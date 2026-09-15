@@ -11,7 +11,7 @@ export default function AdminPaymentsPage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProof, setSelectedProof] = useState(null);
+  const [selectedProofUrl, setSelectedProofUrl] = useState(null);
 
   const loadPayments = async () => {
     try {

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchApi } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
+import { useToast } from '../../../src/contexts/ToastContext';
 import { ShoppingBag, Plus, Search, Edit3, Trash2, X, Apple, Layers, Image as ImageIcon, Sparkles } from 'lucide-react';
 
 const SAMPLE_GROCERY_IMAGES = [
