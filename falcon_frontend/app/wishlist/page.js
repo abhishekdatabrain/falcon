@@ -2,14 +2,16 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../src/contexts/AuthContext';
 import { useWishlist } from '../../src/contexts/WishlistContext';
 import { useCart } from '../../src/contexts/CartContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { Heart, ShoppingBag, Trash2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Heart, ShoppingBag, Trash2, ArrowRight, LogIn } from 'lucide-react';
 
 export default function WishlistPage() {
   const router = useRouter();
   const { locale } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
   const { wishlist, removeFromWishlist, clearWishlist } = useWishlist();
   const { addToCart } = useCart();
   const [addingId, setAddingId] = useState(null);
@@ -19,11 +21,46 @@ export default function WishlistPage() {
       setAddingId(product.id);
       await addToCart(product.id, 1);
     } catch (err) {
-      alert(err.message || 'Please log in to add items to cart');
+      // Toast notification is managed by CartContext
     } finally {
       setAddingId(null);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-24 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="max-w-xl mx-auto py-20 px-4 text-center space-y-6 bg-white rounded-3xl border border-slate-200/80 shadow-sm my-10 font-sans">
+        <div className="w-20 h-20 rounded-3xl bg-emerald-50 text-[#05442e] flex items-center justify-center mx-auto border border-emerald-100">
+          <Heart className="w-10 h-10 fill-rose-500/20 text-rose-500" />
+        </div>
+        <h1 className="text-3xl font-extrabold text-slate-900">
+          {locale === 'ar' ? 'سجل الدخول لعرض قائمة المفضلة' : 'Log In to Access Your Wishlist'}
+        </h1>
+        <p className="text-slate-500 text-sm max-w-md mx-auto">
+          {locale === 'ar'
+            ? 'يجب تسجيل الدخول لإضافة المنتجات إلى قائمة المفضلة وحفظها في حسابك.'
+            : 'You must be logged in to save favorite items and access your wishlist.'}
+        </p>
+        <div className="pt-2">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#05442e] hover:bg-emerald-800 text-white font-extrabold text-sm transition-all shadow-md cursor-pointer"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>{locale === 'ar' ? 'تسجيل الدخول الآن' : 'Log In Now'}</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!wishlist || wishlist.length === 0) {
     return (

@@ -6,16 +6,17 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
-import { ShoppingBag, Globe, User, LogOut, Package, Truck, ShieldCheck, Search, PhoneCall, Menu, X, Leaf, Sparkles, Heart } from 'lucide-react';
+import { ShoppingBag, Globe, User, LogOut, Package, Truck, ShieldCheck, Search, PhoneCall, Menu, X, Leaf, Sparkles, Heart, Trash2 } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
   const { t, locale, toggleLanguage } = useLanguage();
   const { user, logout } = useAuth();
-  const { cartCount } = useCart();
+  const { cart, cartCount, removeItem } = useCart();
   const { wishlistCount } = useWishlist();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [cartDropdownOpen, setCartDropdownOpen] = useState(false);
 
   // Hide customer Navbar on Admin routes
   if (pathname?.startsWith('/admin')) {
@@ -132,20 +133,127 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Shopping Bag / Cart Icon Button */}
+            {/* Shopping Bag / Cart Icon Button with Items Dropdown */}
             {(!user || user.role === 'CUSTOMER') && (
-              <Link
-                href="/cart"
-                className="relative w-10 h-10 rounded-2xl bg-white text-slate-900 flex items-center justify-center shadow-md hover:scale-105 transition-all group border border-slate-100 cursor-pointer"
-                title="Shopping Cart"
+              <div
+                className="relative"
+                onMouseEnter={() => setCartDropdownOpen(true)}
+                onMouseLeave={() => setCartDropdownOpen(false)}
               >
-                <ShoppingBag className="w-5 h-5 text-slate-900 group-hover:text-emerald-700 transition-colors" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#05442e] text-white text-[11px] font-black flex items-center justify-center shadow-md">
-                    {cartCount}
-                  </span>
+                <Link
+                  href="/cart"
+                  onClick={() => setCartDropdownOpen(false)}
+                  className="relative w-10 h-10 rounded-2xl bg-white text-slate-900 flex items-center justify-center shadow-md hover:scale-105 transition-all group border border-slate-100 cursor-pointer"
+                  title="Shopping Cart"
+                >
+                  <ShoppingBag className="w-5 h-5 text-slate-900 group-hover:text-emerald-700 transition-colors" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#05442e] text-white text-[11px] font-black flex items-center justify-center shadow-md">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+
+                {/* Cart Items Quick Popover */}
+                {cartDropdownOpen && (
+                  <div className="absolute right-0 top-11 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-slate-200/80 p-5 text-slate-900 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <ShoppingBag className="w-4 h-4 text-emerald-700" />
+                        <h4 className="font-extrabold text-sm text-slate-900">
+                          {locale === 'ar' ? 'سلة التسوق' : 'Shopping Cart'}
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-[#05442e] text-xs font-black">
+                          {cartCount}
+                        </span>
+                      </div>
+
+                      <Link
+                        href="/cart"
+                        onClick={() => setCartDropdownOpen(false)}
+                        className="text-xs font-bold text-emerald-700 hover:underline"
+                      >
+                        {locale === 'ar' ? 'عرض السلة' : 'View Full Cart'}
+                      </Link>
+                    </div>
+
+                    {/* List of Added Cart Items */}
+                    {!cart?.items || cart.items.length === 0 ? (
+                      <div className="py-8 text-center space-y-2">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center mx-auto border border-slate-100">
+                          <ShoppingBag className="w-6 h-6" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-500">
+                          {locale === 'ar' ? 'سلة التسوق فارغة حالياً' : 'Your shopping cart is empty'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="max-h-60 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+                          {cart.items.map((item) => {
+                            const imgUrl = item.image || (item.product?.img || (item.product?.images && item.product.images[0])) || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300';
+                            return (
+                              <div key={item.id} className="flex items-center justify-between gap-3 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-12 h-12 rounded-xl bg-white p-1 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center">
+                                    <img
+                                      src={imgUrl}
+                                      alt={locale === 'ar' ? item.name_ar : item.name_en}
+                                      className="w-full h-full object-contain"
+                                    />
+                                  </div>
+
+                                  <div className="space-y-0.5">
+                                    <h5 className="font-extrabold text-xs text-slate-900 line-clamp-1">
+                                      {locale === 'ar' ? item.name_ar : item.name_en}
+                                    </h5>
+                                    <p className="text-[11px] font-bold text-emerald-700">
+                                      {item.quantity} × {parseFloat(item.price || 0).toFixed(2)} SAR
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <button
+                                  onClick={() => removeItem(item.id)}
+                                  className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                                  title="Remove"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Subtotal & Action Buttons */}
+                        <div className="pt-3 border-t border-slate-100 space-y-3">
+                          <div className="flex items-center justify-between font-extrabold text-sm">
+                            <span className="text-slate-600">{locale === 'ar' ? 'المجموع الفرعي:' : 'Subtotal:'}</span>
+                            <span className="text-[#05442e]">{parseFloat(cart.subtotal || cart.grandTotal || 0).toFixed(2)} SAR</span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <Link
+                              href="/cart"
+                              onClick={() => setCartDropdownOpen(false)}
+                              className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs text-center transition-colors"
+                            >
+                              {locale === 'ar' ? 'عرض السلة' : 'View Cart'}
+                            </Link>
+                            <Link
+                              href="/checkout"
+                              onClick={() => setCartDropdownOpen(false)}
+                              className="py-2.5 px-3 rounded-xl bg-[#05442e] hover:bg-emerald-800 text-white font-extrabold text-xs text-center transition-colors shadow-sm"
+                            >
+                              {locale === 'ar' ? 'إتمام الطلب' : 'Checkout'}
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
-              </Link>
+              </div>
             )}
 
             {user ? (

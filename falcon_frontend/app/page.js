@@ -278,7 +278,7 @@ export default function HomePage() {
       setAddingId(productId);
       await addToCart(productId, 1);
     } catch (err) {
-      alert(err.message || 'Please log in to add items to cart');
+      // Toast message managed by CartContext
     } finally {
       setAddingId(null);
     }

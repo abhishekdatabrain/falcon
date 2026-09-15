@@ -2,16 +2,24 @@
 import React, { useEffect, useState } from 'react';
 import { fetchApi } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
+import { useToast } from '../../../src/contexts/ToastContext';
 import {
   Bell,
   Send,
   Search,
   Trash2,
   X,
+  Filter,
+  Users,
+  User,
+  ShieldAlert,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 
 export default function AdminNotificationsPage() {
-  const { t, locale } = useLanguage();
+  const { locale } = useLanguage();
+  const { showToast } = useToast();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTypeFilter, setActiveTypeFilter] = useState('ALL');
@@ -33,8 +41,9 @@ export default function AdminNotificationsPage() {
   const loadNotifications = async () => {
     try {
       setLoading(true);
-      const url = activeTypeFilter === 'ALL' ? '/admin/notifications' : `/admin/notifications?type=${activeTypeFilter}`;
-      const res = await fetchApi(url);
+      let query = '/admin/notifications';
+      if (activeTypeFilter !== 'ALL') query += `?type=${activeTypeFilter}`;
+      const res = await fetchApi(query);
       if (res.success) {
         setNotifications(res.data.notifications || []);
       }
@@ -58,7 +67,10 @@ export default function AdminNotificationsPage() {
         body: JSON.stringify(form),
       });
       if (res.success) {
-        alert(locale === 'ar' ? 'تم إرسال الإشعار بنجاح!' : 'Notification broadcasted successfully!');
+        showToast(
+          locale === 'ar' ? 'تم إرسال الإشعار بنجاح!' : 'Notification broadcasted successfully!',
+          'success'
+        );
         setShowModal(false);
         setForm({
           target_audience: 'ALL_CUSTOMERS',
@@ -72,7 +84,7 @@ export default function AdminNotificationsPage() {
         await loadNotifications();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setSending(false);
     }
@@ -83,10 +95,14 @@ export default function AdminNotificationsPage() {
     try {
       const res = await fetchApi(`/admin/notifications/${notificationId}`, { method: 'DELETE' });
       if (res.success) {
+        showToast(
+          locale === 'ar' ? 'تم حذف الإشعار' : 'Notification log deleted',
+          'info'
+        );
         await loadNotifications();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 

@@ -13,7 +13,8 @@ const SAMPLE_GROCERY_IMAGES = [
 ];
 
 export default function AdminProductsPage() {
-  const { t, locale } = useLanguage();
+  const { locale } = useLanguage();
+  const { showToast } = useToast();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +73,10 @@ export default function AdminProductsPage() {
           body: JSON.stringify(payload),
         });
         if (res.success) {
-          alert(locale === 'ar' ? 'تم تحديث منتج البقالة بنجاح!' : 'Grocery item updated successfully!');
+          showToast(
+            locale === 'ar' ? 'تم تحديث منتج البقالة بنجاح!' : 'Grocery item updated successfully!',
+            'success'
+          );
         }
       } else {
         const res = await fetchApi('/products', {
@@ -80,7 +84,10 @@ export default function AdminProductsPage() {
           body: JSON.stringify(payload),
         });
         if (res.success) {
-          alert(locale === 'ar' ? 'تم إضافة منتج البقالة بنجاح!' : 'Fresh grocery item created successfully!');
+          showToast(
+            locale === 'ar' ? 'تم إضافة منتج البقالة بنجاح!' : 'Fresh grocery item created successfully!',
+            'success'
+          );
         }
       }
       setShowModal(false);
@@ -88,7 +95,7 @@ export default function AdminProductsPage() {
       setProductForm({ category_id: '', subcategory_id: '', sku: '', name_en: '', name_ar: '', description_en: '', description_ar: '', price: '', stock_quantity: '', image_url: '' });
       await loadData();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -97,11 +104,11 @@ export default function AdminProductsPage() {
     try {
       const res = await fetchApi(`/products/${productId}`, { method: 'DELETE' });
       if (res.success) {
-        alert('Grocery product deleted successfully');
+        showToast('Grocery product deleted successfully', 'info');
         await loadData();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 

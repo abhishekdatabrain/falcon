@@ -2,10 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { fetchApi } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
+import { useToast } from '../../../src/contexts/ToastContext';
 import { Package, Truck, UserCheck, Search, X } from 'lucide-react';
 
 export default function AdminOrdersPage() {
   const { t, locale } = useLanguage();
+  const { showToast } = useToast();
   const [orders, setOrders] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +23,7 @@ export default function AdminOrdersPage() {
     try {
       setLoading(true);
       const [ordRes, drvRes] = await Promise.all([
-        fetchApi('/orders'),
+        fetchApi('/admin/orders'),
         fetchApi('/admin/drivers'),
       ]);
       if (ordRes.success) setOrders(ordRes.data.orders || []);
@@ -47,13 +49,16 @@ export default function AdminOrdersPage() {
         body: JSON.stringify({ driverId: selectedDriverId }),
       });
       if (res.success) {
-        alert(locale === 'ar' ? 'تم تعيين السائق بنجاح!' : 'Driver assigned successfully!');
+        showToast(
+          locale === 'ar' ? 'تم تعيين السائق بنجاح!' : 'Driver assigned successfully!',
+          'success'
+        );
         setSelectedOrder(null);
         setSelectedDriverId('');
         await loadData();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setAssigning(false);
     }

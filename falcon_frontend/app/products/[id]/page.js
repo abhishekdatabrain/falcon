@@ -270,21 +270,21 @@ export default function ProductDetailPage() {
   const handleAddToCart = async () => {
     try {
       setAdding(true);
-      await addToCart(product.id, quantity);
+      await addToCart(product.id, quantity, product);
     } catch (err) {
-      alert(err.message || 'Please login to add to cart');
+      // Toast notification is handled by CartContext
     } finally {
       setAdding(false);
     }
   };
 
-  const handleAddRelatedToCart = async (e, relId) => {
+  const handleAddRelatedToCart = async (e, relItem) => {
     e.stopPropagation();
     try {
-      setAddingRelatedId(relId);
-      await addToCart(relId, 1);
+      setAddingRelatedId(relItem.id);
+      await addToCart(relItem.id, 1, relItem);
     } catch (err) {
-      alert(err.message || 'Please login to add to cart');
+      // Toast notification is handled by CartContext
     } finally {
       setAddingRelatedId(null);
     }
@@ -556,7 +556,7 @@ export default function ProductDetailPage() {
                   </div>
 
                   <button
-                    onClick={(e) => handleAddRelatedToCart(e, item.id)}
+                    onClick={(e) => handleAddRelatedToCart(e, item)}
                     disabled={addingRelatedId === item.id}
                     className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white transition-colors cursor-pointer"
                     title="Add to Cart"

@@ -51,12 +51,12 @@ export default function ProductsPage() {
     loadProducts();
   };
 
-  const handleAddToCart = async (productId) => {
+  const handleAddToCart = async (productId, productObj) => {
     try {
       setAddingId(productId);
-      await addToCart(productId, 1);
+      await addToCart(productId, 1, productObj);
     } catch (err) {
-      alert(err.message || 'Please log in to add items to cart');
+      // Toast notification is automatically managed by CartContext
     } finally {
       setAddingId(null);
     }
@@ -166,7 +166,7 @@ export default function ProductsPage() {
                   </span>
 
                   <button
-                    onClick={() => handleAddToCart(prod.id)}
+                    onClick={() => handleAddToCart(prod.id, prod)}
                     disabled={addingId === prod.id}
                     className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
                   >

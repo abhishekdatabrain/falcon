@@ -3,13 +3,15 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useSocket } from '../../../src/contexts/SocketContext';
+import { useToast } from '../../../src/contexts/ToastContext';
 import { fetchApi } from '../../../src/services/api';
 import { Truck, MapPin, CheckCircle2, Clock, Navigation, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function DriverDashboardPage() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const { emitDriverLocation, joinDeliveryRoom, leaveDeliveryRoom } = useSocket();
+  const { showToast } = useToast();
 
   const [driver, setDriver] = useState(null);
   const [deliveries, setDeliveries] = useState([]);
@@ -27,7 +29,7 @@ export default function DriverDashboardPage() {
 
         // Find active delivery run
         const active = (res.data.deliveries || []).find((d) =>
-          ['OUT_FOR_DELIVERY', 'ARRIVED'].includes(d.status)
+          ['ACCEPTED', 'PICKED_UP', 'ON_THE_WAY', 'OUT_FOR_DELIVERY', 'ARRIVED'].includes(d.delivery_status)
         );
         if (active) {
           setActiveDeliveryId(active.id);
@@ -109,10 +111,14 @@ export default function DriverDashboardPage() {
         body: JSON.stringify({ availabilityStatus: newStatus }),
       });
       if (res.success) {
+        showToast(
+          locale === 'ar' ? 'تم تحديث حالة التوفر' : 'Availability status updated',
+          'success'
+        );
         await loadDashboard();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -122,10 +128,14 @@ export default function DriverDashboardPage() {
         method: 'POST',
       });
       if (res.success) {
+        showToast(
+          locale === 'ar' ? 'تم قبول طلب التوصيل!' : 'Delivery accepted!',
+          'success'
+        );
         await loadDashboard();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -136,10 +146,14 @@ export default function DriverDashboardPage() {
         body: JSON.stringify({ status: nextStatus }),
       });
       if (res.success) {
+        showToast(
+          locale === 'ar' ? 'تم تحديث حالة التوصيل!' : 'Delivery status updated!',
+          'success'
+        );
         await loadDashboard();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 

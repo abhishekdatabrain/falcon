@@ -2,10 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { fetchApi } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
+import { useToast } from '../../../src/contexts/ToastContext';
 import { FolderTree, Plus, Edit3, Trash2, X, ChevronRight, Layers, Tag } from 'lucide-react';
 
 export default function AdminCategoriesPage() {
   const { t, locale } = useLanguage();
+  const { showToast } = useToast();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('parent'); // 'parent' | 'sub'
@@ -56,20 +58,20 @@ export default function AdminCategoriesPage() {
           method: 'PUT',
           body: JSON.stringify(payload),
         });
-        if (res.success) alert(locale === 'ar' ? 'تم تحديث القسم بنجاح!' : 'Category updated successfully!');
+        if (res.success) showToast(locale === 'ar' ? 'تم تحديث القسم بنجاح!' : 'Category updated successfully!', 'success');
       } else {
         const res = await fetchApi('/categories', {
           method: 'POST',
           body: JSON.stringify(payload),
         });
-        if (res.success) alert(locale === 'ar' ? 'تم إنشاء القسم بنجاح!' : 'Category created successfully!');
+        if (res.success) showToast(locale === 'ar' ? 'تم إنشاء القسم بنجاح!' : 'Category created successfully!', 'success');
       }
       setShowModal(false);
       setEditingCategory(null);
       setForm({ name_en: '', name_ar: '', slug: '', parent_id: '' });
       await loadCategories();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -78,11 +80,11 @@ export default function AdminCategoriesPage() {
     try {
       const res = await fetchApi(`/categories/${catId}`, { method: 'DELETE' });
       if (res.success) {
-        alert(locale === 'ar' ? 'تم حذف القسم بنجاح!' : 'Category deleted successfully!');
+        showToast(locale === 'ar' ? 'تم حذف القسم بنجاح!' : 'Category deleted successfully!', 'info');
         await loadCategories();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 

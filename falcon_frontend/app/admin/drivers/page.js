@@ -2,10 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { fetchApi } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
+import { useToast } from '../../../src/contexts/ToastContext';
 import { Truck, UserPlus, Phone, X } from 'lucide-react';
 
 export default function AdminDriversPage() {
-  const { t, locale } = useLanguage();
+  const { locale } = useLanguage();
+  const { showToast } = useToast();
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,13 +49,16 @@ export default function AdminDriversPage() {
         body: JSON.stringify(newDriver),
       });
       if (res.success) {
-        alert(locale === 'ar' ? 'تم إنشاء حساب السائق بنجاح!' : 'Driver account created successfully!');
+        showToast(
+          locale === 'ar' ? 'تم إنشاء حساب السائق بنجاح!' : 'Driver account created successfully!',
+          'success'
+        );
         setShowModal(false);
         setNewDriver({ email: '', mobile: '', password: '', license_number: '', vehicle_details: '' });
         await loadDrivers();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setCreating(false);
     }
@@ -67,10 +72,14 @@ export default function AdminDriversPage() {
         body: JSON.stringify({ availabilityStatus: nextAvail }),
       });
       if (res.success) {
+        showToast(
+          locale === 'ar' ? `تم تغيير حالة السائق إلى ${nextAvail}` : `Driver availability set to ${nextAvail}`,
+          'info'
+        );
         await loadDrivers();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 

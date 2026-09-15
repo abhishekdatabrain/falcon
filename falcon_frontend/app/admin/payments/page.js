@@ -2,19 +2,21 @@
 import React, { useEffect, useState } from 'react';
 import { fetchApi } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
-import { Landmark, CheckCircle2, XCircle, Search, ExternalLink, X } from 'lucide-react';
+import { useToast } from '../../../src/contexts/ToastContext';
+import { Landmark, CheckCircle2, XCircle, Clock, Eye, FileText, Search, User, ExternalLink, X } from 'lucide-react';
 
 export default function AdminPaymentsPage() {
-  const { t, locale } = useLanguage();
+  const { locale } = useLanguage();
+  const { showToast } = useToast();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProofUrl, setSelectedProofUrl] = useState(null);
+  const [selectedProof, setSelectedProof] = useState(null);
 
   const loadPayments = async () => {
     try {
       setLoading(true);
-      const res = await fetchApi('/payments/pending');
+      const res = await fetchApi('/payments/verify-list');
       if (res.success) {
         setPayments(res.data.payments || []);
       }
@@ -33,11 +35,14 @@ export default function AdminPaymentsPage() {
     try {
       const res = await fetchApi(`/payments/${paymentId}/verify`, { method: 'POST' });
       if (res.success) {
-        alert(locale === 'ar' ? 'تم تأكيد التحويل بنجاح! أصبح الطلب جاهزاً للتعيين للسائق.' : 'Payment verified successfully! Order is ready for driver assignment.');
+        showToast(
+          locale === 'ar' ? 'تم تأكيد التحويل بنجاح! أصبح الطلب جاهزاً للتعيين للسائق.' : 'Payment verified successfully! Order is ready for driver assignment.',
+          'success'
+        );
         await loadPayments();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -50,11 +55,14 @@ export default function AdminPaymentsPage() {
         body: JSON.stringify({ rejectionReason: reason }),
       });
       if (res.success) {
-        alert(locale === 'ar' ? 'تم رفض التحويل وإبلاغ العميل' : 'Payment rejected successfully');
+        showToast(
+          locale === 'ar' ? 'تم رفض التحويل وإبلاغ العميل' : 'Payment rejected successfully',
+          'info'
+        );
         await loadPayments();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 

@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { fetchApi } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useSocket } from '../../../src/contexts/SocketContext';
+import { useToast } from '../../../src/contexts/ToastContext';
 import LiveTrackingMap from '../../../src/components/LiveTrackingMap';
 import { Package, Truck, Download, Star, CheckCircle2, MapPin, Landmark, MessageSquare } from 'lucide-react';
 
@@ -11,6 +12,7 @@ export default function OrderDetailsPage() {
   const { id } = useParams();
   const { t, locale } = useLanguage();
   const { socket, joinDeliveryRoom, leaveDeliveryRoom } = useSocket();
+  const { showToast } = useToast();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,9 @@ export default function OrderDetailsPage() {
       const res = await fetchApi(`/orders/${id}`);
       if (res.success && res.data.order) {
         setOrder(res.data.order);
+        if (res.data.order.feedback) {
+          setFeedbackSubmitted(true);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -39,30 +44,30 @@ export default function OrderDetailsPage() {
     if (id) loadOrderDetails();
   }, [id]);
 
-  // Subscribe to real-time Socket.IO Delivery Room when order is active
   useEffect(() => {
-    if (order && order.delivery && ['OUT_FOR_DELIVERY', 'ARRIVED'].includes(order.order_status)) {
+    if (order && order.delivery) {
       const deliveryId = order.delivery.id;
       joinDeliveryRoom(deliveryId);
 
-      if (socket) {
-        const handleLocationUpdate = (data) => {
-          if (data.deliveryId === deliveryId) {
-            setDriverLocation({
-              latitude: data.latitude,
-              longitude: data.longitude,
-              timestamp: data.timestamp,
-            });
-          }
-        };
-
-        socket.on('location_updated', handleLocationUpdate);
-
-        return () => {
-          socket.off('location_updated', handleLocationUpdate);
-          leaveDeliveryRoom(deliveryId);
-        };
+      if (order.delivery.current_lat && order.delivery.current_lng) {
+        setDriverLocation({
+          lat: parseFloat(order.delivery.current_lat),
+          lng: parseFloat(order.delivery.current_lng),
+        });
       }
+
+      if (socket) {
+        socket.on('driverLocationUpdate', (data) => {
+          if (data.deliveryId === deliveryId) {
+            setDriverLocation({ lat: data.lat, lng: data.lng });
+          }
+        });
+      }
+
+      return () => {
+        leaveDeliveryRoom(deliveryId);
+        if (socket) socket.off('driverLocationUpdate');
+      };
     }
   }, [order, socket]);
 
@@ -86,10 +91,16 @@ export default function OrderDetailsPage() {
       if (res.success) {
         setFeedbackSubmitted(true);
         setShowFeedbackModal(false);
+        showToast(
+          locale === 'ar' ? 'شكراً لتقييمك الفائق!' : 'Thank you for your feedback!',
+          'success'
+        );
         await loadOrderDetails();
+      } else {
+        showToast(res.message || 'Failed to submit feedback', 'error');
       }
     } catch (err) {
-      alert(err.message || 'Failed to submit feedback');
+      showToast(err.message || 'Failed to submit feedback', 'error');
     }
   };
 

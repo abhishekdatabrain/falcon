@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchApi } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
+import { useToast } from '../../../src/contexts/ToastContext';
 import {
   Users,
   Search,
@@ -20,6 +21,7 @@ import {
 
 export default function AdminCustomersPage() {
   const { t, locale } = useLanguage();
+  const { showToast } = useToast();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,13 +81,13 @@ export default function AdminCustomersPage() {
         body: JSON.stringify(customerForm),
       });
       if (res.success) {
-        alert(locale === 'ar' ? 'تم إضافة العميل بنجاح!' : 'Customer created successfully!');
+        showToast(locale === 'ar' ? 'تم إضافة العميل بنجاح!' : 'Customer created successfully!', 'success');
         setShowAddModal(false);
         setCustomerForm({ id: '', first_name: '', last_name: '', email: '', mobile: '', password: '' });
         await loadCustomers();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -97,7 +99,7 @@ export default function AdminCustomersPage() {
         body: JSON.stringify(customerForm),
       });
       if (res.success) {
-        alert(locale === 'ar' ? 'تم تحديث بيانات العميل بنجاح!' : 'Customer updated successfully!');
+        showToast(locale === 'ar' ? 'تم تحديث بيانات العميل بنجاح!' : 'Customer updated successfully!', 'success');
         setShowEditModal(false);
         await loadCustomers();
         if (selectedCustomer && selectedCustomer.id === customerForm.id) {
@@ -105,7 +107,7 @@ export default function AdminCustomersPage() {
         }
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -117,6 +119,10 @@ export default function AdminCustomersPage() {
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.success) {
+        showToast(
+          locale === 'ar' ? `تم تغيير حالة العميل إلى ${newStatus}` : `Customer status set to ${newStatus}`,
+          'info'
+        );
         await loadCustomers();
         if (selectedCustomer && selectedCustomer.id === customerId) {
           setSelectedCustomer({
@@ -126,7 +132,7 @@ export default function AdminCustomersPage() {
         }
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -139,13 +145,13 @@ export default function AdminCustomersPage() {
         body: JSON.stringify(addressForm),
       });
       if (res.success) {
-        alert(locale === 'ar' ? 'تم إضافة العنوان بنجاح!' : 'Address added successfully!');
+        showToast(locale === 'ar' ? 'تم إضافة العنوان بنجاح!' : 'Address added successfully!', 'success');
         setShowAddressModal(false);
         setAddressForm({ address_name: 'Home', building_number: '', street: '', area: '', city: 'Riyadh', postal_code: '' });
         openDetails(selectedCustomer);
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -154,11 +160,11 @@ export default function AdminCustomersPage() {
     try {
       const res = await fetchApi(`/admin/customers/addresses/${addressId}`, { method: 'DELETE' });
       if (res.success) {
-        alert('Address deleted successfully');
+        showToast('Address deleted successfully', 'info');
         openDetails(selectedCustomer);
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 

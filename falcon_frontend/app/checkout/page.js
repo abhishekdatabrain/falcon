@@ -3,12 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../src/contexts/CartContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { useToast } from '../../src/contexts/ToastContext';
 import { fetchApi } from '../../src/services/api';
 import { MapPin, Plus, Landmark, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function CheckoutPage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const { cart, clearCart } = useCart();
+  const { showToast } = useToast();
   const router = useRouter();
 
   const [addresses, setAddresses] = useState([]);
@@ -23,13 +25,14 @@ export default function CheckoutPage() {
   const [newAddress, setNewAddress] = useState({
     full_name: '',
     mobile: '',
-    state: 'Riyadh Province',
     city: 'Riyadh',
-    area: 'Al-Olaya',
-    address_line: '',
+    district: '',
+    street_address: '',
+    building_no: '',
+    zip_code: '',
   });
 
-  // Payment Confirmation state
+  // Bank Transfer Form state
   const [bankName, setBankName] = useState('Al Rajhi Bank');
   const [paymentReference, setPaymentReference] = useState('');
   const [proofFile, setProofFile] = useState(null);
@@ -41,10 +44,7 @@ export default function CheckoutPage() {
       const res = await fetchApi('/customers/addresses');
       if (res.success && res.data.addresses) {
         setAddresses(res.data.addresses);
-        const defaultAddr = res.data.addresses.find((a) => a.is_default);
-        if (defaultAddr) {
-          setSelectedAddressId(defaultAddr.id);
-        } else if (res.data.addresses.length > 0) {
+        if (res.data.addresses.length > 0) {
           setSelectedAddressId(res.data.addresses[0].id);
         }
       }
@@ -66,16 +66,24 @@ export default function CheckoutPage() {
       });
       if (res.success) {
         setShowAddressModal(false);
+        showToast(
+          locale === 'ar' ? 'تم إضافة العنوان بنجاح!' : 'Address added successfully!',
+          'success'
+        );
         await loadAddresses();
       }
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
   const handlePlaceOrder = async () => {
     if (!selectedAddressId) {
       setError('Please select or add a delivery address');
+      showToast(
+        locale === 'ar' ? 'يرجى اختيار أو إضافة عنوان التوصيل' : 'Please select or add a delivery address',
+        'error'
+      );
       return;
     }
 
@@ -93,9 +101,14 @@ export default function CheckoutPage() {
 
       if (res.success && res.data.order) {
         setOrder(res.data.order);
+        showToast(
+          locale === 'ar' ? 'تم إنشاء الطلب بنجاح!' : 'Order created successfully!',
+          'success'
+        );
       }
     } catch (err) {
       setError(err.message || 'Unable to place order');
+      showToast(err.message || 'Unable to place order', 'error');
     } finally {
       setLoading(false);
     }
@@ -104,7 +117,10 @@ export default function CheckoutPage() {
   const handleSubmitBankPayment = async (e) => {
     e.preventDefault();
     if (!proofFile || !paymentReference) {
-      alert('Please enter payment reference and upload receipt file');
+      showToast(
+        locale === 'ar' ? 'يرجى إدخال رقم المرجع وإرفاق إيصال التحويل' : 'Please enter payment reference and upload receipt file',
+        'error'
+      );
       return;
     }
 
@@ -123,12 +139,16 @@ export default function CheckoutPage() {
 
       if (res.success) {
         setPaymentSuccess(true);
+        showToast(
+          locale === 'ar' ? 'تم إرسال إيصال الدفع بنجاح!' : 'Payment confirmation submitted successfully!',
+          'success'
+        );
         setTimeout(() => {
           router.push(`/orders/${order.id}`);
         }, 2000);
       }
     } catch (err) {
-      alert(err.message || 'Failed to submit payment confirmation');
+      showToast(err.message || 'Failed to submit payment confirmation', 'error');
     } finally {
       setPaymentSubmitting(false);
     }
