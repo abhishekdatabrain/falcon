@@ -1,4 +1,5 @@
 const { Order, OrderItem, OrderStatusHistory, Payment, Product, Address, Customer, User, Driver, Delivery, sequelize } = require('../models');
+const { Op } = require('sequelize');
 const cartService = require('./cartService');
 const { ORDER_STATUS, VALID_STATUS_TRANSITIONS } = require('../constants/orderStatus');
 const PAYMENT_STATUS = require('../constants/paymentStatus');
@@ -120,12 +121,26 @@ class OrderService {
 
     // Role-based Security Enforcement
     if (role === ROLES.CUSTOMER) {
-      const customer = await Customer.findOne({ where: { user_id: userId } });
+      const customer = await Customer.findOne({
+        where: {
+          [Op.or]: [
+            { id: userId },
+            { user_id: userId },
+          ],
+        },
+      });
       if (!customer || order.customer_id !== customer.id) {
         throw new Error('Access denied to this order');
       }
     } else if (role === ROLES.DRIVER) {
-      const driver = await Driver.findOne({ where: { user_id: userId } });
+      const driver = await Driver.findOne({
+        where: {
+          [Op.or]: [
+            { id: userId },
+            { user_id: userId },
+          ],
+        },
+      });
       if (!driver || !order.delivery || order.delivery.driver_id !== driver.id) {
         throw new Error('Access denied. You are not the assigned driver for this order');
       }
@@ -146,25 +161,173 @@ class OrderService {
   }
 
   async getAllOrders(filters = {}) {
-    const { status, search } = filters;
+    const {
+      search,
+      status,
+      tab,
+      paymentStatus,
+      paymentMethod,
+      driverId,
+      fromDate,
+      toDate,
+      minAmount,
+      maxAmount,
+      page = 1,
+      limit = 10,
+    } = filters;
+
     const where = {};
-    if (status) {
+    const paymentWhere = {};
+    const deliveryWhere = {};
+
+    // 1. Tab Quick Filters
+    if (tab === 'ACTIVE') {
+      where.order_status = [
+        ORDER_STATUS.PENDING_PAYMENT,
+        ORDER_STATUS.PAYMENT_SUBMITTED,
+        ORDER_STATUS.PAYMENT_VERIFIED,
+        ORDER_STATUS.DRIVER_ASSIGNED,
+        ORDER_STATUS.DRIVER_ACCEPTED,
+        ORDER_STATUS.OUT_FOR_DELIVERY,
+        ORDER_STATUS.ARRIVED,
+      ];
+    } else if (tab === 'COMPLETED') {
+      where.order_status = ORDER_STATUS.DELIVERED;
+    } else if (tab === 'CANCELLED') {
+      where.order_status = [ORDER_STATUS.CANCELLED, ORDER_STATUS.PAYMENT_REJECTED];
+    }
+
+    // 2. Specific Order Status Filter
+    if (status && status !== 'ALL') {
       where.order_status = status;
     }
 
-    return await Order.findAll({
+    // 3. Payment Status Filter
+    if (paymentStatus && paymentStatus !== 'ALL') {
+      paymentWhere.status = paymentStatus;
+    }
+
+    // 4. Driver Filter
+    if (driverId && driverId !== 'ALL') {
+      deliveryWhere.driver_id = driverId;
+    }
+
+    // 5. Date Range Filter
+    if (fromDate || toDate) {
+      where.createdAt = {};
+      if (fromDate) where.createdAt[Op.gte] = new Date(fromDate);
+      if (toDate) {
+        const endDate = new Date(toDate);
+        endDate.setHours(23, 59, 59, 999);
+        where.createdAt[Op.lte] = endDate;
+      }
+    }
+
+    // 6. Order Amount Range Filter
+    if (minAmount || maxAmount) {
+      where.grand_total = {};
+      if (minAmount) where.grand_total[Op.gte] = parseFloat(minAmount);
+      if (maxAmount) where.grand_total[Op.lte] = parseFloat(maxAmount);
+    }
+
+    // 7. Text Search Query Across Order #, Customer Name, Mobile, Email, Driver
+    if (search && search.trim()) {
+      const q = `%${search.trim()}%`;
+      where[Op.or] = [
+        { order_number: { [Op.iLike]: q } },
+        { '$customer.first_name$': { [Op.iLike]: q } },
+        { '$customer.last_name$': { [Op.iLike]: q } },
+        { '$customer.user.email$': { [Op.iLike]: q } },
+        { '$customer.user.mobile$': { [Op.iLike]: q } },
+        { '$delivery.driver.user.email$': { [Op.iLike]: q } },
+        { '$delivery.driver.user.mobile$': { [Op.iLike]: q } },
+      ];
+    }
+
+    const pageNum = parseInt(page, 10) || 1;
+    const pageSize = parseInt(limit, 10) || 10;
+    const offset = (pageNum - 1) * pageSize;
+
+    const { count, rows: orders } = await Order.findAndCountAll({
       where,
       include: [
-        { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] },
-        { model: Payment, as: 'payment' },
-        { model: Delivery, as: 'delivery', include: ['driver'] },
+        {
+          model: Customer,
+          as: 'customer',
+          include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile', 'status'] }],
+        },
+        {
+          model: Payment,
+          as: 'payment',
+          where: Object.keys(paymentWhere).length > 0 ? paymentWhere : undefined,
+          include: ['confirmation'],
+        },
+        {
+          model: Address,
+          as: 'address',
+        },
+        {
+          model: OrderItem,
+          as: 'items',
+        },
+        {
+          model: OrderStatusHistory,
+          as: 'status_history',
+          include: [{ model: User, as: 'changed_by', attributes: ['id', 'email', 'role'] }],
+        },
+        {
+          model: Delivery,
+          as: 'delivery',
+          where: Object.keys(deliveryWhere).length > 0 ? deliveryWhere : undefined,
+          required: false,
+          include: [
+            {
+              model: Driver,
+              as: 'driver',
+              include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile', 'status'] }],
+            },
+          ],
+        },
       ],
       order: [['createdAt', 'DESC']],
+      limit: pageSize,
+      offset,
+      distinct: true,
     });
+
+    // Compute Overall Dynamic Dashboard Summary Metrics
+    const allOrders = await Order.findAll({
+      include: [
+        { model: Payment, as: 'payment' },
+        { model: Delivery, as: 'delivery' },
+      ],
+    });
+
+    const stats = {
+      total: allOrders.length,
+      pending: allOrders.filter(o => o.order_status === ORDER_STATUS.PENDING_PAYMENT).length,
+      processing: allOrders.filter(o => [ORDER_STATUS.PAYMENT_VERIFIED, ORDER_STATUS.DRIVER_ASSIGNED, ORDER_STATUS.DRIVER_ACCEPTED].includes(o.order_status)).length,
+      outForDelivery: allOrders.filter(o => [ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.ARRIVED].includes(o.order_status)).length,
+      delivered: allOrders.filter(o => o.order_status === ORDER_STATUS.DELIVERED).length,
+      cancelled: allOrders.filter(o => [ORDER_STATUS.CANCELLED, ORDER_STATUS.PAYMENT_REJECTED].includes(o.order_status)).length,
+      pendingPayments: allOrders.filter(o => o.payment && ['PENDING', 'SUBMITTED', 'UNDER_REVIEW'].includes(o.payment.status)).length,
+      completedPayments: allOrders.filter(o => o.payment && o.payment.status === 'VERIFIED').length,
+    };
+
+    return {
+      orders,
+      pagination: {
+        total: count,
+        page: pageNum,
+        limit: pageSize,
+        totalPages: Math.ceil(count / pageSize),
+      },
+      stats,
+    };
   }
 
   async updateOrderStatus(orderId, newStatus, changedByUserId, notes = '') {
-    const order = await Order.findByPk(orderId);
+    const order = await Order.findByPk(orderId, { include: ['payment'] });
     if (!order) {
       throw new Error('Order not found');
     }
@@ -172,8 +335,13 @@ class OrderService {
     const currentStatus = order.order_status;
     const allowedTransitions = VALID_STATUS_TRANSITIONS[currentStatus] || [];
 
-    if (!allowedTransitions.includes(newStatus)) {
+    if (!allowedTransitions.includes(newStatus) && newStatus !== ORDER_STATUS.CANCELLED) {
       throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus}`);
+    }
+
+    // Business Rule Check: Cannot mark order as DELIVERED unless payment is VERIFIED
+    if (newStatus === ORDER_STATUS.DELIVERED && (!order.payment || order.payment.status !== PAYMENT_STATUS.VERIFIED)) {
+      throw new Error('Cannot complete delivery: Payment for this order is not verified');
     }
 
     return await sequelize.transaction(async (t) => {
@@ -183,7 +351,7 @@ class OrderService {
         order_id: order.id,
         from_status: currentStatus,
         to_status: newStatus,
-        changed_by_user_id: changedByUserId,
+        changed_by_user_id: changedByUserId || null,
         notes,
       }, { transaction: t });
 
@@ -208,11 +376,11 @@ class OrderService {
 
   async cancelOrder(orderId, userId, role, reason = '') {
     const order = await this.getOrderById(orderId, userId, role);
-    if (![ORDER_STATUS.PENDING_PAYMENT, ORDER_STATUS.PAYMENT_SUBMITTED, ORDER_STATUS.PAYMENT_REJECTED].includes(order.order_status)) {
+    if (![ORDER_STATUS.PENDING_PAYMENT, ORDER_STATUS.PAYMENT_SUBMITTED, ORDER_STATUS.PAYMENT_REJECTED].includes(order.order_status) && role !== ROLES.ADMIN) {
       throw new Error('Order cannot be cancelled at its current status');
     }
 
-    return await this.updateOrderStatus(orderId, ORDER_STATUS.CANCELLED, userId, `Cancelled by user. Reason: ${reason}`);
+    return await this.updateOrderStatus(orderId, ORDER_STATUS.CANCELLED, userId, `Cancelled. Reason: ${reason}`);
   }
 }
 

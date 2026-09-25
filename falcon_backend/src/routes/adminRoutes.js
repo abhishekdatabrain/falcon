@@ -13,7 +13,13 @@ router.get('/dashboard', (req, res, next) => adminController.getDashboard(req, r
 router.post('/drivers', (req, res, next) => adminController.createDriver(req, res, next));
 router.get('/drivers', (req, res, next) => adminController.getDrivers(req, res, next));
 router.get('/drivers/:driverId', (req, res, next) => adminController.getDriverById(req, res, next));
+router.put('/drivers/:driverId', (req, res, next) => adminController.updateDriver(req, res, next));
 router.put('/drivers/:driverId/status', (req, res, next) => adminController.updateDriverStatus(req, res, next));
+router.put('/drivers/:driverId/account-status', (req, res, next) => adminController.toggleDriverAccountStatus(req, res, next));
+router.get('/drivers/:driverId/location', (req, res, next) => adminController.getDriverLocation(req, res, next));
+// Order Management Routes
+router.get('/orders', (req, res, next) => adminController.getAllOrders(req, res, next));
+router.put('/orders/:orderId/status', (req, res, next) => adminController.updateOrderStatus(req, res, next));
 router.post('/orders/:orderId/assign-driver', (req, res, next) => adminController.assignDriverToOrder(req, res, next));
 
 // Customer Management Routes

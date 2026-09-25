@@ -34,9 +34,6 @@ export const AuthProvider = ({ children }) => {
     });
     if (res.success && res.data.user) {
       setUser(res.data.user);
-      if (res.data.accessToken && typeof window !== 'undefined') {
-        localStorage.setItem('access_token', res.data.accessToken);
-      }
     }
     return res;
   };
@@ -55,9 +52,6 @@ export const AuthProvider = ({ children }) => {
       // Ignore
     } finally {
       setUser(null);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('access_token');
-      }
     }
   };
 

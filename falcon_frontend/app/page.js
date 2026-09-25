@@ -4,8 +4,18 @@ import Link from 'next/link';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import { useCart } from '../src/contexts/CartContext';
 import { useWishlist } from '../src/contexts/WishlistContext';
+import { useToast } from '../src/contexts/ToastContext';
 import { fetchApi } from '../src/services/api';
 import { ShoppingBag, Truck, ShieldCheck, FileCheck, ArrowRight, Star, Sparkles, CheckCircle2, Leaf, Tag, ChevronRight, ChevronLeft, Gift, Headphones, Shield, Smartphone, Heart, Flame, TrendingUp } from 'lucide-react';
+
+const SAFE_DEFAULT_CATEGORIES = [
+  { id: 'cat-1', name_en: 'Fruits & Vegetables', name_ar: 'فواكه وخضروات', image_url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop' },
+  { id: 'cat-2', name_en: 'Fresh Grocery & Dairy', name_ar: 'بقالة وألبان طازجة', image_url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&auto=format&fit=crop' },
+  { id: 'cat-3', name_en: 'Beverages & Juices', name_ar: 'مشروبات وعصائر', image_url: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=400&auto=format&fit=crop' },
+  { id: 'cat-4', name_en: 'Bakery & Bread', name_ar: 'مخبوزات وخبز', image_url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop' },
+  { id: 'cat-5', name_en: 'Electronics & Gadgets', name_ar: 'الإلكترونيات والأجهزة', image_url: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&auto=format&fit=crop' },
+  { id: 'cat-6', name_en: 'Home & Kitchen', name_ar: 'المنزل والمطبخ', image_url: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&auto=format&fit=crop' },
+];
 
 const HERO_SLIDES = [
   {
@@ -55,20 +65,15 @@ const HERO_SLIDES = [
   },
 ];
 
-const CATEGORY_ITEMS = [
-  { name_en: 'Capsicum', name_ar: 'فلفل رومي', img: 'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=300' },
-  { name_en: 'Watermelon', name_ar: 'بطيخ طازج', img: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=300' },
-  { name_en: 'Seafood', name_ar: 'مأكولات بحرية', img: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=300' },
-  { name_en: 'Strawberry', name_ar: 'فراولة عضوية', img: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=300' },
-  { name_en: 'Rice & Grains', name_ar: 'أرز وحبوب', img: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300' },
-  { name_en: 'Organic Kiwi', name_ar: 'كيوي طازج', img: 'https://images.unsplash.com/photo-1585059819970-311904b48f61?w=300' },
-  { name_en: 'Fresh Oranges', name_ar: 'برتقال عصير', img: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=300' },
-  { name_en: 'Broccoli', name_ar: 'بروكلي أخضر', img: 'https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=300' },
-  { name_en: 'Fresh Eggs', name_ar: 'بيض مزارع', img: 'https://images.unsplash.com/photo-1506976785307-8732e854ad03?w=300' },
-  { name_en: 'Organic Bakery', name_ar: 'مخبوزات طازجة', img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300' },
-  { name_en: 'Fresh Dairy', name_ar: 'ألبان وجبن', img: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=300' },
-  { name_en: 'Cold Juices', name_ar: 'عصائر طازجة', img: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=300' },
-];
+const getCategoryImageUrl = (cat) => {
+  if (cat && cat.image_url && typeof cat.image_url === 'string' && cat.image_url.trim() !== '') {
+    return cat.image_url;
+  }
+  const name = (cat?.name_en || '').toLowerCase();
+  return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop';
+};
+
+
 
 const FEATURED_BANNERS = [
   {
@@ -235,6 +240,7 @@ export default function HomePage() {
   const { t, locale } = useLanguage();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const { showToast } = useToast();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -259,13 +265,14 @@ export default function HomePage() {
       try {
         const [catRes, prodRes] = await Promise.all([
           fetchApi('/categories'),
-          fetchApi('/products?limit=10'),
+          fetchApi('/products?limit=50'),
         ]);
 
-        if (catRes.success) setCategories(catRes.data.categories || []);
-        if (prodRes.success) setProducts(prodRes.data.products?.products || prodRes.data.products || []);
+        if (catRes.success) setCategories(catRes.data?.categories || catRes.data || []);
+        if (prodRes.success) setProducts(prodRes.data?.products?.products || prodRes.data?.products || []);
       } catch (err) {
         console.error('Error loading home data:', err);
+        showToast(err.message || 'Error loading page content', 'error');
       } finally {
         setLoading(false);
       }
@@ -286,10 +293,10 @@ export default function HomePage() {
 
   return (
     <div className="space-y-16 pb-16 font-sans bg-[#fbfcfb]">
-      
+
       {/* 1. Hero Section (Interactive Banner Slider) */}
       <section className={`${HERO_SLIDES[currentSlide].bg} text-white overflow-hidden relative transition-colors duration-700 min-h-[460px] flex flex-col justify-between`}>
-        
+
         {/* Navigation Arrow Controls */}
         <button
           onClick={prevSlide}
@@ -309,7 +316,7 @@ export default function HomePage() {
 
         {/* Slide Content */}
         <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-16 py-12 sm:py-20 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10 w-full">
-          
+
           {/* Left Text */}
           <div className="space-y-6 max-w-xl text-center md:text-left rtl:md:text-right">
             <span className={`${HERO_SLIDES[currentSlide].accentColor} font-serif italic text-lg sm:text-xl font-medium tracking-wide block transition-all`}>
@@ -355,9 +362,8 @@ export default function HomePage() {
             <button
               key={idx}
               onClick={() => setCurrentSlide(idx)}
-              className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                currentSlide === idx ? 'w-8 bg-amber-400' : 'w-2.5 bg-white/50 hover:bg-white'
-              }`}
+              className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${currentSlide === idx ? 'w-8 bg-amber-400' : 'w-2.5 bg-white/50 hover:bg-white'
+                }`}
               aria-label={`Go to slide ${idx + 1}`}
             />
           ))}
@@ -365,54 +371,64 @@ export default function HomePage() {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-        
+
         {/* 2. Shop By Category (Row of Circular Category Cards with Carousel) */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05442e] font-serif tracking-tight">
-              Shop By Category
-            </h2>
+        {(() => {
+          const mainCategories = (categories || []).filter((c) => !c.parent_id);
+          const displayCategories = mainCategories.length > 0 ? mainCategories : ((categories || []).length > 0 ? categories : SAFE_DEFAULT_CATEGORIES);
+          const maxSlides = Math.max(1, Math.ceil(displayCategories.length / 6));
+          return (
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05442e] font-serif tracking-tight">
+                  {locale === 'ar' ? 'التسوق حسب القسم' : 'Shop By Category'}
+                </h2>
 
-            {/* Carousel Circular Arrow Controls matching user screenshot */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCategorySlideIndex((prev) => (prev - 1 + 2) % 2)}
-                className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
-                title="Previous Categories"
-              >
-                <ChevronLeft className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
-              </button>
-              <button
-                onClick={() => setCategorySlideIndex((prev) => (prev + 1) % 2)}
-                className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
-                title="Next Categories"
-              >
-                <ChevronRight className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 transition-all duration-500">
-            {CATEGORY_ITEMS.slice(categorySlideIndex * 6, (categorySlideIndex + 1) * 6).map((cat, idx) => (
-              <Link
-                key={idx}
-                href="/products"
-                className="bg-white rounded-2xl p-5 text-center border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-300 group transition-all cursor-pointer flex flex-col items-center justify-between space-y-3"
-              >
-                <div className="w-20 h-20 rounded-full overflow-hidden bg-emerald-50 p-1 border border-emerald-100 group-hover:scale-110 transition-transform flex items-center justify-center">
-                  <img
-                    src={cat.img}
-                    alt={locale === 'ar' ? cat.name_ar : cat.name_en}
-                    className="w-full h-full object-cover rounded-full"
-                  />
+                {/* Carousel Circular Arrow Controls */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCategorySlideIndex((prev) => (prev - 1 + maxSlides) % maxSlides)}
+                    className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
+                    title="Previous Categories"
+                  >
+                    <ChevronLeft className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
+                  </button>
+                  <button
+                    onClick={() => setCategorySlideIndex((prev) => (prev + 1) % maxSlides)}
+                    className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
+                    title="Next Categories"
+                  >
+                    <ChevronRight className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
+                  </button>
                 </div>
-                <span className="text-xs font-extrabold text-slate-800 group-hover:text-emerald-700 transition-colors">
-                  {locale === 'ar' ? cat.name_ar : cat.name_en}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 transition-all duration-500">
+                {displayCategories.slice(categorySlideIndex * 6, (categorySlideIndex + 1) * 6).map((cat, idx) => (
+                  <Link
+                    key={cat.id || idx}
+                    href={cat.id ? `/products?categoryId=${cat.id}` : '/products'}
+                    className="bg-white rounded-2xl p-5 text-center border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-300 group transition-all cursor-pointer flex flex-col items-center justify-between space-y-3"
+                  >
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-emerald-50 p-1 border border-emerald-100 group-hover:scale-110 transition-transform flex items-center justify-center">
+                      <img
+                        src={getCategoryImageUrl(cat)}
+                        alt={locale === 'ar' ? cat.name_ar : cat.name_en}
+                        className="w-full h-full object-cover rounded-full"
+                        onError={(e) => {
+                          e.target.src = getCategoryImageUrl({ name_en: cat.name_en });
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs font-extrabold text-slate-800 group-hover:text-emerald-700 transition-colors line-clamp-1">
+                      {locale === 'ar' ? cat.name_ar : cat.name_en}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* 3. 3-Column Feature Banners */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -443,10 +459,10 @@ export default function HomePage() {
           ))}
         </section>
         {(() => {
-          const allGreenFreshItems = [...(products || []), ...STATIC_GREEN_FRESH];
-          const displayGreenFresh = allGreenFreshItems.slice(0, 10);
+          const displayProducts = products.length > 0 ? products : STATIC_GREEN_FRESH;
           const itemsPerPage = 5;
-          const currentSlideItems = displayGreenFresh.slice(
+          const maxProductSlides = Math.ceil(displayProducts.length / itemsPerPage) || 1;
+          const currentSlideItems = displayProducts.slice(
             productSlideIndex * itemsPerPage,
             (productSlideIndex + 1) * itemsPerPage
           );
@@ -459,17 +475,16 @@ export default function HomePage() {
                 </h2>
 
                 <div className="flex items-center gap-6">
-                  {/* Carousel Circular Arrow Controls matching user screenshot */}
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setProductSlideIndex((prev) => (prev - 1 + 2) % 2)}
+                      onClick={() => setProductSlideIndex((prev) => (prev - 1 + maxProductSlides) % maxProductSlides)}
                       className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
                       title="Previous"
                     >
                       <ChevronLeft className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
                     </button>
                     <button
-                      onClick={() => setProductSlideIndex((prev) => (prev + 1) % 2)}
+                      onClick={() => setProductSlideIndex((prev) => (prev + 1) % maxProductSlides)}
                       className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
                       title="Next"
                     >
@@ -488,7 +503,7 @@ export default function HomePage() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 transition-all duration-500">
                   {currentSlideItems.map((prod) => {
-                    const primaryImg = prod.img || (prod.images && prod.images.length > 0 ? prod.images[0].image_url : 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400');
+                    const primaryImg = (prod.images && prod.images.length > 0 ? (prod.images[0].image_url || prod.images[0]) : prod.image_url) || prod.img || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400';
                     return (
                       <div
                         key={prod.id}
@@ -501,8 +516,7 @@ export default function HomePage() {
                               alt={locale === 'ar' ? prod.name_ar : prod.name_en}
                               className="w-full h-full object-contain group-hover/link:scale-105 transition-transform"
                             />
-                            
-                            {/* Floating Wishlist Heart Button */}
+
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
@@ -519,6 +533,10 @@ export default function HomePage() {
                           <h3 className="font-bold text-xs text-slate-800 line-clamp-1 group-hover/link:text-emerald-700 transition-colors">
                             {locale === 'ar' ? prod.name_ar : prod.name_en}
                           </h3>
+
+                          <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-md inline-block border border-emerald-200">
+                            {locale === 'ar' ? `الوحدة: ${prod.unit || '200 جم'}` : `Unit: ${prod.unit || '200 g'}`}
+                          </span>
 
                           <span className="text-sm font-black text-emerald-700 block">
                             {parseFloat(prod.price).toFixed(2)} SAR
@@ -560,108 +578,120 @@ export default function HomePage() {
         </section>
 
         {/* Trending Products Section */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shadow-xs">
-                <Flame className="w-5 h-5 fill-amber-500 text-amber-500" />
-              </div>
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05442e] font-serif tracking-tight">
-                  {locale === 'ar' ? 'المنتجات الأكثر تداولاً' : 'Trending Products'}
-                </h2>
-                <p className="text-xs text-slate-500 font-medium">
-                  {locale === 'ar' ? 'أكثر المنتجات إقبالاً هذا الأسبوع' : 'Popular grocery picks customers are loving this week'}
-                </p>
-              </div>
-            </div>
+        {(() => {
+          const displayTrending = products.length > 0 ? products : STATIC_TRENDING;
+          const itemsPerPage = 5;
+          const maxTrendingSlides = Math.ceil(displayTrending.length / itemsPerPage) || 1;
+          const currentTrendingItems = displayTrending.slice(
+            trendingSlideIndex * itemsPerPage,
+            (trendingSlideIndex + 1) * itemsPerPage
+          );
 
-            {/* Carousel Circular Arrow Controls matching user request */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setTrendingSlideIndex((prev) => (prev - 1 + 2) % 2)}
-                className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
-                title={locale === 'ar' ? 'السابق' : 'Previous'}
-              >
-                <ChevronLeft className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
-              </button>
-              <button
-                onClick={() => setTrendingSlideIndex((prev) => (prev + 1) % 2)}
-                className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
-                title={locale === 'ar' ? 'التالي' : 'Next'}
-              >
-                <ChevronRight className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
-              </button>
-            </div>
-          </div>
+          return (
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shadow-xs">
+                    <Flame className="w-5 h-5 fill-amber-500 text-amber-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05442e] font-serif tracking-tight">
+                      {locale === 'ar' ? 'المنتجات الأكثر تداولاً' : 'Trending Products'}
+                    </h2>
+                    <p className="text-xs text-slate-500 font-medium">
+                      {locale === 'ar' ? 'أكثر المنتجات إقبالاً هذا الأسبوع' : 'Popular grocery picks customers are loving this week'}
+                    </p>
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5 transition-all duration-500">
-            {STATIC_TRENDING.slice(trendingSlideIndex * 5, (trendingSlideIndex + 1) * 5).map((prod) => {
-              const priceVal = parseFloat(prod.price).toFixed(2);
-              const mrpVal = prod.mrp ? parseFloat(prod.mrp).toFixed(2) : null;
-              return (
-                <div
-                  key={prod.id}
-                  className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between group space-y-3 relative"
-                >
-                  {/* Badge */}
-                  {prod.badge && (
-                    <span className="absolute top-3 left-3 bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-xs z-10">
-                      {locale === 'ar' ? (prod.badge_ar || prod.badge) : prod.badge}
-                    </span>
-                  )}
-
-                  <Link href={`/products/${prod.id}`} className="space-y-2 text-center block group/link">
-                    <div className="w-full h-36 rounded-2xl overflow-hidden bg-[#fff9f9] relative border border-slate-100 p-2 flex items-center justify-center">
-                      <img
-                        src={prod.img}
-                        alt={locale === 'ar' ? prod.name_ar : prod.name_en}
-                        className="w-full h-full object-contain group-hover/link:scale-105 transition-transform duration-300"
-                      />
-                      
-                      {/* Floating Wishlist Heart Button */}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleWishlist(prod);
-                        }}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 shadow-sm border border-slate-100 flex items-center justify-center text-slate-700 hover:scale-110 transition-all z-10 cursor-pointer"
-                        title="Add to Wishlist"
-                      >
-                        <Heart className={`w-4 h-4 transition-colors ${isInWishlist(prod.id) ? 'fill-rose-500 text-rose-500' : 'text-slate-600 hover:text-rose-500'}`} />
-                      </button>
-                    </div>
-
-                    <h3 className="font-extrabold text-xs text-slate-900 line-clamp-1 group-hover/link:text-emerald-700 transition-colors">
-                      {locale === 'ar' ? prod.name_ar : prod.name_en}
-                    </h3>
-
-                    <div className="flex items-baseline justify-center gap-2">
-                      <span className="text-sm font-black text-[#05442e]">
-                        {priceVal} SAR
-                      </span>
-                      {mrpVal && (
-                        <span className="text-[11px] text-slate-400 line-through font-medium">
-                          {mrpVal} SAR
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleAddToCart(prod.id)}
-                    disabled={addingId === prod.id}
-                    className="w-full py-2.5 rounded-xl bg-[#05442e] hover:bg-emerald-800 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                    onClick={() => setTrendingSlideIndex((prev) => (prev - 1 + maxTrendingSlides) % maxTrendingSlides)}
+                    className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
+                    title={locale === 'ar' ? 'السابق' : 'Previous'}
                   >
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                    <span>{addingId === prod.id ? (locale === 'ar' ? 'جاري الإضافة...' : 'Adding...') : (locale === 'ar' ? 'إضافة إلى السلة' : 'Add to Cart')}</span>
+                    <ChevronLeft className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
+                  </button>
+                  <button
+                    onClick={() => setTrendingSlideIndex((prev) => (prev + 1) % maxTrendingSlides)}
+                    className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
+                    title={locale === 'ar' ? 'التالي' : 'Next'}
+                  >
+                    <ChevronRight className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
                   </button>
                 </div>
-              );
-            })}
-          </div>
-        </section>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5 transition-all duration-500">
+                {currentTrendingItems.map((prod) => {
+                  const priceVal = parseFloat(prod.price).toFixed(2);
+                  const mrpVal = prod.mrp ? parseFloat(prod.mrp).toFixed(2) : null;
+                  const primaryImg = (prod.images && prod.images.length > 0 ? (prod.images[0].image_url || prod.images[0]) : prod.image_url) || prod.img || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400';
+
+                  return (
+                    <div
+                      key={prod.id}
+                      className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between group space-y-3 relative"
+                    >
+                      {/* Badge */}
+                      {(prod.badge || prod.discount_percentage) && (
+                        <span className="absolute top-3 left-3 bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-xs z-10">
+                          {prod.badge ? (locale === 'ar' ? (prod.badge_ar || prod.badge) : prod.badge) : 'Trending 🔥'}
+                        </span>
+                      )}
+
+                      <Link href={`/products/${prod.id}`} className="space-y-2 text-center block group/link">
+                        <div className="w-full h-36 rounded-2xl overflow-hidden bg-[#fff9f9] relative border border-slate-100 p-2 flex items-center justify-center">
+                          <img
+                            src={primaryImg}
+                            alt={locale === 'ar' ? prod.name_ar : prod.name_en}
+                            className="w-full h-full object-contain group-hover/link:scale-105 transition-transform duration-300"
+                          />
+
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleWishlist(prod);
+                            }}
+                            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 shadow-sm border border-slate-100 flex items-center justify-center text-slate-700 hover:scale-110 transition-all z-10 cursor-pointer"
+                            title="Add to Wishlist"
+                          >
+                            <Heart className={`w-4 h-4 transition-colors ${isInWishlist(prod.id) ? 'fill-rose-500 text-rose-500' : 'text-slate-600 hover:text-rose-500'}`} />
+                          </button>
+                        </div>
+
+                        <h3 className="font-extrabold text-xs text-slate-900 line-clamp-1 group-hover/link:text-emerald-700 transition-colors">
+                          {locale === 'ar' ? prod.name_ar : prod.name_en}
+                        </h3>
+
+                        <div className="flex items-baseline justify-center gap-2">
+                          <span className="text-sm font-black text-[#05442e]">
+                            {priceVal} SAR
+                          </span>
+                          {mrpVal && (
+                            <span className="text-[11px] text-slate-400 line-through font-medium">
+                              {mrpVal} SAR
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+
+                      <button
+                        onClick={() => handleAddToCart(prod.id)}
+                        disabled={addingId === prod.id}
+                        className="w-full py-2.5 rounded-xl bg-[#05442e] hover:bg-emerald-800 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>{addingId === prod.id ? (locale === 'ar' ? 'جاري الإضافة...' : 'Adding...') : (locale === 'ar' ? 'إضافة إلى السلة' : 'Add to Cart')}</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* 6. Order via Our App & Free Delivery Banner */}
         <section className="bg-[#05442e] rounded-3xl text-white p-8 sm:p-12 border border-emerald-800 shadow-xl overflow-hidden relative">
@@ -698,9 +728,9 @@ export default function HomePage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {(() => {
-              const mostBuyCombined = [...(products || []), ...STATIC_MOST_BUY].slice(0, 5);
-              return mostBuyCombined.map((prod) => {
-                const primaryImg = prod.img || (prod.images && prod.images.length > 0 ? prod.images[0].image_url : 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400');
+              const displayMostBuy = products.length > 0 ? products.slice(0, 5) : STATIC_MOST_BUY;
+              return displayMostBuy.map((prod) => {
+                const primaryImg = (prod.images && prod.images.length > 0 ? (prod.images[0].image_url || prod.images[0]) : prod.image_url) || prod.img || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400';
                 return (
                   <div
                     key={prod.id}
@@ -713,8 +743,7 @@ export default function HomePage() {
                           alt={locale === 'ar' ? prod.name_ar : prod.name_en}
                           className="w-full h-full object-contain group-hover/link:scale-105 transition-transform"
                         />
-                        
-                        {/* Floating Wishlist Heart Button */}
+
                         <button
                           onClick={(e) => {
                             e.preventDefault();

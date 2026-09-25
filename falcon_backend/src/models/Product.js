@@ -46,6 +46,11 @@ const Product = sequelize.define('Product', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  unit: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'PCS',
+  },
   price: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,

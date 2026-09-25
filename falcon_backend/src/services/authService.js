@@ -40,6 +40,42 @@ class AuthService {
     return result;
   }
 
+  async registerAdmin(data) {
+    const { email, mobile, password, name, department } = data;
+    console.log(data, "data")
+    const existingUser = await User.findOne({
+      where: {
+        [sequelize.Sequelize.Op.or]: [{ email }, { mobile }],
+      },
+    });
+
+    if (existingUser) {
+      throw new Error('Email or mobile number is already registered');
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    const result = await sequelize.transaction(async (t) => {
+      const user = await User.create({
+        email,
+        mobile,
+        password_hash: hashedPassword,
+        role: ROLES.ADMIN,
+        status: 'ACTIVE',
+      }, { transaction: t });
+
+      const admin = await Admin.create({
+        user_id: user.id,
+        name: name || 'System Administrator',
+        department: department || 'Management',
+      }, { transaction: t });
+
+      return { user, admin };
+    });
+
+    return result;
+  }
+
   async login(loginInput, password, reqInfo = {}) {
     const user = await User.findOne({
       where: {

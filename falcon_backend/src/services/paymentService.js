@@ -62,7 +62,7 @@ class PaymentService {
     });
   }
 
-  async verifyPayment(paymentId, adminId) {
+  async verifyPayment(paymentId, adminId, userId) {
     const payment = await Payment.findByPk(paymentId, { include: ['order'] });
     if (!payment) {
       throw new Error('Payment record not found');
@@ -83,7 +83,7 @@ class PaymentService {
         order_id: payment.order.id,
         from_status: ORDER_STATUS.PAYMENT_SUBMITTED,
         to_status: ORDER_STATUS.PAYMENT_VERIFIED,
-        changed_by_user_id: adminId,
+        changed_by_user_id: userId || null,
         notes: 'Bank transfer payment verified by Admin. Eligible for driver assignment.',
       }, { transaction: t });
 
@@ -91,7 +91,7 @@ class PaymentService {
     });
   }
 
-  async rejectPayment(paymentId, adminId, rejectionReason) {
+  async rejectPayment(paymentId, adminId, userId, rejectionReason) {
     if (!rejectionReason) {
       throw new Error('Rejection reason is required');
     }
@@ -116,7 +116,7 @@ class PaymentService {
         order_id: payment.order.id,
         from_status: ORDER_STATUS.PAYMENT_SUBMITTED,
         to_status: ORDER_STATUS.PAYMENT_REJECTED,
-        changed_by_user_id: adminId,
+        changed_by_user_id: userId || null,
         notes: `Payment rejected by Admin. Reason: ${rejectionReason}`,
       }, { transaction: t });
 

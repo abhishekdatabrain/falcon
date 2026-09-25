@@ -49,6 +49,49 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+const optionalAuthenticate = async (req, res, next) => {
+  try {
+    let token = req.cookies ? req.cookies.access_token : null;
+
+    if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    let decoded = token ? verifyAccessToken(token) : null;
+
+    if (!decoded) {
+      const refreshToken = req.cookies ? req.cookies.refresh_token : null;
+      if (refreshToken) {
+        const decodedRefresh = verifyRefreshToken(refreshToken);
+        if (decodedRefresh) {
+          const newAccessToken = generateAccessToken({ id: decodedRefresh.id, role: decodedRefresh.role });
+          setAuthCookies(res, newAccessToken, refreshToken);
+          token = newAccessToken;
+          decoded = decodedRefresh;
+        }
+      }
+    }
+
+    if (token && decoded) {
+      const user = await User.findByPk(decoded.id, {
+        include: [
+          { model: Customer, as: 'customer' },
+          { model: Driver, as: 'driver' },
+          { model: Admin, as: 'admin' },
+        ],
+      });
+
+      if (user && user.status === 'ACTIVE') {
+        req.user = user;
+      }
+    }
+  } catch (error) {
+    // Non-blocking optional authentication
+  }
+  next();
+};
+
 module.exports = {
   authenticate,
+  optionalAuthenticate,
 };

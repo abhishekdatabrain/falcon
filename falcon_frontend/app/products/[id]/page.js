@@ -295,7 +295,7 @@ export default function ProductDetailPage() {
       navigator.share({
         title: product.name_en,
         url: window.location.href,
-      }).catch(() => {});
+      }).catch(() => { });
     } else {
       navigator.clipboard.writeText(window.location.href);
       setCopied(true);
@@ -328,7 +328,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-14 font-sans bg-[#fbfcfb] pb-24">
-      
+
       {/* Back Button */}
       <button
         onClick={() => router.back()}
@@ -340,10 +340,10 @@ export default function ProductDetailPage() {
 
       {/* Main Product Showcase (Left Thumbnails + Center Main Image + Right Details Panel) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
+
         {/* Gallery Section: Thumbnails Column (2 cols) + Main Image Container (5 cols) */}
         <div className="lg:col-span-7 grid grid-cols-12 gap-4">
-          
+
           {/* Vertical Thumbnails List */}
           <div className="col-span-3 sm:col-span-2 flex flex-col gap-3 max-h-[440px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200">
             {galleryImages.map((imgUrl, idx) => {
@@ -352,9 +352,8 @@ export default function ProductDetailPage() {
                 <button
                   key={idx}
                   onClick={() => setSelectedImg(imgUrl)}
-                  className={`w-full aspect-square rounded-2xl p-1.5 border-2 transition-all cursor-pointer bg-white flex items-center justify-center overflow-hidden ${
-                    isSelected ? 'border-[#05442e] ring-2 ring-emerald-100 shadow-sm scale-95' : 'border-slate-200 hover:border-slate-300 opacity-80 hover:opacity-100'
-                  }`}
+                  className={`w-full aspect-square rounded-2xl p-1.5 border-2 transition-all cursor-pointer bg-white flex items-center justify-center overflow-hidden ${isSelected ? 'border-[#05442e] ring-2 ring-emerald-100 shadow-sm scale-95' : 'border-slate-200 hover:border-slate-300 opacity-80 hover:opacity-100'
+                    }`}
                 >
                   <img
                     src={imgUrl}
@@ -373,7 +372,7 @@ export default function ProductDetailPage() {
               alt={locale === 'ar' ? product.name_ar : product.name_en}
               className="w-full h-full object-contain transition-all duration-300"
             />
-            
+
             {/* Wishlist Heart Button */}
             <button
               onClick={() => toggleWishlist(product)}
@@ -388,7 +387,7 @@ export default function ProductDetailPage() {
 
         {/* Right Details Panel */}
         <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
-          
+
           {/* Top Breadcrumb & Share */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
@@ -414,14 +413,18 @@ export default function ProductDetailPage() {
             </button>
           </div>
 
-          {/* Product Title & Net Qty */}
-          <div className="space-y-1">
+          {/* Product Title & Net Qty / Unit */}
+          <div className="space-y-1.5">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
               {locale === 'ar' ? product.name_ar : product.name_en}
             </h1>
-            <p className="text-xs text-slate-400 font-semibold">
-              {locale === 'ar' ? (product.net_qty_ar || 'الوزن الصافي: 1 حبة') : (product.net_qty || 'Net Qty: 1 pc')}
-            </p>
+            <div className="flex items-center gap-2">
+              <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-xl text-xs font-bold shadow-2xs">
+                {locale === 'ar'
+                  ? `الوحدة: ${product.unit || product.net_qty_ar || '200 جم'}`
+                  : `Unit: ${product.unit || product.net_qty || '200 g'}`}
+              </span>
+            </div>
           </div>
 
           {/* Price Box with Green Discount Badge */}

@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'fallback_access_secret';
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret';
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || '';
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || '';
 
 const generateAccessToken = (payload) => {
   return jwt.sign(payload, ACCESS_SECRET, {
@@ -59,7 +59,7 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
 const clearAuthCookies = (res) => {
   const isProd = process.env.NODE_ENV === 'production';
   const sameSite = process.env.COOKIE_SAME_SITE || 'lax';
-  
+
   const options = {
     httpOnly: true,
     secure: isProd,

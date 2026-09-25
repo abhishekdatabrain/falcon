@@ -32,10 +32,10 @@ export default function AdminNavbar({ mobileOpen, setMobileOpen }) {
   return (
     <header className="sticky top-0 z-40 w-full h-16 bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-xs text-slate-900">
       <div className="w-full h-full px-4 md:px-6 flex items-center justify-between">
-        
+
         {/* Left Side: Brand Logo & Breadcrumb Navigation */}
         <div className="flex items-center gap-4">
-          
+
           {/* Brand Logo Header */}
           <Link href="/admin/dashboard" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-2xl bg-emerald-600 p-0.5 shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform duration-300 flex items-center justify-center text-white">
@@ -43,10 +43,10 @@ export default function AdminNavbar({ mobileOpen, setMobileOpen }) {
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-black tracking-tight text-slate-900 leading-tight">
-                {locale === 'ar' ? 'أورا ماركت البقالة والطازج' : 'Aura Fresh Grocery'}
+                {locale === 'ar' ? 'أورا ماركت البقالة والطازج' : 'Super Mart'}
               </span>
               <span className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest -mt-0.5 flex items-center gap-1">
-                <Apple className="w-2.5 h-2.5 text-emerald-500" /> Supermarket Control
+                <Apple className="w-2.5 h-2.5 text-emerald-500" /> Super Mart Control
               </span>
             </div>
           </Link>
@@ -54,7 +54,7 @@ export default function AdminNavbar({ mobileOpen, setMobileOpen }) {
           {/* Breadcrumb Separator Line & Current Path */}
           <div className="hidden sm:flex items-center gap-2.5 border-l border-slate-200 pl-4 ml-1 rtl:border-l-0 rtl:border-r rtl:pl-0 rtl:pr-4 rtl:ml-0 rtl:mr-1">
             <div className="px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200/80 text-xs font-bold text-emerald-700">
-              {locale === 'ar' ? 'إدارة سوبرماركت أورا' : 'Aura Grocery Admin'}
+              {locale === 'ar' ? 'إدارة سوبرماركت أورا' : 'Super Mart Admin'}
             </div>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180" />
             <span className="font-extrabold text-emerald-700 uppercase tracking-wider text-xs">
@@ -65,7 +65,7 @@ export default function AdminNavbar({ mobileOpen, setMobileOpen }) {
 
         {/* Right Side: Language Switcher, User Avatar & Direct Logout Button */}
         <div className="flex items-center gap-3">
-          
+
           {/* Language Switcher Button */}
           <button
             onClick={toggleLanguage}

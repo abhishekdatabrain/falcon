@@ -4,8 +4,16 @@ const { sendSuccess, sendError } = require('../utils/response');
 class CategoryController {
   async getCategories(req, res, next) {
     try {
-      const onlyActive = req.user ? req.user.role !== 'ADMIN' : true;
-      const categories = await categoryService.getAllCategories(onlyActive);
+      const isAdmin = req.user && req.user.role === 'ADMIN';
+      const onlyActive = req.query.all === 'true' || isAdmin ? false : (req.query.is_active === 'false' ? false : true);
+      const { search, parent_id, type } = req.query;
+
+      const categories = await categoryService.getAllCategories({
+        onlyActive,
+        search,
+        parent_id,
+        type,
+      });
       return sendSuccess(res, 'Categories retrieved', { categories });
     } catch (error) {
       return sendError(res, error.message, [], 400);

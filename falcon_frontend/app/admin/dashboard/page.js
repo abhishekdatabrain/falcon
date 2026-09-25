@@ -75,7 +75,7 @@ export default function AdminDashboardPage() {
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-900">
-              {locale === 'ar' ? 'لوحة تحكم بقالة وسوبرماركت أورا الطازج' : 'Aura Fresh Grocery & Supermarket Dashboard'}
+              {locale === 'ar' ? 'لوحة تحكم بقالة وسوبرماركت أورا الطازج' : 'Super Mart Dashboard'}
             </h1>
             <p className="text-xs text-slate-500">
               {locale === 'ar' ? 'نظرة عامة شمولية على طلبات المواد الغذائية، التوصيل السريع، المخزون الطازج، والتحويلات البنكية' : 'Real-time Fresh Produce Inventory, Express Deliveries, Customer Grocery Orders & ZATCA Tax Invoices'}
@@ -93,12 +93,12 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Primary KPI Stats Grid (6 Core Stats for Grocery) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {/* 1. Total Grocery Customers */}
         <Link href="/admin/customers" className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-purple-300 hover:shadow-md transition-all space-y-2 group">
           <div className="flex items-center justify-between text-purple-600">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-purple-700">
-              {locale === 'ar' ? 'مستهلكي البقالة' : 'Grocery Customers'}
+              {locale === 'ar' ? 'مستهلكي البقالة' : 'Total Customers '}
             </span>
             <Users className="w-5 h-5 transition-transform group-hover:scale-110" />
           </div>
@@ -112,7 +112,7 @@ export default function AdminDashboardPage() {
         <Link href="/admin/drivers" className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-cyan-300 hover:shadow-md transition-all space-y-2 group">
           <div className="flex items-center justify-between text-cyan-600">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-cyan-700">
-              {locale === 'ar' ? 'سائقي التوصيل' : 'Express Drivers'}
+              {locale === 'ar' ? 'سائقي التوصيل' : 'Total Drivers '}
             </span>
             <Truck className="w-5 h-5 transition-transform group-hover:scale-110" />
           </div>
@@ -122,25 +122,11 @@ export default function AdminDashboardPage() {
           </p>
         </Link>
 
-        {/* 3. Fresh Grocery Products */}
-        <Link href="/admin/products" className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all space-y-2 group">
-          <div className="flex items-center justify-between text-emerald-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-700">
-              {locale === 'ar' ? 'أصناف الأغذية' : 'Grocery SKUs'}
-            </span>
-            <Apple className="w-5 h-5 transition-transform group-hover:scale-110" />
-          </div>
-          <div className="text-2xl font-black text-slate-900">{metrics.totalProducts || 0}</div>
-          <p className="text-[10px] text-slate-500 font-medium">
-            {locale === 'ar' ? 'في المخزون الطازج' : 'Supermarket Items'}
-          </p>
-        </Link>
-
         {/* 4. Total Grocery Orders */}
         <Link href="/admin/orders" className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all space-y-2 group">
           <div className="flex items-center justify-between text-indigo-600">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-indigo-700">
-              {locale === 'ar' ? 'طلبات البقالة' : 'Grocery Orders'}
+              {locale === 'ar' ? 'طلبات البقالة' : 'Total Orders'}
             </span>
             <Package className="w-5 h-5 transition-transform group-hover:scale-110" />
           </div>
@@ -154,7 +140,7 @@ export default function AdminDashboardPage() {
         <Link href="/admin/orders" className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-amber-300 hover:shadow-md transition-all space-y-2 group">
           <div className="flex items-center justify-between text-amber-600">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-amber-700">
-              {locale === 'ar' ? 'قيد التجهيز والدفع' : 'Pending & Packing'}
+              {locale === 'ar' ? 'قيد التجهيز والدفع' : 'Pending Orders'}
             </span>
             <Clock className="w-5 h-5 transition-transform group-hover:scale-110" />
           </div>
@@ -168,7 +154,7 @@ export default function AdminDashboardPage() {
         <Link href="/admin/orders" className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all space-y-2 group">
           <div className="flex items-center justify-between text-emerald-600">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-700">
-              {locale === 'ar' ? 'طلبات تم توصيلها' : 'Delivered Grocery'}
+              {locale === 'ar' ? 'طلبات تم توصيلها' : 'Completed  Orders'}
             </span>
             <CheckCircle2 className="w-5 h-5 transition-transform group-hover:scale-110" />
           </div>
@@ -181,7 +167,7 @@ export default function AdminDashboardPage() {
 
       {/* Main Analytics Sections Grid (Payment Status & Delivery Status) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Payment Status Breakdown */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -392,12 +378,11 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      ord.order_status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${ord.order_status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                       ord.order_status === 'PENDING_PAYMENT' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                      ord.order_status === 'CANCELLED' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                      'bg-indigo-50 text-indigo-700 border-indigo-200'
-                    }`}>
+                        ord.order_status === 'CANCELLED' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                          'bg-indigo-50 text-indigo-700 border-indigo-200'
+                      }`}>
                       {ord.order_status}
                     </span>
 

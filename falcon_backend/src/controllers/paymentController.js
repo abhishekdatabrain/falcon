@@ -41,9 +41,10 @@ class PaymentController {
 
   async verifyPaymentAdmin(req, res, next) {
     try {
-      const adminId = req.user.admin.id;
+      const adminId = req.user.admin ? req.user.admin.id : null;
+      const userId = req.user.id;
       const { paymentId } = req.params;
-      const payment = await paymentService.verifyPayment(paymentId, adminId);
+      const payment = await paymentService.verifyPayment(paymentId, adminId, userId);
       return sendSuccess(res, 'Payment verified successfully. Order ready for driver assignment.', { payment });
     } catch (error) {
       return sendError(res, error.message, [], 400);
@@ -52,7 +53,8 @@ class PaymentController {
 
   async rejectPaymentAdmin(req, res, next) {
     try {
-      const adminId = req.user.admin.id;
+      const adminId = req.user.admin ? req.user.admin.id : null;
+      const userId = req.user.id;
       const { paymentId } = req.params;
       const { rejectionReason } = req.body;
 
@@ -60,7 +62,7 @@ class PaymentController {
         return sendError(res, 'Rejection reason is required', [], 400);
       }
 
-      const payment = await paymentService.rejectPayment(paymentId, adminId, rejectionReason);
+      const payment = await paymentService.rejectPayment(paymentId, adminId, userId, rejectionReason);
       return sendSuccess(res, 'Payment rejected', { payment });
     } catch (error) {
       return sendError(res, error.message, [], 400);

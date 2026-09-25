@@ -29,8 +29,9 @@ class AdminController {
 
   async getDrivers(req, res, next) {
     try {
-      const drivers = await adminService.getAllDrivers();
-      return sendSuccess(res, 'Drivers list retrieved', { drivers });
+      const { search, availability, status, accountStatus } = req.query;
+      const { drivers, stats } = await adminService.getAllDrivers({ search, availability, status, accountStatus });
+      return sendSuccess(res, 'Drivers list retrieved', { drivers, stats });
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }
@@ -47,9 +48,41 @@ class AdminController {
     }
   }
 
+  async updateDriver(req, res, next) {
+    try {
+      const { driverId } = req.params;
+      const driver = await adminService.updateDriver(driverId, req.body);
+      return sendSuccess(res, 'Driver profile updated successfully', { driver });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async toggleDriverAccountStatus(req, res, next) {
+    try {
+      const { driverId } = req.params;
+      const { status } = req.body; // ACTIVE or INACTIVE
+      const driver = await adminService.toggleDriverAccountStatus(driverId, status);
+      return sendSuccess(res, `Driver account status updated to ${status}`, { driver });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async getDriverLocation(req, res, next) {
+    try {
+      const { driverId } = req.params;
+      const locationData = await adminService.getDriverLocation(driverId);
+      return sendSuccess(res, 'Driver location retrieved', locationData);
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
   async assignDriverToOrder(req, res, next) {
     try {
-      const adminId = req.user.admin.id;
+      const adminId = req.user.admin ? req.user.admin.id : null;
+      const userId = req.user.id;
       const { orderId } = req.params;
       const { driverId, reassignmentReason } = req.body;
 
@@ -57,8 +90,37 @@ class AdminController {
         return sendError(res, 'driverId is required', [], 400);
       }
 
-      const delivery = await adminService.assignDriverToOrder(orderId, driverId, adminId, reassignmentReason);
+      const delivery = await adminService.assignDriverToOrder(orderId, driverId, adminId, userId, reassignmentReason);
       return sendSuccess(res, 'Driver assigned to order successfully', { delivery });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async getAllOrders(req, res, next) {
+    try {
+      const orderService = require('../services/orderService');
+      const data = await orderService.getAllOrders(req.query);
+      return sendSuccess(res, 'All platform orders retrieved', data);
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async updateOrderStatus(req, res, next) {
+    try {
+      const orderService = require('../services/orderService');
+      const { orderId } = req.params;
+      const { status, notes, reason } = req.body;
+      const userId = req.user.id;
+
+      if (!status) {
+        return sendError(res, 'Target order status is required', [], 400);
+      }
+
+      const noteText = notes || reason || '';
+      const order = await orderService.updateOrderStatus(orderId, status, userId, noteText);
+      return sendSuccess(res, `Order status updated to ${status}`, { order });
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }
@@ -66,7 +128,8 @@ class AdminController {
 
   async getCustomers(req, res, next) {
     try {
-      const customers = await adminService.getAllCustomers();
+      const { search, status } = req.query;
+      const customers = await adminService.getAllCustomers({ search, status });
       return sendSuccess(res, 'Customers list retrieved', { customers });
     } catch (error) {
       return sendError(res, error.message, [], 400);

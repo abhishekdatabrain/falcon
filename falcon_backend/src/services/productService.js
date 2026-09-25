@@ -55,7 +55,9 @@ class ProductService {
       include: [
         { model: Category, as: 'category', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         { model: Category, as: 'subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
-        { model: ProductImage, as: 'images', attributes: ['id', 'image_url', 'is_primary', 'display_order'] },
+        {
+          model: ProductImage, as: 'images', attributes: ['id', 'image_url', 'is_primary', 'display_order'], separate: true, order: [['display_order', 'ASC']]
+        },
       ],
       order: [[sortBy, sortOrder.toUpperCase()]],
       limit: limitNum,
@@ -91,7 +93,7 @@ class ProductService {
   }
 
   async createProduct(data) {
-    const { category_id, subcategory_id, sku, name_en, name_ar, description_en, description_ar, price, stock_quantity, images } = data;
+    const { category_id, subcategory_id, sku, name_en, name_ar, description_en, description_ar, unit, price, stock_quantity, images } = data;
 
     const existingSku = await Product.findOne({ where: { sku } });
     if (existingSku) {
@@ -107,6 +109,7 @@ class ProductService {
         name_ar,
         description_en,
         description_ar,
+        unit: unit || 'PCS',
         price,
         stock_quantity: stock_quantity || 0,
         is_available: (stock_quantity || 0) > 0,

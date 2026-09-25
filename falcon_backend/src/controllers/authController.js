@@ -20,6 +20,24 @@ class AuthController {
     }
   }
 
+  async registerAdmin(req, res, next) {
+    try {
+      const { email, mobile, password, name, department } = req.body;
+      if (!email || !mobile || !password || !name) {
+        return sendError(res, 'Email, mobile, password, and admin name are required', [], 400);
+      }
+
+      const result = await authService.registerAdmin({ email, mobile, password, name, department });
+      return sendSuccess(res, 'Admin account created successfully. You can now log in.', {
+        userId: result.user.id,
+        email: result.user.email,
+        role: result.user.role,
+      }, 201);
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
   async login(req, res, next) {
     try {
       const { loginInput, password } = req.body; // email or mobile

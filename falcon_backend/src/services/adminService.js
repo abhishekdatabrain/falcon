@@ -117,11 +117,59 @@ class AdminService {
     });
   }
 
-  async getAllDrivers() {
-    return await Driver.findAll({
-      include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile', 'status'] }],
+  async getAllDrivers(options = {}) {
+    const { search, availability, status, accountStatus } = options;
+    const { Op } = require('sequelize');
+
+    const driverWhere = {};
+    const userWhere = {};
+
+    const availVal = availability || options.availability_status;
+    if (availVal && availVal !== 'ALL') {
+      driverWhere.availability_status = availVal;
+    }
+
+    const statusVal = accountStatus || status;
+    if (statusVal && statusVal !== 'ALL') {
+      userWhere.status = statusVal;
+    }
+
+    if (search && search.trim()) {
+      const q = `%${search.trim()}%`;
+      driverWhere[Op.or] = [
+        { license_number: { [Op.iLike]: q } },
+        { vehicle_details: { [Op.iLike]: q } },
+        { '$user.email$': { [Op.iLike]: q } },
+        { '$user.mobile$': { [Op.iLike]: q } },
+      ];
+    }
+
+    const drivers = await Driver.findAll({
+      where: driverWhere,
+      include: [
+        {
+          model: User,
+          as: 'user',
+          where: Object.keys(userWhere).length > 0 ? userWhere : undefined,
+          attributes: ['id', 'email', 'mobile', 'status', 'createdAt'],
+        },
+      ],
       order: [['createdAt', 'DESC']],
     });
+
+    const allDrivers = await Driver.findAll({
+      include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile', 'status'] }],
+    });
+
+    const stats = {
+      total: allDrivers.length,
+      available: allDrivers.filter((d) => d.availability_status === 'AVAILABLE').length,
+      busy: allDrivers.filter((d) => d.availability_status === 'BUSY').length,
+      offline: allDrivers.filter((d) => d.availability_status === 'OFFLINE').length,
+      activeAccount: allDrivers.filter((d) => d.user?.status === 'ACTIVE').length,
+    };
+
+    return { drivers, stats };
   }
 
   async updateDriverStatus(driverId, driverStatus, availabilityStatus) {
@@ -138,14 +186,71 @@ class AdminService {
     return driver;
   }
 
-  async assignDriverToOrder(orderId, driverId, adminId, reassignmentReason = '') {
+  async updateDriver(driverId, data) {
+    const { email, mobile, license_number, vehicle_details } = data;
+    const driver = await Driver.findByPk(driverId, { include: ['user'] });
+    if (!driver) {
+      throw new Error('Driver not found');
+    }
+
+    await sequelize.transaction(async (t) => {
+      if (email || mobile) {
+        const userUpdate = {};
+        if (email) userUpdate.email = email;
+        if (mobile) userUpdate.mobile = mobile;
+        await driver.user.update(userUpdate, { transaction: t });
+      }
+
+      const driverUpdate = {};
+      if (license_number) driverUpdate.license_number = license_number;
+      if (vehicle_details !== undefined) driverUpdate.vehicle_details = vehicle_details;
+
+      await driver.update(driverUpdate, { transaction: t });
+    });
+
+    return await Driver.findByPk(driverId, {
+      include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile', 'status'] }],
+    });
+  }
+
+  async toggleDriverAccountStatus(driverId, status) {
+    const driver = await Driver.findByPk(driverId, { include: ['user'] });
+    if (!driver) {
+      throw new Error('Driver not found');
+    }
+    await driver.user.update({ status });
+    return driver;
+  }
+
+  async getDriverLocation(driverId) {
+    const { DriverLocation } = require('../models');
+    const driver = await Driver.findByPk(driverId, {
+      include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile', 'status'] }],
+    });
+    if (!driver) throw new Error('Driver not found');
+
+    const lastLocation = await DriverLocation.findOne({
+      where: { driver_id: driverId },
+      order: [['createdAt', 'DESC']],
+    });
+
+    return {
+      driver,
+      location: lastLocation || {
+        latitude: 24.7136,
+        longitude: 46.6753,
+        speed: 35,
+        heading: 90,
+        updatedAt: new Date(),
+        isSimulated: true,
+      },
+    };
+  }
+
+  async assignDriverToOrder(orderId, driverId, adminId, userId, reassignmentReason = '') {
     const order = await Order.findByPk(orderId);
     if (!order) {
       throw new Error('Order not found');
-    }
-
-    if (![ORDER_STATUS.PAYMENT_VERIFIED, ORDER_STATUS.DRIVER_ASSIGNED].includes(order.order_status)) {
-      throw new Error(`Order cannot be assigned a driver at status "${order.order_status}". Payment must be VERIFIED first.`);
     }
 
     const driver = await Driver.findByPk(driverId);
@@ -155,6 +260,13 @@ class AdminService {
 
     if (driver.availability_status === DRIVER_AVAILABILITY.OFFLINE) {
       throw new Error('Selected driver is currently OFFLINE');
+    }
+
+    let effectiveAdminId = adminId;
+    if (!effectiveAdminId && userId) {
+      const { Admin } = require('../models');
+      const adminRecord = await Admin.findOne({ where: { user_id: userId } });
+      if (adminRecord) effectiveAdminId = adminRecord.id;
     }
 
     return await sequelize.transaction(async (t) => {
@@ -172,22 +284,24 @@ class AdminService {
         }, { transaction: t });
       }
 
-      await DriverAssignment.create({
-        order_id: orderId,
-        driver_id: driverId,
-        assigned_by_admin_id: adminId,
-        previous_driver_id: previousDriverId,
-        reassignment_reason: reassignmentReason,
-      }, { transaction: t });
-
       const prevStatus = order.order_status;
       await order.update({ order_status: ORDER_STATUS.DRIVER_ASSIGNED }, { transaction: t });
+
+      if (effectiveAdminId) {
+        await DriverAssignment.create({
+          order_id: orderId,
+          driver_id: driverId,
+          assigned_by_admin_id: effectiveAdminId,
+          previous_driver_id: previousDriverId,
+          reassignment_reason: reassignmentReason,
+        }, { transaction: t });
+      }
 
       await OrderStatusHistory.create({
         order_id: order.id,
         from_status: prevStatus,
         to_status: ORDER_STATUS.DRIVER_ASSIGNED,
-        changed_by_user_id: adminId,
+        changed_by_user_id: userId || null,
         notes: `Driver assigned by Admin. Assigned Driver ID: ${driverId}`,
       }, { transaction: t });
 
@@ -198,10 +312,36 @@ class AdminService {
     });
   }
 
-  async getAllCustomers() {
+  async getAllCustomers(options = {}) {
+    const { search, status } = options;
+    const { Op } = require('sequelize');
+
+    const customerWhere = {};
+    const userWhere = {};
+
+    if (status && status !== 'ALL') {
+      userWhere.status = status;
+    }
+
+    if (search && search.trim()) {
+      const q = `%${search.trim()}%`;
+      customerWhere[Op.or] = [
+        { first_name: { [Op.iLike]: q } },
+        { last_name: { [Op.iLike]: q } },
+        { '$user.email$': { [Op.iLike]: q } },
+        { '$user.mobile$': { [Op.iLike]: q } },
+      ];
+    }
+
     return await Customer.findAll({
+      where: customerWhere,
       include: [
-        { model: User, as: 'user', attributes: ['id', 'email', 'mobile', 'status'] },
+        {
+          model: User,
+          as: 'user',
+          where: Object.keys(userWhere).length > 0 ? userWhere : undefined,
+          attributes: ['id', 'email', 'mobile', 'status'],
+        },
         'addresses',
       ],
       order: [['createdAt', 'DESC']],
@@ -218,7 +358,11 @@ class AdminService {
     return customer;
   }
   async getCustomerById(customerId) {
-    const customer = await Customer.findByPk(customerId, {
+    const { Op } = require('sequelize');
+    const customer = await Customer.findOne({
+      where: {
+        [Op.or]: [{ id: customerId }, { user_id: customerId }],
+      },
       include: [
         { model: User, as: 'user', attributes: ['id', 'email', 'mobile', 'status', 'createdAt'] },
         'addresses',
@@ -226,6 +370,7 @@ class AdminService {
           model: Order,
           as: 'orders',
           include: ['payment', 'delivery'],
+          separate: true,
           order: [['createdAt', 'DESC']],
         },
       ],
@@ -241,7 +386,18 @@ class AdminService {
         {
           model: Delivery,
           as: 'deliveries',
-          include: ['order'],
+          include: [
+            {
+              model: Order,
+              as: 'order',
+              include: [
+                { model: Customer, as: 'customer', include: ['user'] },
+                'address',
+                'payment',
+                'items',
+              ],
+            },
+          ],
           order: [['createdAt', 'DESC']],
         },
       ],

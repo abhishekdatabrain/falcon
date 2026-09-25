@@ -4,7 +4,7 @@ const { sendSuccess, sendError } = require('../utils/response');
 class ProductController {
   async getProducts(req, res, next) {
     try {
-      const onlyActive = req.user ? req.user.role !== 'ADMIN' : true;
+      const onlyActive = req.query.onlyActive === 'false' ? false : (req.user ? req.user.role !== 'ADMIN' : true);
       const result = await productService.getProducts({ ...req.query, onlyActive });
       return sendSuccess(res, 'Products retrieved', result);
     } catch (error) {

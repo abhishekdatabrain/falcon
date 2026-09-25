@@ -5,14 +5,6 @@ export const fetchApi = async (endpoint, options = {}) => {
     'Content-Type': 'application/json',
   };
 
-  // Attach token from localStorage if present in browser
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      defaultHeaders['Authorization'] = `Bearer ${token}`;
-    }
-  }
-
   // If FormData, let browser handle Content-Type boundary
   if (options.body instanceof FormData) {
     delete defaultHeaders['Content-Type'];
@@ -29,7 +21,17 @@ export const fetchApi = async (endpoint, options = {}) => {
 
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, config);
-    const data = await res.json();
+    let data;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      if (!res.ok) {
+        throw new Error(text || `Server error (${res.status})`);
+      }
+      data = { success: true, message: text };
+    }
 
     if (!res.ok) {
       throw new Error(data.message || 'An error occurred during API request');
