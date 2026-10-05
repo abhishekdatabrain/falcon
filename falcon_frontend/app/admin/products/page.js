@@ -599,7 +599,7 @@ export default function AdminProductsPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-700">
                             {prod.unit ? (
                               <span className="inline-block bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-slate-800 font-semibold font-sans">
-                                {(prod.unit_value)} {(prod.unit_type)} {(prod.pack_size)}
+                                {prod.unit_value} ({prod.unit_type} {prod.pack_size})
                               </span>
                             ) : (
                               <span className="text-slate-400 font-normal text-xs">-</span>
