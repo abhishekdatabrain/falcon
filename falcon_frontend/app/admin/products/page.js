@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { fetchApi } from '../../../src/services/api';
+import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import {
@@ -55,6 +55,10 @@ export default function AdminProductsPage() {
   const [stockLogs, setStockLogs] = useState([]);
   const [loadingStockLogs, setLoadingStockLogs] = useState(false);
   const [submittingStockAdj, setSubmittingStockAdj] = useState(false);
+
+  // Gallery Images Upload & Metadata State
+  const [uploadingProductImages, setUploadingProductImages] = useState(false);
+  const [productFileMetas, setProductFileMetas] = useState({}); // { [imgUrl]: { size, type, name } }
 
   const fetchStockLogs = async (productId) => {
     try {
@@ -316,13 +320,74 @@ export default function AdminProductsPage() {
 
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
-    for (const file of files) {
-      try {
-        const compressedUrl = await compressImageFile(file);
-        handleAddImage(compressedUrl);
-      } catch (err) {
-        console.error('Compression error:', err);
+    if (files.length === 0) return;
+
+    // Client-side validation: Max 5MB per file
+    const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+    const oversizedFiles = files.filter((f) => f.size > MAX_SIZE_BYTES);
+    if (oversizedFiles.length > 0) {
+      showToast(
+        locale === 'ar'
+          ? `حجم الملف يجب ألا يتجاوز 5 ميجابايت (${oversizedFiles[0].name})`
+          : `File size must not exceed 5MB (${oversizedFiles[0].name})`,
+        'error'
+      );
+      e.target.value = '';
+      return;
+    }
+
+    try {
+      setUploadingProductImages(true);
+      const formData = new FormData();
+      if (files.length === 1) {
+        const file = files[0];
+        formData.append('file', file);
+        const res = await fetchApi('/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        if (res.success && res.data?.url) {
+          handleAddImage(res.data.url);
+          setProductFileMetas((prev) => ({
+            ...prev,
+            [res.data.url]: {
+              size: res.data.formattedSize,
+              type: res.data.fileType,
+              name: res.data.originalname || file.name,
+            },
+          }));
+        }
+      } else {
+        files.forEach((f) => formData.append('files', f));
+        const res = await fetchApi('/upload/multiple', {
+          method: 'POST',
+          body: formData,
+        });
+        if (res.success && Array.isArray(res.data?.files)) {
+          const newMetas = {};
+          res.data.files.forEach((item) => {
+            if (item.url) {
+              handleAddImage(item.url);
+              newMetas[item.url] = {
+                size: item.formattedSize,
+                type: item.fileType,
+                name: item.originalname || item.filename,
+              };
+            }
+          });
+          setProductFileMetas((prev) => ({ ...prev, ...newMetas }));
+        }
       }
+      showToast(
+        locale === 'ar' ? 'تم رفع الصور بنجاح إلى السيرفر!' : 'Images uploaded to server successfully!',
+        'success'
+      );
+    } catch (err) {
+      console.error('File upload error:', err);
+      showToast(err.message || 'Image upload failed', 'error');
+    } finally {
+      setUploadingProductImages(false);
+      e.target.value = '';
     }
   };
 
@@ -528,7 +593,7 @@ export default function AdminProductsPage() {
                               {firstImg ? (
                                 <div className="relative">
                                   <img
-                                    src={firstImg}
+                                    src={getImageUrl(firstImg)}
                                     alt={prod.name_en}
                                     className="w-12 h-12 object-cover rounded-xl border border-slate-200 shrink-0 bg-slate-50"
                                   />
@@ -1214,7 +1279,7 @@ export default function AdminProductsPage() {
             <div className="space-y-6">
 
               {/* Product Gallery Images Card */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                     <ImageIcon className="w-4 h-4 text-emerald-600" /> Gallery Images ({productForm.images.length})
@@ -1224,39 +1289,47 @@ export default function AdminProductsPage() {
                 {/* Upload Buttons Box */}
                 <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                      <Upload className="w-3.5 h-3.5 text-emerald-600" /> Upload Files from Computer:
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Upload className="w-3.5 h-3.5 text-emerald-600" /> Upload File:
+                      </label>
+                    </div>
+
                     <input
                       type="file"
                       multiple
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
                       onChange={handleFileUpload}
-                      className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#043927] file:text-white hover:file:bg-[#02281b] cursor-pointer border border-slate-200 rounded-xl p-1 bg-white"
+                      className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#043927] file:text-white hover:file:bg-[#02281b] cursor-pointer border border-slate-200 rounded-xl p-1 bg-white shadow-2xs"
                     />
-                  </div>
 
-                  <div className="pt-2 border-t border-slate-200">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Or Add Image via URL:
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="https://..."
-                        value={urlInput}
-                        onChange={(e) => setUrlInput(e.target.value)}
-                        className="flex-1 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-emerald-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleUrlAdd}
-                        className="px-3 py-2 bg-[#043927] hover:bg-[#02281b] text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
-                      >
-                        + Add
-                      </button>
+                    {/* Allowed Size & Type Spec Banner */}
+                    <div className="mt-2.5 bg-emerald-50/70 border border-emerald-200/80 p-2.5 rounded-xl space-y-1 text-xs">
+                      <div className="flex items-center justify-between font-bold text-[#043927]">
+                        <span className="flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#05A764]" /> Allowed Upload Specs:
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        <span className="bg-white px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-900 font-extrabold text-[10px]">
+                          Types: JPG, PNG, WEBP, PDF
+                        </span>
+                        <span className="bg-white px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-900 font-extrabold text-[10px]">
+                          Max Size: 5MB / file
+                        </span>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Loading spinner while uploading */}
+                  {uploadingProductImages && (
+                    <div className="py-2.5 px-3 rounded-xl bg-emerald-100/70 border border-emerald-200 text-xs font-extrabold text-[#043927] flex items-center justify-center gap-2 animate-pulse">
+                      <div className="w-4 h-4 border-2 border-[#043927] border-t-transparent rounded-full animate-spin"></div>
+                      Uploading image(s) & analyzing file size...
+                    </div>
+                  )}
+
+                 
                 </div>
 
                 {/* Uploaded Images List Grid */}
@@ -1265,27 +1338,41 @@ export default function AdminProductsPage() {
                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                       Uploaded Gallery Images:
                     </span>
-                    <div className="grid grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1">
-                      {productForm.images.map((imgUrl, idx) => (
-                        <div key={idx} className="relative group bg-slate-50 border border-slate-200 rounded-2xl p-1.5 flex flex-col items-center">
-                          <img
-                            src={imgUrl}
-                            alt={`Product view ${idx + 1}`}
-                            className="w-full h-16 object-contain rounded-xl bg-white border border-slate-100"
-                          />
-                          <span className={`text-[9px] font-extrabold mt-1 px-1.5 py-0.2 rounded-md ${idx === 0 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-200 text-slate-700'}`}>
-                            {idx === 0 ? '★ Main' : `#${idx + 1}`}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(idx)}
-                            className="absolute -top-1.5 -right-1.5 bg-rose-500 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-xs text-xs cursor-pointer transition-all"
-                            title="Remove Image"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-72 overflow-y-auto pr-1">
+                      {productForm.images.map((imgUrl, idx) => {
+                        const meta = productFileMetas[imgUrl];
+                        return (
+                          <div key={idx} className="relative group bg-slate-50 border border-slate-200 rounded-2xl p-2 flex flex-col items-center shadow-2xs hover:border-emerald-300 transition-all">
+                            <img
+                              src={getImageUrl(imgUrl)}
+                              alt={`Product view ${idx + 1}`}
+                              className="w-full h-20 object-contain rounded-xl bg-white border border-slate-100"
+                            />
+                            <div className="w-full flex items-center justify-between mt-1.5 gap-1">
+                              <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${idx === 0 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-200 text-slate-700'}`}>
+                                {idx === 0 ? '★ Main' : `#${idx + 1}`}
+                              </span>
+                              {meta ? (
+                                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-white border border-emerald-200 text-emerald-800 truncate" title={`${meta.type} | ${meta.size}`}>
+                                  {meta.type} ({meta.size})
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500">
+                                  URL
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(idx)}
+                              className="absolute -top-1.5 -right-1.5 bg-rose-500 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-xs text-xs cursor-pointer transition-all"
+                              title="Remove Image"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (

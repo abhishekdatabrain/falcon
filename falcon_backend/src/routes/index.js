@@ -14,6 +14,7 @@ const adminRoutes = require('./adminRoutes');
 const feedbackRoutes = require('./feedbackRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const wishlistRoutes = require('./wishlistRoutes');
+const uploadRoutes = require('./uploadRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/customers', customerRoutes);
@@ -28,5 +29,6 @@ router.use('/admin', adminRoutes);
 router.use('/feedback', feedbackRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/wishlist', wishlistRoutes);
+router.use('/upload', uploadRoutes);
 
 module.exports = router;

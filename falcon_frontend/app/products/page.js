@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useCart } from '../../src/contexts/CartContext';
 import { useWishlist } from '../../src/contexts/WishlistContext';
-import { fetchApi } from '../../src/services/api';
+import { fetchApi, getImageUrl } from '../../src/services/api';
 import {
   Search,
   ShoppingBag,
@@ -636,7 +636,7 @@ function ProductsCatalogContent() {
                   {/* Product Image Container */}
                   <div className="w-full aspect-[4/3] rounded-xl bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
                     <img
-                      src={prod.img || (prod.images && prod.images[0]?.image_url) || prod.image_url}
+                      src={getImageUrl(prod.img || (prod.images && (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.image_url)) || prod.image_url)}
                       alt={locale === 'ar' ? prod.name_ar || prod.title_ar : prod.name_en || prod.title_en}
                       className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     />

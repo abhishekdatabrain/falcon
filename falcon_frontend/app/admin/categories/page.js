@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { fetchApi } from '../../../src/services/api';
+import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import {
@@ -50,6 +50,64 @@ export default function AdminCategoriesPage() {
     parent_main_id: '', // Used for selecting level 1 when setting up level 2/3
     parent_id: '',      // Final parent_id saved in backend
   });
+
+  // Upload & File metadata state
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [fileMeta, setFileMeta] = useState(null); // { name, size, type }
+
+  const handleCategoryFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Client-side validation: Max 5MB
+    const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE_BYTES) {
+      showToast(
+        locale === 'ar'
+          ? `حجم الملف يجب ألا يتجاوز 5 ميجابايت (${file.name})`
+          : `File size must not exceed 5MB (${file.name})`,
+        'error'
+      );
+      e.target.value = '';
+      return;
+    }
+
+    const ext = file.name.split('.').pop().toUpperCase();
+    const sizeFormatted = file.size > 1024 * 1024
+      ? (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+      : (file.size / 1024).toFixed(1) + ' KB';
+
+    setFileMeta({
+      name: file.name,
+      size: sizeFormatted,
+      type: ext || 'IMAGE',
+    });
+
+    try {
+      setUploadingImage(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetchApi('/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.success && res.data?.url) {
+        setForm((prev) => ({ ...prev, image_url: res.data.url }));
+        showToast(
+          locale === 'ar' ? 'تم رفع الصورة بنجاح على السيرفر!' : 'Image uploaded to server successfully!',
+          'success'
+        );
+      }
+    } catch (err) {
+      console.error('File upload error:', err);
+      showToast(err.message || 'Image upload failed', 'error');
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -497,7 +555,7 @@ export default function AdminCategoriesPage() {
                           <td className="px-6 py-3.5">
                             {cat.image_url ? (
                               <img
-                                src={cat.image_url}
+                                src={getImageUrl(cat.image_url)}
                                 alt={cat.name_en}
                                 className="w-11 h-11 object-cover rounded-xl border border-slate-200 bg-slate-50 shadow-2xs"
                               />
@@ -622,7 +680,7 @@ export default function AdminCategoriesPage() {
                           <td className="px-6 py-3.5">
                             {cat.image_url ? (
                               <img
-                                src={cat.image_url}
+                                src={getImageUrl(cat.image_url)}
                                 alt={cat.name_en}
                                 className="w-11 h-11 object-cover rounded-xl border border-slate-200 bg-slate-50 shadow-2xs"
                               />
@@ -752,7 +810,7 @@ export default function AdminCategoriesPage() {
                           <td className="px-6 py-3.5">
                             {cat.image_url ? (
                               <img
-                                src={cat.image_url}
+                                src={getImageUrl(cat.image_url)}
                                 alt={cat.name_en}
                                 className="w-11 h-11 object-cover rounded-xl border border-slate-200 bg-slate-50 shadow-2xs"
                               />
@@ -1015,16 +1073,19 @@ export default function AdminCategoriesPage() {
               </div>
 
               {/* Image Upload & Preview */}
-              <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 font-sans">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                     <ImageIcon className="w-4 h-4 text-emerald-600" />
-                    Category Image (Upload or URL)
+                    Category Image
                   </label>
                   {form.image_url && (
                     <button
                       type="button"
-                      onClick={() => setForm({ ...form, image_url: '' })}
+                      onClick={() => {
+                        setForm({ ...form, image_url: '' });
+                        setFileMeta(null);
+                      }}
                       className="text-[11px] font-bold text-rose-600 hover:text-rose-700 cursor-pointer"
                     >
                       Remove Image
@@ -1034,45 +1095,49 @@ export default function AdminCategoriesPage() {
 
                 <div className="space-y-2">
                   <div>
-                    <label className="block text-[11px] text-slate-500 font-semibold mb-1">
-                      Upload File from Computer:
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] text-slate-600 font-bold">
+                        Upload File
+                      </label>
+                      <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200">
+                        Types: JPG, PNG, WEBP, PDF • Max Size: 5MB
+                      </span>
+                    </div>
                     <input
                       type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setForm({ ...form, image_url: reader.result });
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                      className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-800 hover:file:bg-emerald-200 cursor-pointer"
+                      accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+                      onChange={handleCategoryFileUpload}
+                      className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#043927] file:text-white hover:file:bg-[#02281b] cursor-pointer border border-slate-200 rounded-xl p-1 bg-white shadow-2xs"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] text-slate-500 font-semibold mb-1">
-                      Or Paste Image URL:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://images.unsplash.com/..."
-                      value={form.image_url}
-                      onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:ring-2 focus:ring-emerald-500/20 transition-all outline-hidden"
-                    />
-                  </div>
+                  {/* File Metadata Info Pill (Name, Size, Type) */}
+                  {fileMeta && (
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-emerald-200 text-xs font-semibold text-slate-700 shadow-2xs">
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase border border-emerald-200">
+                        {fileMeta.type}
+                      </span>
+                      <span className="font-bold text-slate-900 truncate max-w-[150px]" title={fileMeta.name}>
+                        {fileMeta.name}
+                      </span>
+                      <span className="text-slate-300">|</span>
+                      <span className="text-emerald-700 font-extrabold">
+                        Size: {fileMeta.size}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {form.image_url && (
-                  <div className="flex items-center gap-3 pt-2 border-t border-slate-200">
-                    <div className="w-14 h-14 rounded-xl border border-slate-200 bg-white overflow-hidden shrink-0 flex items-center justify-center">
+                {uploadingImage ? (
+                  <div className="py-3 text-center text-xs font-extrabold text-emerald-700 animate-pulse flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-[#043927] border-t-transparent rounded-full animate-spin"></div>
+                    Uploading image to server...
+                  </div>
+                ) : form.image_url ? (
+                  <div className="flex items-center gap-3 pt-3 border-t border-slate-200">
+                    <div className="w-14 h-14 rounded-xl border border-slate-200 bg-white overflow-hidden shrink-0 flex items-center justify-center shadow-2xs">
                       <img
-                        src={form.image_url}
+                        src={getImageUrl(form.image_url)}
                         alt="Category Preview"
                         className="w-full h-full object-cover"
                         onError={(e) => { e.target.src = 'https://placehold.co/100x100?text=Invalid+URL'; }}
@@ -1080,12 +1145,14 @@ export default function AdminCategoriesPage() {
                     </div>
                     <div className="text-xs text-slate-600 min-w-0">
                       <span className="font-bold text-emerald-700 block flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Image Loaded!
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Saved Server Image URL
                       </span>
-                      <p className="text-[10px] text-slate-400 truncate max-w-[220px]">{form.image_url.substring(0, 50)}...</p>
+                      <p className="text-[10px] text-slate-500 font-mono truncate max-w-[240px]" title={form.image_url}>
+                        {form.image_url}
+                      </p>
                     </div>
                   </div>
-                )}
+                ) : null}
               </div>
 
               {/* URL Slug */}

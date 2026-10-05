@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useCart } from '../../../src/contexts/CartContext';
 import { useWishlist } from '../../../src/contexts/WishlistContext';
-import { fetchApi } from '../../../src/services/api';
+import { fetchApi, getImageUrl } from '../../../src/services/api';
 import {
   ShoppingBag,
   Heart,
@@ -235,7 +235,7 @@ export default function ProductDetailPage() {
 
             {/* Main Product Image */}
             <img
-              src={selectedImg || galleryImages[0]}
+              src={getImageUrl(selectedImg || galleryImages[0])}
               alt={locale === 'ar' ? product.name_ar : product.name_en}
               className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
             />
@@ -253,7 +253,7 @@ export default function ProductDetailPage() {
                     isSelected ? 'border-[#043927] ring-2 ring-emerald-100 shadow-xs scale-95' : 'border-slate-200/80 hover:border-slate-300 opacity-80 hover:opacity-100'
                   }`}
                 >
-                  <img src={imgUrl} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover rounded-xl" />
+                  <img src={getImageUrl(imgUrl)} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover rounded-xl" />
                 </button>
               );
             })}
