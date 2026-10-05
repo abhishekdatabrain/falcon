@@ -1,4 +1,4 @@
-const { User, Driver, Customer, Order, Payment, Product, Delivery, DriverAssignment, OrderStatusHistory, sequelize } = require('../models');
+const { User, Driver, Customer, Order, Payment, Product, Delivery, DriverAssignment, OrderStatusHistory, DriverLocation, Feedback, sequelize } = require('../models');
 const { hashPassword } = require('../utils/password');
 const ROLES = require('../constants/roles');
 const { ORDER_STATUS } = require('../constants/orderStatus');
@@ -406,25 +406,109 @@ class AdminService {
     return driver;
   }
 
-  async getActiveDeliveries() {
-    return await Delivery.findAll({
+  async getDeliveries(options = {}) {
+    const { status, search } = options;
+    const { Op } = require('sequelize');
+
+    const deliveryWhere = {};
+    if (status && status !== 'ALL') {
+      if (status === 'ACTIVE') {
+        deliveryWhere.status = [
+          ORDER_STATUS.DRIVER_ASSIGNED,
+          ORDER_STATUS.DRIVER_ACCEPTED,
+          ORDER_STATUS.OUT_FOR_DELIVERY,
+          ORDER_STATUS.ARRIVED,
+        ];
+      } else if (status === 'COMPLETED') {
+        deliveryWhere.status = ORDER_STATUS.DELIVERED;
+      } else {
+        deliveryWhere.status = status;
+      }
+    }
+
+    if (search && search.trim()) {
+      const q = `%${search.trim()}%`;
+      deliveryWhere[Op.or] = [
+        { status: { [Op.iLike]: q } },
+        { '$order.order_number$': { [Op.iLike]: q } },
+        { '$driver.user.email$': { [Op.iLike]: q } },
+        { '$order.customer.user.email$': { [Op.iLike]: q } },
+      ];
+    }
+
+    const deliveries = await Delivery.findAll({
+      where: deliveryWhere,
       include: [
         {
           model: Order,
           as: 'order',
           include: [
-            { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] },
+            { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile'] }] },
             'address',
+            'items',
+            'feedback',
+            'status_history',
           ],
         },
         {
           model: Driver,
           as: 'driver',
-          include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }],
+          include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile'] }],
+        },
+        {
+          model: DriverLocation,
+          as: 'locations',
+          limit: 1,
+          order: [['createdAt', 'DESC']],
         },
       ],
       order: [['updatedAt', 'DESC']],
     });
+
+    // Unassigned orders awaiting driver assignment
+    const unassignedOrders = await Order.findAll({
+      where: {
+        order_status: [ORDER_STATUS.PAYMENT_VERIFIED],
+      },
+      include: [
+        { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile'] }] },
+        'address',
+        'items',
+        'delivery',
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+
+    const activeCount = await Delivery.count({
+      where: {
+        status: [
+          ORDER_STATUS.DRIVER_ASSIGNED,
+          ORDER_STATUS.DRIVER_ACCEPTED,
+          ORDER_STATUS.OUT_FOR_DELIVERY,
+          ORDER_STATUS.ARRIVED,
+        ],
+      },
+    });
+
+    const completedCount = await Delivery.count({
+      where: { status: ORDER_STATUS.DELIVERED },
+    });
+
+    return {
+      deliveries,
+      unassignedOrders,
+      stats: {
+        activeCount,
+        completedCount,
+        unassignedCount: unassignedOrders.length,
+        totalCount: deliveries.length,
+      },
+    };
+  }
+
+  async getActiveDeliveries() {
+    const res = await this.getDeliveries({ status: 'ACTIVE' });
+    return res.deliveries;
   }
 
   async getAllInvoices() {

@@ -51,6 +51,27 @@ class ProductController {
       return sendError(res, error.message, [], 400);
     }
   }
+
+  async adjustStock(req, res, next) {
+    try {
+      const result = await productService.adjustStock(req.params.id, {
+        ...req.body,
+        user_id: req.user ? req.user.email || req.user.id : 'Admin',
+      });
+      return sendSuccess(res, 'Stock adjusted successfully', result);
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async getStockLogs(req, res, next) {
+    try {
+      const logs = await productService.getStockLogs(req.params.id);
+      return sendSuccess(res, 'Stock logs retrieved', { logs });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
 }
 
 module.exports = new ProductController();

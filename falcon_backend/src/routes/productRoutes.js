@@ -12,5 +12,7 @@ router.get('/:id', (req, res, next) => productController.getProductById(req, res
 router.post('/', authenticate, authorize(ROLES.ADMIN), (req, res, next) => productController.createProduct(req, res, next));
 router.put('/:id', authenticate, authorize(ROLES.ADMIN), (req, res, next) => productController.updateProduct(req, res, next));
 router.delete('/:id', authenticate, authorize(ROLES.ADMIN), (req, res, next) => productController.deleteProduct(req, res, next));
+router.post('/:id/stock-adjustment', authenticate, authorize(ROLES.ADMIN), (req, res, next) => productController.adjustStock(req, res, next));
+router.get('/:id/stock-logs', authenticate, authorize(ROLES.ADMIN), (req, res, next) => productController.getStockLogs(req, res, next));
 
 module.exports = router;

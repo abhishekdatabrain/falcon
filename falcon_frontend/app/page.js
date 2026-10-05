@@ -236,6 +236,330 @@ const STATIC_TRENDING = [
   },
 ];
 
+const DEALS_PRODUCTS = [
+  {
+    id: 'deal-1',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_headphones.jpg',
+  },
+  {
+    id: 'deal-2',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_lays.jpg',
+  },
+  {
+    id: 'deal-3',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_ariel.jpg',
+  },
+  {
+    id: 'deal-4',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_almarai_milk.jpg',
+  },
+  {
+    id: 'deal-5',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_headphones.jpg',
+  },
+  {
+    id: 'deal-6',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_lays.jpg',
+  },
+  {
+    id: 'deal-7',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_headphones.jpg',
+  },
+  {
+    id: 'deal-8',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_lays.jpg',
+  },
+  {
+    id: 'deal-9',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_ariel.jpg',
+  },
+  {
+    id: 'deal-10',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_almarai_milk.jpg',
+  },
+  {
+    id: 'deal-11',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_headphones.jpg',
+  },
+  {
+    id: 'deal-12',
+    brand: 'Auria Audio',
+    brand_ar: 'أوريا أوديو',
+    title_en: 'Auria Apex Noise-Canceling Wireless',
+    title_ar: 'سماعات أوريا أبيركس اللاسلكية العازلة للصوت',
+    specs_en: '40h Battery  Lossless Audio  Multipoint',
+    specs_ar: 'بطارية ٤٠ ساعة  صوت عالي الدقة  اتصال متعدد',
+    rating: '4.9',
+    reviews: '1,420',
+    price: '12.50',
+    mrp: 'AED 24.9',
+    savings_en: 'Save AED 50 (14% off)',
+    savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
+    img: '/products/prod_lays.jpg',
+  },
+];
+
+const PROMO_CARDS_BANNER = [
+  {
+    id: 'promo-card-1',
+    bg: 'bg-[#F5BF38]',
+    title_en: 'Everyday groceries, made easy!',
+    title_ar: 'البقالة اليومية، بأسهل طريقة!',
+    desc_en: 'Fresh staples, pantry essentials & more',
+    desc_ar: 'مواد أساسية طازجة، مستلزمات المؤونة والمزيد',
+    btn_en: 'Order Now',
+    btn_ar: 'اطلب الآن',
+    img: '/promo/promo_groceries.jpg',
+    href: '/products?category=groceries',
+  },
+  {
+    id: 'promo-card-2',
+    bg: 'bg-[#38BDF8]',
+    title_en: 'Everything your home needs!',
+    title_ar: 'كل ما يحتاجه منزلك!',
+    desc_en: 'Cleaning, home care & daily essentials',
+    desc_ar: 'التنظيف، العناية بالمنزل والمستلزمات اليومية',
+    btn_en: 'Order Now',
+    btn_ar: 'اطلب الآن',
+    img: '/promo/promo_cleaning.jpg',
+    href: '/products?category=household',
+  },
+  {
+    id: 'promo-card-3',
+    bg: 'bg-[#A3E062]',
+    title_en: 'Snack time starts here!',
+    title_ar: 'وقت الوجبات الخفيفة يبدأ هنا!',
+    desc_en: 'Tasty bites, chips, chocolates & more',
+    desc_ar: 'وجبات خفيفة، شيبس، شوكولاتة والمزيد',
+    btn_en: 'Order Now',
+    btn_ar: 'اطلب الآن',
+    img: '/promo/promo_snacks.jpg',
+    href: '/products?category=snacks',
+  },
+];
+
+const HOUSEHOLD_SUBCATEGORIES = [
+  {
+    id: 'hh-1',
+    title_en: 'Laundry Care',
+    title_ar: 'العناية بالغسيل',
+    img: 'https://images.unsplash.com/photo-1585842378054-ee2e52f94ba2?w=400&auto=format&fit=crop',
+    href: '/products?category=household&sub=laundry',
+  },
+  {
+    id: 'hh-2',
+    title_en: 'Toilet Cleaner',
+    title_ar: 'منظف المرحاض',
+    img: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&auto=format&fit=crop',
+    href: '/products?category=household&sub=toilet-cleaner',
+  },
+  {
+    id: 'hh-3',
+    title_en: 'Vacuum Cleaner',
+    title_ar: 'مكنسة كهربائية',
+    img: 'https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&auto=format&fit=crop',
+    href: '/products?category=household&sub=vacuum',
+  },
+  {
+    id: 'hh-4',
+    title_en: 'Storage',
+    title_ar: 'التخزين والمنظمات',
+    img: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400&auto=format&fit=crop',
+    href: '/products?category=household&sub=storage',
+  },
+  {
+    id: 'hh-5',
+    title_en: 'Lights & Lamps',
+    title_ar: 'الإضاءة والمصابيح',
+    img: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400&auto=format&fit=crop',
+    href: '/products?category=household&sub=lighting',
+  },
+  {
+    id: 'hh-6',
+    title_en: 'Chairs',
+    title_ar: 'الكراسي والمقاعد',
+    img: 'https://images.unsplash.com/photo-1580481072645-022f9a6d8310?w=400&auto=format&fit=crop',
+    href: '/products?category=household&sub=chairs',
+  },
+];
+
+const GROCERIES_SUBCATEGORIES = [
+  {
+    id: 'gr-1',
+    title_en: 'Rice & Grains',
+    title_ar: 'الأرز والحبوب',
+    img: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&auto=format&fit=crop',
+    href: '/products?category=groceries&sub=rice-grains',
+  },
+  {
+    id: 'gr-2',
+    title_en: 'Flour & Baking',
+    title_ar: 'الدقيق والمخبوزات',
+    img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop',
+    href: '/products?category=groceries&sub=flour-baking',
+  },
+  {
+    id: 'gr-3',
+    title_en: 'Pulses & Lentils',
+    title_ar: 'البقوليات والعدس',
+    img: 'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?w=400&auto=format&fit=crop',
+    href: '/products?category=groceries&sub=pulses-lentils',
+  },
+  {
+    id: 'gr-4',
+    title_en: 'Pasta & Noodles',
+    title_ar: 'المعكرونة والنودلز',
+    img: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281358?w=400&auto=format&fit=crop',
+    href: '/products?category=groceries&sub=pasta-noodles',
+  },
+  {
+    id: 'gr-5',
+    title_en: 'Tea & Coffee',
+    title_ar: 'الشاي والقهوة',
+    img: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop',
+    href: '/products?category=groceries&sub=tea-coffee',
+  },
+  {
+    id: 'gr-6',
+    title_en: 'Sugar & Sweeteners',
+    title_ar: 'السكر والمحليات',
+    img: 'https://images.unsplash.com/photo-1581441363689-1f3c3c414635?w=400&auto=format&fit=crop',
+    href: '/products?category=groceries&sub=sugar-sweeteners',
+  },
+];
+
 export default function HomePage() {
   const { t, locale } = useLanguage();
   const { addToCart } = useCart();
@@ -294,535 +618,640 @@ export default function HomePage() {
   return (
     <div className="space-y-16 pb-16 font-sans bg-[#fbfcfb]">
 
-      {/* 1. Hero Section (Interactive Banner Slider) */}
-      <section className={`${HERO_SLIDES[currentSlide].bg} text-white overflow-hidden relative transition-colors duration-700 min-h-[460px] flex flex-col justify-between`}>
+      {/* 1. Hero Section (Delivered Simply Landing Banner) */}
+      <section className="bg-[#FAF7F0] relative overflow-hidden pt-10 md:pt-16 pb-0 font-sans border-b border-amber-100/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center min-h-[480px]">
+            
+            {/* Left Column Content */}
+            <div className="lg:col-span-6 space-y-7 text-left rtl:text-right pt-2 pb-8 lg:pb-16">
+              
+              {/* Main Headline */}
+              <h1 className="text-4xl sm:text-5xl lg:text-[64px] font-black text-black tracking-tight leading-[1.08]">
+                {locale === 'ar' ? (
+                  <>
+                    كل ما تحتاجه <br />
+                    <span className="text-[#05A764] inline-block mt-1">يصلك بكل بساطة</span>
+                  </>
+                ) : (
+                  <>
+                    Everything You need <br />
+                    <span className="text-[#05A764] inline-block mt-1">Delivered Simply</span>
+                  </>
+                )}
+              </h1>
 
-        {/* Navigation Arrow Controls */}
-        <button
-          onClick={prevSlide}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/25 hover:bg-black/50 text-white flex items-center justify-center backdrop-blur-sm transition-all cursor-pointer shadow-lg hover:scale-110"
-          aria-label="Previous Slide"
-        >
-          <ChevronLeft className="w-6 h-6 rtl:rotate-180" />
-        </button>
+              {/* Subheadline */}
+              <p className="text-[#475569] font-medium text-base sm:text-lg lg:text-[20px] max-w-lg leading-relaxed">
+                {locale === 'ar'
+                  ? 'تسوق البقالة والوجبات الخفيفة والعناية الشخصية والمزيد بأفضل الأسعار. طازجة يمكنك الوثوق بها.'
+                  : 'Shop groceries, snacks, personal care and more at great prices. Freshness you can trust.'}
+              </p>
 
-        <button
-          onClick={nextSlide}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/25 hover:bg-black/50 text-white flex items-center justify-center backdrop-blur-sm transition-all cursor-pointer shadow-lg hover:scale-110"
-          aria-label="Next Slide"
-        >
-          <ChevronRight className="w-6 h-6 rtl:rotate-180" />
-        </button>
+              {/* Shop Now CTA Button */}
+              <div className="pt-1">
+                <Link
+                  href="/products"
+                  className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-[#043927] hover:bg-[#02281b] text-white font-bold text-base shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer group"
+                >
+                  <span className="tracking-wide">{locale === 'ar' ? 'تسوق الآن' : 'Shop Now'}</span>
+                  <ArrowRight className="w-5 h-5 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
+                </Link>
+              </div>
 
-        {/* Slide Content */}
-        <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-16 py-12 sm:py-20 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10 w-full">
+              {/* Trust Badges Row */}
+              <div className="pt-8 border-t border-amber-200/50 flex flex-wrap items-center gap-6 sm:gap-10 text-xs text-slate-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100/70 text-[#043927] flex items-center justify-center shrink-0">
+                    <Truck className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col leading-tight">
+                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{locale === 'ar' ? 'توصيل سريع وموثوق' : 'Fast & Reliable'}</span>
+                    <span className="text-[11px] sm:text-xs text-slate-500 font-medium">{locale === 'ar' ? 'توصيل للمنزل' : 'Delivery'}</span>
+                  </div>
+                </div>
 
-          {/* Left Text */}
-          <div className="space-y-6 max-w-xl text-center md:text-left rtl:md:text-right">
-            <span className={`${HERO_SLIDES[currentSlide].accentColor} font-serif italic text-lg sm:text-xl font-medium tracking-wide block transition-all`}>
-              {locale === 'ar' ? HERO_SLIDES[currentSlide].tag_ar : HERO_SLIDES[currentSlide].tag_en}
-            </span>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100/70 text-[#043927] flex items-center justify-center shrink-0">
+                    <Tag className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col leading-tight">
+                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{locale === 'ar' ? 'أسعار رائعة' : 'Great Prices'}</span>
+                    <span className="text-[11px] sm:text-xs text-slate-500 font-medium">{locale === 'ar' ? 'كل يوم' : 'Everyday'}</span>
+                  </div>
+                </div>
 
-            <h1 className="text-4xl sm:text-6xl font-black leading-tight tracking-tight font-sans drop-shadow-sm">
-              {locale === 'ar' ? HERO_SLIDES[currentSlide].title_ar : HERO_SLIDES[currentSlide].title_en}
-            </h1>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100/70 text-[#043927] flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col leading-tight">
+                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{locale === 'ar' ? 'دفع آمن' : 'Secure'}</span>
+                    <span className="text-[11px] sm:text-xs text-slate-500 font-medium">{locale === 'ar' ? 'مدفوعات محمية' : 'Payments'}</span>
+                  </div>
+                </div>
+              </div>
 
-            <p className="text-sm sm:text-base text-white/90 leading-relaxed font-normal">
-              {locale === 'ar' ? HERO_SLIDES[currentSlide].desc_ar : HERO_SLIDES[currentSlide].desc_en}
-            </p>
-
-            <div className="pt-2">
-              <Link
-                href="/products"
-                className={`inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-extrabold text-sm shadow-xl transition-all hover:scale-105 cursor-pointer ${HERO_SLIDES[currentSlide].btnStyle}`}
-              >
-                <span>{locale === 'ar' ? HERO_SLIDES[currentSlide].btn_ar : HERO_SLIDES[currentSlide].btn_en}</span>
-                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-              </Link>
             </div>
-          </div>
 
-          {/* Right Image */}
-          <div className="w-full max-w-md relative flex justify-center">
-            <div className="relative z-10 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 w-full max-h-[380px]">
-              <img
-                src={HERO_SLIDES[currentSlide].img}
-                alt="Banner slide image"
-                className="w-full h-full object-cover max-h-[380px] transition-all duration-500"
-              />
+            {/* Right Column Visual Image */}
+            <div className="lg:col-span-6 relative flex justify-center items-end pb-4 lg:pb-0">
+              <div className="relative w-full max-w-lg lg:max-w-xl">
+                <img
+                  src="/hero_grocery_bag.jpg"
+                  alt="Fresh grocery bag filled with fresh vegetables, Lay's chips, fruits, and essentials"
+                  className="w-full h-auto object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-[1.01]"
+                />
+              </div>
             </div>
-            <div className="absolute -bottom-6 -right-6 w-36 h-36 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
-          </div>
 
+          </div>
         </div>
 
-        {/* Pagination Dots Indicator */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/20 px-4 py-1.5 rounded-full backdrop-blur-xs">
-          {HERO_SLIDES.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentSlide(idx)}
-              className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${currentSlide === idx ? 'w-8 bg-amber-400' : 'w-2.5 bg-white/50 hover:bg-white'
-                }`}
-              aria-label={`Go to slide ${idx + 1}`}
+        {/* Wavy Wave Curve Bottom Decorative Banner */}
+        <div className="w-full overflow-hidden leading-none -mt-6 sm:-mt-12 relative z-10 pointer-events-none">
+          <svg
+            viewBox="0 0 1440 160"
+            className="w-full h-16 sm:h-24 lg:h-32 block"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Gold Upper Wavy Layer */}
+            <path
+              fill="#D97706"
+              fillOpacity="0.85"
+              d="M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,85.3C672,75,768,85,864,101.3C960,117,1056,139,1152,138.7C1248,139,1344,117,1392,106.7L1440,96L1440,160L1392,160C1344,160,1248,160,1152,160C1056,160,960,160,864,160C768,160,672,160,576,160C480,160,384,160,288,160C192,160,96,160,48,160L0,160Z"
             />
-          ))}
+            {/* Dark Green Main Bottom Layer */}
+            <path
+              fill="#043927"
+              d="M0,96L48,106.7C96,117,192,139,288,138.7C384,139,480,117,576,106.7C672,96,768,96,864,112C960,128,1056,160,1152,149.3C1248,139,1344,85,1392,58.7L1440,32L1440,160L1392,160C1344,160,1248,160,1152,160C1056,160,960,160,864,160C768,160,672,160,576,160C480,160,384,160,288,160C192,160,96,160,48,160L0,160Z"
+            />
+          </svg>
         </div>
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
 
-        {/* 2. Shop By Category (Row of Circular Category Cards with Carousel) */}
-        {(() => {
-          const mainCategories = (categories || []).filter((c) => !c.parent_id);
-          const displayCategories = mainCategories.length > 0 ? mainCategories : ((categories || []).length > 0 ? categories : SAFE_DEFAULT_CATEGORIES);
-          const maxSlides = Math.max(1, Math.ceil(displayCategories.length / 6));
-          return (
-            <section className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05442e] font-serif tracking-tight">
-                  {locale === 'ar' ? 'التسوق حسب القسم' : 'Shop By Category'}
-                </h2>
+        {/* 2. Explore Our Categories Section */}
+        <section className="space-y-6 pt-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+              {locale === 'ar' ? 'استكشف تصنيفاتنا' : 'Explore Our Categories'}
+            </h2>
+          </div>
 
-                {/* Carousel Circular Arrow Controls */}
-                <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
+            {[
+              {
+                id: 'cat-frozen',
+                title_en: 'Frozen food',
+                title_ar: 'أطعمة مجمدة',
+                img: '/categories/cat_frozen_food.jpg',
+                href: '/products?category=frozen',
+              },
+              {
+                id: 'cat-household',
+                title_en: 'Household Essentials',
+                title_ar: 'المستلزمات المنزلية',
+                img: '/categories/cat_household.jpg',
+                href: '/products?category=household',
+              },
+              {
+                id: 'cat-groceries',
+                title_en: 'Groceries',
+                title_ar: 'البقالة والسلع',
+                img: '/categories/cat_groceries.jpg',
+                href: '/products?category=groceries',
+              },
+              {
+                id: 'cat-snacks',
+                title_en: 'Snacks & Biscuits',
+                title_ar: 'المسليات والبسكويت',
+                img: '/categories/cat_snacks.jpg',
+                href: '/products?category=snacks',
+              },
+              {
+                id: 'cat-personal-care',
+                title_en: 'Personal Care',
+                title_ar: 'العناية الشخصية',
+                img: '/categories/cat_personal_care.jpg',
+                href: '/products?category=personal-care',
+              },
+              {
+                id: 'cat-dairy',
+                title_en: 'Dairy Items',
+                title_ar: 'منتجات الألبان',
+                img: '/categories/cat_dairy.jpg',
+                href: '/products?category=dairy',
+              },
+            ].map((cat) => (
+              <Link
+                key={cat.id}
+                href={cat.href}
+                className="group bg-[#FFFDF8] hover:bg-[#FFF9EC] rounded-[22px] p-4 flex flex-col items-center justify-between border border-[#F6EEDF] shadow-2xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer min-h-[210px] sm:min-h-[230px]"
+              >
+                <div className="w-full aspect-square max-w-[135px] sm:max-w-[150px] flex items-center justify-center overflow-hidden my-auto p-1.5">
+                  <img
+                    src={cat.img}
+                    alt={locale === 'ar' ? cat.title_ar : cat.title_en}
+                    className="w-full h-full object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+
+                <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm md:text-base text-center group-hover:text-[#043927] transition-colors leading-snug pt-2 font-sans">
+                  {locale === 'ar' ? cat.title_ar : cat.title_en}
+                </h3>
+              </Link>
+            ))}
+          </div>
+        </section>
+        {/* 3. Today's Best Deals Section */}
+        <section className="space-y-6 pt-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl sm:text-[32px] font-extrabold text-slate-900 tracking-tight font-sans">
+              {locale === 'ar' ? 'أفضل عروض اليوم' : "Today's Best Deals"}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-4.5">
+            {DEALS_PRODUCTS.map((prod, idx) => (
+              <div
+                key={prod.id + idx}
+                className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer min-h-[410px]"
+              >
+                {/* Top Badges */}
+                <div className="flex items-center justify-between z-10 mb-1">
+                  <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                    <Star className="w-2.5 h-2.5 fill-current text-white" />
+                    <span>BEST SELLER</span>
+                  </span>
+
                   <button
-                    onClick={() => setCategorySlideIndex((prev) => (prev - 1 + maxSlides) % maxSlides)}
-                    className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
-                    title="Previous Categories"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleWishlist(prod);
+                    }}
+                    className="text-slate-300 hover:text-rose-500 transition-colors cursor-pointer p-0.5"
+                    title="Add to Wishlist"
                   >
-                    <ChevronLeft className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
-                  </button>
-                  <button
-                    onClick={() => setCategorySlideIndex((prev) => (prev + 1) % maxSlides)}
-                    className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
-                    title="Next Categories"
-                  >
-                    <ChevronRight className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
+                    <Heart className={`w-4 h-4 ${isInWishlist(prod.id) ? 'text-rose-500 fill-rose-500' : ''}`} />
                   </button>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 transition-all duration-500">
-                {displayCategories.slice(categorySlideIndex * 6, (categorySlideIndex + 1) * 6).map((cat, idx) => (
-                  <Link
-                    key={cat.id || idx}
-                    href={cat.id ? `/products?categoryId=${cat.id}` : '/products'}
-                    className="bg-white rounded-2xl p-5 text-center border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-300 group transition-all cursor-pointer flex flex-col items-center justify-between space-y-3"
-                  >
-                    <div className="w-20 h-20 rounded-full overflow-hidden bg-emerald-50 p-1 border border-emerald-100 group-hover:scale-110 transition-transform flex items-center justify-center">
-                      <img
-                        src={getCategoryImageUrl(cat)}
-                        alt={locale === 'ar' ? cat.name_ar : cat.name_en}
-                        className="w-full h-full object-cover rounded-full"
-                        onError={(e) => {
-                          e.target.src = getCategoryImageUrl({ name_en: cat.name_en });
-                        }}
-                      />
+                {/* Product Image Container */}
+                <div className="w-full aspect-[4/3] rounded-xl bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
+                  <img
+                    src={prod.img}
+                    alt={locale === 'ar' ? prod.title_ar : prod.title_en}
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+
+                {/* Info Content */}
+                <div className="space-y-1 pt-0.5 flex-1 flex flex-col justify-between">
+                  <div>
+                    {/* Brand & In Stock Tag */}
+                    <div className="flex items-center justify-between text-[11px] font-medium leading-none mb-1">
+                      <span className="text-slate-400 truncate">{locale === 'ar' ? prod.brand_ar : prod.brand}</span>
+                      <span className="text-[#00B074] font-bold shrink-0">{locale === 'ar' ? 'متوفر' : 'In Stock'}</span>
                     </div>
-                    <span className="text-xs font-extrabold text-slate-800 group-hover:text-emerald-700 transition-colors line-clamp-1">
-                      {locale === 'ar' ? cat.name_ar : cat.name_en}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          );
-        })()}
 
-        {/* 3. 3-Column Feature Banners */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {FEATURED_BANNERS.map((banner, idx) => (
-            <div
-              key={idx}
-              className={`${banner.cardBg} rounded-3xl p-6 border border-slate-200/60 shadow-sm flex items-center justify-between gap-4 group hover:shadow-md transition-all`}
-            >
-              <div className="space-y-3 max-w-[60%]">
-                <h3 className="text-lg font-extrabold text-slate-900 leading-snug">
-                  {locale === 'ar' ? banner.title_ar : banner.title_en}
-                </h3>
-                <p className="text-xs text-slate-600 font-medium">
-                  {locale === 'ar' ? banner.subtitle_ar : banner.subtitle_en}
-                </p>
+                    {/* Product Title */}
+                    <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug font-sans group-hover:text-[#043927] transition-colors mb-1">
+                      {locale === 'ar' ? prod.title_ar : prod.title_en}
+                    </h3>
+
+                    {/* Specs / Tags */}
+                    <p className="text-[10px] text-slate-400 font-normal truncate mb-1">
+                      {locale === 'ar' ? prod.specs_ar : prod.specs_en}
+                    </p>
+
+                    {/* Rating & Delivery */}
+                    <div className="flex items-center justify-between text-[11px] py-1 border-t border-slate-100">
+                      <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
+                        <span className="text-slate-400">☆</span>
+                        <span className="font-bold text-slate-700">{prod.rating}</span>
+                        <span className="text-slate-400">({prod.reviews})</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
+                        <Truck className="w-3 h-3 text-slate-400" />
+                        <span>{locale === 'ar' ? 'توصيل مجاني' : 'Free Delivery'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Price & Add to Cart Action Row */}
+                  <div className="pt-1.5 border-t border-slate-100 flex items-end justify-between gap-1">
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm sm:text-base font-black text-slate-900 font-sans">
+                          SAR {prod.price}
+                        </span>
+                        <span className="text-[10px] text-slate-400 line-through font-normal">
+                          {prod.mrp}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#00B074] block leading-tight">
+                        {locale === 'ar' ? prod.savings_ar : prod.savings_en}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleAddToCart(prod.id);
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white font-bold text-[11px] shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center gap-1 shrink-0"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 4. Promotional Cards Banner Section (Everyday Groceries, Home Needs, Snack Time) */}
+        <section className="pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+            {PROMO_CARDS_BANNER.map((card) => (
+              <div
+                key={card.id}
+                className={`${card.bg} rounded-[28px] relative overflow-hidden flex justify-between min-h-[200px] sm:min-h-[220px] shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group font-sans`}
+              >
+                {/* Left Text Content */}
+                <div className="p-6 sm:p-7 max-w-[62%] flex flex-col justify-between z-10">
+                  <div className="space-y-2">
+                    <h3 className="font-extrabold text-slate-900 text-xl sm:text-2xl leading-snug tracking-tight font-sans">
+                      {locale === 'ar' ? card.title_ar : card.title_en}
+                    </h3>
+                    <p className="text-slate-800/80 font-medium text-xs sm:text-sm leading-relaxed">
+                      {locale === 'ar' ? card.desc_ar : card.desc_en}
+                    </p>
+                  </div>
+
+                  <div className="pt-4">
+                    <Link
+                      href={card.href}
+                      className="bg-white text-slate-900 hover:bg-slate-900 hover:text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl shadow-xs hover:shadow-md transition-all hover:scale-105 inline-block cursor-pointer"
+                    >
+                      {locale === 'ar' ? card.btn_ar : card.btn_en}
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Right Image Container with Rounded Cutout */}
+                <div className="w-[38%] bg-white rounded-tl-[48px] rounded-bl-none absolute right-0 top-0 bottom-0 flex items-center justify-center p-3 shadow-inner">
+                  <img
+                    src={card.img}
+                    alt={locale === 'ar' ? card.title_ar : card.title_en}
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 5. Household Essentials & Groceries Sub-Category Grids */}
+        <section className="bg-[#F4FBF7] rounded-[32px] p-6 sm:p-8 space-y-10 border border-emerald-100/60 shadow-2xs">
+          
+          {/* Sub-Section 1: Household Essentials */}
+          <div className="space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+                {locale === 'ar' ? 'المستلزمات المنزلية' : 'Household Essentials'}
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
+              {HOUSEHOLD_SUBCATEGORIES.map((item) => (
                 <Link
-                  href="/products"
-                  className={`inline-block text-xs font-bold px-4 py-2 rounded-full transition-all ${banner.btnBg}`}
+                  key={item.id}
+                  href={item.href}
+                  className="group bg-white rounded-2xl p-4 border border-slate-200/60 shadow-2xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 flex flex-col items-center justify-between cursor-pointer min-h-[190px]"
                 >
-                  Shop Now
+                  <div className="w-full aspect-square max-w-[130px] flex items-center justify-center overflow-hidden my-auto p-1">
+                    <img
+                      src={item.img}
+                      alt={locale === 'ar' ? item.title_ar : item.title_en}
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-2xs"
+                    />
+                  </div>
+
+                  <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm text-center group-hover:text-[#043927] transition-colors leading-tight pt-2 font-sans">
+                    {locale === 'ar' ? item.title_ar : item.title_en}
+                  </h3>
+                </Link>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <Link
+                href="/products?category=household"
+                className="text-xs font-bold text-slate-500 hover:text-emerald-700 flex items-center gap-1 group transition-colors"
+              >
+                <span>{locale === 'ar' ? 'عرض المزيد' : 'View more'}</span>
+                <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Sub-Section 2: Groceries */}
+          <div className="space-y-5 pt-4 border-t border-emerald-100/70">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+                {locale === 'ar' ? 'البقالة' : 'Groceries'}
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
+              {GROCERIES_SUBCATEGORIES.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="group bg-white rounded-2xl p-4 border border-slate-200/60 shadow-2xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 flex flex-col items-center justify-between cursor-pointer min-h-[190px]"
+                >
+                  <div className="w-full aspect-square max-w-[130px] flex items-center justify-center overflow-hidden my-auto p-1">
+                    <img
+                      src={item.img}
+                      alt={locale === 'ar' ? item.title_ar : item.title_en}
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-2xs"
+                    />
+                  </div>
+
+                  <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm text-center group-hover:text-[#043927] transition-colors leading-tight pt-2 font-sans">
+                    {locale === 'ar' ? item.title_ar : item.title_en}
+                  </h3>
+                </Link>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <Link
+                href="/products?category=groceries"
+                className="text-xs font-bold text-slate-500 hover:text-emerald-700 flex items-center gap-1 group transition-colors"
+              >
+                <span>{locale === 'ar' ? 'عرض المزيد' : 'View more'}</span>
+                <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          </div>
+
+        </section>
+
+        {/* 6. Household Essentials Featured Banner Section */}
+        <section className="bg-[#FAF7F0] rounded-[32px] p-6 sm:p-10 lg:p-12 border border-amber-100/70 relative overflow-hidden font-sans">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            {/* Left Column Content */}
+            <div className="lg:col-span-6 space-y-6 text-left rtl:text-right z-10">
+              
+              {/* Category Tag */}
+              <span className="text-[#043927] font-extrabold text-xs sm:text-sm uppercase tracking-[0.2em] block font-sans">
+                {locale === 'ar' ? 'مستلزمات منزلية' : 'HOUSEHOLD ESSENTIALS'}
+              </span>
+
+              {/* Headline */}
+              <h2 className="text-3xl sm:text-4xl lg:text-[48px] font-black tracking-tight leading-[1.15] font-serif">
+                <span className="text-[#043927] block">{locale === 'ar' ? 'منزل أكثر نظافة،' : 'A Cleaner Home,'}</span>
+                <span className="text-[#C68A27] block mt-1">{locale === 'ar' ? 'وحياة أكثر سعادة.' : 'A Happier You.'}</span>
+              </h2>
+
+              {/* Subheadline */}
+              <p className="text-[#475569] font-medium text-sm sm:text-base lg:text-lg max-w-md leading-relaxed">
+                {locale === 'ar'
+                  ? 'مستلزمات منزلية عالية الجودة لمنزل أكثر انتعاشاً ونظافة وراحة.'
+                  : 'Quality household essentials for a fresher, cleaner and more comfortable home.'}
+              </p>
+
+              {/* CTA Button */}
+              <div className="pt-2">
+                <Link
+                  href="/products?category=household"
+                  className="inline-flex items-center gap-3 px-8 py-3.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all hover:scale-105 cursor-pointer group"
+                >
+                  <span>{locale === 'ar' ? 'تسوق الآن' : 'Shop Now'}</span>
+                  <ArrowRight className="w-4 h-4 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
                 </Link>
               </div>
 
-              <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-sm shrink-0">
-                <img src={banner.img} alt="Promo" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-              </div>
-            </div>
-          ))}
-        </section>
-        {(() => {
-          const displayProducts = products.length > 0 ? products : STATIC_GREEN_FRESH;
-          const itemsPerPage = 5;
-          const maxProductSlides = Math.ceil(displayProducts.length / itemsPerPage) || 1;
-          const currentSlideItems = displayProducts.slice(
-            productSlideIndex * itemsPerPage,
-            (productSlideIndex + 1) * itemsPerPage
-          );
-
-          return (
-            <section className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05442e] font-serif tracking-tight">
-                  {locale === 'ar' ? 'المنتجات' : 'Products'}
-                </h2>
-
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setProductSlideIndex((prev) => (prev - 1 + maxProductSlides) % maxProductSlides)}
-                      className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
-                      title="Previous"
-                    >
-                      <ChevronLeft className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
-                    </button>
-                    <button
-                      onClick={() => setProductSlideIndex((prev) => (prev + 1) % maxProductSlides)}
-                      className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
-                      title="Next"
-                    >
-                      <ChevronRight className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {loading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <div key={n} className="bg-[#fff5f5] h-64 rounded-2xl animate-pulse border border-[#fce8e8]" />
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 transition-all duration-500">
-                  {currentSlideItems.map((prod) => {
-                    const primaryImg = (prod.images && prod.images.length > 0 ? (prod.images[0].image_url || prod.images[0]) : prod.image_url) || prod.img || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400';
-                    return (
-                      <div
-                        key={prod.id}
-                        className="bg-[#fff5f5] rounded-2xl p-4 border border-[#fce8e8] shadow-xs hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between group space-y-3 relative"
-                      >
-                        <Link href={`/products/${prod.id}`} className="space-y-2 text-center block group/link">
-                          <div className="w-full h-36 rounded-xl overflow-hidden bg-white relative border border-slate-100/60 p-2 flex items-center justify-center">
-                            <img
-                              src={primaryImg}
-                              alt={locale === 'ar' ? prod.name_ar : prod.name_en}
-                              className="w-full h-full object-contain group-hover/link:scale-105 transition-transform"
-                            />
-
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                toggleWishlist(prod);
-                              }}
-                              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 shadow-sm border border-slate-100 flex items-center justify-center text-slate-700 hover:scale-110 transition-all z-10 cursor-pointer"
-                              title="Add to Wishlist"
-                            >
-                              <Heart className={`w-4 h-4 transition-colors ${isInWishlist(prod.id) ? 'fill-rose-500 text-rose-500' : 'text-slate-600 hover:text-rose-500'}`} />
-                            </button>
-                          </div>
-
-                          <h3 className="font-bold text-xs text-slate-800 line-clamp-1 group-hover/link:text-emerald-700 transition-colors">
-                            {locale === 'ar' ? prod.name_ar : prod.name_en}
-                          </h3>
-
-                          <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-md inline-block border border-emerald-200">
-                            {locale === 'ar' ? `الوحدة: ${prod.unit || '200 جم'}` : `Unit: ${prod.unit || '200 g'}`}
-                          </span>
-
-                          <span className="text-sm font-black text-emerald-700 block">
-                            {parseFloat(prod.price).toFixed(2)} SAR
-                          </span>
-                        </Link>
-
-                        <button
-                          onClick={() => handleAddToCart(prod.id)}
-                          disabled={addingId === prod.id}
-                          className="w-full py-2 rounded-xl bg-white hover:bg-[#05442e] text-emerald-800 hover:text-white font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 border border-emerald-200 shadow-xs cursor-pointer"
-                        >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          <span>{addingId === prod.id ? 'Adding...' : 'Add to Cart'}</span>
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          );
-        })()}
-
-        {/* 5. 4-Column Promo Deals */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {PROMO_DEALS.map((deal, idx) => (
-            <div key={idx} className={`${deal.bg} rounded-3xl p-5 border border-slate-200/80 shadow-sm space-y-3 relative overflow-hidden group`}>
-              <span className="absolute top-4 left-4 text-xs font-extrabold text-white bg-emerald-700 px-2.5 py-1 rounded-full shadow-sm">
-                {deal.discount}
-              </span>
-              <h3 className="text-base font-extrabold text-slate-900 pt-6">
-                {locale === 'ar' ? deal.title_ar : deal.title_en}
-              </h3>
-              <div className="w-full h-32 rounded-2xl overflow-hidden shadow-xs">
-                <img src={deal.img} alt={deal.title_en} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-              </div>
-            </div>
-          ))}
-        </section>
-
-        {/* Trending Products Section */}
-        {(() => {
-          const displayTrending = products.length > 0 ? products : STATIC_TRENDING;
-          const itemsPerPage = 5;
-          const maxTrendingSlides = Math.ceil(displayTrending.length / itemsPerPage) || 1;
-          const currentTrendingItems = displayTrending.slice(
-            trendingSlideIndex * itemsPerPage,
-            (trendingSlideIndex + 1) * itemsPerPage
-          );
-
-          return (
-            <section className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shadow-xs">
-                    <Flame className="w-5 h-5 fill-amber-500 text-amber-500" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05442e] font-serif tracking-tight">
-                      {locale === 'ar' ? 'المنتجات الأكثر تداولاً' : 'Trending Products'}
-                    </h2>
-                    <p className="text-xs text-slate-500 font-medium">
-                      {locale === 'ar' ? 'أكثر المنتجات إقبالاً هذا الأسبوع' : 'Popular grocery picks customers are loving this week'}
-                    </p>
-                  </div>
-                </div>
-
+              {/* Trust Badges */}
+              <div className="pt-6 border-t border-amber-200/50 flex flex-wrap items-center gap-6 text-xs text-slate-700">
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setTrendingSlideIndex((prev) => (prev - 1 + maxTrendingSlides) % maxTrendingSlides)}
-                    className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
-                    title={locale === 'ar' ? 'السابق' : 'Previous'}
-                  >
-                    <ChevronLeft className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
-                  </button>
-                  <button
-                    onClick={() => setTrendingSlideIndex((prev) => (prev + 1) % maxTrendingSlides)}
-                    className="w-10 h-10 rounded-full bg-white text-slate-700 border border-slate-200/90 flex items-center justify-center hover:bg-[#05442e] hover:text-white hover:border-[#05442e] shadow-sm transition-all cursor-pointer group"
-                    title={locale === 'ar' ? 'التالي' : 'Next'}
-                  >
-                    <ChevronRight className="w-5 h-5 rtl:rotate-180 group-hover:scale-110 transition-transform" />
-                  </button>
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-[#043927] flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col leading-tight">
+                    <span className="font-extrabold text-slate-900 text-xs">{locale === 'ar' ? 'علامات موثوقة' : 'Trusted Brands'}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 border-l rtl:border-r border-slate-300/60 pl-4 rtl:pr-4">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-[#043927] flex items-center justify-center shrink-0">
+                    <Truck className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col leading-tight">
+                    <span className="font-extrabold text-slate-900 text-xs">{locale === 'ar' ? 'توصيل سريع وموثوق' : 'Fast & Reliable Delivery'}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 border-l rtl:border-r border-slate-300/60 pl-4 rtl:pr-4">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-[#043927] flex items-center justify-center shrink-0">
+                    <Leaf className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col leading-tight">
+                    <span className="font-extrabold text-slate-900 text-xs">{locale === 'ar' ? 'قيمة يومية' : 'Everyday Value'}</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5 transition-all duration-500">
-                {currentTrendingItems.map((prod) => {
-                  const priceVal = parseFloat(prod.price).toFixed(2);
-                  const mrpVal = prod.mrp ? parseFloat(prod.mrp).toFixed(2) : null;
-                  const primaryImg = (prod.images && prod.images.length > 0 ? (prod.images[0].image_url || prod.images[0]) : prod.image_url) || prod.img || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400';
+            </div>
 
-                  return (
-                    <div
-                      key={prod.id}
-                      className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between group space-y-3 relative"
-                    >
-                      {/* Badge */}
-                      {(prod.badge || prod.discount_percentage) && (
-                        <span className="absolute top-3 left-3 bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-xs z-10">
-                          {prod.badge ? (locale === 'ar' ? (prod.badge_ar || prod.badge) : prod.badge) : 'Trending 🔥'}
-                        </span>
-                      )}
-
-                      <Link href={`/products/${prod.id}`} className="space-y-2 text-center block group/link">
-                        <div className="w-full h-36 rounded-2xl overflow-hidden bg-[#fff9f9] relative border border-slate-100 p-2 flex items-center justify-center">
-                          <img
-                            src={primaryImg}
-                            alt={locale === 'ar' ? prod.name_ar : prod.name_en}
-                            className="w-full h-full object-contain group-hover/link:scale-105 transition-transform duration-300"
-                          />
-
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              toggleWishlist(prod);
-                            }}
-                            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 shadow-sm border border-slate-100 flex items-center justify-center text-slate-700 hover:scale-110 transition-all z-10 cursor-pointer"
-                            title="Add to Wishlist"
-                          >
-                            <Heart className={`w-4 h-4 transition-colors ${isInWishlist(prod.id) ? 'fill-rose-500 text-rose-500' : 'text-slate-600 hover:text-rose-500'}`} />
-                          </button>
-                        </div>
-
-                        <h3 className="font-extrabold text-xs text-slate-900 line-clamp-1 group-hover/link:text-emerald-700 transition-colors">
-                          {locale === 'ar' ? prod.name_ar : prod.name_en}
-                        </h3>
-
-                        <div className="flex items-baseline justify-center gap-2">
-                          <span className="text-sm font-black text-[#05442e]">
-                            {priceVal} SAR
-                          </span>
-                          {mrpVal && (
-                            <span className="text-[11px] text-slate-400 line-through font-medium">
-                              {mrpVal} SAR
-                            </span>
-                          )}
-                        </div>
-                      </Link>
-
-                      <button
-                        onClick={() => handleAddToCart(prod.id)}
-                        disabled={addingId === prod.id}
-                        className="w-full py-2.5 rounded-xl bg-[#05442e] hover:bg-emerald-800 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>{addingId === prod.id ? (locale === 'ar' ? 'جاري الإضافة...' : 'Adding...') : (locale === 'ar' ? 'إضافة إلى السلة' : 'Add to Cart')}</span>
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })()}
-
-        {/* 6. Order via Our App & Free Delivery Banner */}
-        <section className="bg-[#05442e] rounded-3xl text-white p-8 sm:p-12 border border-emerald-800 shadow-xl overflow-hidden relative">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-            <div className="space-y-4 text-center md:text-left rtl:md:text-right max-w-xl">
-              <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight">
-                Order via Our App & Enjoy Free Delivery
-              </h2>
-              <p className="text-xs sm:text-sm text-emerald-100">
-                FREE EXPRESS DELIVERY ON ORDERS OVER 150 SAR
-              </p>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
-                <div className="px-5 py-2.5 rounded-xl bg-slate-950/80 text-white font-bold text-xs border border-white/20 flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-lime-400" /> App Store & Play Store Available
-                </div>
+            {/* Right Column Product Image */}
+            <div className="lg:col-span-6 relative flex justify-center items-center">
+              <div className="relative w-full max-w-lg">
+                <img
+                  src="/banners/household_banner.jpg"
+                  alt="Household Essentials cleaning products Comfort Dettol Pril Fine"
+                  className="w-full h-auto object-contain rounded-2xl drop-shadow-xl transition-transform duration-500 hover:scale-[1.02]"
+                />
               </div>
             </div>
 
-            <div className="w-full max-w-xs shrink-0 rounded-2xl overflow-hidden border-2 border-emerald-400/30 shadow-2xl">
-              <img
-                src="/images/delivery_driver.jpg"
-                alt="Delivery Driver"
-                className="w-full h-auto object-cover max-h-60"
-              />
-            </div>
           </div>
         </section>
 
-        {/* 7. Most Buy Items */}
-        <section className="space-y-6">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#05442e] font-serif tracking-tight">
-            Most Buy Items
-          </h2>
+        {/* 7. Popular Picks Product Grid Section */}
+        <section className="space-y-6 pt-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl sm:text-[32px] font-extrabold text-slate-900 tracking-tight font-sans">
+              {locale === 'ar' ? 'الأكثر شعبية' : 'Popular Picks'}
+            </h2>
+          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {(() => {
-              const displayMostBuy = products.length > 0 ? products.slice(0, 5) : STATIC_MOST_BUY;
-              return displayMostBuy.map((prod) => {
-                const primaryImg = (prod.images && prod.images.length > 0 ? (prod.images[0].image_url || prod.images[0]) : prod.image_url) || prod.img || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400';
-                return (
-                  <div
-                    key={prod.id}
-                    className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between group space-y-3 relative"
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-4.5">
+            {DEALS_PRODUCTS.map((prod, idx) => (
+              <div
+                key={'pop-' + prod.id + idx}
+                className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer min-h-[410px]"
+              >
+                {/* Top Badges */}
+                <div className="flex items-center justify-between z-10 mb-1">
+                  <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                    <Star className="w-2.5 h-2.5 fill-current text-white" />
+                    <span>BEST SELLER</span>
+                  </span>
+
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleWishlist(prod);
+                    }}
+                    className="text-slate-300 hover:text-rose-500 transition-colors cursor-pointer p-0.5"
+                    title="Add to Wishlist"
                   >
-                    <Link href={`/products/${prod.id}`} className="space-y-2 text-center block group/link">
-                      <div className="w-full h-36 rounded-xl overflow-hidden bg-slate-50 relative border border-slate-100 p-2 flex items-center justify-center">
-                        <img
-                          src={primaryImg}
-                          alt={locale === 'ar' ? prod.name_ar : prod.name_en}
-                          className="w-full h-full object-contain group-hover/link:scale-105 transition-transform"
-                        />
+                    <Heart className={`w-4 h-4 ${isInWishlist(prod.id) ? 'text-rose-500 fill-rose-500' : ''}`} />
+                  </button>
+                </div>
 
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toggleWishlist(prod);
-                          }}
-                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 shadow-sm border border-slate-100 flex items-center justify-center text-slate-700 hover:scale-110 transition-all z-10 cursor-pointer"
-                          title="Add to Wishlist"
-                        >
-                          <Heart className={`w-4 h-4 transition-colors ${isInWishlist(prod.id) ? 'fill-rose-500 text-rose-500' : 'text-slate-600 hover:text-rose-500'}`} />
-                        </button>
+                {/* Product Image Container */}
+                <div className="w-full aspect-[4/3] rounded-xl bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
+                  <img
+                    src={prod.img}
+                    alt={locale === 'ar' ? prod.title_ar : prod.title_en}
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+
+                {/* Info Content */}
+                <div className="space-y-1 pt-0.5 flex-1 flex flex-col justify-between">
+                  <div>
+                    {/* Brand & In Stock Tag */}
+                    <div className="flex items-center justify-between text-[11px] font-medium leading-none mb-1">
+                      <span className="text-slate-400 truncate">{locale === 'ar' ? prod.brand_ar : prod.brand}</span>
+                      <span className="text-[#00B074] font-bold shrink-0">{locale === 'ar' ? 'متوفر' : 'In Stock'}</span>
+                    </div>
+
+                    {/* Product Title */}
+                    <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug font-sans group-hover:text-[#043927] transition-colors mb-1">
+                      {locale === 'ar' ? prod.title_ar : prod.title_en}
+                    </h3>
+
+                    {/* Specs / Tags */}
+                    <p className="text-[10px] text-slate-400 font-normal truncate mb-1">
+                      {locale === 'ar' ? prod.specs_ar : prod.specs_en}
+                    </p>
+
+                    {/* Rating & Delivery */}
+                    <div className="flex items-center justify-between text-[11px] py-1 border-t border-slate-100">
+                      <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
+                        <span className="text-slate-400">☆</span>
+                        <span className="font-bold text-slate-700">{prod.rating}</span>
+                        <span className="text-slate-400">({prod.reviews})</span>
                       </div>
+                      <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
+                        <Truck className="w-3 h-3 text-slate-400" />
+                        <span>{locale === 'ar' ? 'توصيل مجاني' : 'Free Delivery'}</span>
+                      </div>
+                    </div>
+                  </div>
 
-                      <h3 className="font-bold text-xs text-slate-800 line-clamp-1 group-hover/link:text-emerald-700 transition-colors">
-                        {locale === 'ar' ? prod.name_ar : prod.name_en}
-                      </h3>
-
-                      <span className="text-sm font-black text-emerald-700 block">
-                        {parseFloat(prod.price).toFixed(2)} SAR
+                  {/* Price & Add to Cart Action Row */}
+                  <div className="pt-1.5 border-t border-slate-100 flex items-end justify-between gap-1">
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm sm:text-base font-black text-slate-900 font-sans">
+                          SAR {prod.price}
+                        </span>
+                        <span className="text-[10px] text-slate-400 line-through font-normal">
+                          {prod.mrp}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#00B074] block leading-tight">
+                        {locale === 'ar' ? prod.savings_ar : prod.savings_en}
                       </span>
-                    </Link>
+                    </div>
 
                     <button
-                      onClick={() => handleAddToCart(prod.id)}
-                      disabled={addingId === prod.id}
-                      className="w-full py-2 rounded-xl bg-white hover:bg-[#05442e] text-emerald-800 hover:text-white font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 border border-emerald-200 shadow-xs cursor-pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleAddToCart(prod.id);
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white font-bold text-[11px] shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center gap-1 shrink-0"
                     >
                       <ShoppingBag className="w-3.5 h-3.5" />
-                      <span>{addingId === prod.id ? 'Adding...' : 'Add to Cart'}</span>
+                      <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
                     </button>
                   </div>
-                );
-              });
-            })()}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* 8. 4 Feature Value Props */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-emerald-50/60 p-5 rounded-2xl border border-emerald-100 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
-              <Truck className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-sm text-slate-900">Free Shipping</h4>
-              <p className="text-xs text-slate-500">Orders over 150 SAR</p>
-            </div>
-          </div>
-
-          <div className="bg-amber-50/60 p-5 rounded-2xl border border-amber-100 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold">
-              <Gift className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-sm text-slate-900">Join Club Free</h4>
-              <p className="text-xs text-slate-500">Earn points on 1st order</p>
-            </div>
-          </div>
-
-          <div className="bg-sky-50/60 p-5 rounded-2xl border border-sky-100 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold">
-              <Headphones className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-sm text-slate-900">Support 24/7</h4>
-              <p className="text-xs text-slate-500">Online 24 hours</p>
-            </div>
-          </div>
-
-          <div className="bg-teal-50/60 p-5 rounded-2xl border border-teal-100 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold">
-              <Shield className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-sm text-slate-900">100% Safe</h4>
-              <p className="text-xs text-slate-500">Secure ZATCA Payment</p>
-            </div>
-          </div>
+        {/* 8. Freshness at your Doorstep Banner Section */}
+        <section className="py-10 sm:py-14 text-center space-y-3 max-w-3xl mx-auto font-sans">
+          <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-[#333333] tracking-tight leading-snug font-sans">
+            {locale === 'ar' ? 'الطازج حتى عتبة دارك' : 'Freshness at your Doorstep'}
+          </h2>
+          <p className="text-[#666666] font-normal text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
+            {locale === 'ar'
+              ? 'تسوق البقالة عالية الجودة والفواكه الطازجة والمستلزمات اليومية والوجبات الخفيفة السريعة التي تصل مباشرة إلى منزلك.'
+              : 'Shop Quality groceries, quality fruits, daily essentials and quick snacks delivered straight to your Home.'}
+          </p>
         </section>
+       
+       
+
+  
 
       </div>
     </div>

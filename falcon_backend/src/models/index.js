@@ -23,6 +23,7 @@ const Feedback = require('./Feedback');
 const Notification = require('./Notification');
 const RefreshToken = require('./RefreshToken');
 const Wishlist = require('./Wishlist');
+const StockLog = require('./StockLog');
 
 // --- User Associations ---
 User.hasOne(Customer, { foreignKey: 'user_id', as: 'customer', onDelete: 'CASCADE' });
@@ -66,10 +67,14 @@ Product.belongsTo(Category, { foreignKey: 'category_id', as: 'category' });
 Category.hasMany(Product, { foreignKey: 'subcategory_id', as: 'subcategory_products' });
 Product.belongsTo(Category, { foreignKey: 'subcategory_id', as: 'subcategory' });
 
+Category.hasMany(Product, { foreignKey: 'sub_subcategory_id', as: 'sub_subcategory_products' });
+Product.belongsTo(Category, { foreignKey: 'sub_subcategory_id', as: 'sub_subcategory' });
+
 Product.hasMany(ProductImage, { foreignKey: 'product_id', as: 'images', onDelete: 'CASCADE' });
 ProductImage.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 
-// --- Cart Associations ---
+Product.hasMany(StockLog, { foreignKey: 'product_id', as: 'stock_logs', onDelete: 'CASCADE' });
+StockLog.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 Cart.hasMany(CartItem, { foreignKey: 'cart_id', as: 'items', onDelete: 'CASCADE' });
 CartItem.belongsTo(Cart, { foreignKey: 'cart_id', as: 'cart' });
 
@@ -137,6 +142,7 @@ module.exports = {
   Category,
   Product,
   ProductImage,
+  StockLog,
   Cart,
   CartItem,
   Order,

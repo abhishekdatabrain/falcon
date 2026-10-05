@@ -16,6 +16,7 @@ const seedDatabase = async () => {
     if (!adminUser) {
       console.log('Creating default Admin account...');
       const adminPassHash = await hashPassword('Admin@123');
+      console.log(adminPassHash, "adminPassHash")
       adminUser = await User.create({
         email: 'admin@gmail.com',
         mobile: '+966500000001',

@@ -34,8 +34,20 @@ class CategoryService {
     return await Category.findAll({
       where,
       include: [
-        { model: Category, as: 'subcategories' },
-        { model: Category, as: 'parentCategory' },
+        {
+          model: Category,
+          as: 'subcategories',
+          include: [
+            { model: Category, as: 'subcategories' }
+          ]
+        },
+        {
+          model: Category,
+          as: 'parentCategory',
+          include: [
+            { model: Category, as: 'parentCategory' }
+          ]
+        },
       ],
       order: [['name_en', 'ASC']],
     });
@@ -45,8 +57,20 @@ class CategoryService {
     const category = await Category.findOne({
       where: { slug, is_active: true },
       include: [
-        { model: Category, as: 'subcategories' },
-        { model: Category, as: 'parentCategory' },
+        {
+          model: Category,
+          as: 'subcategories',
+          include: [
+            { model: Category, as: 'subcategories' }
+          ]
+        },
+        {
+          model: Category,
+          as: 'parentCategory',
+          include: [
+            { model: Category, as: 'parentCategory' }
+          ]
+        },
       ],
     });
     if (!category) {

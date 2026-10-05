@@ -1,24 +1,40 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
-import { ShoppingBag, Globe, User, LogOut, Package, Truck, ShieldCheck, Search, PhoneCall, Menu, X, Leaf, Sparkles, Heart, Trash2 } from 'lucide-react';
+import {
+  MapPin,
+  Search,
+  User,
+  Heart,
+  ShoppingBag,
+  Menu,
+  X,
+  ChevronDown,
+  LogOut,
+  Tag,
+  Sparkles,
+  HelpCircle,
+  Package
+} from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { t, locale, toggleLanguage } = useLanguage();
   const { user, logout } = useAuth();
-  const { cart, cartCount, removeItem } = useCart();
+  const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [cartDropdownOpen, setCartDropdownOpen] = useState(false);
 
-  // Hide customer Navbar on Admin routes
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  // Hide Navbar on Admin pages
   if (pathname?.startsWith('/admin')) {
     return null;
   }
@@ -26,289 +42,211 @@ export default function Navbar() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/products?search=${encodeURIComponent(searchQuery.trim())}`;
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
-  return (
-    <header className="sticky top-0 z-50 bg-[#05442e] border-b border-emerald-900/60 shadow-md font-sans text-white">
-      {/* Top Announcement Bar (Black Header) */}
-      <div className="bg-black text-white text-xs py-2 px-4 sm:px-8 flex items-center justify-between border-b border-white/10">
-        <div className="flex items-center gap-2 font-medium tracking-wide">
-          <Sparkles className="w-3.5 h-3.5 text-lime-400" />
-          <span>{locale === 'ar' ? 'توصيل مجاني للطلبات أكثر من ١٥٠ ريال سعودي' : 'FREE EXPRESS DELIVERY ON ORDERS OVER 150 SAR!'}</span>
-        </div>
+  const navCategories = [
+    { name_en: 'Deals & Offers', name_ar: 'العروض والخصومات', href: '/products?deals=true' },
+    { name_en: 'Groceries', name_ar: 'البقالة والمنتجات الطازجة', href: '/products?category=groceries' },
+    { name_en: 'Snacks', name_ar: 'المسليات والوجبات الخفيفة', href: '/products?category=snacks' },
+    { name_en: 'Personal Care', name_ar: 'العناية الشخصية', href: '/products?category=personal-care' },
+    { name_en: 'Household', name_ar: 'المستلزمات المنزلية', href: '/products?category=household' },
+    { name_en: 'Frozen', name_ar: 'المجمدات', href: '/products?category=frozen' },
+    { name_en: 'New Arrivals', name_ar: 'وصل حديثاً', href: '/products?sort=newest' },
+    { name_en: 'Help', name_ar: 'المساعدة', href: '/contact' },
+  ];
 
-        <div className="flex items-center gap-6">
-          <div className="hidden sm:flex items-center gap-1.5 font-medium text-emerald-200">
-            <PhoneCall className="w-3.5 h-3.5 text-lime-400" />
-            <span>{locale === 'ar' ? 'الدعم الفني: ٩٦٦٥٠٠٠٠٠٠٠٠+' : 'Support 24/7: +966 500 000 000'}</span>
+  return (
+    <header className="sticky top-0 z-50 font-sans shadow-md">
+      {/* Primary Main Navbar (Dark Green Bar) */}
+      <div className="bg-[#043927] text-white py-3.5 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/60">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          
+          {/* Left Side: Logo & Deliver To Location Selector */}
+          <div className="flex items-center gap-6 shrink-0">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2 group">
+              <span className="text-2xl font-black text-white tracking-tight font-serif group-hover:text-emerald-300 transition-colors">
+                Logo
+              </span>
+            </Link>
+
+            {/* Location Indicator */}
+            <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-emerald-100/90 hover:text-white transition-colors cursor-pointer border-l border-emerald-800/80 pl-6 rtl:border-r rtl:border-l-0 rtl:pr-6 rtl:pl-0">
+              <MapPin className="w-4 h-4 text-emerald-400 shrink-0 animate-bounce" />
+              <div className="flex flex-col text-[11px] leading-tight">
+                <span className="text-emerald-300/80 font-normal">
+                  {locale === 'ar' ? 'التوصيل إلى' : 'Deliver to'}
+                </span>
+                <span className="font-bold text-white">
+                  {locale === 'ar' ? 'الرياض، المملكة العربية السعودية' : 'Riyadh, Saudi Arabia'}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <button
-            onClick={toggleLanguage}
-            className="flex items-center gap-1.5 hover:text-lime-300 font-bold text-xs bg-emerald-900/80 px-2.5 py-1 rounded-lg border border-emerald-500/40 cursor-pointer transition-colors"
-          >
-            <Globe className="w-3.5 h-3.5 text-lime-400" />
-            <span>{t('nav.switchLang')}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 gap-4">
-
-          {/* Logo & Brand */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-2xl bg-white text-[#05442e] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <Leaf className="w-6 h-6 fill-current text-emerald-700" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-extrabold text-white tracking-tight font-serif">
-                Grocery
-              </span>
-              <span className="text-[10px] text-lime-300 font-bold uppercase tracking-wider -mt-1">
-                {locale === 'ar' ? 'سوبرماركت البقالة الطازجة' : 'Fresh Grocery Supermart'}
-              </span>
-            </div>
-          </Link>
-
-          {/* Search Bar (Compact Center Input) */}
-          <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center w-full max-w-[220px] lg:max-w-[260px] relative">
+          {/* Center: Search Bar */}
+          <form onSubmit={handleSearchSubmit} className="hidden sm:flex items-center flex-1 max-w-xl relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-4 rtl:right-4 rtl:left-auto pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={locale === 'ar' ? 'ابحث عن منتج...' : 'Search products...'}
-              className="w-full pl-4 pr-10 py-1.5 rounded-full bg-white text-slate-900 placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-lime-400 transition-all shadow-sm border border-emerald-900/30"
+              placeholder={locale === 'ar' ? 'ابحث عن المنتجات والعلامات التجارية والمزيد...' : 'Search for products, brands and more...'}
+              className="w-full pl-10 pr-4 py-2.5 rtl:pr-10 rtl:pl-4 rounded-full bg-[#032e1f] text-white placeholder-emerald-200/60 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all border border-emerald-700/50 shadow-inner"
             />
-            <button
-              type="submit"
-              className="absolute right-1 top-1 bottom-1 px-2.5 bg-[#05442e] hover:bg-emerald-800 text-white rounded-full flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <Search className="w-3.5 h-3.5 text-lime-300" />
-            </button>
           </form>
 
-          {/* Desktop Links & Actions */}
-          <div className="hidden lg:flex items-center space-x-6 rtl:space-x-reverse font-semibold text-xs text-white">
-            <Link href="/" className="hover:text-lime-300 transition-colors">
-              {t('nav.home')}
-            </Link>
-            <Link href="/products" className="hover:text-lime-300 transition-colors">
-              {t('nav.products')}
-            </Link>
-            <Link href="/about" className="hover:text-lime-300 transition-colors">
-              {t('nav.about')}
-            </Link>
-            <Link href="/contact" className="hover:text-lime-300 transition-colors">
-              {t('nav.contact')}
-            </Link>
-            <Link href="/orders" className="hover:text-lime-300 transition-colors font-bold">
-              {t('nav.myOrders')}
-            </Link>
-
-            {user && user.role === 'DRIVER' && (
-              <Link href="/driver/dashboard" className="text-white font-bold bg-emerald-800/80 px-3 py-1.5 rounded-xl border border-emerald-600">
-                <Truck className="w-4 h-4 inline mr-1 text-lime-300" /> Driver
-              </Link>
-            )}
-          </div>
-
-          {/* Wishlist, Cart & Auth Controls */}
-          <div className="flex items-center gap-3">
-            {/* Wishlist / Favorites Icon Button */}
-            <Link
-              href="/wishlist"
-              className="relative w-10 h-10 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-md hover:scale-105 transition-all group border border-slate-100 cursor-pointer"
-              title="Wishlist & Favorites"
+          {/* Right Side Actions: Language, Account, Wishlist, Cart */}
+          <div className="flex items-center gap-4 sm:gap-6 text-xs font-bold text-white shrink-0">
+            
+            {/* Language Switcher */}
+            <button
+              onClick={toggleLanguage}
+              className="hover:text-emerald-300 font-bold transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-emerald-900/60"
             >
-              <Heart className={`w-5 h-5 transition-colors ${wishlistCount > 0 ? 'text-rose-500 fill-rose-500' : 'text-slate-800 group-hover:text-rose-500 fill-transparent group-hover:fill-rose-500/10'}`} />
+              {locale === 'ar' ? 'English' : 'العربية'}
+            </button>
+
+            {/* User Account / Auth Dropdown */}
+            <div className="relative">
+              {user ? (
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors cursor-pointer"
+                >
+                  <User className="w-4.5 h-4.5" />
+                  <span className="hidden md:inline-block max-w-[90px] truncate">{user.name || user.email}</span>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <Link href="/login" className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors">
+                  <User className="w-4.5 h-4.5" />
+                  <span className="hidden md:inline-block">{t('nav.account') || 'Account'}</span>
+                </Link>
+              )}
+
+              {userDropdownOpen && user && (
+                <div className="absolute right-0 rtl:left-0 rtl:right-auto top-8 w-48 bg-white text-slate-900 rounded-2xl shadow-xl border border-slate-200 py-2 z-50 space-y-1">
+                  <div className="px-4 py-2 border-b border-slate-100">
+                    <p className="font-bold text-xs text-slate-900 truncate">{user.name}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
+                  </div>
+                  <Link
+                    href="/orders"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="block px-4 py-2 hover:bg-slate-50 text-xs font-semibold text-slate-700"
+                  >
+                    {t('nav.myOrders') || 'My Orders'}
+                  </Link>
+                  {user.role === 'ADMIN' && (
+                    <Link
+                      href="/admin/dashboard"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="block px-4 py-2 hover:bg-slate-50 text-xs font-bold text-emerald-700"
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      logout();
+                    }}
+                    className="w-full text-left rtl:text-right px-4 py-2 hover:bg-rose-50 text-xs font-bold text-rose-600 flex items-center gap-1.5"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Wishlist */}
+            <Link href="/wishlist" className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors relative">
+              <Heart className="w-4.5 h-4.5" />
+              <span className="hidden md:inline-block">{t('nav.wishlist') || 'Wishlist'}</span>
               {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center shadow-xs">
+                <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center -mt-2 -ml-1">
                   {wishlistCount}
                 </span>
               )}
             </Link>
 
-            {/* Shopping Bag / Cart Icon Button with Items Dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => setCartDropdownOpen(true)}
-              onMouseLeave={() => setCartDropdownOpen(false)}
-            >
-              <Link
-                href="/cart"
-                onClick={() => setCartDropdownOpen(false)}
-                className="relative w-10 h-10 rounded-2xl bg-white text-slate-900 flex items-center justify-center shadow-md hover:scale-105 transition-all group border border-slate-100 cursor-pointer"
-                title="Shopping Cart"
-              >
-                <ShoppingBag className="w-5 h-5 text-slate-900 group-hover:text-emerald-700 transition-colors" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#05442e] text-white text-[11px] font-black flex items-center justify-center shadow-md">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
-
-              {/* Cart Items Quick Popover */}
-              {cartDropdownOpen && (
-                <div className="absolute right-0 top-11 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-slate-200/80 p-5 text-slate-900 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
-                    <div className="flex items-center gap-2">
-                      <ShoppingBag className="w-4 h-4 text-emerald-700" />
-                      <h4 className="font-extrabold text-sm text-slate-900">
-                        {locale === 'ar' ? 'سلة التسوق' : 'Shopping Cart'}
-                      </h4>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-[#05442e] text-xs font-black">
-                        {cartCount}
-                      </span>
-                    </div>
-
-                    <Link
-                      href="/cart"
-                      onClick={() => setCartDropdownOpen(false)}
-                      className="text-xs font-bold text-emerald-700 hover:underline"
-                    >
-                      {locale === 'ar' ? 'عرض السلة' : 'View Full Cart'}
-                    </Link>
-                  </div>
-
-                  {/* List of Added Cart Items */}
-                  {!cart?.items || cart.items.length === 0 ? (
-                    <div className="py-8 text-center space-y-2">
-                      <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center mx-auto border border-slate-100">
-                        <ShoppingBag className="w-6 h-6" />
-                      </div>
-                      <p className="text-xs font-bold text-slate-500">
-                        {locale === 'ar' ? 'سلة التسوق فارغة حالياً' : 'Your shopping cart is empty'}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="max-h-60 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
-                        {cart.items.map((item) => {
-                          const imgUrl = item.image || (item.product?.img || (item.product?.images && item.product.images[0])) || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300';
-                          return (
-                            <div key={item.id} className="flex items-center justify-between gap-3 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl bg-white p-1 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center">
-                                  <img
-                                    src={imgUrl}
-                                    alt={locale === 'ar' ? item.name_ar : item.name_en}
-                                    className="w-full h-full object-contain"
-                                  />
-                                </div>
-
-                                <div className="space-y-0.5">
-                                  <h5 className="font-extrabold text-xs text-slate-900 line-clamp-1">
-                                    {locale === 'ar' ? item.name_ar : item.name_en}
-                                  </h5>
-                                  <p className="text-[11px] font-bold text-emerald-700">
-                                    {item.quantity} × {parseFloat(item.price || 0).toFixed(2)} SAR
-                                  </p>
-                                </div>
-                              </div>
-
-                              <button
-                                onClick={() => removeItem(item.id)}
-                                className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                                title="Remove"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Subtotal & Action Buttons */}
-                      <div className="pt-3 border-t border-slate-100 space-y-3">
-                        <div className="flex items-center justify-between font-extrabold text-sm">
-                          <span className="text-slate-600">{locale === 'ar' ? 'المجموع الفرعي:' : 'Subtotal:'}</span>
-                          <span className="text-[#05442e]">{parseFloat(cart.subtotal || cart.grandTotal || 0).toFixed(2)} SAR</span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                          <Link
-                            href="/cart"
-                            onClick={() => setCartDropdownOpen(false)}
-                            className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs text-center transition-colors"
-                          >
-                            {locale === 'ar' ? 'عرض السلة' : 'View Cart'}
-                          </Link>
-                          <Link
-                            href="/checkout"
-                            onClick={() => setCartDropdownOpen(false)}
-                            className="py-2.5 px-3 rounded-xl bg-[#05442e] hover:bg-emerald-800 text-white font-extrabold text-xs text-center transition-colors shadow-sm"
-                          >
-                            {locale === 'ar' ? 'إتمام الطلب' : 'Checkout'}
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {user && user.role === 'CUSTOMER' ? (
-              <div className="flex items-center gap-2">
-                <span className="hidden sm:inline-block text-xs font-bold text-lime-300 truncate max-w-[120px]">
-                  {user.name || user.email}
+            {/* Cart */}
+            <Link href="/cart" className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors relative">
+              <ShoppingBag className="w-4.5 h-4.5" />
+              <span className="hidden md:inline-block">{t('nav.cart') || 'Cart'}</span>
+              {cartCount > 0 && (
+                <span className="w-4.5 h-4.5 rounded-full bg-emerald-400 text-emerald-950 text-[11px] font-black flex items-center justify-center -mt-2 -ml-1 shadow-sm">
+                  {cartCount}
                 </span>
-                <button
-                  onClick={logout}
-                  className="p-2 rounded-xl bg-rose-500/20 text-rose-200 border border-rose-400/40 hover:bg-rose-500/40 transition-all cursor-pointer"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/login" className="text-xs font-bold px-3 py-2 text-white hover:text-lime-300">
-                  {t('nav.login')}
-                </Link>
-                <Link href="/register" className="text-xs font-bold px-4 py-2 rounded-xl bg-white text-[#05442e] hover:bg-lime-300 shadow-md transition-all">
-                  {t('nav.register')}
-                </Link>
-              </div>
-            )}
+              )}
+            </Link>
 
-            {/* Mobile Menu Toggle */}
+            {/* Mobile Menu Toggle Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl bg-emerald-800 text-white"
+              className="sm:hidden p-1.5 text-white hover:text-emerald-300 cursor-pointer"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
+
           </div>
 
         </div>
       </div>
 
+      {/* Sub-header Category Navigation Bar */}
+      <div className="bg-[#032d1f] text-white py-2 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/80 shadow-xs">
+        <div className="max-w-7xl mx-auto flex items-center gap-6 overflow-x-auto scrollbar-none font-semibold text-xs whitespace-nowrap">
+          {/* All Categories Button */}
+          <Link
+            href="/products"
+            className="flex items-center gap-1.5 hover:text-emerald-300 text-white font-extrabold pr-3 border-r border-emerald-800 rtl:border-l rtl:border-r-0 rtl:pl-3 rtl:pr-0"
+          >
+            <Menu className="w-4 h-4 text-emerald-400" />
+            <span>{locale === 'ar' ? 'جميع الاقسام' : 'All'}</span>
+          </Link>
+
+          {/* Nav Categories List */}
+          {navCategories.map((cat, idx) => (
+            <Link
+              key={idx}
+              href={cat.href}
+              className="text-emerald-100/90 hover:text-white hover:underline transition-colors py-0.5"
+            >
+              {locale === 'ar' ? cat.name_ar : cat.name_en}
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#05442e] border-t border-emerald-800 px-6 py-4 space-y-3">
+        <div className="sm:hidden bg-[#043927] text-white p-4 space-y-3 border-b border-emerald-800">
           <form onSubmit={handleSearchSubmit} className="relative mb-3">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search products..."
-              className="w-full pl-4 pr-10 py-2 rounded-xl bg-white text-slate-900 text-xs"
+              className="w-full pl-9 pr-4 py-2 rounded-full bg-[#032e1f] text-white text-xs"
             />
-            <button type="submit" className="absolute right-2 top-2 text-emerald-800">
-              <Search className="w-4 h-4" />
-            </button>
           </form>
-          <Link href="/" className="block text-sm font-semibold text-white" onClick={() => setMobileMenuOpen(false)}>{t('nav.home')}</Link>
-          <Link href="/products" className="block text-sm font-semibold text-white" onClick={() => setMobileMenuOpen(false)}>{t('nav.products')}</Link>
-          <Link href="/about" className="block text-sm font-semibold text-white" onClick={() => setMobileMenuOpen(false)}>{t('nav.about')}</Link>
-          <Link href="/contact" className="block text-sm font-semibold text-white" onClick={() => setMobileMenuOpen(false)}>{t('nav.contact')}</Link>
-          <Link href="/cart" className="block text-sm font-semibold text-white" onClick={() => setMobileMenuOpen(false)}>Cart ({cartCount})</Link>
+
+          {navCategories.map((cat, idx) => (
+            <Link
+              key={idx}
+              href={cat.href}
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-xs font-semibold text-emerald-100 hover:text-white"
+            >
+              {locale === 'ar' ? cat.name_ar : cat.name_en}
+            </Link>
+          ))}
         </div>
       )}
     </header>

@@ -169,8 +169,9 @@ class AdminController {
 
   async getDeliveries(req, res, next) {
     try {
-      const deliveries = await adminService.getActiveDeliveries();
-      return sendSuccess(res, 'Deliveries list retrieved', { deliveries });
+      const { status, search } = req.query;
+      const data = await adminService.getDeliveries({ status, search });
+      return sendSuccess(res, 'Deliveries data retrieved successfully', data);
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }
