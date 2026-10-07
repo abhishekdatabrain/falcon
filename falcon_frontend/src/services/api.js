@@ -19,6 +19,17 @@ export const fetchApi = async (endpoint, options = {}) => {
     'Content-Type': 'application/json',
   };
 
+  if (typeof window !== 'undefined') {
+    const pathname = window.location.pathname;
+    if (pathname.startsWith('/admin')) {
+      defaultHeaders['x-auth-role'] = 'ADMIN';
+    } else if (pathname.startsWith('/driver')) {
+      defaultHeaders['x-auth-role'] = 'DRIVER';
+    } else {
+      defaultHeaders['x-auth-role'] = 'CUSTOMER';
+    }
+  }
+
   // If FormData, let browser handle Content-Type boundary
   if (options.body instanceof FormData) {
     delete defaultHeaders['Content-Type'];

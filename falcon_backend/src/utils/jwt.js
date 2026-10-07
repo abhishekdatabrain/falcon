@@ -32,7 +32,7 @@ const verifyRefreshToken = (token) => {
   }
 };
 
-const setAuthCookies = (res, accessToken, refreshToken) => {
+const setAuthCookies = (res, accessToken, refreshToken, role) => {
   const isProd = process.env.NODE_ENV === 'production';
   const sameSite = process.env.COOKIE_SAME_SITE || 'lax';
 
@@ -52,11 +52,32 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
     path: '/',
   };
 
+  let userRole = role;
+  if (!userRole && accessToken) {
+    const decoded = verifyAccessToken(accessToken);
+    if (decoded && decoded.role) {
+      userRole = decoded.role;
+    }
+  }
+
+  // Set default global cookies
   res.cookie('access_token', accessToken, accessOptions);
   res.cookie('refresh_token', refreshToken, refreshOptions);
+
+  // Set role-specific cookies to allow concurrent admin & customer logins in same browser
+  if (userRole === 'ADMIN') {
+    res.cookie('admin_access_token', accessToken, accessOptions);
+    res.cookie('admin_refresh_token', refreshToken, refreshOptions);
+  } else if (userRole === 'DRIVER') {
+    res.cookie('driver_access_token', accessToken, accessOptions);
+    res.cookie('driver_refresh_token', refreshToken, refreshOptions);
+  } else if (userRole === 'CUSTOMER') {
+    res.cookie('customer_access_token', accessToken, accessOptions);
+    res.cookie('customer_refresh_token', refreshToken, refreshOptions);
+  }
 };
 
-const clearAuthCookies = (res) => {
+const clearAuthCookies = (res, role) => {
   const isProd = process.env.NODE_ENV === 'production';
   const sameSite = process.env.COOKIE_SAME_SITE || 'lax';
 
@@ -67,8 +88,25 @@ const clearAuthCookies = (res) => {
     path: '/',
   };
 
-  res.clearCookie('access_token', options);
-  res.clearCookie('refresh_token', options);
+  if (role === 'ADMIN') {
+    res.clearCookie('admin_access_token', options);
+    res.clearCookie('admin_refresh_token', options);
+  } else if (role === 'DRIVER') {
+    res.clearCookie('driver_access_token', options);
+    res.clearCookie('driver_refresh_token', options);
+  } else if (role === 'CUSTOMER') {
+    res.clearCookie('customer_access_token', options);
+    res.clearCookie('customer_refresh_token', options);
+  } else {
+    res.clearCookie('access_token', options);
+    res.clearCookie('refresh_token', options);
+    res.clearCookie('admin_access_token', options);
+    res.clearCookie('admin_refresh_token', options);
+    res.clearCookie('customer_access_token', options);
+    res.clearCookie('customer_refresh_token', options);
+    res.clearCookie('driver_access_token', options);
+    res.clearCookie('driver_refresh_token', options);
+  }
 };
 
 module.exports = {

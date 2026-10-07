@@ -70,6 +70,9 @@ Product.belongsTo(Category, { foreignKey: 'subcategory_id', as: 'subcategory' })
 Category.hasMany(Product, { foreignKey: 'sub_subcategory_id', as: 'sub_subcategory_products' });
 Product.belongsTo(Category, { foreignKey: 'sub_subcategory_id', as: 'sub_subcategory' });
 
+Category.hasMany(Product, { foreignKey: 'sub_sub_subcategory_id', as: 'sub_sub_subcategory_products' });
+Product.belongsTo(Category, { foreignKey: 'sub_sub_subcategory_id', as: 'sub_sub_subcategory' });
+
 Product.hasMany(ProductImage, { foreignKey: 'product_id', as: 'images', onDelete: 'CASCADE' });
 ProductImage.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 

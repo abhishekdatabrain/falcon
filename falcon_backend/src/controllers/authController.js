@@ -48,7 +48,7 @@ class AuthController {
       const reqInfo = { ip: req.ip, userAgent: req.headers['user-agent'] };
       const { user, accessToken, refreshToken } = await authService.login(loginInput, password, reqInfo);
 
-      setAuthCookies(res, accessToken, refreshToken);
+      setAuthCookies(res, accessToken, refreshToken, user.role);
 
       return sendSuccess(res, 'Login successful', { user, accessToken });
     } catch (error) {
@@ -58,27 +58,42 @@ class AuthController {
 
   async refresh(req, res, next) {
     try {
-      const refreshToken = req.cookies ? req.cookies.refresh_token : null;
+      const reqRole = (req.headers['x-auth-role'] || '').toUpperCase();
+      let refreshToken = null;
+      if (req.cookies) {
+        if (reqRole === 'ADMIN') refreshToken = req.cookies.admin_refresh_token || req.cookies.refresh_token;
+        else if (reqRole === 'DRIVER') refreshToken = req.cookies.driver_refresh_token || req.cookies.refresh_token;
+        else if (reqRole === 'CUSTOMER') refreshToken = req.cookies.customer_refresh_token || req.cookies.refresh_token;
+        else refreshToken = req.cookies.refresh_token || req.cookies.customer_refresh_token || req.cookies.admin_refresh_token || req.cookies.driver_refresh_token;
+      }
+
       const reqInfo = { ip: req.ip, userAgent: req.headers['user-agent'] };
 
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await authService.refreshTokens(refreshToken, reqInfo);
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken, role } = await authService.refreshTokens(refreshToken, reqInfo);
 
-      setAuthCookies(res, newAccessToken, newRefreshToken);
+      setAuthCookies(res, newAccessToken, newRefreshToken, role || reqRole);
       return sendSuccess(res, 'Tokens refreshed successfully');
     } catch (error) {
-      clearAuthCookies(res);
+      clearAuthCookies(res, req.headers['x-auth-role']);
       return sendError(res, error.message || 'Token refresh failed', [], 401);
     }
   }
 
   async logout(req, res, next) {
+    const role = req.user?.role || req.headers['x-auth-role'];
     try {
-      const refreshToken = req.cookies ? req.cookies.refresh_token : null;
+      let refreshToken = null;
+      if (req.cookies) {
+        if (role === 'ADMIN') refreshToken = req.cookies.admin_refresh_token || req.cookies.refresh_token;
+        else if (role === 'DRIVER') refreshToken = req.cookies.driver_refresh_token || req.cookies.refresh_token;
+        else if (role === 'CUSTOMER') refreshToken = req.cookies.customer_refresh_token || req.cookies.refresh_token;
+        else refreshToken = req.cookies.refresh_token || req.cookies.customer_refresh_token || req.cookies.admin_refresh_token;
+      }
       await authService.logout(refreshToken);
-      clearAuthCookies(res);
+      clearAuthCookies(res, role);
       return sendSuccess(res, 'Logout successful');
     } catch (error) {
-      clearAuthCookies(res);
+      clearAuthCookies(res, role);
       return sendSuccess(res, 'Logout completed');
     }
   }

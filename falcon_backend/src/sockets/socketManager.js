@@ -21,7 +21,7 @@ const initSocketServer = (server) => {
 
       if (cookieHeader) {
         const cookies = require('cookie').parse(cookieHeader);
-        token = cookies.access_token;
+        token = cookies.admin_access_token || cookies.driver_access_token || cookies.customer_access_token || cookies.access_token;
       }
 
       if (!token && socket.handshake.auth && socket.handshake.auth.token) {

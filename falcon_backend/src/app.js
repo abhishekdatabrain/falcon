@@ -42,11 +42,19 @@ app.use(cookieParser());
 
 // Static File Uploads Directory with Cross-Origin headers
 const uploadDir = process.env.UPLOAD_DIR || 'uploads';
-app.use('/uploads', (req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  next();
-}, express.static(path.join(__dirname, '..', uploadDir)));
+const uploadsPath = path.join(__dirname, '..', uploadDir);
+const staticUploadsHandler = [
+  (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(uploadsPath),
+];
+
+app.use('/uploads', staticUploadsHandler);
+app.use('/api/v1/uploads', staticUploadsHandler);
+app.use('/api/uploads', staticUploadsHandler);
 
 // Rate Limiter
 app.use('/api/', apiLimiter);

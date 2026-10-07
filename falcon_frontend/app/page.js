@@ -5,16 +5,16 @@ import { useLanguage } from '../src/contexts/LanguageContext';
 import { useCart } from '../src/contexts/CartContext';
 import { useWishlist } from '../src/contexts/WishlistContext';
 import { useToast } from '../src/contexts/ToastContext';
-import { fetchApi } from '../src/services/api';
+import { fetchApi, getImageUrl } from '../src/services/api';
 import { ShoppingBag, Truck, ShieldCheck, FileCheck, ArrowRight, Star, Sparkles, CheckCircle2, Leaf, Tag, ChevronRight, ChevronLeft, Gift, Headphones, Shield, Smartphone, Heart, Flame, TrendingUp } from 'lucide-react';
 
 const SAFE_DEFAULT_CATEGORIES = [
-  { id: 'cat-1', name_en: 'Fruits & Vegetables', name_ar: 'فواكه وخضروات', image_url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop' },
-  { id: 'cat-2', name_en: 'Fresh Grocery & Dairy', name_ar: 'بقالة وألبان طازجة', image_url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&auto=format&fit=crop' },
-  { id: 'cat-3', name_en: 'Beverages & Juices', name_ar: 'مشروبات وعصائر', image_url: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=400&auto=format&fit=crop' },
-  { id: 'cat-4', name_en: 'Bakery & Bread', name_ar: 'مخبوزات وخبز', image_url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop' },
-  { id: 'cat-5', name_en: 'Electronics & Gadgets', name_ar: 'الإلكترونيات والأجهزة', image_url: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&auto=format&fit=crop' },
-  { id: 'cat-6', name_en: 'Home & Kitchen', name_ar: 'المنزل والمطبخ', image_url: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&auto=format&fit=crop' },
+  { id: 'cat-frozen', slug: 'frozen', name_en: 'Frozen food', name_ar: 'أطعمة مجمدة', image_url: '/categories/cat_frozen_food.jpg' },
+  { id: 'cat-household', slug: 'household', name_en: 'Household Essentials', name_ar: 'المستلزمات المنزلية', image_url: '/categories/cat_household.jpg' },
+  { id: 'cat-groceries', slug: 'groceries', name_en: 'Groceries', name_ar: 'البقالة والسلع', image_url: '/categories/cat_groceries.jpg' },
+  { id: 'cat-snacks', slug: 'snacks', name_en: 'Snacks & Biscuits', name_ar: 'المسليات والبسكويت', image_url: '/categories/cat_snacks.jpg' },
+  { id: 'cat-personal-care', slug: 'personal-care', name_en: 'Personal Care', name_ar: 'العناية الشخصية', image_url: '/categories/cat_personal_care.jpg' },
+  { id: 'cat-dairy', slug: 'dairy', name_en: 'Dairy Items', name_ar: 'منتجات الألبان', image_url: '/categories/cat_dairy.jpg' },
 ];
 
 const HERO_SLIDES = [
@@ -567,6 +567,7 @@ export default function HomePage() {
   const { showToast } = useToast();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [bestDealsProducts, setBestDealsProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -587,13 +588,23 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [catRes, prodRes] = await Promise.all([
-          fetchApi('/categories'),
+        const [catRes, prodRes, dealsRes] = await Promise.all([
+          fetchApi('/categories?type=parent'),
           fetchApi('/products?limit=50'),
+          fetchApi('/products?is_best_deal=true'),
         ]);
 
-        if (catRes.success) setCategories(catRes.data?.categories || catRes.data || []);
+        if (catRes.success) {
+          const rawCats = catRes.data?.categories || catRes.data || [];
+          // Filter to guarantee ONLY top-level parent categories (no sub or sub-subcategory)
+          const parentsOnly = rawCats.filter(c => !c.parent_id);
+          setCategories(parentsOnly);
+        }
         if (prodRes.success) setProducts(prodRes.data?.products?.products || prodRes.data?.products || []);
+        if (dealsRes.success) {
+          const dealsArr = dealsRes.data?.products?.products || dealsRes.data?.products || (Array.isArray(dealsRes.data) ? dealsRes.data : []);
+          setBestDealsProducts(dealsArr);
+        }
       } catch (err) {
         console.error('Error loading home data:', err);
         showToast(err.message || 'Error loading page content', 'error');
@@ -622,10 +633,10 @@ export default function HomePage() {
       <section className="bg-[#FAF7F0] relative overflow-hidden pt-10 md:pt-16 pb-0 font-sans border-b border-amber-100/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center min-h-[480px]">
-            
+
             {/* Left Column Content */}
             <div className="lg:col-span-6 space-y-7 text-left rtl:text-right pt-2 pb-8 lg:pb-16">
-              
+
               {/* Main Headline */}
               <h1 className="text-4xl sm:text-5xl lg:text-[64px] font-black text-black tracking-tight leading-[1.08]">
                 {locale === 'ar' ? (
@@ -660,19 +671,19 @@ export default function HomePage() {
               </div>
 
               {/* Trust Badges Row */}
-              <div className="pt-8 border-t border-amber-200/50 flex flex-wrap items-center gap-6 sm:gap-10 text-xs text-slate-700">
+              <div className="pt-8 border-t border-amber-200/50 flex flex-wrap items-center gap-6 sm:gap-10 text-xs text-slate-700 font-sans">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100/70 text-[#043927] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
                     <Truck className="w-5 h-5" />
                   </div>
                   <div className="flex flex-col leading-tight">
-                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{locale === 'ar' ? 'توصيل سريع وموثوق' : 'Fast & Reliable'}</span>
-                    <span className="text-[11px] sm:text-xs text-slate-500 font-medium">{locale === 'ar' ? 'توصيل للمنزل' : 'Delivery'}</span>
+                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{locale === 'ar' ? 'سريع وموثوق' : 'Fast & Reliable'}</span>
+                    <span className="text-[11px] sm:text-xs text-slate-500 font-medium">{locale === 'ar' ? 'التوصيل' : 'Delivery'}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100/70 text-[#043927] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
                     <Tag className="w-5 h-5" />
                   </div>
                   <div className="flex flex-col leading-tight">
@@ -682,12 +693,12 @@ export default function HomePage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100/70 text-[#043927] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div className="flex flex-col leading-tight">
-                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{locale === 'ar' ? 'دفع آمن' : 'Secure'}</span>
-                    <span className="text-[11px] sm:text-xs text-slate-500 font-medium">{locale === 'ar' ? 'مدفوعات محمية' : 'Payments'}</span>
+                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{locale === 'ar' ? 'آمن ومحمي' : 'Secure'}</span>
+                    <span className="text-[11px] sm:text-xs text-slate-500 font-medium">{locale === 'ar' ? 'المدفوعات' : 'Payments'}</span>
                   </div>
                 </div>
               </div>
@@ -709,22 +720,22 @@ export default function HomePage() {
         </div>
 
         {/* Wavy Wave Curve Bottom Decorative Banner */}
-        <div className="w-full overflow-hidden leading-none -mt-6 sm:-mt-12 relative z-10 pointer-events-none">
+        <div className="w-full overflow-hidden leading-none relative z-10 pointer-events-none -mb-1 bg-[#FAF7F0]">
           <svg
-            viewBox="0 0 1440 160"
+            viewBox="0 0 1440 140"
             className="w-full h-16 sm:h-24 lg:h-32 block"
             xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="none"
           >
             {/* Gold Upper Wavy Layer */}
             <path
-              fill="#D97706"
-              fillOpacity="0.85"
-              d="M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,85.3C672,75,768,85,864,101.3C960,117,1056,139,1152,138.7C1248,139,1344,117,1392,106.7L1440,96L1440,160L1392,160C1344,160,1248,160,1152,160C1056,160,960,160,864,160C768,160,672,160,576,160C480,160,384,160,288,160C192,160,96,160,48,160L0,160Z"
+              fill="#DA9628"
+              d="M 0,25 C 180,85 360,95 560,50 C 760,5 980,5 1180,80 C 1300,125 1380,50 1440,0 L 1440,140 L 0,140 Z"
             />
             {/* Dark Green Main Bottom Layer */}
             <path
               fill="#043927"
-              d="M0,96L48,106.7C96,117,192,139,288,138.7C384,139,480,117,576,106.7C672,96,768,96,864,112C960,128,1056,160,1152,149.3C1248,139,1344,85,1392,58.7L1440,32L1440,160L1392,160C1344,160,1248,160,1152,160C1056,160,960,160,864,160C768,160,672,160,576,160C480,160,384,160,288,160C192,160,96,160,48,160L0,160Z"
+              d="M 0,45 C 180,105 360,115 560,70 C 760,25 980,25 1180,100 C 1300,145 1380,70 1440,20 L 1440,140 L 0,140 Z"
             />
           </svg>
         </div>
@@ -741,178 +752,198 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
-            {[
-              {
-                id: 'cat-frozen',
-                title_en: 'Frozen food',
-                title_ar: 'أطعمة مجمدة',
-                img: '/categories/cat_frozen_food.jpg',
-                href: '/products?category=frozen',
-              },
-              {
-                id: 'cat-household',
-                title_en: 'Household Essentials',
-                title_ar: 'المستلزمات المنزلية',
-                img: '/categories/cat_household.jpg',
-                href: '/products?category=household',
-              },
-              {
-                id: 'cat-groceries',
-                title_en: 'Groceries',
-                title_ar: 'البقالة والسلع',
-                img: '/categories/cat_groceries.jpg',
-                href: '/products?category=groceries',
-              },
-              {
-                id: 'cat-snacks',
-                title_en: 'Snacks & Biscuits',
-                title_ar: 'المسليات والبسكويت',
-                img: '/categories/cat_snacks.jpg',
-                href: '/products?category=snacks',
-              },
-              {
-                id: 'cat-personal-care',
-                title_en: 'Personal Care',
-                title_ar: 'العناية الشخصية',
-                img: '/categories/cat_personal_care.jpg',
-                href: '/products?category=personal-care',
-              },
-              {
-                id: 'cat-dairy',
-                title_en: 'Dairy Items',
-                title_ar: 'منتجات الألبان',
-                img: '/categories/cat_dairy.jpg',
-                href: '/products?category=dairy',
-              },
-            ].map((cat) => (
-              <Link
-                key={cat.id}
-                href={cat.href}
-                className="group bg-[#FFFDF8] hover:bg-[#FFF9EC] rounded-[22px] p-4 flex flex-col items-center justify-between border border-[#F6EEDF] shadow-2xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer min-h-[210px] sm:min-h-[230px]"
-              >
-                <div className="w-full aspect-square max-w-[135px] sm:max-w-[150px] flex items-center justify-center overflow-hidden my-auto p-1.5">
-                  <img
-                    src={cat.img}
-                    alt={locale === 'ar' ? cat.title_ar : cat.title_en}
-                    className="w-full h-full object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+            {(categories && categories.length > 0 ? categories : SAFE_DEFAULT_CATEGORIES).map((cat) => {
+              const titleEn = cat.name_en || cat.title_en || cat.name || 'Category';
+              const titleAr = cat.name_ar || cat.title_ar || titleEn;
+              const catSlug = cat.slug || titleEn.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+              const imageSrc = cat.image_url
+                ? getImageUrl(cat.image_url)
+                : (cat.img || '/categories/cat_groceries.jpg');
 
-                <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm md:text-base text-center group-hover:text-[#043927] transition-colors leading-snug pt-2 font-sans">
-                  {locale === 'ar' ? cat.title_ar : cat.title_en}
-                </h3>
-              </Link>
-            ))}
+              return (
+                <Link
+                  key={cat.id || cat._id || catSlug}
+                  href={`/products?category=${encodeURIComponent(catSlug)}`}
+                  className="group bg-[#FFFDF8] hover:bg-[#FFF9EC] rounded-[22px] p-4 flex flex-col items-center justify-between border border-[#F6EEDF] shadow-2xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer min-h-[210px] sm:min-h-[230px]"
+                >
+                  <div className="w-full aspect-square max-w-[135px] sm:max-w-[150px] flex items-center justify-center overflow-hidden my-auto p-1.5">
+                    <img
+                      src={imageSrc}
+                      alt={locale === 'ar' ? titleAr : titleEn}
+                      className="w-full h-full object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop';
+                      }}
+                    />
+                  </div>
+
+                  <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm md:text-base text-center group-hover:text-[#043927] transition-colors leading-snug pt-2 font-sans">
+                    {locale === 'ar' ? titleAr : titleEn}
+                  </h3>
+                </Link>
+              );
+            })}
           </div>
         </section>
         {/* 3. Today's Best Deals Section */}
         <section className="space-y-6 pt-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl sm:text-[32px] font-extrabold text-slate-900 tracking-tight font-sans">
-              {locale === 'ar' ? 'أفضل عروض اليوم' : "Today's Best Deals"}
+            <h2 className="text-2xl sm:text-[32px] font-extrabold text-slate-900 tracking-tight font-sans flex items-center gap-2">
+              <span>{locale === 'ar' ? 'أفضل عروض اليوم' : "Best Deals"}</span>
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-4.5">
-            {DEALS_PRODUCTS.map((prod, idx) => (
-              <div
-                key={prod.id + idx}
-                className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer min-h-[410px]"
-              >
-                {/* Top Badges */}
-                <div className="flex items-center justify-between z-10 mb-1">
-                  <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
-                    <Star className="w-2.5 h-2.5 fill-current text-white" />
-                    <span>BEST SELLER</span>
-                  </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-4.5">
+            {(() => {
+              const apiDeals = bestDealsProducts.length > 0
+                ? bestDealsProducts
+                : products.filter((p) => p.is_best_deal);
+              const displayList = apiDeals.length > 0 ? apiDeals : DEALS_PRODUCTS;
 
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleWishlist(prod);
-                    }}
-                    className="text-slate-300 hover:text-rose-500 transition-colors cursor-pointer p-0.5"
-                    title="Add to Wishlist"
+              return displayList.map((prod, idx) => {
+                const titleEn = prod.name_en || prod.title_en;
+                const titleAr = prod.name_ar || prod.title_ar || titleEn;
+                const title = locale === 'ar' ? titleAr : titleEn;
+
+                const brandEn = prod.brand;
+                const brandAr = prod.brand_ar || brandEn;
+                const brandName = locale === 'ar' ? brandAr : brandEn;
+
+                let imgRaw = '';
+                if (Array.isArray(prod.images) && prod.images.length > 0) {
+                  imgRaw = typeof prod.images[0] === 'string' ? prod.images[0] : (prod.images[0]?.image_url || prod.images[0]?.url);
+                } else if (prod.image_url) {
+                  imgRaw = prod.image_url;
+                } else if (prod.img) {
+                  imgRaw = prod.img;
+                }
+                const finalImg = imgRaw ? getImageUrl(imgRaw) : 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+
+                const currentPrice = parseFloat(prod.price);
+                const isDiscounted = prod.discount_price && parseFloat(prod.discount_price) < currentPrice;
+                const finalPrice = isDiscounted ? parseFloat(prod.discount_price) : currentPrice;
+                const originalPrice = isDiscounted ? currentPrice : (prod.purchase_price ? parseFloat(prod.purchase_price) : null);
+
+                const specs =
+                  prod.unit_value && prod.unit_type && prod.pack_size
+                    ? `${prod.unit_value} ${prod.unit_type} (${prod.pack_size})`
+                    : locale === 'ar'
+                      ? prod.specs_ar
+                      : prod.specs_en;
+                const ratingVal = prod.rating || '4.9';
+                const reviewsVal = prod.reviews || '1,420';
+
+                return (
+                  <Link
+                    key={prod.id ? `${prod.id}-${idx}` : `deal-${idx}`}
+                    href={prod.id ? `/products/${prod.id}` : '/products'}
+                    className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer min-h-[410px]"
                   >
-                    <Heart className={`w-4 h-4 ${isInWishlist(prod.id) ? 'text-rose-500 fill-rose-500' : ''}`} />
-                  </button>
-                </div>
-
-                {/* Product Image Container */}
-                <div className="w-full aspect-[4/3] rounded-xl bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
-                  <img
-                    src={prod.img}
-                    alt={locale === 'ar' ? prod.title_ar : prod.title_en}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-
-                {/* Info Content */}
-                <div className="space-y-1 pt-0.5 flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Brand & In Stock Tag */}
-                    <div className="flex items-center justify-between text-[11px] font-medium leading-none mb-1">
-                      <span className="text-slate-400 truncate">{locale === 'ar' ? prod.brand_ar : prod.brand}</span>
-                      <span className="text-[#00B074] font-bold shrink-0">{locale === 'ar' ? 'متوفر' : 'In Stock'}</span>
-                    </div>
-
-                    {/* Product Title */}
-                    <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug font-sans group-hover:text-[#043927] transition-colors mb-1">
-                      {locale === 'ar' ? prod.title_ar : prod.title_en}
-                    </h3>
-
-                    {/* Specs / Tags */}
-                    <p className="text-[10px] text-slate-400 font-normal truncate mb-1">
-                      {locale === 'ar' ? prod.specs_ar : prod.specs_en}
-                    </p>
-
-                    {/* Rating & Delivery */}
-                    <div className="flex items-center justify-between text-[11px] py-1 border-t border-slate-100">
-                      <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
-                        <span className="text-slate-400">☆</span>
-                        <span className="font-bold text-slate-700">{prod.rating}</span>
-                        <span className="text-slate-400">({prod.reviews})</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
-                        <Truck className="w-3 h-3 text-slate-400" />
-                        <span>{locale === 'ar' ? 'توصيل مجاني' : 'Free Delivery'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Price & Add to Cart Action Row */}
-                  <div className="pt-1.5 border-t border-slate-100 flex items-end justify-between gap-1">
-                    <div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm sm:text-base font-black text-slate-900 font-sans">
-                          SAR {prod.price}
+                    {/* Top Badges */}
+                    <div className="flex items-center justify-between z-10 mb-1">
+                      {prod.is_best_seller === true && (
+                        <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                          <Star className="w-2.5 h-2.5 fill-current text-white" />
+                          <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>
                         </span>
-                        <span className="text-[10px] text-slate-400 line-through font-normal">
-                          {prod.mrp}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold text-[#00B074] block leading-tight">
-                        {locale === 'ar' ? prod.savings_ar : prod.savings_en}
-                      </span>
+                      )}
+
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleWishlist(prod);
+                        }}
+                        className="text-slate-300 hover:text-rose-500 transition-colors cursor-pointer p-0.5"
+                        title="Add to Wishlist"
+                      >
+                        <Heart className={`w-4 h-4 ${isInWishlist(prod.id) ? 'text-rose-500 fill-rose-500' : ''}`} />
+                      </button>
                     </div>
 
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleAddToCart(prod.id);
-                      }}
-                      className="px-2.5 py-1.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white font-bold text-[11px] shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center gap-1 shrink-0"
-                    >
-                      <ShoppingBag className="w-3.5 h-3.5" />
-                      <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
-                    </button>
-                  </div>
-                </div>
+                    {/* Product Image Container */}
+                    <div className="w-full aspect-[4/3] rounded-xl bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
+                      <img
+                        src={finalImg}
+                        alt={title}
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+                        }}
+                      />
+                    </div>
 
-              </div>
-            ))}
+                    {/* Info Content */}
+                    <div className="space-y-1 pt-0.5 flex-1 flex flex-col justify-between">
+                      <div>
+                        {/* Brand & In Stock Tag */}
+                        <div className="flex items-center justify-between text-[11px] font-medium leading-none mb-1">
+                          <span className="text-slate-400 truncate">{brandName}</span>
+                          <span className="text-[#00B074] font-bold shrink-0">
+                            {prod.stock_quantity !== undefined && prod.stock_quantity <= 0
+                              ? (locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock')
+                              : (locale === 'ar' ? 'متوفر' : 'In Stock')}
+                          </span>
+                        </div>
+
+                        {/* Product Title */}
+                        <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug font-sans group-hover:text-[#043927] transition-colors mb-1">
+                          {title}
+                        </h3>
+
+                        {/* Specs / Tags */}
+                        <p className="text-[10px] text-slate-400 font-normal truncate mb-1">
+                          {specs}
+                        </p>
+
+                        {/* Rating & Delivery */}
+                        <div className="flex items-center justify-between text-[11px] py-1 border-t border-slate-100">
+                          <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
+                            <span className="text-amber-400 font-bold">★</span>
+                            <span className="font-bold text-slate-700">{ratingVal}</span>
+                            <span className="text-slate-400">({reviewsVal})</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Price & Add to Cart Action Row */}
+                      <div className="pt-1.5 border-t border-slate-100 flex items-end justify-between gap-1">
+                        <div>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-sm sm:text-base font-black text-slate-900 font-sans">
+                              SAR {finalPrice.toFixed(2)}
+                            </span>
+                            {originalPrice && (
+                              <span className="text-[10px] text-slate-400 line-through font-normal">
+                                SAR {originalPrice.toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-bold text-[#00B074] block leading-tight">
+                            {locale === 'ar' ? 'عرض خاص' : 'Best Deal Offer'}
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleAddToCart(prod.id);
+                          }}
+                          disabled={addingId === prod.id}
+                          className="px-2.5 py-1.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white font-bold text-[11px] shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center gap-1 shrink-0 disabled:opacity-60"
+                        >
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <span>{addingId === prod.id ? '...' : (locale === 'ar' ? 'أضف' : 'Add to Cart')}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              });
+            })()}
           </div>
         </section>
 
@@ -960,7 +991,7 @@ export default function HomePage() {
 
         {/* 5. Household Essentials & Groceries Sub-Category Grids */}
         <section className="bg-[#F4FBF7] rounded-[32px] p-6 sm:p-8 space-y-10 border border-emerald-100/60 shadow-2xs">
-          
+
           {/* Sub-Section 1: Household Essentials */}
           <div className="space-y-5">
             <div className="flex items-center justify-between">
@@ -1048,10 +1079,10 @@ export default function HomePage() {
         {/* 6. Household Essentials Featured Banner Section */}
         <section className="bg-[#FAF7F0] rounded-[32px] p-6 sm:p-10 lg:p-12 border border-amber-100/70 relative overflow-hidden font-sans">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
+
             {/* Left Column Content */}
             <div className="lg:col-span-6 space-y-6 text-left rtl:text-right z-10">
-              
+
               {/* Category Tag */}
               <span className="text-[#043927] font-extrabold text-xs sm:text-sm uppercase tracking-[0.2em] block font-sans">
                 {locale === 'ar' ? 'مستلزمات منزلية' : 'HOUSEHOLD ESSENTIALS'}
@@ -1135,7 +1166,7 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-4.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-4.5">
             {DEALS_PRODUCTS.map((prod, idx) => (
               <div
                 key={'pop-' + prod.id + idx}
@@ -1196,10 +1227,7 @@ export default function HomePage() {
                         <span className="font-bold text-slate-700">{prod.rating}</span>
                         <span className="text-slate-400">({prod.reviews})</span>
                       </div>
-                      <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
-                        <Truck className="w-3 h-3 text-slate-400" />
-                        <span>{locale === 'ar' ? 'توصيل مجاني' : 'Free Delivery'}</span>
-                      </div>
+
                     </div>
                   </div>
 
@@ -1248,10 +1276,10 @@ export default function HomePage() {
               : 'Shop Quality groceries, quality fruits, daily essentials and quick snacks delivered straight to your Home.'}
           </p>
         </section>
-       
-       
 
-  
+
+
+
 
       </div>
     </div>

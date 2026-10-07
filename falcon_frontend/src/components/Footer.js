@@ -3,7 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Leaf, ArrowRight } from 'lucide-react';
+import { Leaf, ArrowRight, Truck, Tag, ShieldCheck } from 'lucide-react';
 
 export default function Footer() {
   const pathname = usePathname();
@@ -17,25 +17,82 @@ export default function Footer() {
   return (
     <footer className="relative bg-[#043927] text-slate-200 font-sans mt-20 overflow-hidden">
       
-      {/* Top Decorative Dual Wavy Banner */}
-      <div className="w-full overflow-hidden leading-none relative pointer-events-none -mb-1">
-        <svg
-          viewBox="0 0 1440 120"
-          className="w-full h-16 sm:h-24 lg:h-28 block"
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="none"
-        >
-          {/* Gold Accent Upper Wave */}
-          <path
-            fill="#C68A27"
-            d="M0,32C180,64,360,70,540,55C720,40,900,10,1080,20C1260,30,1350,60,1440,75L1440,120L0,120Z"
-          />
-          {/* Deep Forest Green Main Footer Layer */}
-          <path
-            fill="#043927"
-            d="M0,45C180,75,360,82,540,68C720,53,900,22,1080,32C1260,42,1350,72,1440,88L1440,120L0,120Z"
-          />
-        </svg>
+      {/* Off-White Top Container: Trust Badges Bar + Dual Wavy Banner */}
+      <div className="w-full bg-[#F8FAF8] pt-8 overflow-hidden relative">
+        
+        {/* Trust Badges Bar */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="flex flex-wrap items-center gap-6 sm:gap-10 font-sans">
+            
+            {/* Feature 1: Fast & Reliable Delivery */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#043927] shrink-0 border border-emerald-200/60 shadow-2xs">
+                <Truck className="w-5 h-5 text-[#043927]" />
+              </div>
+              <div className="leading-tight">
+                <span className="font-extrabold text-slate-900 text-xs sm:text-sm block">
+                  {locale === 'ar' ? 'سريع وموثوق' : 'Fast & Reliable'}
+                </span>
+                <span className="text-[11px] text-slate-500 font-medium block">
+                  {locale === 'ar' ? 'التوصيل' : 'Delivery'}
+                </span>
+              </div>
+            </div>
+
+            {/* Feature 2: Great Prices Everyday */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#043927] shrink-0 border border-emerald-200/60 shadow-2xs">
+                <Tag className="w-5 h-5 text-[#043927]" />
+              </div>
+              <div className="leading-tight">
+                <span className="font-extrabold text-slate-900 text-xs sm:text-sm block">
+                  {locale === 'ar' ? 'أسعار رائعة' : 'Great Prices'}
+                </span>
+                <span className="text-[11px] text-slate-500 font-medium block">
+                  {locale === 'ar' ? 'كل يوم' : 'Everyday'}
+                </span>
+              </div>
+            </div>
+
+            {/* Feature 3: Secure Payments */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#043927] shrink-0 border border-emerald-200/60 shadow-2xs">
+                <ShieldCheck className="w-5 h-5 text-[#043927]" />
+              </div>
+              <div className="leading-tight">
+                <span className="font-extrabold text-slate-900 text-xs sm:text-sm block">
+                  {locale === 'ar' ? 'آمن ومحمي' : 'Secure'}
+                </span>
+                <span className="text-[11px] text-slate-500 font-medium block">
+                  {locale === 'ar' ? 'المدفوعات' : 'Payments'}
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Dual Wavy Banner SVG */}
+        <div className="w-full overflow-hidden leading-none relative pointer-events-none -mb-1">
+          <svg
+            viewBox="0 0 1440 140"
+            className="w-full h-16 sm:h-24 lg:h-28 block"
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="none"
+          >
+            {/* Gold Accent Upper Wave */}
+            <path
+              fill="#DA9628"
+              d="M 0,25 C 180,85 360,95 560,50 C 760,5 980,5 1180,80 C 1300,125 1380,50 1440,0 L 1440,140 L 0,140 Z"
+            />
+            {/* Deep Forest Green Main Footer Layer */}
+            <path
+              fill="#043927"
+              d="M 0,45 C 180,105 360,115 560,70 C 760,25 980,25 1180,100 C 1300,145 1380,70 1440,20 L 1440,140 L 0,140 Z"
+            />
+          </svg>
+        </div>
+
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">

@@ -122,6 +122,7 @@ export default function AdminProductsPage() {
     category_id: '',
     subcategory_id: '',
     sub_subcategory_id: '',
+    sub_sub_subcategory_id: '',
     sku: '',
     name_en: '',
     name_ar: '',
@@ -144,6 +145,7 @@ export default function AdminProductsPage() {
     is_featured: false,
     is_new_arrival: true,
     is_best_seller: false,
+    is_best_deal: false,
     images: [],
   });
 
@@ -172,20 +174,26 @@ export default function AdminProductsPage() {
     loadData();
   }, []);
 
-  // Compute 3 Levels of Category Hierarchy
+  // Compute 4 Levels of Category Hierarchy
   const mainCategories = categories.filter((c) => !c.parent_id);
   const mainIds = new Set(mainCategories.map((c) => c.id));
 
   const subCategories = categories.filter((c) => c.parent_id && mainIds.has(c.parent_id));
   const subIds = new Set(subCategories.map((c) => c.id));
 
-  const subSubCategories = categories.filter((c) => c.parent_id && (subIds.has(c.parent_id) || (!mainIds.has(c.parent_id) && c.parent_id !== null)));
+  const subSubCategories = categories.filter((c) => c.parent_id && subIds.has(c.parent_id));
+  const subSubIds = new Set(subSubCategories.map((c) => c.id));
+
+  const subSubSubCategories = categories.filter((c) => c.parent_id && (subSubIds.has(c.parent_id) || (!subIds.has(c.parent_id) && !mainIds.has(c.parent_id) && c.parent_id !== null)));
 
   // Available Level 2 options based on selected Level 1 (category_id)
   const availableSubcategories = subCategories.filter((sc) => String(sc.parent_id) === String(productForm.category_id));
 
   // Available Level 3 options based on selected Level 2 (subcategory_id)
   const availableSubSubcategories = subSubCategories.filter((ssc) => String(ssc.parent_id) === String(productForm.subcategory_id));
+
+  // Available Level 4 options based on selected Level 3 (sub_subcategory_id)
+  const availableSubSubSubcategories = subSubSubCategories.filter((sssc) => String(sssc.parent_id) === String(productForm.sub_subcategory_id));
 
   const resetForm = () => {
     setEditingProduct(null);
@@ -194,6 +202,7 @@ export default function AdminProductsPage() {
       category_id: '',
       subcategory_id: '',
       sub_subcategory_id: '',
+      sub_sub_subcategory_id: '',
       sku: '',
       name_en: '',
       name_ar: '',
@@ -216,6 +225,7 @@ export default function AdminProductsPage() {
       is_featured: false,
       is_new_arrival: true,
       is_best_seller: false,
+      is_best_deal: false,
       images: [],
     });
   };
@@ -240,6 +250,7 @@ export default function AdminProductsPage() {
       category_id: prod.category_id || '',
       subcategory_id: prod.subcategory_id || '',
       sub_subcategory_id: prod.sub_subcategory_id || '',
+      sub_sub_subcategory_id: prod.sub_sub_subcategory_id || '',
       sku: prod.sku || '',
       name_en: prod.name_en || '',
       name_ar: prod.name_ar || '',
@@ -262,6 +273,7 @@ export default function AdminProductsPage() {
       is_featured: prod.is_featured !== undefined ? prod.is_featured : false,
       is_new_arrival: prod.is_new_arrival !== undefined ? prod.is_new_arrival : true,
       is_best_seller: prod.is_best_seller !== undefined ? prod.is_best_seller : false,
+      is_best_deal: prod.is_best_deal !== undefined ? prod.is_best_deal : false,
       images: initialImgs,
     });
     setViewMode('form');
@@ -406,6 +418,7 @@ export default function AdminProductsPage() {
         category_id: productForm.category_id || null,
         subcategory_id: productForm.subcategory_id || null,
         sub_subcategory_id: productForm.sub_subcategory_id || null,
+        sub_sub_subcategory_id: productForm.sub_sub_subcategory_id || null,
         brand: productForm.brand || null,
         unit_type: productForm.unit_type || null,
         unit_value: productForm.unit_value || null,
@@ -511,7 +524,7 @@ export default function AdminProductsPage() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                    {locale === 'ar' ? 'إدارة المنتجات وتحديد الأقسام والأقسام الفرعية الدقيقة للمخزون' : 'Manage products across 3 category levels, prices, stock, and image gallery'}
+                    {locale === 'ar' ? 'إدارة المنتجات وتحديد الأقسام والأقسام الفرعية الدقيقة للمخزون' : 'Manage products across 4 category levels, prices, stock, and image gallery'}
                   </p>
                 </div>
               </div>
@@ -571,7 +584,7 @@ export default function AdminProductsPage() {
                     <tr>
                       <th className="px-6 py-4">{locale === 'ar' ? 'المنتج والصور' : 'Product & Images'}</th>
                       <th className="px-6 py-4">SKU</th>
-                      <th className="px-6 py-4">{locale === 'ar' ? 'التسلسل الهرمي للقسم (٣ مستويات)' : 'Category Hierarchy (3 Levels)'}</th>
+                      <th className="px-6 py-4">{locale === 'ar' ? 'التسلسل الهرمي للقسم (٤ مستويات)' : 'Category Hierarchy (4 Levels)'}</th>
                       <th className="px-6 py-4">{locale === 'ar' ? 'السعر' : 'Price (SAR)'}</th>
                       <th className="px-6 py-4">{locale === 'ar' ? 'المخزون' : 'Stock'}</th>
                       <th className="px-6 py-4">{locale === 'ar' ? 'الوحدة والعبوة' : 'Unit & Size'}</th>
@@ -615,6 +628,23 @@ export default function AdminProductsPage() {
                                 <p className="text-xs text-emerald-700 font-bold">
                                   {prod.name_ar}
                                 </p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {prod.is_best_deal && (
+                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 border border-rose-200">
+                                      🔥 Best Deal
+                                    </span>
+                                  )}
+                                  {prod.is_best_seller && (
+                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
+                                      ⭐ Best Seller
+                                    </span>
+                                  )}
+                                  {prod.is_featured && (
+                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                      ✨ Featured
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -625,7 +655,7 @@ export default function AdminProductsPage() {
                             </span>
                           </td>
 
-                          {/* 3-Level Category Hierarchy Column */}
+                          {/* 4-Level Category Hierarchy Column */}
                           <td className="px-6 py-4 text-xs font-medium text-slate-700 min-w-[170px]">
                             <span className="font-extrabold text-slate-900 block">{prod.category?.name_en || 'Main Category'}</span>
                             {prod.subcategory && (
@@ -636,6 +666,11 @@ export default function AdminProductsPage() {
                             {prod.sub_subcategory && (
                               <span className="text-[10px] text-[#043927] font-extrabold flex items-center gap-1 mt-0.5 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80 w-fit whitespace-nowrap">
                                 ↳ {prod.sub_subcategory.name_en}
+                              </span>
+                            )}
+                            {prod.sub_sub_subcategory && (
+                              <span className="text-[10px] text-emerald-900 font-black flex items-center gap-1 mt-0.5 bg-emerald-100/90 px-2 py-0.5 rounded-md border border-emerald-300 w-fit whitespace-nowrap">
+                                ↳ {prod.sub_sub_subcategory.name_en}
                               </span>
                             )}
                           </td>
@@ -772,126 +807,160 @@ export default function AdminProductsPage() {
             </div>
           </div>
 
-          {/* Form Body - 2 Column Layout */}
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Form Body Layout */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+{/* MIDDLE SECTION: FULL WIDTH CATEGORY CLASSIFICATION (4 LEVELS) */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans w-full">
+              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                <Layers className="w-4 h-4 text-[#05A764]" /> 2. Category Classification (4 Levels)
+              </h3>
 
-            {/* Left Column (2 Cols wide) */}
-            <div className="lg:col-span-2 space-y-6">
-
-              {/* CARD 1: CATEGORY CLASSIFICATION */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
-                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                  <Layers className="w-4 h-4 text-[#05A764]" /> Category Classification
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {/* Level 1: Main Category */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Main Category (Level 1) *
-                    </label>
-                    <select
-                      required
-                      value={productForm.category_id}
-                      onChange={(e) =>
-                        setProductForm({
-                          ...productForm,
-                          category_id: e.target.value,
-                          subcategory_id: '',
-                          sub_subcategory_id: '',
-                        })
-                      }
-                      className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all"
-                    >
-                      <option value="">-- Select Main Category --</option>
-                      {mainCategories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name_en} / {c.name_ar}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Level 2: Sub-Category */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Sub-Category (Level 2)
-                    </label>
-                    <select
-                      disabled={!productForm.category_id}
-                      value={productForm.subcategory_id}
-                      onChange={(e) =>
-                        setProductForm({
-                          ...productForm,
-                          subcategory_id: e.target.value,
-                          sub_subcategory_id: '',
-                        })
-                      }
-                      className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
-                    >
-                      <option value="">-- Select Sub-Category --</option>
-                      {availableSubcategories.map((sc) => (
-                        <option key={sc.id} value={sc.id}>
-                          {sc.name_en} / {sc.name_ar}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Level 3: Sub-Subcategory */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Sub-Subcategory (Level 3)
-                    </label>
-                    <select
-                      disabled={!productForm.subcategory_id}
-                      value={productForm.sub_subcategory_id}
-                      onChange={(e) => setProductForm({ ...productForm, sub_subcategory_id: e.target.value })}
-                      className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
-                    >
-                      <option value="">-- Select Sub-Subcategory --</option>
-                      {availableSubSubcategories.map((ssc) => (
-                        <option key={ssc.id} value={ssc.id}>
-                          {ssc.name_en} / {ssc.name_ar}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Level 1: Main Category */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                    Main Category (Level 1) *
+                  </label>
+                  <select
+                    required
+                    value={productForm.category_id}
+                    onChange={(e) =>
+                      setProductForm({
+                        ...productForm,
+                        category_id: e.target.value,
+                        subcategory_id: '',
+                        sub_subcategory_id: '',
+                        sub_sub_subcategory_id: '',
+                      })
+                    }
+                    className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all"
+                  >
+                    <option value="">-- Select Main Category --</option>
+                    {mainCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name_en} / {c.name_ar}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* Selected Hierarchy Breadcrumb Preview Path Bar */}
-                {(productForm.category_id || productForm.subcategory_id || productForm.sub_subcategory_id) && (
-                  <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200/80 flex items-center gap-2 text-xs font-semibold text-slate-700 font-sans mt-2 flex-wrap">
-                    <span className="text-slate-400 font-bold">Selected Path:</span>
-                    {productForm.category_id && (
-                      <span className="bg-white border border-slate-200 text-slate-900 font-extrabold px-2.5 py-1 rounded-lg shadow-2xs">
-                        {mainCategories.find((c) => String(c.id) === String(productForm.category_id))?.name_en || 'Main Category'}
-                      </span>
-                    )}
-                    {productForm.subcategory_id && (
-                      <>
-                        <span className="text-slate-400">➔</span>
-                        <span className="bg-emerald-50 border border-emerald-200 text-emerald-900 font-extrabold px-2.5 py-1 rounded-lg">
-                          {subCategories.find((sc) => String(sc.id) === String(productForm.subcategory_id))?.name_en || 'Sub-Category'}
-                        </span>
-                      </>
-                    )}
-                    {productForm.sub_subcategory_id && (
-                      <>
-                        <span className="text-slate-400">➔</span>
-                        <span className="bg-[#043927] text-white font-black px-2.5 py-1 rounded-lg shadow-2xs">
-                          {subSubCategories.find((ssc) => String(ssc.id) === String(productForm.sub_subcategory_id))?.name_en || 'Sub-Subcategory'}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )}
+                {/* Level 2: Sub-Category */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                    Sub-Category (Level 2)
+                  </label>
+                  <select
+                    disabled={!productForm.category_id}
+                    value={productForm.subcategory_id}
+                    onChange={(e) =>
+                      setProductForm({
+                        ...productForm,
+                        subcategory_id: e.target.value,
+                        sub_subcategory_id: '',
+                        sub_sub_subcategory_id: '',
+                      })
+                    }
+                    className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
+                  >
+                    <option value="">-- Select Sub-Category --</option>
+                    {availableSubcategories.map((sc) => (
+                      <option key={sc.id} value={sc.id}>
+                        {sc.name_en} / {sc.name_ar}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Level 3: Sub-Subcategory */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                    Sub-Subcategory (Level 3)
+                  </label>
+                  <select
+                    disabled={!productForm.subcategory_id}
+                    value={productForm.sub_subcategory_id}
+                    onChange={(e) =>
+                      setProductForm({
+                        ...productForm,
+                        sub_subcategory_id: e.target.value,
+                        sub_sub_subcategory_id: '',
+                      })
+                    }
+                    className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
+                  >
+                    <option value="">-- Select Sub-Subcategory --</option>
+                    {availableSubSubcategories.map((ssc) => (
+                      <option key={ssc.id} value={ssc.id}>
+                        {ssc.name_en} / {ssc.name_ar}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Level 4: Sub-Sub-Subcategory */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                    Sub-Sub-Subcategory (Level 4)
+                  </label>
+                  <select
+                    disabled={!productForm.sub_subcategory_id}
+                    value={productForm.sub_sub_subcategory_id}
+                    onChange={(e) => setProductForm({ ...productForm, sub_sub_subcategory_id: e.target.value })}
+                    className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
+                  >
+                    <option value="">-- Select Sub-Sub-Subcategory --</option>
+                    {availableSubSubSubcategories.map((sssc) => (
+                      <option key={sssc.id} value={sssc.id}>
+                        {sssc.name_en} / {sssc.name_ar}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* CARD 2: PRODUCT INFORMATION */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+              {/* Selected Hierarchy Breadcrumb Preview Path Bar */}
+              {(productForm.category_id || productForm.subcategory_id || productForm.sub_subcategory_id || productForm.sub_sub_subcategory_id) && (
+                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200/80 flex items-center gap-2 text-xs font-semibold text-slate-700 font-sans mt-2 flex-wrap">
+                  <span className="text-slate-400 font-bold">Selected Path:</span>
+                  {productForm.category_id && (
+                    <span className="bg-white border border-slate-200 text-slate-900 font-extrabold px-2.5 py-1 rounded-lg shadow-2xs">
+                      {mainCategories.find((c) => String(c.id) === String(productForm.category_id))?.name_en || 'Main Category'}
+                    </span>
+                  )}
+                  {productForm.subcategory_id && (
+                    <>
+                      <span className="text-slate-400">➔</span>
+                      <span className="bg-emerald-50 border border-emerald-200 text-emerald-900 font-extrabold px-2.5 py-1 rounded-lg">
+                        {subCategories.find((sc) => String(sc.id) === String(productForm.subcategory_id))?.name_en || 'Sub-Category'}
+                      </span>
+                    </>
+                  )}
+                  {productForm.sub_subcategory_id && (
+                    <>
+                      <span className="text-slate-400">➔</span>
+                      <span className="bg-[#043927] text-white font-black px-2.5 py-1 rounded-lg shadow-2xs">
+                        {subSubCategories.find((ssc) => String(ssc.id) === String(productForm.sub_subcategory_id))?.name_en || 'Sub-Subcategory'}
+                      </span>
+                    </>
+                  )}
+                  {productForm.sub_sub_subcategory_id && (
+                    <>
+                      <span className="text-slate-400">➔</span>
+                      <span className="bg-[#02281b] text-emerald-300 font-black px-2.5 py-1 rounded-lg shadow-2xs border border-emerald-600/40">
+                        {subSubSubCategories.find((sssc) => String(sssc.id) === String(productForm.sub_sub_subcategory_id))?.name_en || 'Sub-Sub-Subcategory'}
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* TOP SECTION: Product Info (2 Cols) + Gallery Images (1 Col) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              {/* CARD 1: PRODUCT INFORMATION */}
+              <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
                 <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                  <Apple className="w-4 h-4 text-[#05A764]" /> 2. Product Information
+                  <Apple className="w-4 h-4 text-[#05A764]" /> 1. Product Information
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -969,317 +1038,8 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* CARD 3: UNIT & PACKAGING */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
-                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                  <Package className="w-4 h-4 text-[#05A764]" /> 3. Unit & Packaging
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Unit Type * */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Unit Type *
-                    </label>
-                    <select
-                      required
-                      value={productForm.unit_type}
-                      onChange={(e) => setProductForm({ ...productForm, unit_type: e.target.value })}
-                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
-                    >
-                      <option value="g">Gram (g)</option>
-                      <option value="kg">Kilogram (kg)</option>
-                      <option value="ml">Milliliter (ml)</option>
-                      <option value="L">Liter (L)</option>
-                      <option value="PCS">Piece (Pcs)</option>
-                      <option value="Box">Box</option>
-                      <option value="Pack">Pack / Bundle</option>
-                    </select>
-                  </div>
-
-                  {/* Unit Value * */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Unit Value *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. 200, 500, 1.5, 1"
-                      value={productForm.unit_value}
-                      onChange={(e) => setProductForm({ ...productForm, unit_value: e.target.value })}
-                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
-                    />
-                  </div>
-
-                  {/* Pack Size */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Pack Size
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Pack of 6, Box of 12"
-                      value={productForm.pack_size}
-                      onChange={(e) => setProductForm({ ...productForm, pack_size: e.target.value })}
-                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
-                    />
-                  </div>
-
-                  {/* Sold By */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Sold By
-                    </label>
-                    <select
-                      value={productForm.sold_by}
-                      onChange={(e) => setProductForm({ ...productForm, sold_by: e.target.value })}
-                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
-                    >
-                      <option value="Piece">Piece / Item</option>
-                      <option value="Weight">Weight (kg / g)</option>
-                      <option value="Volume">Volume (L / ml)</option>
-                      <option value="Box">Box / Bundle</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* CARD 4: INVENTORY & STOCK */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                  <ShoppingBag className="w-4 h-4 text-[#05A764]" /> 4. Inventory & Stock
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      SKU Code *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="GROC-001"
-                      value={productForm.sku}
-                      onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
-                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-mono font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Fresh Stock Qty *
-                    </label>
-                   
-                      <input
-                        type="number"
-                        required
-                        placeholder="100"
-                        value={productForm.stock_quantity}
-                        onChange={(e) => setProductForm({ ...productForm, stock_quantity: e.target.value })}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
-                      />
-                  
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Product Status *
-                    </label>
-                    <select
-                      value={productForm.is_active ? 'true' : 'false'}
-                      onChange={(e) => setProductForm({ ...productForm, is_active: e.target.value === 'true' })}
-                      className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
-                    >
-                      <option value="true">Active (Enabled)</option>
-                      <option value="false">Disabled (Hidden)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* CARD 5: PRICING */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
-                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                  <Tag className="w-4 h-4 text-[#05A764]" /> 5. Pricing
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                
-
-                  {/* Selling Price * */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Selling Price *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="0.01"
-                        required
-                        placeholder="14.50"
-                        value={productForm.price}
-                        onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-black focus:outline-none focus:bg-white focus:border-[#043927]"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-emerald-700">SAR</span>
-                    </div>
-                  </div>
-
-                  {/* Discount Price */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Discount Price
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g. 12.00"
-                        value={productForm.discount_price}
-                        onChange={(e) => setProductForm({ ...productForm, discount_price: e.target.value })}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">SAR</span>
-                    </div>
-                  </div>
-
-                  {/* VAT % */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      VAT %
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="0.1"
-                        placeholder="15"
-                        value={productForm.vat_percentage}
-                        onChange={(e) => setProductForm({ ...productForm, vat_percentage: e.target.value })}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Price Includes VAT Toggle Checkbox */}
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between mt-2">
-                  <div className="space-y-0.5">
-                    <span className="text-xs font-extrabold text-slate-900 block">Price Includes VAT</span>
-                    <span className="text-[11px] text-slate-500 font-medium">When enabled, the selling price already includes calculated tax (ZATCA compliant).</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={productForm.price_includes_vat}
-                      onChange={(e) => setProductForm({ ...productForm, price_includes_vat: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
-                  </label>
-                </div>
-              </div>
-
-              {/* CARD 6: ONLINE STORE */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
-                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                  <Globe className="w-4 h-4 text-[#05A764]" /> 6. Online Store
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Show on Website */}
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
-                    <div className="space-y-0.5 pr-3">
-                      <span className="text-xs font-extrabold text-slate-900 block">Show on Website</span>
-                      <span className="text-[11px] text-slate-500 font-medium block">Display product on website & mobile storefront</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={productForm.is_available}
-                        onChange={(e) => setProductForm({ ...productForm, is_available: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
-                    </label>
-                  </div>
-
-                  {/* Featured */}
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
-                    <div className="space-y-0.5 pr-3">
-                      <span className="text-xs font-extrabold text-slate-900 block">Featured</span>
-                      <span className="text-[11px] text-slate-500 font-medium block">Highlight in featured product sections</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={productForm.is_featured}
-                        onChange={(e) => setProductForm({ ...productForm, is_featured: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
-                    </label>
-                  </div>
-
-                  {/* New Arrival */}
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
-                    <div className="space-y-0.5 pr-3">
-                      <span className="text-xs font-extrabold text-slate-900 block">New Arrival</span>
-                      <span className="text-[11px] text-slate-500 font-medium block">Show NEW badge on store listings</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={productForm.is_new_arrival}
-                        onChange={(e) => setProductForm({ ...productForm, is_new_arrival: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
-                    </label>
-                  </div>
-
-                  {/* Best Seller */}
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
-                    <div className="space-y-0.5 pr-3">
-                      <span className="text-xs font-extrabold text-slate-900 block">Best Seller</span>
-                      <span className="text-[11px] text-slate-500 font-medium block">Mark item as top customer favorite</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={productForm.is_best_seller}
-                        onChange={(e) => setProductForm({ ...productForm, is_best_seller: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Product Status */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Product Status *
-                  </label>
-                  <select
-                    value={productForm.is_active ? 'true' : 'false'}
-                    onChange={(e) => setProductForm({ ...productForm, is_active: e.target.value === 'true' })}
-                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
-                  >
-                    <option value="true">Active (Enabled on Store)</option>
-                    <option value="false">Disabled (Hidden / Archived)</option>
-                  </select>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Right Column - Multiple Images Upload */}
-            <div className="space-y-6">
-
-              {/* Product Gallery Images Card */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
+              {/* CARD 2: GALLERY IMAGES */}
+              <div className="lg:col-span-1 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                     <ImageIcon className="w-4 h-4 text-emerald-600" /> Gallery Images ({productForm.images.length})
@@ -1328,8 +1088,6 @@ export default function AdminProductsPage() {
                       Uploading image(s) & analyzing file size...
                     </div>
                   )}
-
-                 
                 </div>
 
                 {/* Uploaded Images List Grid */}
@@ -1381,6 +1139,325 @@ export default function AdminProductsPage() {
                     <p className="text-xs font-semibold">No Gallery Images Uploaded Yet</p>
                   </div>
                 )}
+              </div>
+
+            </div>
+
+            
+
+            {/* BOTTOM SECTION: Packaging & Inventory (2 Cols) + Online Store Options (1 Col) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              {/* Left Column (2 Cols) */}
+              <div className="lg:col-span-2 space-y-6">
+
+                {/* CARD 3: UNIT & PACKAGING */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <Package className="w-4 h-4 text-[#05A764]" /> 3. Unit & Packaging
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Unit Type * */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Unit Type *
+                      </label>
+                      <select
+                        required
+                        value={productForm.unit_type}
+                        onChange={(e) => setProductForm({ ...productForm, unit_type: e.target.value })}
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
+                      >
+                        <option value="g">Gram (g)</option>
+                        <option value="kg">Kilogram (kg)</option>
+                        <option value="ml">Milliliter (ml)</option>
+                        <option value="L">Liter (L)</option>
+                        <option value="PCS">Piece (Pcs)</option>
+                        <option value="Box">Box</option>
+                        <option value="Pack">Pack / Bundle</option>
+                      </select>
+                    </div>
+
+                    {/* Unit Value * */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Unit Value *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. 200, 500, 1.5, 1"
+                        value={productForm.unit_value}
+                        onChange={(e) => setProductForm({ ...productForm, unit_value: e.target.value })}
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    {/* Pack Size */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Pack Size
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Pack of 6, Box of 12"
+                        value={productForm.pack_size}
+                        onChange={(e) => setProductForm({ ...productForm, pack_size: e.target.value })}
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    {/* Sold By */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Sold By
+                      </label>
+                      <select
+                        value={productForm.sold_by}
+                        onChange={(e) => setProductForm({ ...productForm, sold_by: e.target.value })}
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
+                      >
+                        <option value="Piece">Piece / Item</option>
+                        <option value="Weight">Weight (kg / g)</option>
+                        <option value="Volume">Volume (L / ml)</option>
+                        <option value="Box">Box / Bundle</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CARD 4: INVENTORY & STOCK */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <ShoppingBag className="w-4 h-4 text-[#05A764]" /> 4. Inventory & Stock
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        SKU Code *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="GROC-001"
+                        value={productForm.sku}
+                        onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-mono font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Fresh Stock Qty *
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        placeholder="100"
+                        value={productForm.stock_quantity}
+                        onChange={(e) => setProductForm({ ...productForm, stock_quantity: e.target.value })}
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Product Status *
+                      </label>
+                      <select
+                        value={productForm.is_active ? 'true' : 'false'}
+                        onChange={(e) => setProductForm({ ...productForm, is_active: e.target.value === 'true' })}
+                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
+                      >
+                        <option value="true">Active (Enabled)</option>
+                        <option value="false">Disabled (Hidden)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CARD 5: PRICING */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <Tag className="w-4 h-4 text-[#05A764]" /> 5. Pricing
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Selling Price * */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Selling Price *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          placeholder="14.50"
+                          value={productForm.price}
+                          onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                          className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-black focus:outline-none focus:bg-white focus:border-[#043927]"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-emerald-700">SAR</span>
+                      </div>
+                    </div>
+
+                    {/* Discount Price */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Discount Price
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="e.g. 12.00"
+                          value={productForm.discount_price}
+                          onChange={(e) => setProductForm({ ...productForm, discount_price: e.target.value })}
+                          className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">SAR</span>
+                      </div>
+                    </div>
+
+                    {/* VAT % */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        VAT %
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="15"
+                          value={productForm.vat_percentage}
+                          onChange={(e) => setProductForm({ ...productForm, vat_percentage: e.target.value })}
+                          className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Price Includes VAT Toggle Checkbox */}
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between mt-2">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-extrabold text-slate-900 block">Price Includes VAT</span>
+                      <span className="text-[11px] text-slate-500 font-medium">When enabled, the selling price already includes calculated tax (ZATCA compliant).</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={productForm.price_includes_vat}
+                        onChange={(e) => setProductForm({ ...productForm, price_includes_vat: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
+                    </label>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Right Column (1 Col) */}
+              <div className="lg:col-span-1 space-y-6">
+
+                {/* CARD 6: ONLINE STORE STOREFRONT SETTINGS */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <Globe className="w-4 h-4 text-[#05A764]" /> 6. Storefront Visibility & Badges
+                  </h3>
+
+                  <div className="space-y-3">
+                    {/* Show on Website */}
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
+                      <div className="space-y-0.5 pr-2">
+                        <span className="text-xs font-extrabold text-slate-900 block">Show on Store</span>
+                        <span className="text-[10px] text-slate-500 font-medium block">Visible on app & website</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={productForm.is_available}
+                          onChange={(e) => setProductForm({ ...productForm, is_available: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
+                      </label>
+                    </div>
+
+                    {/* Featured */}
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
+                      <div className="space-y-0.5 pr-2">
+                        <span className="text-xs font-extrabold text-slate-900 block">Featured</span>
+                        <span className="text-[10px] text-slate-500 font-medium block">Highlight in home sliders</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={productForm.is_featured}
+                          onChange={(e) => setProductForm({ ...productForm, is_featured: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
+                      </label>
+                    </div>
+
+                    {/* New Arrival */}
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
+                      <div className="space-y-0.5 pr-2">
+                        <span className="text-xs font-extrabold text-slate-900 block">New Arrival</span>
+                        <span className="text-[10px] text-slate-500 font-medium block">Display NEW badge</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={productForm.is_new_arrival}
+                          onChange={(e) => setProductForm({ ...productForm, is_new_arrival: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
+                      </label>
+                    </div>
+
+                    {/* Best Seller */}
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
+                      <div className="space-y-0.5 pr-2">
+                        <span className="text-xs font-extrabold text-slate-900 block">Best Seller</span>
+                        <span className="text-[10px] text-slate-500 font-medium block">Display ⭐ Best Seller</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={productForm.is_best_seller}
+                          onChange={(e) => setProductForm({ ...productForm, is_best_seller: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
+                      </label>
+                    </div>
+
+                    {/* Best Deal */}
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
+                      <div className="space-y-0.5 pr-2">
+                        <span className="text-xs font-extrabold text-slate-900 block">Best Deal</span>
+                        <span className="text-[10px] text-slate-500 font-medium block">Display 🔥 Best Deal</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={productForm.is_best_deal}
+                          onChange={(e) => setProductForm({ ...productForm, is_best_deal: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
             </div>

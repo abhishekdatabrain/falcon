@@ -11,17 +11,29 @@ class ProductService {
       subcategoryId,
       subSubcategoryId,
       sub_subcategory_id,
+      subSubSubcategoryId,
+      sub_sub_subcategory_id,
       minPrice,
       maxPrice,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
       onlyActive = true,
+      is_featured,
+      is_new_arrival,
+      is_best_seller,
+      is_best_deal,
+      isBestDeal,
     } = query;
 
     const where = {};
     if (onlyActive) {
       where.is_active = true;
       where.is_available = true;
+    }
+
+    if (is_best_deal !== undefined || isBestDeal !== undefined) {
+      const val = is_best_deal !== undefined ? is_best_deal : isBestDeal;
+      where.is_best_deal = String(val) === 'true';
     }
 
     if (categoryId) {
@@ -34,6 +46,10 @@ class ProductService {
 
     if (subSubcategoryId || sub_subcategory_id) {
       where.sub_subcategory_id = subSubcategoryId || sub_subcategory_id;
+    }
+
+    if (subSubSubcategoryId || sub_sub_subcategory_id) {
+      where.sub_sub_subcategory_id = subSubSubcategoryId || sub_sub_subcategory_id;
     }
 
     if (search) {
@@ -63,6 +79,7 @@ class ProductService {
         { model: Category, as: 'category', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         { model: Category, as: 'subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         { model: Category, as: 'sub_subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
+        { model: Category, as: 'sub_sub_subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         {
           model: ProductImage, as: 'images', attributes: ['id', 'image_url', 'is_primary', 'display_order'], separate: true, order: [['display_order', 'ASC']]
         },
@@ -90,6 +107,7 @@ class ProductService {
         { model: Category, as: 'category', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         { model: Category, as: 'subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         { model: Category, as: 'sub_subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
+        { model: Category, as: 'sub_sub_subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         { model: ProductImage, as: 'images' },
       ],
     });
@@ -102,7 +120,7 @@ class ProductService {
   }
 
   async createProduct(data) {
-    const { category_id, subcategory_id, sub_subcategory_id, sku, name_en, name_ar, description_en, description_ar, brand, unit, unit_type, unit_value, pack_size, sold_by, price, purchase_price, discount_price, vat_percentage, price_includes_vat, stock_quantity, is_available, is_active, is_featured, is_new_arrival, is_best_seller, images } = data;
+    const { category_id, subcategory_id, sub_subcategory_id, sub_sub_subcategory_id, sku, name_en, name_ar, description_en, description_ar, brand, unit, unit_type, unit_value, pack_size, sold_by, price, purchase_price, discount_price, vat_percentage, price_includes_vat, stock_quantity, is_available, is_active, is_featured, is_new_arrival, is_best_seller, is_best_deal, images } = data;
 
     const existingSku = await Product.findOne({ where: { sku } });
     if (existingSku) {
@@ -116,6 +134,7 @@ class ProductService {
         category_id,
         subcategory_id: subcategory_id || null,
         sub_subcategory_id: sub_subcategory_id || null,
+        sub_sub_subcategory_id: sub_sub_subcategory_id || null,
         sku,
         name_en,
         name_ar,
@@ -138,6 +157,7 @@ class ProductService {
         is_featured: is_featured !== undefined ? Boolean(is_featured) : false,
         is_new_arrival: is_new_arrival !== undefined ? Boolean(is_new_arrival) : true,
         is_best_seller: is_best_seller !== undefined ? Boolean(is_best_seller) : false,
+        is_best_deal: is_best_deal !== undefined ? Boolean(is_best_deal) : false,
       }, { transaction: t });
 
       if (images && Array.isArray(images) && images.length > 0) {
@@ -155,6 +175,7 @@ class ProductService {
           { model: Category, as: 'category' },
           { model: Category, as: 'subcategory' },
           { model: Category, as: 'sub_subcategory' },
+          { model: Category, as: 'sub_sub_subcategory' },
           { model: ProductImage, as: 'images' },
         ],
         transaction: t,
@@ -171,6 +192,7 @@ class ProductService {
     const cleanData = { ...data };
     if (cleanData.subcategory_id === '' || cleanData.subcategory_id === undefined) cleanData.subcategory_id = null;
     if (cleanData.sub_subcategory_id === '' || cleanData.sub_subcategory_id === undefined) cleanData.sub_subcategory_id = null;
+    if (cleanData.sub_sub_subcategory_id === '' || cleanData.sub_sub_subcategory_id === undefined) cleanData.sub_sub_subcategory_id = null;
     if (cleanData.category_id === '') delete cleanData.category_id;
     if (cleanData.purchase_price === '') cleanData.purchase_price = null;
     if (cleanData.discount_price === '') cleanData.discount_price = null;
@@ -202,6 +224,7 @@ class ProductService {
           { model: Category, as: 'category' },
           { model: Category, as: 'subcategory' },
           { model: Category, as: 'sub_subcategory' },
+          { model: Category, as: 'sub_sub_subcategory' },
           { model: ProductImage, as: 'images' },
         ],
         transaction: t,
@@ -263,6 +286,7 @@ class ProductService {
           { model: Category, as: 'category' },
           { model: Category, as: 'subcategory' },
           { model: Category, as: 'sub_subcategory' },
+          { model: Category, as: 'sub_sub_subcategory' },
           { model: ProductImage, as: 'images' },
         ],
         transaction: t,

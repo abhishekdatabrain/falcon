@@ -248,13 +248,16 @@ export default function ProfilePage() {
                 <span className="text-slate-400 font-semibold">12</span>
               </Link>
 
-              <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer">
+              <Link
+                href="/addresses"
+                className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer"
+              >
                 <div className="flex items-center gap-3">
                   <MapPin className="w-4 h-4 text-slate-500" />
                   <span>Saved Addresses</span>
                 </div>
                 <span className="text-slate-400 font-semibold">3</span>
-              </div>
+              </Link>
 
               <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">

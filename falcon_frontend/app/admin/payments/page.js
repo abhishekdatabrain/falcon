@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { fetchApi } from '../../../src/services/api';
+import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import {
@@ -205,9 +205,7 @@ export default function AdminPaymentsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredPayments.map((pay) => {
             const proofUrl = pay.confirmation?.proof_file_url
-              ? (pay.confirmation.proof_file_url.startsWith('http')
-                  ? pay.confirmation.proof_file_url
-                  : `http://localhost:5001${pay.confirmation.proof_file_url}`)
+              ? getImageUrl(pay.confirmation.proof_file_url)
               : null;
 
             return (

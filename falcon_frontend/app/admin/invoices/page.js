@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { fetchApi } from '../../../src/services/api';
+import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { FileText, Download, Search } from 'lucide-react';
 
@@ -91,7 +91,7 @@ export default function AdminInvoicesPage() {
 
               <div className="flex gap-2 pt-2">
                 <a
-                  href={`http://localhost:5001/api/v1/invoices/${inv.id}/pdf`}
+                  href={getImageUrl(`/api/v1/invoices/${inv.id}/pdf`)}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-primary flex-1 text-xs py-2.5 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20"

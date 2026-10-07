@@ -38,14 +38,26 @@ class CategoryService {
           model: Category,
           as: 'subcategories',
           include: [
-            { model: Category, as: 'subcategories' }
+            {
+              model: Category,
+              as: 'subcategories',
+              include: [
+                { model: Category, as: 'subcategories' }
+              ]
+            }
           ]
         },
         {
           model: Category,
           as: 'parentCategory',
           include: [
-            { model: Category, as: 'parentCategory' }
+            {
+              model: Category,
+              as: 'parentCategory',
+              include: [
+                { model: Category, as: 'parentCategory' }
+              ]
+            }
           ]
         },
       ],
@@ -61,14 +73,26 @@ class CategoryService {
           model: Category,
           as: 'subcategories',
           include: [
-            { model: Category, as: 'subcategories' }
+            {
+              model: Category,
+              as: 'subcategories',
+              include: [
+                { model: Category, as: 'subcategories' }
+              ]
+            }
           ]
         },
         {
           model: Category,
           as: 'parentCategory',
           include: [
-            { model: Category, as: 'parentCategory' }
+            {
+              model: Category,
+              as: 'parentCategory',
+              include: [
+                { model: Category, as: 'parentCategory' }
+              ]
+            }
           ]
         },
       ],

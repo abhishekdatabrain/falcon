@@ -31,24 +31,26 @@ export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState('parent'); // 'parent' | 'sub' | 'subsub'
+  const [activeTab, setActiveTab] = useState('parent'); // 'parent' | 'sub' | 'subsub' | 'subsubsub'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedParentFilter, setSelectedParentFilter] = useState('');
   const [selectedSubFilter, setSelectedSubFilter] = useState('');
+  const [selectedSubSubFilter, setSelectedSubSubFilter] = useState('');
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
 
   // Form state
-  const [formLevel, setFormLevel] = useState('LEVEL_1'); // 'LEVEL_1' | 'LEVEL_2' | 'LEVEL_3'
+  const [formLevel, setFormLevel] = useState('LEVEL_1'); // 'LEVEL_1' | 'LEVEL_2' | 'LEVEL_3' | 'LEVEL_4'
   const [form, setForm] = useState({
     name_en: '',
     name_ar: '',
     slug: '',
     image_url: '',
-    parent_main_id: '', // Used for selecting level 1 when setting up level 2/3
-    parent_id: '',      // Final parent_id saved in backend
+    parent_main_id: '',   // Level 1 parent
+    parent_sub_id: '',    // Level 2 parent
+    parent_id: '',        // Level 3 parent or final parent_id saved in backend
   });
 
   // Upload & File metadata state
@@ -128,15 +130,18 @@ export default function AdminCategoriesPage() {
     loadCategories();
   }, []);
 
-  // Compute 3 Levels of Hierarchy
+  // Compute 4 Levels of Hierarchy
   const mainCategories = categories.filter((c) => !c.parent_id);
   const mainIds = new Set(mainCategories.map((c) => c.id));
 
   const subCategories = categories.filter((c) => c.parent_id && mainIds.has(c.parent_id));
   const subIds = new Set(subCategories.map((c) => c.id));
 
-  // Level 3 (Sub-Subcategories) are items whose parent_id is in Level 2 or any non-main parent
-  const subSubCategories = categories.filter((c) => c.parent_id && (subIds.has(c.parent_id) || (!mainIds.has(c.parent_id) && c.parent_id !== null)));
+  const subSubCategories = categories.filter((c) => c.parent_id && subIds.has(c.parent_id));
+  const subSubIds = new Set(subSubCategories.map((c) => c.id));
+
+  // Level 4 (Sub-Sub-Subcategories)
+  const subSubSubCategories = categories.filter((c) => c.parent_id && (subSubIds.has(c.parent_id) || (!mainIds.has(c.parent_id) && !subIds.has(c.parent_id) && c.parent_id !== null)));
 
   // Filtered lists based on search & dropdown filters
   const filteredParents = mainCategories.filter((cat) => {
@@ -163,9 +168,23 @@ export default function AdminCategoriesPage() {
   const filteredSubSubs = subSubCategories.filter((cat) => {
     if (selectedSubFilter && String(cat.parent_id) !== String(selectedSubFilter)) return false;
     if (selectedParentFilter) {
-      // Find parent subcategory
       const parentSub = subCategories.find((s) => String(s.id) === String(cat.parent_id));
       if (!parentSub || String(parentSub.parent_id) !== String(selectedParentFilter)) return false;
+    }
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      cat.name_en?.toLowerCase().includes(q) ||
+      cat.name_ar?.includes(q) ||
+      cat.slug?.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredSubSubSubs = subSubSubCategories.filter((cat) => {
+    if (selectedSubSubFilter && String(cat.parent_id) !== String(selectedSubSubFilter)) return false;
+    if (selectedSubFilter) {
+      const parentSubSub = subSubCategories.find((ss) => String(ss.id) === String(cat.parent_id));
+      if (!parentSubSub || String(parentSubSub.parent_id) !== String(selectedSubFilter)) return false;
     }
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
@@ -185,10 +204,12 @@ export default function AdminCategoriesPage() {
       if (formLevel === 'LEVEL_2') {
         finalParentId = form.parent_main_id || null;
       } else if (formLevel === 'LEVEL_3') {
+        finalParentId = form.parent_sub_id || form.parent_id || null;
+      } else if (formLevel === 'LEVEL_4') {
         finalParentId = form.parent_id || null;
       }
 
-      if ((formLevel === 'LEVEL_2' && !finalParentId) || (formLevel === 'LEVEL_3' && !finalParentId)) {
+      if ((formLevel === 'LEVEL_2' || formLevel === 'LEVEL_3' || formLevel === 'LEVEL_4') && !finalParentId) {
         showToast(locale === 'ar' ? 'يرجى اختيار القسم التابع له' : 'Please select a valid parent category', 'error');
         setSubmitting(false);
         return;
@@ -218,7 +239,7 @@ export default function AdminCategoriesPage() {
 
       setShowModal(false);
       setEditingCategory(null);
-      setForm({ name_en: '', name_ar: '', slug: '', image_url: '', parent_main_id: '', parent_id: '' });
+      setForm({ name_en: '', name_ar: '', slug: '', image_url: '', parent_main_id: '', parent_sub_id: '', parent_id: '' });
       await loadCategories();
     } catch (err) {
       showToast(err.message || 'Operation failed', 'error');
@@ -243,22 +264,28 @@ export default function AdminCategoriesPage() {
   const openEdit = (cat) => {
     setEditingCategory(cat);
     
-    // Determine level
     let level = 'LEVEL_1';
     let mainParentId = '';
     let subParentId = '';
+    let subSubParentId = '';
 
     if (cat.parent_id) {
-      const isParentMain = mainIds.has(cat.parent_id);
-      if (isParentMain) {
+      if (mainIds.has(cat.parent_id)) {
         level = 'LEVEL_2';
         mainParentId = cat.parent_id;
-      } else {
+      } else if (subIds.has(cat.parent_id)) {
         level = 'LEVEL_3';
         subParentId = cat.parent_id;
         const parentSub = subCategories.find((s) => String(s.id) === String(cat.parent_id));
-        if (parentSub) {
-          mainParentId = parentSub.parent_id;
+        if (parentSub) mainParentId = parentSub.parent_id;
+      } else {
+        level = 'LEVEL_4';
+        subSubParentId = cat.parent_id;
+        const parentSubSub = subSubCategories.find((ss) => String(ss.id) === String(cat.parent_id));
+        if (parentSubSub) {
+          subParentId = parentSubSub.parent_id;
+          const parentSub = subCategories.find((s) => String(s.id) === String(parentSubSub.parent_id));
+          if (parentSub) mainParentId = parentSub.parent_id;
         }
       }
     }
@@ -270,12 +297,13 @@ export default function AdminCategoriesPage() {
       slug: cat.slug || '',
       image_url: cat.image_url || '',
       parent_main_id: mainParentId,
-      parent_id: subParentId,
+      parent_sub_id: subParentId,
+      parent_id: level === 'LEVEL_4' ? subSubParentId : (level === 'LEVEL_3' ? subParentId : mainParentId),
     });
     setShowModal(true);
   };
 
-  const openAdd = (targetLevel = 'LEVEL_1', targetParentMain = '', targetParentSub = '') => {
+  const openAdd = (targetLevel = 'LEVEL_1', targetParentMain = '', targetParentSub = '', targetParentSubSub = '') => {
     setEditingCategory(null);
     setFormLevel(targetLevel);
     setForm({
@@ -284,7 +312,8 @@ export default function AdminCategoriesPage() {
       slug: '',
       image_url: '',
       parent_main_id: targetParentMain || mainCategories[0]?.id || '',
-      parent_id: targetParentSub || '',
+      parent_sub_id: targetParentSub || '',
+      parent_id: targetParentSubSub || targetParentSub || '',
     });
     setShowModal(true);
   };
@@ -327,7 +356,8 @@ export default function AdminCategoriesPage() {
           
           <button
             onClick={() => {
-              if (activeTab === 'subsub') openAdd('LEVEL_3');
+              if (activeTab === 'subsubsub') openAdd('LEVEL_4');
+              else if (activeTab === 'subsub') openAdd('LEVEL_3');
               else if (activeTab === 'sub') openAdd('LEVEL_2');
               else openAdd('LEVEL_1');
             }}
@@ -335,7 +365,9 @@ export default function AdminCategoriesPage() {
           >
             <Plus className="w-4 h-4 text-emerald-400" />
             <span>
-              {activeTab === 'subsub'
+              {activeTab === 'subsubsub'
+                ? (locale === 'ar' ? 'إضافة قسم مستوى ٤' : 'Add Level 4 Sub-Sub-Subcategory')
+                : activeTab === 'subsub'
                 ? (locale === 'ar' ? 'إضافة فرعي فرعي' : 'Add Sub-Subcategory')
                 : activeTab === 'sub'
                 ? (locale === 'ar' ? 'إضافة قسم فرعي' : 'Add Sub-Category')
@@ -395,11 +427,11 @@ export default function AdminCategoriesPage() {
       {/* Control Bar: Tabs & Search Filters */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3 font-sans">
         
-        {/* Top Row: 3 Tabs */}
-        <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-fit">
+        {/* Top Row: 4 Tabs */}
+        <div className="flex bg-slate-100 p-1 rounded-xl w-full flex-wrap sm:flex-nowrap">
           {/* Tab 1: Main */}
           <button
-            onClick={() => { setActiveTab('parent'); setSelectedParentFilter(''); setSelectedSubFilter(''); }}
+            onClick={() => { setActiveTab('parent'); setSelectedParentFilter(''); setSelectedSubFilter(''); setSelectedSubSubFilter(''); }}
             className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'parent'
                 ? 'bg-white text-emerald-800 shadow-xs font-black'
@@ -415,7 +447,7 @@ export default function AdminCategoriesPage() {
 
           {/* Tab 2: Sub */}
           <button
-            onClick={() => { setActiveTab('sub'); setSelectedSubFilter(''); }}
+            onClick={() => { setActiveTab('sub'); setSelectedSubFilter(''); setSelectedSubSubFilter(''); }}
             className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'sub'
                 ? 'bg-white text-blue-800 shadow-xs font-black'
@@ -431,7 +463,7 @@ export default function AdminCategoriesPage() {
 
           {/* Tab 3: Sub-Sub */}
           <button
-            onClick={() => setActiveTab('subsub')}
+            onClick={() => { setActiveTab('subsub'); setSelectedSubSubFilter(''); }}
             className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'subsub'
                 ? 'bg-white text-purple-800 shadow-xs font-black'
@@ -442,6 +474,22 @@ export default function AdminCategoriesPage() {
             <span>{locale === 'ar' ? 'فرعية فرعية (مستوى ٣)' : 'Sub-Subcategories'}</span>
             <span className="px-2 py-0.5 text-[10px] rounded-full bg-purple-100 text-purple-800">
               {subSubCategories.length}
+            </span>
+          </button>
+
+          {/* Tab 4: Sub-Sub-Sub */}
+          <button
+            onClick={() => setActiveTab('subsubsub')}
+            className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'subsubsub'
+                ? 'bg-white text-rose-800 shadow-xs font-black'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <CornerDownRight className="w-4 h-4 text-rose-600" />
+            <span>{locale === 'ar' ? 'فرعية فرعية فرعية (مستوى ٤)' : 'Sub-Sub-Subcategories'}</span>
+            <span className="px-2 py-0.5 text-[10px] rounded-full bg-rose-100 text-rose-800">
+              {subSubSubCategories.length}
             </span>
           </button>
         </div>
@@ -887,6 +935,135 @@ export default function AdminCategoriesPage() {
         </>
       )}
 
+      {/* TAB 4: SUB-SUB-SUBCATEGORIES (LEVEL 4) TABLE */}
+      {activeTab === 'subsubsub' && (
+        <>
+          {loading ? (
+            <div className="bg-white rounded-3xl p-16 text-center space-y-3 border border-slate-200 shadow-xs">
+              <div className="w-8 h-8 border-4 border-rose-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="text-xs font-bold text-slate-500 font-sans">{locale === 'ar' ? 'جاري تحميل الأقسام مستوى ٤...' : 'Loading level 4 categories...'}</p>
+            </div>
+          ) : filteredSubSubSubs.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200 shadow-xs space-y-3 font-sans">
+              <AlertCircle className="w-10 h-10 text-slate-300 mx-auto" />
+              <p className="text-sm font-bold text-slate-700">
+                {searchQuery || selectedParentFilter || selectedSubFilter || selectedSubSubFilter
+                  ? (locale === 'ar' ? 'لم يتم العثور على أقسام فرعية ٤ تطابق الفلتر' : 'No sub-sub-subcategories match your filter')
+                  : (locale === 'ar' ? 'لا توجد أقسام فرعية مستوى ٤ بعد' : 'No level 4 sub-sub-subcategories created yet')}
+              </p>
+              <button
+                onClick={() => { setSearchQuery(''); setSelectedParentFilter(''); setSelectedSubFilter(''); setSelectedSubSubFilter(''); openAdd('LEVEL_4'); }}
+                className="text-xs font-extrabold px-4 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
+              >
+                + {locale === 'ar' ? 'إضافة قسم مستوى ٤' : 'Add Level 4 Category'}
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden font-sans">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-600">
+                  <thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <tr>
+                      <th className="px-6 py-4">{locale === 'ar' ? 'الصورة' : 'Image'}</th>
+                      <th className="px-6 py-4">{locale === 'ar' ? 'القسم الفرعي ٤' : 'Sub-Sub-Subcategory (L4)'}</th>
+                      <th className="px-6 py-4">{locale === 'ar' ? 'مسار التسلسل الهرمي (٤ مستويات)' : 'Hierarchy Path (4 Levels)'}</th>
+                      <th className="px-6 py-4">Slug</th>
+                      <th className="px-6 py-4 text-right">{locale === 'ar' ? 'الإجراءات' : 'Actions'}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredSubSubSubs.map((cat) => {
+                      const parentSubSub = subSubCategories.find((ss) => String(ss.id) === String(cat.parent_id));
+                      const parentSub = parentSubSub ? subCategories.find((s) => String(s.id) === String(parentSubSub.parent_id)) : null;
+                      const parentMain = parentSub ? mainCategories.find((p) => String(p.id) === String(parentSub.parent_id)) : null;
+
+                      return (
+                        <tr key={cat.id} className="hover:bg-slate-50/80 transition-all">
+                          {/* Image */}
+                          <td className="px-6 py-3.5">
+                            {cat.image_url ? (
+                              <img
+                                src={getImageUrl(cat.image_url)}
+                                alt={cat.name_en}
+                                className="w-11 h-11 object-cover rounded-xl border border-slate-200 bg-slate-50 shadow-2xs"
+                              />
+                            ) : (
+                              <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                                <CornerDownRight className="w-5 h-5 text-rose-500" />
+                              </div>
+                            )}
+                          </td>
+
+                          {/* English & Arabic Name */}
+                          <td className="px-6 py-3.5">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
+                              <span className="font-extrabold text-slate-900">{cat.name_en}</span>
+                            </div>
+                            <span className="text-xs text-emerald-800 font-bold block pt-0.5" dir="rtl">
+                              {cat.name_ar}
+                            </span>
+                          </td>
+
+                          {/* Full 4-Level Hierarchy Path */}
+                          <td className="px-6 py-3.5">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 flex-wrap">
+                              <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-700">
+                                {parentMain ? parentMain.name_en : 'Main'}
+                              </span>
+                              <ChevronRight className="w-3 h-3 text-slate-400" />
+                              <span className="bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded font-bold">
+                                {parentSub ? parentSub.name_en : 'Sub'}
+                              </span>
+                              <ChevronRight className="w-3 h-3 text-slate-400" />
+                              <span className="bg-purple-50 text-purple-800 border border-purple-200 px-2 py-0.5 rounded font-bold">
+                                {parentSubSub ? parentSubSub.name_en : 'Sub-Sub'}
+                              </span>
+                              <ChevronRight className="w-3 h-3 text-slate-400" />
+                              <span className="bg-rose-100 text-rose-900 border border-rose-200 px-2 py-0.5 rounded font-black">
+                                {cat.name_en}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Slug */}
+                          <td className="px-6 py-3.5 font-mono text-xs font-semibold text-slate-500">
+                            <span className="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
+                              {cat.slug}
+                            </span>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-6 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => openEdit(cat)}
+                                className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-200 transition-all cursor-pointer"
+                                title="Edit"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                onClick={() => handleDelete(cat.id)}
+                                className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       {/* CREATE / EDIT MODAL FOR ALL 3 LEVELS */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200 font-sans">
@@ -940,16 +1117,28 @@ export default function AdminCategoriesPage() {
                     const newLvl = e.target.value;
                     setFormLevel(newLvl);
                     if (newLvl === 'LEVEL_1') {
-                      setForm((prev) => ({ ...prev, parent_main_id: '', parent_id: '' }));
+                      setForm((prev) => ({ ...prev, parent_main_id: '', parent_sub_id: '', parent_id: '' }));
                     } else if (newLvl === 'LEVEL_2') {
-                      setForm((prev) => ({ ...prev, parent_main_id: prev.parent_main_id || mainCategories[0]?.id || '', parent_id: '' }));
+                      setForm((prev) => ({ ...prev, parent_main_id: prev.parent_main_id || mainCategories[0]?.id || '', parent_sub_id: '', parent_id: '' }));
                     } else if (newLvl === 'LEVEL_3') {
                       const firstMainId = mainCategories[0]?.id || '';
                       const subsForFirstMain = subCategories.filter((s) => String(s.parent_id) === String(firstMainId));
                       setForm((prev) => ({
                         ...prev,
                         parent_main_id: prev.parent_main_id || firstMainId,
+                        parent_sub_id: prev.parent_sub_id || subsForFirstMain[0]?.id || '',
                         parent_id: prev.parent_id || subsForFirstMain[0]?.id || '',
+                      }));
+                    } else if (newLvl === 'LEVEL_4') {
+                      const firstMainId = mainCategories[0]?.id || '';
+                      const subsForFirstMain = subCategories.filter((s) => String(s.parent_id) === String(firstMainId));
+                      const firstSubId = subsForFirstMain[0]?.id || '';
+                      const subSubsForFirstSub = subSubCategories.filter((ss) => String(ss.parent_id) === String(firstSubId));
+                      setForm((prev) => ({
+                        ...prev,
+                        parent_main_id: prev.parent_main_id || firstMainId,
+                        parent_sub_id: prev.parent_sub_id || firstSubId,
+                        parent_id: prev.parent_id || subSubsForFirstSub[0]?.id || '',
                       }));
                     }
                   }}
@@ -958,6 +1147,7 @@ export default function AdminCategoriesPage() {
                   <option value="LEVEL_1">Level 1: Main Category (Top-Level)</option>
                   <option value="LEVEL_2">Level 2: Sub-Category (Nested in Main)</option>
                   <option value="LEVEL_3">Level 3: Sub-Subcategory (Nested in Sub-Category)</option>
+                  <option value="LEVEL_4">Level 4: Sub-Sub-Subcategory (Nested in Sub-Subcategory)</option>
                 </select>
               </div>
 
@@ -998,6 +1188,7 @@ export default function AdminCategoriesPage() {
                         setForm({
                           ...form,
                           parent_main_id: newMainId,
+                          parent_sub_id: availableSubs[0]?.id || '',
                           parent_id: availableSubs[0]?.id || '',
                         });
                       }}
@@ -1026,6 +1217,86 @@ export default function AdminCategoriesPage() {
                         .map((s) => (
                           <option key={s.id} value={s.id}>
                             {s.name_en} / {s.name_ar}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* LEVEL 4: Select Main, Sub, and Sub-Subcategory */}
+              {formLevel === 'LEVEL_4' && (
+                <div className="bg-rose-50/60 p-3.5 rounded-2xl border border-rose-200 space-y-3">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      Step 1: Select Main Category (Level 1)
+                    </label>
+                    <select
+                      value={form.parent_main_id}
+                      onChange={(e) => {
+                        const newMainId = e.target.value;
+                        const availableSubs = subCategories.filter((s) => String(s.parent_id) === String(newMainId));
+                        const availableSubSubs = subSubCategories.filter((ss) => String(ss.parent_id) === String(availableSubs[0]?.id));
+                        setForm({
+                          ...form,
+                          parent_main_id: newMainId,
+                          parent_sub_id: availableSubs[0]?.id || '',
+                          parent_id: availableSubSubs[0]?.id || '',
+                        });
+                      }}
+                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-rose-300 text-slate-900 text-xs font-semibold outline-hidden cursor-pointer"
+                    >
+                      <option value="">-- Select Main Category --</option>
+                      {mainCategories.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name_en}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      Step 2: Select Sub-Category (Level 2)
+                    </label>
+                    <select
+                      value={form.parent_sub_id}
+                      onChange={(e) => {
+                        const newSubId = e.target.value;
+                        const availableSubSubs = subSubCategories.filter((ss) => String(ss.parent_id) === String(newSubId));
+                        setForm({
+                          ...form,
+                          parent_sub_id: newSubId,
+                          parent_id: availableSubSubs[0]?.id || '',
+                        });
+                      }}
+                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-rose-300 text-slate-900 text-xs font-semibold outline-hidden cursor-pointer"
+                    >
+                      <option value="">-- Select Sub-Category --</option>
+                      {subCategories
+                        .filter((s) => !form.parent_main_id || String(s.parent_id) === String(form.parent_main_id))
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name_en} / {s.name_ar}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      Step 3: Select Parent Sub-Subcategory (Level 3) *
+                    </label>
+                    <select
+                      required
+                      value={form.parent_id}
+                      onChange={(e) => setForm({ ...form, parent_id: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-rose-300 text-slate-900 text-xs font-extrabold outline-hidden cursor-pointer text-rose-900"
+                    >
+                      <option value="">-- Select Sub-Subcategory --</option>
+                      {subSubCategories
+                        .filter((ss) => !form.parent_sub_id || String(ss.parent_id) === String(form.parent_sub_id))
+                        .map((ss) => (
+                          <option key={ss.id} value={ss.id}>
+                            {ss.name_en} / {ss.name_ar}
                           </option>
                         ))}
                     </select>

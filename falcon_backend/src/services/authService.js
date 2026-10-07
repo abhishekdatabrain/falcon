@@ -179,6 +179,7 @@ class AuthService {
     return {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
+      role: user.role,
     };
   }
 

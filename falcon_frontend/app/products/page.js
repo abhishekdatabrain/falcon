@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '../../src/contexts/LanguageContext';
@@ -17,6 +17,7 @@ import {
   Minus,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Filter,
   Star,
   Truck,
@@ -25,201 +26,6 @@ import {
   Tag,
   SlidersHorizontal,
 } from 'lucide-react';
-
-const SAMPLE_CATALOG_PRODUCTS = [
-  {
-    id: 'sp-1',
-    name_en: 'Premium Organic Hass Avocados Ready-to-Eat',
-    name_ar: 'أفوكادو هاس عضوي فاخر جاهز للأكل',
-    brand_en: 'ORGANIC SANCTUARY',
-    brand_ar: 'أورجانيك سانكتشواري',
-    unit: '400g Tray',
-    rating: '4.9',
-    reviews: '1,420',
-    price: '14.50',
-    mrp: '19.00',
-    badge: 'BEST SELLER',
-    badgeType: 'amber',
-    express: true,
-    img: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400',
-  },
-  {
-    id: 'sp-2',
-    name_en: 'Crisp Sweet Royal Gala Apples Freshly Handled',
-    name_ar: 'تفاح رويال جالا أحمر طازج ومقرمش',
-    brand_en: 'SAUDI HARVEST',
-    brand_ar: 'حصاد السعودية',
-    unit: '1 kg Bag',
-    rating: '4.8',
-    reviews: '980',
-    price: '8.25',
-    mrp: '11.50',
-    badge: '-15% OFF',
-    badgeType: 'red',
-    express: true,
-    img: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400',
-  },
-  {
-    id: 'sp-3',
-    name_en: 'Saudi Sweet Greenhouse Strawberries Hand-Picked',
-    name_ar: 'فراولة محمية طازجة منتقاة بعناية',
-    brand_en: 'SAUDI LOCAL FARM',
-    brand_ar: 'مزرعة سعودية محلية',
-    unit: '250g Pack',
-    rating: '4.9',
-    reviews: '1,120',
-    price: '7.50',
-    mrp: '9.50',
-    badge: 'LOCAL SAUDI',
-    badgeType: 'green',
-    express: true,
-    img: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400',
-  },
-  {
-    id: 'sp-4',
-    name_en: 'Saudi Sweet Greenhouse Strawberries Hand-Picked',
-    name_ar: 'فراولة محمية طازجة منتقاة بعناية',
-    brand_en: 'SAUDI LOCAL FARM',
-    brand_ar: 'مزرعة سعودية محلية',
-    unit: '250g Pack',
-    rating: '4.9',
-    reviews: '1,120',
-    price: '7.50',
-    mrp: '9.50',
-    badge: 'LOCAL SAUDI',
-    badgeType: 'green',
-    express: true,
-    img: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400',
-  },
-  {
-    id: 'sp-5',
-    name_en: 'Premium Sweet Red Bananas High Potassium',
-    name_ar: 'موز أصفر طازج غني بالبوتاسيوم',
-    brand_en: 'FARM CHOICE',
-    brand_ar: 'خيار المزرعة',
-    unit: '1 kg Bag',
-    rating: '4.7',
-    reviews: '640',
-    price: '5.95',
-    mrp: '8.00',
-    badge: 'BEST SELLER',
-    badgeType: 'amber',
-    express: true,
-    img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400',
-  },
-  {
-    id: 'sp-6',
-    name_en: 'Almarai 100% Pure Fresh Full Cream Milk 2L',
-    name_ar: 'حليب المراعي طازج كامل الدسم ٢ لتر',
-    brand_en: 'ALMARAI DAIRY',
-    brand_ar: 'ألبان المراعي',
-    unit: '2 Litre Bottle',
-    rating: '4.9',
-    reviews: '3,240',
-    price: '11.00',
-    mrp: '14.00',
-    badge: 'BEST SELLER',
-    badgeType: 'amber',
-    express: true,
-    img: '/products/prod_almarai_milk.jpg',
-  },
-  {
-    id: 'sp-7',
-    name_en: 'Hydroponic Sweet Vine Cherry Tomatoes Extra Juicy',
-    name_ar: 'طماطم كرزية مائية طازجة وشديدة العصير',
-    brand_en: 'HYDRO GREEN',
-    brand_ar: 'هايدرو جرين',
-    unit: '250g Pack',
-    rating: '4.9',
-    reviews: '820',
-    price: '6.80',
-    mrp: '8.50',
-    badge: 'LOCAL SAUDI',
-    badgeType: 'green',
-    express: true,
-    img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400',
-  },
-  {
-    id: 'sp-8',
-    name_en: 'Hydroponic Sweet Vine Cherry Tomatoes Extra Juicy',
-    name_ar: 'طماطم كرزية مائية طازجة وشديدة العصير',
-    brand_en: 'HYDRO GREEN',
-    brand_ar: 'هايدرو جرين',
-    unit: '250g Pack',
-    rating: '4.9',
-    reviews: '820',
-    price: '6.80',
-    mrp: '8.50',
-    badge: 'LOCAL SAUDI',
-    badgeType: 'green',
-    express: true,
-    img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400',
-  },
-  {
-    id: 'sp-9',
-    name_en: 'Saudi Sweet Seedless Red Watermelon Pre-Cut',
-    name_ar: 'بطيخ أحمر خالي من البذر مقطع طازج',
-    brand_en: 'SAUDI HARVEST',
-    brand_ar: 'حصاد السعودية',
-    unit: 'Half Fruit (1.5 kg)',
-    rating: '4.8',
-    reviews: '560',
-    price: '12.50',
-    mrp: '16.00',
-    badge: '-15% OFF',
-    badgeType: 'red',
-    express: true,
-    img: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400',
-  },
-  {
-    id: 'sp-10',
-    name_en: 'NADEC Premium Farm Fresh Large Brown Eggs 30s',
-    name_ar: 'بيض نادك مزارع بني طازج ٣٠ حبة',
-    brand_en: 'NADEC POULTRY',
-    brand_ar: 'نادك الدواجن',
-    unit: 'Carton of 30 Eggs',
-    rating: '4.9',
-    reviews: '2,150',
-    price: '21.50',
-    mrp: '26.00',
-    badge: 'BEST SELLER',
-    badgeType: 'amber',
-    express: true,
-    img: 'https://images.unsplash.com/photo-1506976785307-8732e854ad03?w=400',
-  },
-  {
-    id: 'sp-11',
-    name_en: 'Fresh Harvest Mint & Crisp Coriander Bunch',
-    name_ar: 'نعناع وحزمة كزبرة طازجة من المزرعة',
-    brand_en: 'LOCAL SAUDI FARM',
-    brand_ar: 'مزرعة سعودية محلية',
-    unit: '1 Fresh Bunch',
-    rating: '4.7',
-    reviews: '410',
-    price: '3.50',
-    mrp: '5.00',
-    badge: 'LOCAL SAUDI',
-    badgeType: 'green',
-    express: true,
-    img: 'https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400',
-  },
-  {
-    id: 'sp-12',
-    name_en: 'Hydroponic Sweet Vine Cherry Tomatoes Extra Juicy',
-    name_ar: 'طماطم كرزية مائية طازجة وشديدة العصير',
-    brand_en: 'HYDRO GREEN',
-    brand_ar: 'هايدرو جرين',
-    unit: '250g Pack',
-    rating: '4.9',
-    reviews: '820',
-    price: '6.80',
-    mrp: '8.50',
-    badge: 'LOCAL SAUDI',
-    badgeType: 'green',
-    express: true,
-    img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400',
-  },
-];
 
 function ProductsCatalogContent() {
   const searchParams = useSearchParams();
@@ -230,6 +36,8 @@ function ProductsCatalogContent() {
 
   const categoryIdParam = searchParams.get('categoryId') || searchParams.get('category') || '';
   const subcategoryIdParam = searchParams.get('subcategoryId') || searchParams.get('sub') || '';
+  const subSubcategoryIdParam = searchParams.get('subSubcategoryId') || searchParams.get('subSub') || '';
+  const subSubSubcategoryIdParam = searchParams.get('subSubSubcategoryId') || searchParams.get('subSubSub') || '';
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -237,19 +45,24 @@ function ProductsCatalogContent() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(categoryIdParam);
   const [selectedSubcategory, setSelectedSubcategory] = useState(subcategoryIdParam);
+  const [selectedSubSubcategory, setSelectedSubSubcategory] = useState(subSubcategoryIdParam);
+  const [selectedSubSubSubcategory, setSelectedSubSubSubcategory] = useState(subSubSubcategoryIdParam);
+  const [expandedCats, setExpandedCats] = useState(new Set());
   const [addingId, setAddingId] = useState(null);
   const [activeFilterChip, setActiveFilterChip] = useState('ALL');
   const [priceRange, setPriceRange] = useState(150);
-  const [selectedBrands, setSelectedBrands] = useState(['FreshKart Organic Farms']);
+  const [selectedBrands, setSelectedBrands] = useState([]);
 
   useEffect(() => {
     if (categoryIdParam !== selectedCategory) setSelectedCategory(categoryIdParam);
     if (subcategoryIdParam !== selectedSubcategory) setSelectedSubcategory(subcategoryIdParam);
-  }, [categoryIdParam, subcategoryIdParam]);
+    if (subSubcategoryIdParam !== selectedSubSubcategory) setSelectedSubSubcategory(subSubcategoryIdParam);
+    if (subSubSubcategoryIdParam !== selectedSubSubSubcategory) setSelectedSubSubSubcategory(subSubSubcategoryIdParam);
+  }, [categoryIdParam, subcategoryIdParam, subSubcategoryIdParam, subSubSubcategoryIdParam]);
 
   const loadCategories = async () => {
     try {
-      const res = await fetchApi('/categories');
+      const res = await fetchApi('/categories?all=true');
       if (res.success) {
         setCategories(res.data.categories || (Array.isArray(res.data) ? res.data : []));
       }
@@ -264,16 +77,19 @@ function ProductsCatalogContent() {
       let query = `/products?limit=50&search=${encodeURIComponent(search)}`;
       if (selectedCategory) query += `&categoryId=${selectedCategory}`;
       if (selectedSubcategory) query += `&subcategoryId=${selectedSubcategory}`;
+      if (selectedSubSubcategory) query += `&subSubcategoryId=${selectedSubSubcategory}`;
+      if (selectedSubSubSubcategory) query += `&subSubSubcategoryId=${selectedSubSubSubcategory}`;
+
       const res = await fetchApi(query);
       if (res.success && res.data) {
-        const fetched = res.data.products?.products || res.data.products || [];
-        setProducts(fetched.length > 0 ? fetched : SAMPLE_CATALOG_PRODUCTS);
+        const fetched = res.data.products?.products || res.data.products || (Array.isArray(res.data) ? res.data : []);
+        setProducts(fetched);
       } else {
-        setProducts(SAMPLE_CATALOG_PRODUCTS);
+        setProducts([]);
       }
     } catch (err) {
-      console.error('API product load fallback:', err);
-      setProducts(SAMPLE_CATALOG_PRODUCTS);
+      console.error('API product load error:', err);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -285,16 +101,171 @@ function ProductsCatalogContent() {
 
   useEffect(() => {
     loadProducts();
-  }, [selectedCategory, selectedSubcategory]);
+  }, [selectedCategory, selectedSubcategory, selectedSubSubcategory, selectedSubSubSubcategory, search]);
 
-  const handleCategorySelect = (catId) => {
-    setSelectedCategory(catId);
-    setSelectedSubcategory('');
+  const displayCategoryTree = useMemo(() => {
+    if (!categories || categories.length === 0) {
+      return [];
+    }
+
+    const mainCats = categories.filter((c) => !c.parent_id);
+
+    const getChildren = (parentId) => {
+      return categories.filter((c) => String(c.parent_id) === String(parentId));
+    };
+
+    return mainCats.map((main) => {
+      const level2 = (main.subcategories && main.subcategories.length > 0) ? main.subcategories : getChildren(main.id);
+      return {
+        ...main,
+        children: level2.map((sub) => {
+          const level3 = (sub.subcategories && sub.subcategories.length > 0) ? sub.subcategories : getChildren(sub.id);
+          return {
+            ...sub,
+            children: level3.map((subSub) => {
+              const level4 = (subSub.subcategories && subSub.subcategories.length > 0) ? subSub.subcategories : getChildren(subSub.id);
+              return {
+                ...subSub,
+                children: level4,
+              };
+            }),
+          };
+        }),
+      };
+    });
+  }, [categories]);
+
+  const toggleCatExpand = (catId, e) => {
+    e.stopPropagation();
+    setExpandedCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(catId)) next.delete(catId);
+      else next.add(catId);
+      return next;
+    });
+  };
+
+  const handleSelectCat = (node, level) => {
+    let newCat = '', newSub = '', newSubSub = '', newSubSubSub = '';
+
+    const isCurrentlySelected =
+      (level === 1 && selectedCategory === node.id && !selectedSubcategory) ||
+      (level === 2 && selectedSubcategory === node.id && !selectedSubSubcategory) ||
+      (level === 3 && selectedSubSubcategory === node.id && !selectedSubSubSubcategory) ||
+      (level === 4 && selectedSubSubSubcategory === node.id);
+
+    if (!isCurrentlySelected) {
+      if (level === 1) {
+        newCat = node.id;
+      } else if (level === 2) {
+        newCat = node.parent_id || selectedCategory;
+        newSub = node.id;
+      } else if (level === 3) {
+        newCat = selectedCategory;
+        newSub = node.parent_id || selectedSubcategory;
+        newSubSub = node.id;
+      } else if (level === 4) {
+        newCat = selectedCategory;
+        newSub = selectedSubcategory;
+        newSubSub = node.parent_id || selectedSubSubcategory;
+        newSubSubSub = node.id;
+      }
+    }
+
+    setSelectedCategory(newCat);
+    setSelectedSubcategory(newSub);
+    setSelectedSubSubcategory(newSubSub);
+    setSelectedSubSubSubcategory(newSubSubSub);
+
     const newParams = new URLSearchParams(searchParams.toString());
-    if (catId) newParams.set('category', catId);
-    else newParams.delete('category');
+    if (newCat) newParams.set('categoryId', newCat); else newParams.delete('categoryId');
+    if (newSub) newParams.set('subcategoryId', newSub); else newParams.delete('subcategoryId');
+    if (newSubSub) newParams.set('subSubcategoryId', newSubSub); else newParams.delete('subSubcategoryId');
+    if (newSubSubSub) newParams.set('subSubSubcategoryId', newSubSubSub); else newParams.delete('subSubSubcategoryId');
+    newParams.delete('category');
     newParams.delete('sub');
+
     router.push(`/products?${newParams.toString()}`);
+  };
+
+  const renderCategoryNode = (node, level = 1) => {
+    const hasChildren = node.children && node.children.length > 0;
+    const isExpanded = expandedCats.has(node.id) || 
+      (selectedSubcategory && node.children?.some(c => c.id === selectedSubcategory)) ||
+      (selectedSubSubcategory && node.children?.some(c => c.children?.some(cc => cc.id === selectedSubSubcategory)));
+
+    const isSelected =
+      (level === 1 && selectedCategory === node.id && !selectedSubcategory) ||
+      (level === 2 && selectedSubcategory === node.id && !selectedSubSubcategory) ||
+      (level === 3 && selectedSubSubcategory === node.id && !selectedSubSubSubcategory) ||
+      (level === 4 && selectedSubSubSubcategory === node.id);
+
+    const name = (locale === 'ar' ? node.name_ar : node.name_en) || node.name_en || node.name || '';
+
+    return (
+      <div key={node.id} className="space-y-1">
+        <div
+          onClick={() => handleSelectCat(node, level)}
+          className={`flex items-center justify-between py-1.5 px-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group ${
+            isSelected ? 'bg-emerald-50/90 text-[#043927]' : 'text-slate-700'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            {/* Blue / Green Checkbox matching screenshot */}
+            <div
+              className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${
+                isSelected
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                  : 'border-slate-300 bg-white group-hover:border-[#043927]'
+              }`}
+            >
+              {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+            </div>
+
+            {/* Category Name */}
+            <span className={`text-xs truncate ${isSelected ? 'font-bold text-[#043927]' : 'font-medium group-hover:text-[#043927]'}`}>
+              {name}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0 ml-1">
+            {node.count !== undefined && (
+              <span className="text-slate-400 text-[11px]">({node.count})</span>
+            )}
+            {hasChildren && (
+              <button
+                type="button"
+                onClick={(e) => toggleCatExpand(node.id, e)}
+                className="p-1 text-slate-400 hover:text-[#043927] hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+              >
+                {isExpanded ? (
+                  <ChevronDown className="w-3.5 h-3.5 text-[#043927]" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180" />
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Render Nested Child Categories */}
+        {hasChildren && isExpanded && (
+          <div className="pl-3.5 rtl:pr-3.5 border-l border-slate-200/80 rtl:border-r rtl:border-l-0 ml-2 rtl:mr-2 space-y-1 pt-0.5 pb-1">
+            {node.children.map((child) => renderCategoryNode(child, level + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const resetAllFilters = () => {
+    setActiveFilterChip('ALL');
+    setSelectedCategory('');
+    setSelectedSubcategory('');
+    setSelectedSubSubcategory('');
+    setSelectedSubSubSubcategory('');
+    setPriceRange(150);
+    router.push('/products');
   };
 
   const handleAddToCart = async (productId, productObj) => {
@@ -432,41 +403,21 @@ function ProductsCatalogContent() {
               <span>{locale === 'ar' ? 'تصفية المنتجات' : 'Filter Products'}</span>
             </h3>
             <button
-              onClick={() => {
-                setActiveFilterChip('ALL');
-                setSelectedCategory('');
-                setPriceRange(150);
-              }}
+              type="button"
+              onClick={resetAllFilters}
               className="text-xs font-bold text-emerald-700 hover:underline cursor-pointer"
             >
               {locale === 'ar' ? 'إعادة ضبط' : 'Reset All'}
             </button>
           </div>
 
-          {/* 1. Produce Categories */}
+          {/* 1. Produce Categories (Nested Tree) */}
           <div className="space-y-3">
             <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
               {locale === 'ar' ? 'تصنيفات المنتجات' : 'Produce Categories'}
             </h4>
-            <div className="space-y-2 text-xs font-medium text-slate-700">
-              {[
-                { name: 'Fresh Fruits', count: 32, checked: true },
-                { name: 'Crisp Vegetables', count: 41, checked: false },
-                { name: 'Aromatic Herbs & Greens', count: 19, checked: false },
-                { name: 'Farm Dairy & Chilled Eggs', count: 15, checked: false },
-              ].map((cat, idx) => (
-                <label key={idx} className="flex items-center justify-between hover:text-[#043927] cursor-pointer group">
-                  <div className="flex items-center gap-2.5">
-                    <input
-                      type="checkbox"
-                      defaultChecked={cat.checked}
-                      className="w-4 h-4 rounded border-slate-300 text-[#043927] focus:ring-[#043927]"
-                    />
-                    <span className={cat.checked ? 'font-bold text-[#043927]' : ''}>{cat.name}</span>
-                  </div>
-                  <span className="text-slate-400 text-[11px]">({cat.count})</span>
-                </label>
-              ))}
+            <div className="space-y-1 text-xs font-medium text-slate-700">
+              {displayCategoryTree.map((catNode) => renderCategoryNode(catNode, 1))}
             </div>
           </div>
 

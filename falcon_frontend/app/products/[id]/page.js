@@ -218,11 +218,18 @@ export default function ProductDetailPage() {
           
           {/* Hero Image Frame */}
           <div className="w-full aspect-[4/3] sm:aspect-square rounded-3xl bg-[#F8F9FA] border border-slate-200/80 p-6 relative flex items-center justify-center overflow-hidden shadow-2xs group">
-            {/* Top Left Best Seller Badge */}
-            <span className="absolute top-4 left-4 bg-[#FFA500] text-white text-[11px] font-extrabold px-3.5 py-1 rounded-full uppercase tracking-wider shadow-2xs z-10 flex items-center gap-1">
-              <Star className="w-3 h-3 fill-current text-white" />
-              <span>BEST SELLER</span>
-            </span>
+            {/* Top Left Badge */}
+            {product.is_best_deal ? (
+              <span className="absolute top-4 left-4 bg-[#E11D48] text-white text-[11px] font-extrabold px-3.5 py-1 rounded-full uppercase tracking-wider shadow-2xs z-10 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-white" />
+                <span>BEST DEAL</span>
+              </span>
+            ) : (
+              <span className="absolute top-4 left-4 bg-[#FFA500] text-white text-[11px] font-extrabold px-3.5 py-1 rounded-full uppercase tracking-wider shadow-2xs z-10 flex items-center gap-1">
+                <Star className="w-3 h-3 fill-current text-white" />
+                <span>BEST SELLER</span>
+              </span>
+            )}
 
             {/* Top Right Wishlist Heart Button */}
             <button

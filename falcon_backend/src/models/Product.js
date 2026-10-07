@@ -34,6 +34,15 @@ const Product = sequelize.define('Product', {
     },
     onDelete: 'SET NULL',
   },
+  sub_sub_subcategory_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'categories',
+      key: 'id',
+    },
+    onDelete: 'SET NULL',
+  },
   sku: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -123,6 +132,10 @@ const Product = sequelize.define('Product', {
     defaultValue: true,
   },
   is_best_seller: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  is_best_deal: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },

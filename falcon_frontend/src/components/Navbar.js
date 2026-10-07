@@ -22,6 +22,8 @@ import {
   Package
 } from 'lucide-react';
 
+import { fetchApi } from '../services/api';
+
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -33,6 +35,19 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [dbCategories, setDbCategories] = useState([]);
+
+  React.useEffect(() => {
+    fetchApi('/categories?type=parent')
+      .then((res) => {
+        if (res.success) {
+          const rawCats = res.data?.categories || res.data || [];
+          const parentsOnly = rawCats.filter(c => !c.parent_id);
+          setDbCategories(parentsOnly);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Hide Navbar on Admin pages
   if (pathname?.startsWith('/admin')) {
@@ -46,7 +61,7 @@ export default function Navbar() {
     }
   };
 
-  const navCategories = [
+  const defaultNavCategories = [
     { name_en: 'Deals & Offers', name_ar: 'العروض والخصومات', href: '/products?deals=true' },
     { name_en: 'Groceries', name_ar: 'البقالة والمنتجات الطازجة', href: '/products?category=groceries' },
     { name_en: 'Snacks', name_ar: 'المسليات والوجبات الخفيفة', href: '/products?category=snacks' },
@@ -56,6 +71,19 @@ export default function Navbar() {
     { name_en: 'New Arrivals', name_ar: 'وصل حديثاً', href: '/products?sort=newest' },
     { name_en: 'Help', name_ar: 'المساعدة', href: '/contact' },
   ];
+
+  const navCategories = dbCategories && dbCategories.length > 0
+    ? [
+        { name_en: 'Deals & Offers', name_ar: 'العروض والخصومات', href: '/products?deals=true' },
+        ...dbCategories.map(c => ({
+          name_en: c.name_en,
+          name_ar: c.name_ar,
+          href: `/products?category=${encodeURIComponent(c.slug || c.name_en.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}`
+        })),
+        { name_en: 'New Arrivals', name_ar: 'وصل حديثاً', href: '/products?sort=newest' },
+        { name_en: 'Help', name_ar: 'المساعدة', href: '/contact' },
+      ]
+    : defaultNavCategories;
 
   return (
     <header className="sticky top-0 z-50 font-sans shadow-md">
