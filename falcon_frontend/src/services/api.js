@@ -6,45 +6,31 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v
  */
 export const getImageUrl = (url) => {
   if (!url || typeof url !== 'string') return '';
-  const backendBase = API_BASE.replace(/\/api\/v1\/?$/, '');
   const targetUrl = url.trim();
+  if (!targetUrl) return '';
 
-  // If stored as absolute localhost/127.0.0.1 or staging domain URL in database,
-  // rewrite to current backend domain if backendBase is configured
-  if (
-    targetUrl.startsWith('http://localhost') ||
-    targetUrl.startsWith('https://localhost') ||
-    targetUrl.startsWith('https://falcon.databrainit.com') ||
-    targetUrl.startsWith('http://falcon.databrainit.com')
-  ) {
-    try {
-      if (!backendBase.includes('localhost') && !backendBase.includes('127.0.0.1')) {
-        const parsed = new URL(targetUrl);
-        return `${backendBase}${parsed.pathname}${parsed.search}`;
-      }
-    } catch (e) {
-      // fallback
+  // 1. Data URLs (base64)
+  if (targetUrl.startsWith('data:')) return targetUrl;
+
+  const cleanApiBase = API_BASE.replace(/\/$/, '');
+  const backendBase = API_BASE.replace(/\/api\/v1\/?$/, '');
+
+  // 2. Extract uploaded filename if path contains /uploads/
+  if (targetUrl.includes('/uploads/')) {
+    const filename = targetUrl.split('/uploads/')[1];
+    if (filename) {
+      // Always route through API_BASE/uploads (e.g. /api/v1/uploads/file-123.jpg)
+      // Works consistently across Nginx reverse proxy, production staging, and local dev
+      return `${cleanApiBase}/uploads/${filename}`;
     }
   }
 
-  // Mixed Content Fix: Upgrade HTTP to HTTPS if backendBase is HTTPS
-  if (targetUrl.startsWith('http://') && backendBase.startsWith('https://')) {
-    try {
-      const parsed = new URL(targetUrl);
-      const backendUrl = new URL(backendBase);
-      if (parsed.hostname === backendUrl.hostname) {
-        return `${backendBase}${parsed.pathname}${parsed.search}`;
-      }
-      return targetUrl.replace(/^http:\/\//i, 'https://');
-    } catch (e) {
-      return targetUrl.replace(/^http:\/\//i, 'https://');
-    }
-  }
-
-  if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://') || targetUrl.startsWith('data:')) {
+  // 3. Absolute HTTP/HTTPS URLs (external CDNs, Unsplash)
+  if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
     return targetUrl;
   }
 
+  // 4. Relative paths starting with slash
   const cleanPath = targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`;
   return `${backendBase}${cleanPath}`;
 };

@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 :root {
-  --font-en: 'Outfit', sans-serif;
+  --font-en: 'Raleway', sans-serif;
   --font-ar: 'Tajawal', sans-serif;
   --bg-light: #ffffff;
   --text-main: #0f172a;
@@ -24,6 +24,7 @@ body {
   background-color: #ffffff;
   color: #0f172a;
   overflow-x: hidden;
+  
 }
 
 /* Glassmorphism & Visual Aesthetics */
