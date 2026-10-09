@@ -38,6 +38,7 @@ import {
 
 export default function OrdersPage() {
   const { t, locale } = useLanguage();
+  const [profile, setProfile] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,128 +46,40 @@ export default function OrdersPage() {
   const [quickFilter, setQuickFilter] = useState('ALL'); // 'ALL' | 'HARVEST' | 'ORGANIC'
   const [timeframe, setTimeframe] = useState('3_months');
 
-  // Fallback Mock Orders matching the exact UI design if user has no real backend orders yet
-  const mockOrders = [
-    {
-      id: 'FM-08421',
-      order_number: 'FM-08421',
-      order_status: 'OUT_FOR_DELIVERY',
-      type: 'EXPRESS',
-      createdAt: new Date().toISOString(),
-      placed_time: 'Today, 2:15 PM',
-      payment_method: 'Apple Pay (Mada)',
-      grand_total: 184.50,
-      total_items: 7,
-      delivery_eta: 'Arriving in ~18 mins (2:35 PM)',
-      driver_name: 'Tariq K.',
-      driver_status: 'approaching Villa 14, Al Malqa',
-      temp_status: '3.8°C (Optimal)',
-      current_step: 4,
-      items: [
-        { name: 'Organic Milk', image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=150' },
-        { name: 'Fresh Strawberries', image: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=150' },
-        { name: 'Artisan Sourdough', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=150' },
-        { name: 'Avocado Hass', image: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=150' },
-        { name: 'Organic Honey', image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=150' },
-      ],
-      extra_items_count: 2,
-    },
-    {
-      id: 'FM-08399',
-      order_number: 'FM-08399',
-      order_status: 'PACKING',
-      type: 'SLOTTED',
-      createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-      placed_time: 'Today, 11:30 AM',
-      delivery_slot: '6:00 PM - 7:30 PM Today',
-      grand_total: 96.00,
-      total_items: 4,
-      picking_farm: 'Al-Kharj partner farms',
-      time_left_to_add: '15 mins left',
-      current_step: 2,
-      items: [
-        { name: 'Farm Tomatoes', image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=150' },
-        { name: 'Fresh Mint', image: 'https://images.unsplash.com/photo-1628556270448-4d4e4148e1b1?w=150' },
-        { name: 'Cucumber', image: 'https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=150' },
-        { name: 'Organic Eggs', image: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=150' },
-      ],
-    },
-    {
-      id: 'FM-08210',
-      order_number: 'FM-08210',
-      order_status: 'SCHEDULED',
-      type: 'SUBSCRIPTION',
-      createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-      scheduled_for: 'Tomorrow, 8:00 AM',
-      drop_address: 'Villa 14, Al Malqa',
-      grand_total: 142.50,
-      total_items: 5,
-      subscription_name: 'Weekly Organic Produce & Dairy Box',
-      discount_info: 'Next billing: Midnight tonight • Automatic 10% subscriber discount applied',
-      items: [
-        { name: 'Organic Milk', image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=150' },
-        { name: 'Fresh Eggs', image: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=150' },
-        { name: 'Spinach', image: 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=150' },
-      ],
-    },
-    {
-      id: 'FM-04821',
-      order_number: 'FM-04821',
-      order_status: 'DELIVERED',
-      type: 'EXPRESS',
-      createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-      delivered_time: 'Yesterday, 6:40 PM',
-      grand_total: 215.00,
-      total_items: 11,
-      delivery_proof: 'Contactless handover completed at Villa 14 front porch. Digital delivery photo logged and cold-temperature verified (3.4°C on arrival).',
-      rating: 5,
-      items: [
-        { name: 'Dates Sukary', image: 'https://images.unsplash.com/photo-1596560548464-f010549b84d7?w=150' },
-        { name: 'Grass-Fed Beef', image: 'https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=150' },
-        { name: 'Olive Oil', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=150' },
-        { name: 'Greek Yogurt', image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=150' },
-      ],
-      extra_items_count: 7,
-    },
-    {
-      id: 'FM-02005',
-      order_number: 'FM-02005',
-      order_status: 'DELIVERED',
-      type: 'STANDARD',
-      createdAt: new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString(),
-      delivered_time: 'May 18, 2026',
-      grand_total: 340.20,
-      total_items: 16,
-      bundle_name: 'Fortnightly Pantry & Fresh Produce Restock',
-      bundle_summary: '16 products including Grass-Fed Beef, Organic Milk, Al-Hasa Dates',
-      items: [],
-    }
-  ];
-
   useEffect(() => {
-    const loadOrders = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const res = await fetchApi('/orders/my-orders');
-        if (res.success && Array.isArray(res.data?.orders) && res.data.orders.length > 0) {
-          setOrders(res.data.orders);
+        const [profRes, ordRes] = await Promise.all([
+          fetchApi('/customers/profile').catch(() => null),
+          fetchApi('/orders/my-orders').catch(() => null),
+        ]);
+
+        if (profRes && profRes.success && profRes.data?.profile) {
+          setProfile(profRes.data.profile);
+        }
+        if (ordRes && ordRes.success && Array.isArray(ordRes.data?.orders)) {
+          setOrders(ordRes.data.orders);
         } else {
-          setOrders(mockOrders);
+          setOrders([]);
         }
       } catch (err) {
-        console.error('Failed to load customer orders:', err);
-        setOrders(mockOrders);
+        console.error('Failed to load customer data:', err);
+        setOrders([]);
       } finally {
         setLoading(false);
       }
     };
-    loadOrders();
+    loadData();
   }, []);
+
+  const isOrderActive = (status) =>
+    ['OUT_FOR_DELIVERY', 'ARRIVED', 'PAYMENT_VERIFIED', 'PACKING', 'DRIVER_ASSIGNED', 'DRIVER_ACCEPTED', 'PENDING_PAYMENT', 'PAYMENT_SUBMITTED'].includes(status);
 
   // Filtering Logic
   const filteredOrders = orders.filter((ord) => {
     // Tab Filter
-    if (activeTab === 'ACTIVE' && !['OUT_FOR_DELIVERY', 'ARRIVED', 'PAYMENT_VERIFIED', 'PACKING', 'DRIVER_ASSIGNED'].includes(ord.order_status)) {
+    if (activeTab === 'ACTIVE' && !isOrderActive(ord.order_status)) {
       return false;
     }
     if (activeTab === 'DELIVERED' && ord.order_status !== 'DELIVERED') {
@@ -175,7 +88,7 @@ export default function OrdersPage() {
     if (activeTab === 'SCHEDULED' && ord.order_status !== 'SCHEDULED' && ord.type !== 'SUBSCRIPTION') {
       return false;
     }
-    if (activeTab === 'CANCELLED' && ord.order_status !== 'CANCELLED') {
+    if (activeTab === 'CANCELLED' && !['CANCELLED', 'PAYMENT_REJECTED'].includes(ord.order_status)) {
       return false;
     }
 
@@ -183,17 +96,19 @@ export default function OrdersPage() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchId = ord.order_number?.toLowerCase().includes(q) || ord.id?.toLowerCase().includes(q);
-      const matchItems = ord.items?.some(i => (i.name || i.title_en || '').toLowerCase().includes(q));
+      const matchItems = ord.items?.some(i =>
+        ((i.product?.name_en || i.product_name_en || i.name || '')).toLowerCase().includes(q)
+      );
       if (!matchId && !matchItems) return false;
     }
 
     return true;
   });
 
-  const activeCount = orders.filter(o => ['OUT_FOR_DELIVERY', 'ARRIVED', 'PACKING', 'PAYMENT_VERIFIED', 'DRIVER_ASSIGNED'].includes(o.order_status)).length;
+  const activeCount = orders.filter(o => isOrderActive(o.order_status)).length;
   const deliveredCount = orders.filter(o => o.order_status === 'DELIVERED').length;
   const scheduledCount = orders.filter(o => o.order_status === 'SCHEDULED' || o.type === 'SUBSCRIPTION').length;
-  const cancelledCount = orders.filter(o => o.order_status === 'CANCELLED').length;
+  const cancelledCount = orders.filter(o => ['CANCELLED', 'PAYMENT_REJECTED'].includes(o.order_status)).length;
 
   if (loading) {
     return (
@@ -233,27 +148,20 @@ export default function OrdersPage() {
           <div className="lg:col-span-3 space-y-4">
             
             {/* User Profile Card */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-4">
+            <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-4 font-sans">
               <div className="flex items-center gap-3">
-                <div className="relative shrink-0">
-                  <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
-                    alt="Noura Al-Mansoor"
-                    className="w-13 h-13 rounded-2xl object-cover border-2 border-emerald-100 shadow-2xs"
-                  />
-                  <span className="absolute -bottom-1 -right-1 bg-amber-400 text-amber-950 p-0.5 rounded-full text-[9px]">
-                    ⭐
-                  </span>
+                <div className="w-13 h-13 rounded-2xl bg-[#043927] text-white font-black text-lg flex items-center justify-center border-2 border-emerald-100 shadow-2xs shrink-0">
+                  {profile?.first_name ? profile.first_name[0].toUpperCase() : 'M'}
                 </div>
                 <div className="min-w-0">
                   <h3 className="font-extrabold text-slate-900 text-sm leading-tight truncate">
-                    Noura Al-Mansoor
+                    {profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Mohammed Al-Salem' : 'Mohammed Al-Salem'}
                   </h3>
                   <span className="inline-block bg-amber-50 text-amber-800 border border-amber-200/80 text-[10px] font-black px-2 py-0.5 rounded-md mt-0.5 uppercase tracking-wider">
                     ⭐ GOLD VIP MEMBER
                   </span>
                   <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                    +966 55 907 6543
+                    {profile?.user?.mobile || profile?.mobile || '+966 50 123 4567'}
                   </p>
                 </div>
               </div>
@@ -689,23 +597,66 @@ export default function OrdersPage() {
                             </div>
                           </div>
 
-                          {/* Included Items Thumbnails */}
+                          {/* Included Items List */}
                           {ord.items && ord.items.length > 0 && (
-                            <div className="space-y-1.5">
+                            <div className="space-y-2 font-sans pt-1">
                               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                                Included in this delivery:
+                                Included in this delivery ({ord.items.length} items):
                               </span>
-                              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                                {ord.items.slice(0, 5).map((item, idx) => (
-                                  <div key={idx} className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-200 p-1 shrink-0 flex items-center justify-center">
-                                    <img src={getImageUrl(item.image)} alt={item.name} className="w-full h-full object-contain" />
-                                  </div>
-                                ))}
-                                {ord.extra_items_count > 0 && (
-                                  <div className="w-14 h-14 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-extrabold text-xs shrink-0 flex items-center justify-center">
-                                    +{ord.extra_items_count} more
-                                  </div>
-                                )}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                {ord.items.map((item, idx) => {
+                                  const img = item.product?.images?.[0]?.image_url || item.product?.main_image || item.image || item.main_image;
+                                  const name = item.product_name_en || item.product?.name_en || item.product_name_ar || item.name || 'Grocery Item';
+                                  const qty = item.quantity || 1;
+                                  const itemPrice = parseFloat(item.total_price || (item.unit_price ? item.unit_price * qty : 0));
+                                  return (
+                                    <div
+                                      key={item.id || idx}
+                                      className="bg-[#F8F9FA] rounded-2xl p-2.5 flex items-center justify-between gap-3 border border-slate-200/70"
+                                    >
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden relative shadow-2xs">
+                                          {img ? (
+                                            <img
+                                              src={getImageUrl(img)}
+                                              alt={name}
+                                              className="w-full h-full object-contain"
+                                              onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.style.display = 'none';
+                                                if (e.currentTarget.nextSibling) {
+                                                  e.currentTarget.nextSibling.style.display = 'flex';
+                                                }
+                                              }}
+                                            />
+                                          ) : null}
+                                          <div
+                                            className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#05A764] rounded-lg"
+                                            style={{ display: img ? 'none' : 'flex' }}
+                                          >
+                                            <ShoppingBag className="w-4 h-4 stroke-[2]" />
+                                          </div>
+                                        </div>
+
+                                        <div className="min-w-0">
+                                          <h5 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                                            {name}
+                                          </h5>
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="bg-[#05A764]/10 text-[#05A764] text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
+                                              Qty: {qty}
+                                            </span>
+                                            {itemPrice > 0 && (
+                                              <span className="text-[11px] font-extrabold text-slate-700 font-sans">
+                                                SAR {itemPrice.toFixed(2)}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           )}
@@ -778,14 +729,67 @@ export default function OrdersPage() {
                             </span>
                           </div>
 
-                          {/* Items Thumbnails */}
+                          {/* Items List */}
                           {ord.items && ord.items.length > 0 && (
-                            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                              {ord.items.map((item, idx) => (
-                                <div key={idx} className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-200 p-1 shrink-0 flex items-center justify-center">
-                                  <img src={getImageUrl(item.image)} alt={item.name} className="w-full h-full object-contain" />
-                                </div>
-                              ))}
+                            <div className="space-y-2 font-sans pt-1">
+                              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                                Items Being Picked ({ord.items.length}):
+                              </span>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                {ord.items.map((item, idx) => {
+                                  const img = item.product?.images?.[0]?.image_url || item.product?.main_image || item.image || item.main_image;
+                                  const name = item.product_name_en || item.product?.name_en || item.product_name_ar || item.name || 'Grocery Item';
+                                  const qty = item.quantity || 1;
+                                  const itemPrice = parseFloat(item.total_price || (item.unit_price ? item.unit_price * qty : 0));
+                                  return (
+                                    <div
+                                      key={item.id || idx}
+                                      className="bg-[#F8F9FA] rounded-2xl p-2.5 flex items-center justify-between gap-3 border border-slate-200/70"
+                                    >
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden relative shadow-2xs">
+                                          {img ? (
+                                            <img
+                                              src={getImageUrl(img)}
+                                              alt={name}
+                                              className="w-full h-full object-contain"
+                                              onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.style.display = 'none';
+                                                if (e.currentTarget.nextSibling) {
+                                                  e.currentTarget.nextSibling.style.display = 'flex';
+                                                }
+                                              }}
+                                            />
+                                          ) : null}
+                                          <div
+                                            className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#05A764] rounded-lg"
+                                            style={{ display: img ? 'none' : 'flex' }}
+                                          >
+                                            <ShoppingBag className="w-4 h-4 stroke-[2]" />
+                                          </div>
+                                        </div>
+
+                                        <div className="min-w-0">
+                                          <h5 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                                            {name}
+                                          </h5>
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="bg-[#05A764]/10 text-[#05A764] text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
+                                              Qty: {qty}
+                                            </span>
+                                            {itemPrice > 0 && (
+                                              <span className="text-[11px] font-extrabold text-slate-700 font-sans">
+                                                SAR {itemPrice.toFixed(2)}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -923,19 +927,67 @@ export default function OrdersPage() {
                           </div>
                         )}
 
-                        {/* Product Thumbnails */}
+                        {/* Product Items List */}
                         {ord.items && ord.items.length > 0 && (
-                          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                            {ord.items.map((item, idx) => (
-                              <div key={idx} className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-200 p-1 shrink-0 flex items-center justify-center">
-                                <img src={getImageUrl(item.image)} alt={item.name} className="w-full h-full object-contain" />
-                              </div>
-                            ))}
-                            {ord.extra_items_count > 0 && (
-                              <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 font-extrabold text-xs shrink-0 flex items-center justify-center">
-                                +{ord.extra_items_count} more
-                              </div>
-                            )}
+                          <div className="space-y-2 font-sans pt-1">
+                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                              Items Delivered ({ord.items.length}):
+                            </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                              {ord.items.map((item, idx) => {
+                                const img = item.product?.images?.[0]?.image_url || item.product?.main_image || item.image || item.main_image;
+                                const name = item.product_name_en || item.product?.name_en || item.product_name_ar || item.name || 'Grocery Item';
+                                const qty = item.quantity || 1;
+                                const itemPrice = parseFloat(item.total_price || (item.unit_price ? item.unit_price * qty : 0));
+                                return (
+                                  <div
+                                    key={item.id || idx}
+                                    className="bg-[#F8F9FA] rounded-2xl p-2.5 flex items-center justify-between gap-3 border border-slate-200/70"
+                                  >
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden relative shadow-2xs">
+                                        {img ? (
+                                          <img
+                                            src={getImageUrl(img)}
+                                            alt={name}
+                                            className="w-full h-full object-contain"
+                                            onError={(e) => {
+                                              e.currentTarget.onerror = null;
+                                              e.currentTarget.style.display = 'none';
+                                              if (e.currentTarget.nextSibling) {
+                                                e.currentTarget.nextSibling.style.display = 'flex';
+                                              }
+                                            }}
+                                          />
+                                        ) : null}
+                                        <div
+                                          className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#05A764] rounded-lg"
+                                          style={{ display: img ? 'none' : 'flex' }}
+                                        >
+                                          <ShoppingBag className="w-4 h-4 stroke-[2]" />
+                                        </div>
+                                      </div>
+
+                                      <div className="min-w-0">
+                                        <h5 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                                          {name}
+                                        </h5>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                          <span className="bg-[#05A764]/10 text-[#05A764] text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
+                                            Qty: {qty}
+                                          </span>
+                                          {itemPrice > 0 && (
+                                            <span className="text-[11px] font-extrabold text-slate-700 font-sans">
+                                              SAR {itemPrice.toFixed(2)}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
                       </div>

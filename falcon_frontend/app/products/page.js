@@ -51,6 +51,7 @@ function ProductsCatalogContent() {
   const [addingId, setAddingId] = useState(null);
   const [activeFilterChip, setActiveFilterChip] = useState('ALL');
   const [priceRange, setPriceRange] = useState(150);
+  const [minPrice, setMinPrice] = useState(5);
   const [selectedBrands, setSelectedBrands] = useState([]);
 
   useEffect(() => {
@@ -80,6 +81,9 @@ function ProductsCatalogContent() {
       if (selectedSubSubcategory) query += `&subSubcategoryId=${selectedSubSubcategory}`;
       if (selectedSubSubSubcategory) query += `&subSubSubcategoryId=${selectedSubSubSubcategory}`;
 
+      if (minPrice !== undefined && minPrice !== null && minPrice !== '') query += `&minPrice=${minPrice}`;
+      if (priceRange !== undefined && priceRange !== null && priceRange !== '') query += `&maxPrice=${priceRange}`;
+
       const res = await fetchApi(query);
       if (res.success && res.data) {
         const fetched = res.data.products?.products || res.data.products || (Array.isArray(res.data) ? res.data : []);
@@ -100,8 +104,11 @@ function ProductsCatalogContent() {
   }, []);
 
   useEffect(() => {
-    loadProducts();
-  }, [selectedCategory, selectedSubcategory, selectedSubSubcategory, selectedSubSubSubcategory, search]);
+    const timer = setTimeout(() => {
+      loadProducts();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [selectedCategory, selectedSubcategory, selectedSubSubcategory, selectedSubSubSubcategory, search, minPrice, priceRange]);
 
   const displayCategoryTree = useMemo(() => {
     if (!categories || categories.length === 0) {
@@ -264,7 +271,8 @@ function ProductsCatalogContent() {
     setSelectedSubcategory('');
     setSelectedSubSubcategory('');
     setSelectedSubSubSubcategory('');
-    setPriceRange(150);
+    setMinPrice(5);
+    setPriceRange(200);
     router.push('/products');
   };
 
@@ -445,30 +453,40 @@ function ProductsCatalogContent() {
           <div className="space-y-3 pt-3 border-t border-slate-100">
             <div className="flex items-center justify-between text-xs font-bold text-slate-900">
               <span>{locale === 'ar' ? 'نطاق السعر (ريال)' : 'Price Range (SAR)'}</span>
-              <span className="text-[#043927] font-black">SAR 5 - SAR {priceRange}</span>
+              <span className="text-[#043927] font-black">SAR {minPrice} - SAR {priceRange}</span>
             </div>
             <input
               type="range"
-              min="5"
-              max="200"
+              min="0"
+              max="500"
               value={priceRange}
-              onChange={(e) => setPriceRange(e.target.value)}
+              onChange={(e) => setPriceRange(Number(e.target.value))}
               className="w-full accent-[#043927] cursor-pointer"
             />
             <div className="flex items-center gap-2">
-              <input
-                type="text"
-                readOnly
-                value="SAR 5"
-                className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-center text-xs font-bold text-slate-700"
-              />
+              <div className="w-1/2 flex items-center bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700">
+                <span className="text-slate-400 mr-1 font-normal">SAR</span>
+                <input
+                  type="number"
+                  min="0"
+                  max={priceRange}
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(Number(e.target.value))}
+                  className="w-full bg-transparent text-center font-bold focus:outline-none"
+                />
+              </div>
               <span className="text-slate-400">-</span>
-              <input
-                type="text"
-                readOnly
-                value={`SAR ${priceRange}`}
-                className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-center text-xs font-bold text-slate-700"
-              />
+              <div className="w-1/2 flex items-center bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700">
+                <span className="text-slate-400 mr-1 font-normal">SAR</span>
+                <input
+                  type="number"
+                  min={minPrice}
+                  max="1000"
+                  value={priceRange}
+                  onChange={(e) => setPriceRange(Number(e.target.value))}
+                  className="w-full bg-transparent text-center font-bold focus:outline-none"
+                />
+              </div>
             </div>
           </div>
 
@@ -550,11 +568,14 @@ function ProductsCatalogContent() {
             {products.map((prod) => {
               const qtyInCart = getCartQty(prod.id);
               const isWish = isInWishlist(prod.id);
-
+const currentPrice = parseFloat(prod.price);
+                const isDiscounted = prod.discount_price && parseFloat(prod.discount_price) < currentPrice;
+                const finalPrice = isDiscounted ? parseFloat(prod.discount_price) : currentPrice;
+                const originalPrice = isDiscounted ? currentPrice : (prod.purchase_price ? parseFloat(prod.purchase_price) : null);
               return (
                 <div
                   key={prod.id}
-                  className="group bg-white rounded-2xl border border-slate-200/90 hover:border-[#05A764] shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer min-h-[410px]"
+                  className="group bg-white rounded-2xl border border-slate-200/90 hover:border-[#05A764] shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer h-full"
                 >
                   {/* Top Badges */}
                   <div className="flex items-center justify-between z-10 mb-1">
@@ -593,52 +614,46 @@ function ProductsCatalogContent() {
                     />
                   </div>
 
-                  {/* Weight / Packaging Tag */}
-                  <div className="mb-1">
-                    <span className="bg-slate-100 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded-md inline-block">
-                      {prod.unit || '400g Tray'}
-                    </span>
-                  </div>
-
                   {/* Info Content */}
-                  <div className="space-y-1 flex-1 flex flex-col justify-between">
+                  <div className="flex-1 flex flex-col justify-between space-y-2 mt-1">
                     <div>
-                      {/* Brand & Rating Bar */}
-                      <div className="flex items-center justify-between text-[11px] font-medium leading-none mb-1">
-                        <span className="text-slate-400 truncate max-w-[110px] uppercase font-bold text-[10px]">
-                          {prod.brand_en || 'ORGANIC FARM'}
-                        </span>
-                        <div className="flex items-center gap-0.5 text-amber-500 font-bold text-[10px]">
+                      {/* Weight Tag & Rating Row */}
+                      <div className="flex items-center justify-between text-[11px] font-medium mb-1.5 gap-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="bg-slate-100 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded-md inline-block shrink-0">
+                            {prod.unit || '400g Tray'}
+                          </span>
+                          {prod.brand_en && (
+                            <span className="text-slate-400 truncate uppercase font-bold text-[10px]">
+                              {prod.brand_en}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-0.5 text-amber-500 font-bold text-[10px] shrink-0">
                           <span>★ {prod.rating || '4.9'}</span>
                           <span className="text-slate-400 font-normal">({prod.reviews || '1,420'})</span>
                         </div>
                       </div>
 
                       {/* Product Title */}
-                      <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug font-sans group-hover:text-[#043927] transition-colors mb-1">
+                      <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug font-sans group-hover:text-[#043927] transition-colors">
                         {locale === 'ar' ? prod.name_ar || prod.title_ar : prod.name_en || prod.title_en}
                       </h3>
-
-                      {/* Delivery Speed Badge */}
-                      <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-700 mb-1">
-                        <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
-                        <span>Express Delivery in 2h</span>
-                      </div>
                     </div>
 
                     {/* Price & Add to Cart Action Row */}
-                    <div className="pt-1.5 border-t border-slate-100 flex items-end justify-between gap-1">
+                    <div className="pt-2 border-t border-slate-100 flex items-end justify-between gap-1 mt-auto">
                       <div>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-sm sm:text-base font-black text-slate-900 font-sans">
-                            SAR {prod.price}
-                          </span>
-                          {prod.mrp && (
-                            <span className="text-[10px] text-slate-400 line-through font-normal">
-                              SAR {prod.mrp}
+                            <span className="text-sm sm:text-base font-black text-slate-900 font-sans">
+                              SAR {finalPrice.toFixed(2)}
                             </span>
-                          )}
-                        </div>
+                            {originalPrice && (
+                              <span className="text-[10px] text-slate-400 line-through font-normal">
+                                SAR {originalPrice.toFixed(2)}
+                              </span>
+                            )}
+                          </div>
                       </div>
 
                       {/* Add Button or Quantity Selector */}

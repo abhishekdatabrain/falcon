@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { fetchApi } from '../../../src/services/api';
+import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useSocket } from '../../../src/contexts/SocketContext';
 import { useToast } from '../../../src/contexts/ToastContext';
@@ -530,7 +530,7 @@ export default function OrderDetailsPage() {
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0">
                         <img
-                          src={item.image}
+                          src={getImageUrl(item.image)}
                           alt={item.name_en}
                           className="w-full h-full object-contain"
                         />

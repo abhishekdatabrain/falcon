@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '../../src/contexts/CartContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { getImageUrl } from '../../src/services/api';
 import RecommendedProducts from '../../src/components/RecommendedProducts';
 import CouponCard from '../../src/components/CouponCard';
 import {
@@ -66,7 +67,7 @@ export default function CartPage() {
   const { t, locale } = useLanguage();
   const { cart, updateQuantity, removeItem, clearCart, loading } = useCart();
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-
+  console.log(cart, "cart");
   // If real cart has items, use real items; otherwise fallback to DEMO items for instant visual preview
   const itemsToDisplay = (cart && cart.items && cart.items.length > 0) ? cart.items : DEMO_CART_ITEMS;
   const isDemo = (!cart || !cart.items || cart.items.length === 0);
@@ -106,7 +107,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-slate-900 pb-24">
-      
+
       {/* Top Header Banner */}
       <div className="bg-white border-b border-slate-200/80 py-5 px-4 sm:px-6 lg:px-8 shadow-2xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -141,13 +142,13 @@ export default function CartPage() {
       {/* Main Content Layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* LEFT COLUMN: Cart Item Cards List (8 Columns) */}
           <div className="lg:col-span-8 space-y-4">
             {itemsToDisplay.map((item) => {
-              const itemPrice = parseFloat(item.price || 10.45);
-              const itemMrp = parseFloat(item.mrp || (itemPrice * 1.4).toFixed(2));
-              const discountTag = item.discountPercent || `${Math.round(((itemMrp - itemPrice) / itemMrp) * 100)}% OFF`;
+              const itemPrice = parseFloat(item.discount_price);
+              const itemMrp = parseFloat(item.price || (itemPrice * 1.4).toFixed(2));
+              const discountTag = item.vat_percentage || `${Math.round(((itemMrp - itemPrice) / itemMrp) * 100)}% OFF`;
               const offers = item.offers || [
                 { text_en: 'Extra 15% off', text_ar: 'خصم إضافي ١٥٪' },
                 { text_en: '15% cashback up to SAR 15', text_ar: 'كاشباك ١٥٪ حتى ١٥ ريال' },
@@ -162,7 +163,7 @@ export default function CartPage() {
                 >
                   {/* Top Row: Thumbnail + Info + Top Right Delete & Price */}
                   <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
-                    
+
                     {/* Thumbnail & Checkbox Column */}
                     <div className="flex flex-col items-center gap-2 shrink-0 w-full sm:w-auto">
                       <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-2xl bg-[#F8F9FA] border border-slate-200/80 p-3 flex items-center justify-center overflow-hidden">
@@ -172,7 +173,7 @@ export default function CartPage() {
                         </div>
 
                         <img
-                          src={item.image || 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400'}
+                          src={getImageUrl(item.image)}
                           alt={locale === 'ar' ? (item.name_ar || item.name_en) : (item.name_en || item.name_ar)}
                           className="w-full h-full object-contain"
                         />
@@ -229,7 +230,11 @@ export default function CartPage() {
                       {/* Size Chip */}
                       <div>
                         <button className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-xs px-3 py-1 rounded-full cursor-pointer transition-colors">
-                          <span>Size: {item.size || '2 kg'}</span>
+                          <span>
+                            {[item.unit_value, item.unit_type, item.pack_size]
+                              .filter(value => value !== null && value !== undefined && value !== "")
+                              .join(" ")}
+                          </span>
                           <ChevronRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180" />
                         </button>
                       </div>
@@ -282,12 +287,16 @@ export default function CartPage() {
                     <div className="text-right sm:text-right w-full sm:w-auto shrink-0 space-y-1">
                       <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[#05A764] font-black text-xs sm:text-sm">
-                            {discountTag}
-                          </span>
-                          <span className="text-slate-400 line-through text-xs font-medium">
-                            {itemMrp.toFixed(2)}
-                          </span>
+                          {discountTag && (
+                            <span className="text-[#05A764] font-black text-xs sm:text-sm">
+                              {discountTag} % OFF
+                            </span>
+                          )}
+                          {itemMrp > itemPrice && (
+                            <span className="text-slate-400 line-through text-xs font-medium">
+                              {itemMrp.toFixed(2)}
+                            </span>
+                          )}
                         </div>
 
                         <div className="text-2xl sm:text-3xl font-black text-slate-900 font-sans tracking-tight flex items-baseline justify-end gap-1">
@@ -305,7 +314,7 @@ export default function CartPage() {
 
           {/* RIGHT COLUMN: Coupon Box & Order Summary Box (4 Columns) */}
           <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24">
-            
+
             {/* Got a Coupon Component */}
             <CouponCard
               appliedCoupon={appliedCoupon}
@@ -315,7 +324,7 @@ export default function CartPage() {
 
             {/* Order Summary Box */}
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/90 shadow-sm space-y-6">
-              
+
               {/* Header Title & Item Count Pill */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <h2 className="text-xl font-extrabold text-slate-900 font-sans">
@@ -390,7 +399,7 @@ export default function CartPage() {
                 </div>
               </div>
 
-            
+
 
               {/* Primary CTA Checkout Button */}
               <Link

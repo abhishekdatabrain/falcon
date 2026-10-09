@@ -6,11 +6,46 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v
  */
 export const getImageUrl = (url) => {
   if (!url || typeof url !== 'string') return '';
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
-    return url;
-  }
   const backendBase = API_BASE.replace(/\/api\/v1\/?$/, '');
-  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  const targetUrl = url.trim();
+
+  // If stored as absolute localhost/127.0.0.1 or staging domain URL in database,
+  // rewrite to current backend domain if backendBase is configured
+  if (
+    targetUrl.startsWith('http://localhost') ||
+    targetUrl.startsWith('https://localhost') ||
+    targetUrl.startsWith('https://falcon.databrainit.com') ||
+    targetUrl.startsWith('http://falcon.databrainit.com')
+  ) {
+    try {
+      if (!backendBase.includes('localhost') && !backendBase.includes('127.0.0.1')) {
+        const parsed = new URL(targetUrl);
+        return `${backendBase}${parsed.pathname}${parsed.search}`;
+      }
+    } catch (e) {
+      // fallback
+    }
+  }
+
+  // Mixed Content Fix: Upgrade HTTP to HTTPS if backendBase is HTTPS
+  if (targetUrl.startsWith('http://') && backendBase.startsWith('https://')) {
+    try {
+      const parsed = new URL(targetUrl);
+      const backendUrl = new URL(backendBase);
+      if (parsed.hostname === backendUrl.hostname) {
+        return `${backendBase}${parsed.pathname}${parsed.search}`;
+      }
+      return targetUrl.replace(/^http:\/\//i, 'https://');
+    } catch (e) {
+      return targetUrl.replace(/^http:\/\//i, 'https://');
+    }
+  }
+
+  if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://') || targetUrl.startsWith('data:')) {
+    return targetUrl;
+  }
+
+  const cleanPath = targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`;
   return `${backendBase}${cleanPath}`;
 };
 

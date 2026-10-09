@@ -63,10 +63,14 @@ class ProductService {
       ];
     }
 
-    if (minPrice || maxPrice) {
-      where.price = {};
-      if (minPrice) where.price[Op.gte] = parseFloat(minPrice);
-      if (maxPrice) where.price[Op.lte] = parseFloat(maxPrice);
+    const minP = minPrice !== undefined && minPrice !== '' ? parseFloat(minPrice) : (query.min_price !== undefined && query.min_price !== '' ? parseFloat(query.min_price) : null);
+    const maxP = maxPrice !== undefined && maxPrice !== '' ? parseFloat(maxPrice) : (query.max_price !== undefined && query.max_price !== '' ? parseFloat(query.max_price) : null);
+
+    if (minP !== null || maxP !== null) {
+      const priceFilter = {};
+      if (minP !== null && !isNaN(minP)) priceFilter[Op.gte] = minP;
+      if (maxP !== null && !isNaN(maxP)) priceFilter[Op.lte] = maxP;
+      where.price = priceFilter;
     }
 
     const pageNum = parseInt(page, 10);

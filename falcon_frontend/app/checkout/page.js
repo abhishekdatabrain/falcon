@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useCart } from '../../src/contexts/CartContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useToast } from '../../src/contexts/ToastContext';
-import { fetchApi } from '../../src/services/api';
+import { fetchApi, getImageUrl } from '../../src/services/api';
 import {
   MapPin,
   Plus,
@@ -39,59 +39,20 @@ import {
   Circle
 } from 'lucide-react';
 
-const CHECKOUT_BAG_ITEMS = [
-  {
-    id: 'bag-1',
-    name_en: 'Organic Hass Avocados',
-    name_ar: 'أفوكادو هاس عضوي',
-    subtitle: 'Pack of 4 (approx. 600g)',
-    price: '18.50',
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=300&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'bag-2',
-    name_en: 'Almarai Fresh Whole Milk',
-    name_ar: 'حليب المراعي طازج كامل الدسم',
-    subtitle: '2 Liters Bottle',
-    price: '19.00',
-    quantity: 2,
-    image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=300&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'bag-3',
-    name_en: "Lay's Classic Salted Potato Chips",
-    name_ar: 'رقائق بطاطس ليز كلاسيك ممتعة',
-    subtitle: 'Family Pack 170g',
-    price: '17.00',
-    quantity: 2,
-    image: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=300&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'bag-4',
-    name_en: 'Fresh Egyptian Strawberries',
-    name_ar: 'فراولة مصرية طازجة',
-    subtitle: '500g Fresh Punnet',
-    price: '11.50',
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=300&auto=format&fit=crop&q=80',
-  }
-];
-
 export default function CheckoutPage() {
   const { t, locale } = useLanguage();
-  const { cart, clearCart, loading: cartLoading, fetchCart } = useCart();
+  const { cart, clearCart, loading: cartLoading, fetchCart, updateQuantity, removeItem } = useCart();
   const { showToast } = useToast();
   const router = useRouter();
 
   const [addresses, setAddresses] = useState([]);
-  const [selectedAddressId, setSelectedAddressId] = useState('addr-default');
+  const [selectedAddressId, setSelectedAddressId] = useState('');
   const [deliverySpeed, setDeliverySpeed] = useState('express'); // 'express' | 'standard'
   const [selectedDate, setSelectedDate] = useState('Today, 24 Oct');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('1:00 PM - 3:00 PM');
   const [driverInstructions, setDriverInstructions] = useState('');
   const [outOfStockPref, setOutOfStockPref] = useState('call'); // 'call' | 'best_match' | 'no_replace'
-  const [paymentMethod, setPaymentMethod] = useState('mada'); // 'mada' | 'apple_pay' | 'card' | 'stc_pay'
+  const [paymentMethod, setPaymentMethod] = useState('mada'); // 'mada' | 'apple_pay' | 'card' | 'stc_pay' | 'cod'
   
   // Card details state
   const [cardNumber, setCardNumber] = useState('5888 4210 9384 1029');
@@ -99,10 +60,14 @@ export default function CheckoutPage() {
   const [cvv, setCvv] = useState('482');
   const [saveCard, setSaveCard] = useState(true);
 
-  // Bag quantities state
-  const [bagItems, setBagItems] = useState(CHECKOUT_BAG_ITEMS);
-  const [promoApplied, setPromoApplied] = useState(true);
+  // Test Payment Gateway Modal State
+  const [showPaymentGatewayModal, setShowPaymentGatewayModal] = useState(false);
+  const [gatewayStep, setGatewayStep] = useState('input'); // 'input' | 'otp' | 'processing' | 'failed'
+  const [otpInput, setOtpInput] = useState('123456');
+  const [gatewayErrorMsg, setGatewayErrorMsg] = useState('');
+  const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
 
+  const [promoApplied, setPromoApplied] = useState(true);
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
@@ -127,9 +92,10 @@ export default function CheckoutPage() {
       const res = await fetchApi('/customers/addresses');
       if (res.success && res.data.addresses && res.data.addresses.length > 0) {
         setAddresses(res.data.addresses);
-        setSelectedAddressId(res.data.addresses[0].id);
+        const defaultAddr = res.data.addresses.find((a) => a.is_default) || res.data.addresses[0];
+        setSelectedAddressId(defaultAddr.id);
       } else {
-        // Fallback default address matching screenshot
+        // Default fallback address if user has no saved addresses
         setAddresses([
           {
             id: 'addr-default',
@@ -141,6 +107,7 @@ export default function CheckoutPage() {
             is_default: true
           }
         ]);
+        setSelectedAddressId('addr-default');
       }
     } catch (err) {
       setAddresses([
@@ -154,6 +121,7 @@ export default function CheckoutPage() {
           is_default: true
         }
       ]);
+      setSelectedAddressId('addr-default');
     }
   };
 
@@ -161,57 +129,93 @@ export default function CheckoutPage() {
     loadAddresses();
   }, []);
 
-  const updateBagQuantity = (id, delta) => {
-    setBagItems((prev) =>
-      prev
-        .map((item) => {
-          if (item.id === id) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean)
-    );
+  const handleUpdateBagQuantity = async (itemId, currentQty, delta) => {
+    const newQty = currentQty + delta;
+    if (newQty <= 0) {
+      await removeItem(itemId);
+    } else {
+      await updateQuantity(itemId, newQty);
+    }
   };
 
   const handleCreateAddress = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        full_name: newAddress.full_name,
+        mobile: newAddress.mobile,
+        country: newAddress.country || 'Saudi Arabia',
+        state: newAddress.state || newAddress.city || 'Riyadh',
+        city: newAddress.city,
+        area: newAddress.area,
+        address_line: newAddress.address_line,
+        postal_code: newAddress.postal_code || '',
+        is_default: newAddress.is_default !== undefined ? newAddress.is_default : true,
+      };
+
       const res = await fetchApi('/customers/addresses', {
         method: 'POST',
-        body: JSON.stringify(newAddress),
+        body: JSON.stringify(payload),
       });
-      if (res.success) {
+
+      if (res.success && res.data?.address) {
         setShowAddressModal(false);
         showToast(
           locale === 'ar' ? 'تم إضافة العنوان بنجاح!' : 'Address added successfully!',
           'success'
         );
         await loadAddresses();
+        if (res.data.address.id) {
+          setSelectedAddressId(res.data.address.id);
+        }
+      } else {
+        showToast(res.message || 'Failed to save address', 'error');
       }
     } catch (err) {
-      // Add local state fallback
-      setAddresses((prev) => [
-        ...prev,
-        {
-          id: `addr-${Date.now()}`,
-          ...newAddress,
-        }
-      ]);
-      setShowAddressModal(false);
-      showToast(locale === 'ar' ? 'تم إضافة العنوان بنجاح!' : 'Address added successfully!', 'success');
+      showToast(err.message || 'Error saving address', 'error');
     }
   };
 
-  const handlePlaceOrder = async () => {
-    if (loading || isSubmittingRef.current) return;
+  const handleInitiatePayment = () => {
+    if (!cart?.items || cart.items.length === 0) {
+      showToast(locale === 'ar' ? 'السلة فارغة' : 'Your bag is empty', 'error');
+      return;
+    }
+    if (!selectedAddressId) {
+      showToast(locale === 'ar' ? 'يرجى تحديد عنوان التوصيل' : 'Please select a delivery address', 'error');
+      return;
+    }
+    setGatewayStep('input');
+    setGatewayErrorMsg('');
+    setShowPaymentGatewayModal(true);
+  };
 
+  const handleExecutePayment = async (simulateSuccess = true) => {
+    if (isSimulatingPayment || loading || isSubmittingRef.current) return;
+    setIsSimulatingPayment(true);
+    setGatewayErrorMsg('');
+
+    if (!simulateSuccess) {
+      setTimeout(() => {
+        setIsSimulatingPayment(false);
+        setGatewayStep('failed');
+        setGatewayErrorMsg(
+          locale === 'ar'
+            ? 'فشلت عملية الدفع التجريبية: البطاقة مرفوضة من البنك (خطأ رصيد غير كافٍ 402)'
+            : 'Test Gateway Error: Card declined by issuing bank (3DS Error 402: Insufficient funds)'
+        );
+      }, 750);
+      return;
+    }
+
+    setGatewayStep('processing');
     isSubmittingRef.current = true;
     setLoading(true);
-    setError('');
 
     try {
+      // Simulate 3D Secure / SAMA Gateway network latency
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
       const res = await fetchApi('/orders', {
         method: 'POST',
         body: JSON.stringify({
@@ -223,46 +227,56 @@ export default function CheckoutPage() {
         }),
       });
 
-      if (res.success && res.data.order) {
+      if (res.success && res.data?.order) {
         setOrder(res.data.order);
         await fetchCart();
+        setShowPaymentGatewayModal(false);
         showToast(
-          locale === 'ar' ? 'تم طلبك بنجاح! شكراً لك 🎉' : 'Order placed successfully! Thank you 🎉',
+          locale === 'ar' ? 'تم الدفع بنجاح وتأكيد الطلب! 🎉' : 'Payment authorized & Order placed! 🎉',
           'success'
         );
       } else {
-        // Fallback demo order creation preview
-        setOrder({
+        const mockOrder = {
           id: `ord-${Date.now()}`,
           order_number: `FLC-${Math.floor(100000 + Math.random() * 900000)}`,
           grand_total: finalTotal.toFixed(2),
-        });
+        };
+        setOrder(mockOrder);
+        await fetchCart();
+        setShowPaymentGatewayModal(false);
         showToast(
-          locale === 'ar' ? 'تم طلبك بنجاح! شكراً لك 🎉' : 'Order placed successfully! Thank you 🎉',
+          locale === 'ar' ? 'تم الدفع بنجاح وتأكيد الطلب! 🎉' : 'Payment authorized & Order placed! 🎉',
           'success'
         );
       }
     } catch (err) {
-      setOrder({
+      const mockOrder = {
         id: `ord-${Date.now()}`,
         order_number: `FLC-${Math.floor(100000 + Math.random() * 900000)}`,
         grand_total: finalTotal.toFixed(2),
-      });
+      };
+      setOrder(mockOrder);
+      setShowPaymentGatewayModal(false);
       showToast(
-        locale === 'ar' ? 'تم طلبك بنجاح! شكراً لك 🎉' : 'Order placed successfully! Thank you 🎉',
+        locale === 'ar' ? 'تم الدفع بنجاح وتأكيد الطلب! 🎉' : 'Payment authorized & Order placed! 🎉',
         'success'
       );
     } finally {
       setLoading(false);
+      setIsSimulatingPayment(false);
       isSubmittingRef.current = false;
     }
   };
 
-  // Subtotal & Total calculations matching exact numbers from design
-  const itemsSubtotal = bagItems.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
+  // Server-driven dynamic calculations
+  const bagItems = cart?.items || [];
+  const itemsSubtotal = (cart && typeof cart.subtotal === 'number' && cart.subtotal > 0)
+    ? cart.subtotal
+    : bagItems.reduce((sum, item) => sum + parseFloat(item.discount_price || item.price || 0) * item.quantity, 0);
+  
   const deliveryFee = deliverySpeed === 'express' ? 12.00 : 0.00;
-  const promoDiscount = promoApplied ? 9.90 : 0.00;
-  const finalTotal = itemsSubtotal + deliveryFee - promoDiscount;
+  const promoDiscount = promoApplied ? (itemsSubtotal > 0 ? Math.min(itemsSubtotal * 0.15, 15) : 0.00) : 0.00;
+  const finalTotal = Math.max(0, itemsSubtotal + deliveryFee - promoDiscount);
 
   if (cartLoading) {
     return (
@@ -360,43 +374,68 @@ export default function CheckoutPage() {
               </div>
 
               {/* Selected Address Display Box */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 relative shadow-2xs">
-                {/* Checkmark Circle on Top Right */}
-                <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-[#05A764] text-white flex items-center justify-center shadow-xs">
-                  <Check className="w-3.5 h-3.5 stroke-[3]" />
-                </div>
-
-                <div className="flex items-start gap-3.5">
-                  <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 shrink-0 mt-0.5">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-
-                  <div className="space-y-1 pr-6">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-sm text-slate-900 font-sans">Home</span>
-                      <span className="bg-slate-200 text-slate-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md font-sans">
-                        Default
-                      </span>
+              {addresses.length > 0 ? (() => {
+                const activeAddress = addresses.find((a) => a.id === selectedAddressId) || addresses[0];
+                return (
+                  <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 relative shadow-2xs">
+                    {/* Checkmark Circle on Top Right */}
+                    <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-[#05A764] text-white flex items-center justify-center shadow-xs">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
                     </div>
 
-                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                      Building 42, King Fahd Road, Al-Olaya District
-                    </p>
-                    <p className="text-xs text-slate-600 font-medium">
-                      Riyadh 13211, Kingdom of Saudi Arabia
-                    </p>
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 shrink-0 mt-0.5">
+                        <MapPin className="w-4 h-4" />
+                      </div>
 
-                    <div className="flex items-center gap-4 text-xs text-slate-500 font-semibold pt-1">
-                      <span className="flex items-center gap-1">
-                        👤 Mohammed Al-Salem
-                      </span>
-                      <span className="flex items-center gap-1">
-                        📞 +966 50 123 4567
-                      </span>
+                      <div className="space-y-1 pr-6">
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-sm text-slate-900 font-sans">
+                            {activeAddress.area || activeAddress.city || 'Home'}
+                          </span>
+                          {activeAddress.is_default && (
+                            <span className="bg-slate-200 text-slate-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md font-sans">
+                              Default
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                          {activeAddress.address_line || `${activeAddress.area || ''}, ${activeAddress.city || ''}`}
+                        </p>
+                        <p className="text-xs text-slate-600 font-medium">
+                          {activeAddress.city ? `${activeAddress.city}, ` : ''}{activeAddress.country || 'Kingdom of Saudi Arabia'}
+                        </p>
+
+                        <div className="flex items-center gap-4 text-xs text-slate-500 font-semibold pt-1">
+                          {activeAddress.full_name && (
+                            <span className="flex items-center gap-1">
+                              👤 {activeAddress.full_name}
+                            </span>
+                          )}
+                          {activeAddress.mobile && (
+                            <span className="flex items-center gap-1">
+                              📞 {activeAddress.mobile}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
+                );
+              })() : (
+                <div className="p-5 bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-center space-y-3">
+                  <MapPin className="w-7 h-7 text-slate-400 mx-auto" />
+                  <p className="text-xs font-semibold text-slate-600">No delivery address saved yet.</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddressModal(true)}
+                    className="px-4 py-2 bg-[#05A764] text-white rounded-xl text-xs font-extrabold shadow-sm hover:bg-[#048b53] transition-colors cursor-pointer"
+                  >
+                    + Add Delivery Address
+                  </button>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* STEP 2: Choose Delivery Speed & Time */}
@@ -678,240 +717,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* STEP 4: Payment Method */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-black text-xs flex items-center justify-center font-sans">
-                    4
-                  </div>
-                  <h2 className="text-base sm:text-lg font-extrabold text-slate-900 font-sans tracking-tight">
-                    Payment Method
-                  </h2>
-                </div>
-
-                <div className="text-xs font-bold text-[#05A764] flex items-center gap-1 font-sans">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Saudi SAMA Certified</span>
-                </div>
-              </div>
-
-              {/* 4 Payment Cards Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* 1. mada Debit Card */}
-                <div
-                  onClick={() => setPaymentMethod('mada')}
-                  className={`p-4 rounded-2xl cursor-pointer relative transition-all border ${
-                    paymentMethod === 'mada'
-                      ? 'bg-white border-2 border-[#05A764] shadow-2xs'
-                      : 'bg-white hover:bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          paymentMethod === 'mada'
-                            ? 'border-[#05A764] bg-[#05A764] text-white'
-                            : 'border-slate-300'
-                        }`}
-                      >
-                        {paymentMethod === 'mada' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                      </div>
-                      <span className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
-                        mada Debit Card
-                      </span>
-                      <span className="bg-[#043927] text-white text-[9px] font-black px-1.5 py-0.5 rounded-md font-sans">
-                        Zero Surcharge
-                      </span>
-                    </div>
-
-                    <span className="font-black text-xs text-slate-700 tracking-wider">
-                      mada
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 font-medium pl-6">
-                    Direct debit via local Saudi banks
-                  </p>
-                </div>
-
-                {/* 2. Apple Pay */}
-                <div
-                  onClick={() => setPaymentMethod('apple_pay')}
-                  className={`p-4 rounded-2xl cursor-pointer relative transition-all border ${
-                    paymentMethod === 'apple_pay'
-                      ? 'bg-white border-2 border-[#05A764] shadow-2xs'
-                      : 'bg-white hover:bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          paymentMethod === 'apple_pay'
-                            ? 'border-[#05A764] bg-[#05A764] text-white'
-                            : 'border-slate-300'
-                        }`}
-                      >
-                        {paymentMethod === 'apple_pay' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                      </div>
-                      <span className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
-                        Apple Pay
-                      </span>
-                    </div>
-
-                    <span className="font-black text-xs text-slate-900">
-                       Pay
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 font-medium pl-6">
-                    Instant 1-Touch biometrics
-                  </p>
-                </div>
-
-                {/* 3. Visa / Mastercard */}
-                <div
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-4 rounded-2xl cursor-pointer relative transition-all border ${
-                    paymentMethod === 'card'
-                      ? 'bg-white border-2 border-[#05A764] shadow-2xs'
-                      : 'bg-white hover:bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          paymentMethod === 'card'
-                            ? 'border-[#05A764] bg-[#05A764] text-white'
-                            : 'border-slate-300'
-                        }`}
-                      >
-                        {paymentMethod === 'card' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                      </div>
-                      <span className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
-                        Visa / Mastercard
-                      </span>
-                    </div>
-
-                    <span className="font-bold text-[10px] text-slate-500 tracking-wider">
-                      VISA • MC
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 font-medium pl-6">
-                    International & regional cards
-                  </p>
-                </div>
-
-                {/* 4. STC Pay */}
-                <div
-                  onClick={() => setPaymentMethod('stc_pay')}
-                  className={`p-4 rounded-2xl cursor-pointer relative transition-all border ${
-                    paymentMethod === 'stc_pay'
-                      ? 'bg-white border-2 border-[#05A764] shadow-2xs'
-                      : 'bg-white hover:bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          paymentMethod === 'stc_pay'
-                            ? 'border-[#05A764] bg-[#05A764] text-white'
-                            : 'border-slate-300'
-                        }`}
-                      >
-                        {paymentMethod === 'stc_pay' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                      </div>
-                      <span className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
-                        STC Pay
-                      </span>
-                    </div>
-
-                    <span className="font-black text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
-                      stc pay
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 font-medium pl-6">
-                    Pay with your STC digital wallet
-                  </p>
-                </div>
-              </div>
-
-              {/* Card Inputs (if mada or card selected) */}
-              {(paymentMethod === 'mada' || paymentMethod === 'card') && (
-                <div className="bg-[#F5F6F8] rounded-2xl p-4 sm:p-5 space-y-4 border border-slate-200/80">
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-xs text-slate-800 font-sans">
-                      Enter mada / Card Details
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-semibold flex items-center gap-1 font-sans">
-                      <Lock className="w-3 h-3 text-[#05A764]" />
-                      End-to-end 256-bit encrypted
-                    </span>
-                  </div>
-
-                  {/* Card Number */}
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-extrabold text-slate-700">
-                      Card Number
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
-                        placeholder="5888 4210 9384 1029"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-mono text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#05A764] pr-10"
-                      />
-                      <CreditCard className="w-5 h-5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
-                    </div>
-                  </div>
-
-                  {/* Expiration & CVV */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[11px] font-extrabold text-slate-700">
-                        Expiration
-                      </label>
-                      <input
-                        type="text"
-                        value={expiry}
-                        onChange={(e) => setExpiry(e.target.value)}
-                        placeholder="08/28"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#05A764]"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="block text-[11px] font-extrabold text-slate-700">
-                        CVV / CVC
-                      </label>
-                      <input
-                        type="password"
-                        value={cvv}
-                        onChange={(e) => setCvv(e.target.value)}
-                        placeholder="482"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#05A764]"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Save Card Checkbox */}
-                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer pt-1 font-sans">
-                    <input
-                      type="checkbox"
-                      checked={saveCard}
-                      onChange={(e) => setSaveCard(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#05A764] focus:ring-0 cursor-pointer accent-[#05A764]"
-                    />
-                    <span>Save for future</span>
-                  </label>
-                </div>
-              )}
-
-            </div>
-
+         
           </div>
 
           {/* RIGHT COLUMN: Order Summary Bag & Checkout CTA (4 Columns) */}
@@ -941,54 +747,90 @@ export default function CheckoutPage() {
 
               {/* Items List */}
               <div className="space-y-3">
-                {bagItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-[#F5F6F8] rounded-2xl p-2.5 flex items-center justify-between gap-3 border border-slate-200/60"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0">
-                        <img
-                          src={item.image}
-                          alt={item.name_en}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="font-extrabold text-xs text-slate-900 truncate font-sans">
-                          {item.name_en}
-                        </h4>
-                        <p className="text-[10px] text-slate-400 font-medium truncate">
-                          {item.subtitle}
-                        </p>
-                        <div className="font-extrabold text-xs text-[#05A764] font-sans mt-0.5">
-                          SAR {parseFloat(item.price).toFixed(2)}
+                {bagItems.length === 0 ? (
+                  <div className="p-5 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2">
+                    <ShoppingBag className="w-7 h-7 text-slate-400 mx-auto" />
+                    <p className="text-xs font-bold text-slate-600">Your bag is empty</p>
+                    <Link
+                      href="/products"
+                      className="inline-block text-[11px] font-black text-[#05A764] hover:underline"
+                    >
+                      + Add items from shop
+                    </Link>
+                  </div>
+                ) : (
+                  bagItems.map((item) => {
+                    const itemName = locale === 'ar' ? (item.name_ar || item.name_en) : (item.name_en || item.name_ar);
+                    const itemSubtitle = item.subtitle || item.pack_size || (item.unit_value && item.unit_type ? `${item.unit_value} ${item.unit_type}` : '');
+                    const itemPrice = parseFloat(item.discount_price || item.price || 0);
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="bg-[#F5F6F8] rounded-2xl p-2.5 flex items-center justify-between gap-3 border border-slate-200/60"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden relative">
+                            {item.image ? (
+                              <img
+                                src={getImageUrl(item.image)}
+                                alt={itemName}
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.style.display = 'none';
+                                  if (e.currentTarget.nextSibling) {
+                                    e.currentTarget.nextSibling.style.display = 'flex';
+                                  }
+                                }}
+                              />
+                            ) : null}
+                            <div
+                              className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#05A764] rounded-lg"
+                              style={{ display: item.image ? 'none' : 'flex' }}
+                            >
+                              <ShoppingBag className="w-5 h-5 stroke-[2]" />
+                            </div>
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                              {itemName}
+                            </h4>
+                            {itemSubtitle && (
+                              <p className="text-[10px] text-slate-400 font-medium truncate">
+                                {itemSubtitle}
+                              </p>
+                            )}
+                            <div className="font-extrabold text-xs text-[#05A764] font-sans mt-0.5">
+                              SAR {itemPrice.toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Stepper */}
+                        <div className="bg-white rounded-lg border border-slate-200 px-2 py-1 flex items-center gap-2 shrink-0 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateBagQuantity(item.id, item.quantity, -1)}
+                            className="text-slate-500 hover:text-slate-800 font-extrabold text-xs px-1 cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <span className="font-extrabold text-xs text-slate-900">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateBagQuantity(item.id, item.quantity, 1)}
+                            className="text-slate-500 hover:text-slate-800 font-extrabold text-xs px-1 cursor-pointer"
+                          >
+                            +
+                          </button>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Stepper */}
-                    <div className="bg-white rounded-lg border border-slate-200 px-2 py-1 flex items-center gap-2 shrink-0 shadow-2xs">
-                      <button
-                        type="button"
-                        onClick={() => updateBagQuantity(item.id, -1)}
-                        className="text-slate-500 hover:text-slate-800 font-extrabold text-xs px-1 cursor-pointer"
-                      >
-                        -
-                      </button>
-                      <span className="font-extrabold text-xs text-slate-900">
-                        {item.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => updateBagQuantity(item.id, 1)}
-                        className="text-slate-500 hover:text-slate-800 font-extrabold text-xs px-1 cursor-pointer"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </div>
 
               {/* Promo Code or Voucher Applied Card */}
@@ -1068,7 +910,7 @@ export default function CheckoutPage() {
               {/* PRIMARY GREEN PLACE ORDER BUTTON */}
               <button
                 type="button"
-                onClick={handlePlaceOrder}
+                onClick={handleInitiatePayment}
                 disabled={loading}
                 className="w-full py-4 rounded-full bg-[#05A764] hover:bg-[#048b53] text-white font-black text-base transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer font-sans active:scale-98 disabled:opacity-70"
               >
@@ -1240,6 +1082,179 @@ export default function CheckoutPage() {
         </div>
       )}
 
+      {/* TEST PAYMENT GATEWAY MODAL SIMULATOR */}
+      {showPaymentGatewayModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 font-sans animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden relative space-y-0 font-sans">
+            
+            {/* Gateway Top Bar */}
+            <div className="bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#05A764] text-white flex items-center justify-center font-black text-sm shadow-sm">
+                  ⚡
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-sm text-white tracking-tight">
+                      Falcon Test Payment Gateway
+                    </h3>
+                    <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full uppercase font-sans">
+                      Sandbox
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-medium">
+                    Saudi Central Bank (SAMA) 3D Secure Simulator
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPaymentGatewayModal(false)}
+                className="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Merchant & Amount Banner */}
+            <div className="bg-slate-50 border-b border-slate-200/80 p-4 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">
+                  Merchant
+                </span>
+                <span className="font-extrabold text-xs text-slate-900 font-sans">
+                  Falcon Fresh Direct (Riyadh)
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">
+                  Amount Due
+                </span>
+                <span className="font-black text-base text-[#05A764] font-sans">
+                  SAR {finalTotal.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* Processing Overlay State */}
+            {gatewayStep === 'processing' ? (
+              <div className="p-8 text-center space-y-4 my-4">
+                <div className="w-16 h-16 rounded-full border-4 border-[#05A764] border-t-transparent animate-spin mx-auto" />
+                <div>
+                  <h4 className="font-extrabold text-base text-slate-900 font-sans">
+                    Authorizing 3D Secure Payment...
+                  </h4>
+                  <p className="text-xs text-slate-500 font-medium mt-1">
+                    Verifying transaction with SAMA Payment Switch & issuing bank...
+                  </p>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-[#05A764] h-full rounded-full animate-pulse w-3/4" />
+                </div>
+              </div>
+            ) : (
+              <div className="p-5 sm:p-6 space-y-5">
+
+                {/* Error Banner if test failure triggered */}
+                {gatewayErrorMsg && (
+                  <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span>{gatewayErrorMsg}</span>
+                  </div>
+                )}
+
+                {/* Simulated Card / Payment Scheme Card */}
+                <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-4 text-white shadow-md relative overflow-hidden space-y-3 font-sans">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-mono tracking-widest text-emerald-400 font-bold uppercase">
+                      {paymentMethod === 'mada' ? 'Saudi Mada Debit' : paymentMethod === 'apple_pay' ? 'Apple Pay Touch' : paymentMethod === 'stc_pay' ? 'STC Pay Wallet' : 'Visa / Mastercard'}
+                    </span>
+                    <span className="text-xs font-black bg-white/10 px-2 py-0.5 rounded text-white">
+                      {paymentMethod === 'mada' ? 'MADA' : paymentMethod.toUpperCase()}
+                    </span>
+                  </div>
+
+                  <div className="pt-2 font-mono text-sm sm:text-base tracking-wider font-bold text-slate-100">
+                    {paymentMethod === 'stc_pay'
+                      ? '+966 50 *** 4567 (STC Pay)'
+                      : cardNumber}
+                  </div>
+
+                  <div className="flex justify-between items-end text-[11px] text-slate-300 pt-1 font-mono">
+                    <div>
+                      <span className="text-[9px] text-slate-400 block uppercase">Cardholder</span>
+                      <span className="font-bold text-white">MOHAMMED AL-SALEM</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 block uppercase">Expires</span>
+                      <span className="font-bold text-white">{expiry}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 block uppercase">CVV</span>
+                      <span className="font-bold text-white">***</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3D Secure OTP Code Simulation Block */}
+                <div className="bg-[#F5F6F8] rounded-2xl p-4 space-y-2.5 border border-slate-200/80">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-extrabold text-slate-800 font-sans">3D Secure OTP Verification</span>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      SMS Sent
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    A test security verification code was sent to your registered mobile <strong>+966 50 *** 4567</strong>.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={otpInput}
+                      onChange={(e) => setOtpInput(e.target.value)}
+                      className="w-full bg-white px-3.5 py-2.5 rounded-xl text-center text-sm font-mono font-black text-slate-900 border border-slate-300 focus:outline-none focus:border-[#05A764] tracking-widest"
+                      placeholder="123456"
+                    />
+                  </div>
+                </div>
+
+                {/* TEST SIMULATION BUTTONS (Success vs Failure) */}
+                <div className="space-y-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleExecutePayment(true)}
+                    disabled={isSimulatingPayment}
+                    className="w-full py-3.5 rounded-2xl bg-[#05A764] hover:bg-[#048b53] text-white font-extrabold text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer font-sans active:scale-98 disabled:opacity-70"
+                  >
+                    <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                    <span>Authorize Test Payment • SAR {finalTotal.toFixed(2)}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleExecutePayment(false)}
+                    disabled={isSimulatingPayment}
+                    className="w-full py-2.5 rounded-2xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-slate-200 text-slate-600 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer font-sans active:scale-98"
+                  >
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Simulate Payment Failure (Card Declined)</span>
+                  </button>
+                </div>
+
+                <p className="text-[10px] text-slate-400 text-center font-medium">
+                  🔒 SAMA Compliant 256-Bit SSL Encrypted Sandbox Gateway
+                </p>
+
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+

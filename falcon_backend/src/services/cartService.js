@@ -105,7 +105,8 @@ class CartService {
 
     const items = cart.items.map(item => {
       const price = parseFloat(item.product.price);
-      const lineTotal = price * item.quantity;
+      const discount_price = item.product.discount_price ? parseFloat(item.product.discount_price) : null;
+      const lineTotal = discount_price ? discount_price * item.quantity : price * item.quantity;
       subtotal += lineTotal;
       return {
         id: item.id,
@@ -113,6 +114,11 @@ class CartService {
         name_en: item.product.name_en,
         name_ar: item.product.name_ar,
         price,
+        discount_price:item.product.discount_price,
+        vat_percentage: item.product.vat_percentage,
+        unit_value:item.product.unit_value,
+        unit_type:item.product.unit_type,
+        pack_size:item.product.pack_size,
         quantity: item.quantity,
         stockAvailable: item.product.stock_quantity,
         lineTotal,

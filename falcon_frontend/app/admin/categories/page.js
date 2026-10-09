@@ -602,11 +602,23 @@ export default function AdminCategoriesPage() {
                           {/* Image */}
                           <td className="px-6 py-3.5">
                             {cat.image_url ? (
-                              <img
-                                src={getImageUrl(cat.image_url)}
-                                alt={cat.name_en}
-                                className="w-11 h-11 object-cover rounded-xl border border-slate-200 bg-slate-50 shadow-2xs"
-                              />
+                              <div className="relative">
+                                <img
+                                  src={getImageUrl(cat.image_url)}
+                                  alt={cat.name_en}
+                                  className="w-11 h-11 object-cover rounded-xl border border-slate-200 bg-slate-50 shadow-2xs"
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.style.display = 'none';
+                                    if (e.currentTarget.nextSibling) {
+                                      e.currentTarget.nextSibling.style.display = 'flex';
+                                    }
+                                  }}
+                                />
+                                <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400" style={{ display: 'none' }}>
+                                  <FolderTree className="w-5 h-5" />
+                                </div>
+                              </div>
                             ) : (
                               <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
                                 <FolderTree className="w-5 h-5" />

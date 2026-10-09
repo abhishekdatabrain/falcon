@@ -36,7 +36,6 @@ const startServer = async () => {
       if (adminCount === 0) {
         logger.info('No Admin account found in DB. Auto-seeding default credentials...');
         const adminPassHash = await hashPassword('Admin@123456');
-        console.log(adminPassHash, "adminPassHash")
         const adminUser = await User.create({
           email: 'admin@platform.com',
           mobile: '+966500000001',

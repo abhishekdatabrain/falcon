@@ -1,139 +1,146 @@
 'use client';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   Star,
   Heart,
-  ShoppingCart,
   Plus,
   ChevronLeft,
   ChevronRight,
-  TrendingDown,
-  Truck,
-  Sparkles
 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
-
-const RECOMMENDED_ITEMS = [
-  {
-    id: 'rec-1',
-    title: 'Oasis Eco-Friendly Drinking Water 12 x 1.5L',
-    badge: 'Best Seller',
-    rating: 4.7,
-    reviewCount: '903',
-    price: 9,
-    originalPrice: 13.79,
-    discountPercent: '34%',
-    unitPrice: '18L | AED 0.50/L',
-    image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4e?w=500&auto=format&fit=crop&q=80',
-    hasCartIcon: true,
-    bottomTag: {
-      type: 'red',
-      icon: 'down',
-      text: 'Lowest price in 7 days'
-    }
-  },
-  {
-    id: 'rec-2',
-    title: 'Masafi Pure Low Sodium Natural Water 1.5Liters Pack of 12',
-    badge: 'Best Seller',
-    rating: 4.7,
-    reviewCount: '682',
-    price: 9,
-    originalPrice: 16.80,
-    discountPercent: '46%',
-    unitPrice: '18L | AED 0.50/L',
-    image: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=500&auto=format&fit=crop&q=80',
-    hasCartIcon: false,
-    bottomTag: {
-      type: 'purple',
-      icon: 'star',
-      text: '#1 in Packaged Water'
-    }
-  },
-  {
-    id: 'rec-3',
-    title: 'Mai Dubai Bottled Drinking Water 1.5Liters Pack of 12',
-    badge: 'Best Seller',
-    rating: 4.7,
-    reviewCount: '2.4K',
-    price: 10,
-    originalPrice: 20,
-    discountPercent: '50%',
-    unitPrice: '18L | AED 0.56/L',
-    image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=500&auto=format&fit=crop&q=80',
-    hasDots: true,
-    activeDotIndex: 0,
-    hasCartIcon: false,
-    bottomTag: {
-      type: 'blue',
-      icon: 'truck',
-      text: 'Free Delivery'
-    }
-  },
-  {
-    id: 'rec-4',
-    title: 'Masafi Pure Low Sodium Natural Water 500ml Pack of 24',
-    badge: 'Best Seller',
-    rating: 4.7,
-    reviewCount: '432',
-    price: 9,
-    originalPrice: 22,
-    discountPercent: '59%',
-    unitPrice: '12L | AED 0.75/L',
-    image: 'https://images.unsplash.com/photo-1616118132534-381148898bb4?w=500&auto=format&fit=crop&q=80',
-    hasCartIcon: false,
-    bottomTag: {
-      type: 'purple',
-      icon: 'star',
-      text: '#4 in Packaged Water'
-    }
-  },
-  {
-    id: 'rec-5',
-    title: 'Mai Dubai Drinking water 500ml Pack of 24',
-    badge: 'Best Seller',
-    rating: 4.7,
-    reviewCount: '2.4K',
-    price: 10,
-    originalPrice: 18,
-    discountPercent: '44%',
-    unitPrice: '12L | AED 0.83/L',
-    image: 'https://images.unsplash.com/photo-1560023907-5f339617ea30?w=500&auto=format&fit=crop&q=80',
-    hasCartIcon: false,
-    bottomTag: {
-      type: 'blue',
-      icon: 'truck',
-      text: 'Free Delivery'
-    }
-  }
-];
+import { useWishlist } from '../contexts/WishlistContext';
+import { fetchApi, getImageUrl } from '../services/api';
 
 export default function RecommendedProducts() {
-  const { addToCart } = useCart();
+  const { cart, addToCart } = useCart();
   const { locale } = useLanguage();
+  const { toggleWishlist, isInWishlist } = useWishlist ? useWishlist() : { toggleWishlist: () => {}, isInWishlist: () => false };
   const scrollContainerRef = useRef(null);
 
-  const [wishlist, setWishlist] = useState({});
-  const [addedItems, setAddedItems] = useState({ 'rec-1': true }); // default rec-1 added as shown in screenshot
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [addingIds, setAddingIds] = useState({});
 
-  const toggleWishlist = (id) => {
-    setWishlist((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCartRecommendations = async () => {
+      try {
+        setLoading(true);
+        const cartItems = cart?.items || [];
+        const cartProductIds = new Set(cartItems.map((i) => String(i.product_id || i.id || i.productId)));
+        const seenIds = new Set(cartProductIds);
+        const collected = [];
+
+        const isProductValid = (p) => {
+          if (!p || !p.id) return false;
+          const pId = String(p.id);
+          if (seenIds.has(pId)) return false;
+          if (p.is_active === false || p.status === 'inactive' || p.status === 'DISABLED') return false;
+          if (p.is_out_of_stock === true || p.stock === 0 || p.stock_quantity === 0) return false;
+          return true;
+        };
+
+        const appendProducts = (items) => {
+          if (!Array.isArray(items)) return;
+          for (const item of items) {
+            if (isProductValid(item)) {
+              seenIds.add(String(item.id));
+              collected.push(item);
+              if (collected.length >= 15) break;
+            }
+          }
+        };
+
+        // Extract categories and subcategories from cart items
+        const subSubCatIds = new Set();
+        const subCatIds = new Set();
+        const catIds = new Set();
+
+        for (const cItem of cartItems) {
+          const p = cItem.product || cItem;
+          if (p.sub_sub_category_id || p.sub_subcategory_id || p.subSubcategoryId) {
+            subSubCatIds.add(p.sub_sub_category_id || p.sub_subcategory_id || p.subSubcategoryId);
+          }
+          if (p.sub_category_id || p.subcategory_id || p.subcategoryId) {
+            subCatIds.add(p.sub_category_id || p.subcategory_id || p.subcategoryId);
+          }
+          if (p.category_id || p.categoryId || (typeof p.category === 'object' ? p.category?.id : null)) {
+            catIds.add(p.category_id || p.categoryId || p.category?.id);
+          }
+        }
+
+        // Priority 1: Sub-Subcategories of cart items
+        for (const sscId of subSubCatIds) {
+          if (collected.length >= 15) break;
+          const res = await fetchApi(`/products?subSubcategoryId=${sscId}&limit=15`);
+          const items = res?.data?.products || res?.products || res?.data || [];
+          appendProducts(items);
+        }
+
+        // Priority 2: Subcategories of cart items
+        if (collected.length < 15) {
+          for (const scId of subCatIds) {
+            if (collected.length >= 15) break;
+            const res = await fetchApi(`/products?subcategoryId=${scId}&limit=15`);
+            const items = res?.data?.products || res?.products || res?.data || [];
+            appendProducts(items);
+          }
+        }
+
+        // Priority 3: Categories of cart items
+        if (collected.length < 15) {
+          for (const cId of catIds) {
+            if (collected.length >= 15) break;
+            const res = await fetchApi(`/products?categoryId=${cId}&limit=15`);
+            const items = res?.data?.products || res?.products || res?.data || [];
+            appendProducts(items);
+          }
+        }
+
+        // Priority 4: General active products fallback if under 15
+        if (collected.length < 15) {
+          const res = await fetchApi(`/products?limit=20`);
+          const items = res?.data?.products || res?.products || res?.data || [];
+          appendProducts(items);
+        }
+
+        if (isMounted) {
+          setRecommendedProducts(collected.slice(0, 15));
+        }
+      } catch (err) {
+        console.error('Error loading recommendations:', err);
+        if (isMounted) setRecommendedProducts([]);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchCartRecommendations();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cart?.items?.length, JSON.stringify(cart?.items?.map((i) => i.id || i.product_id || i.productId))]);
 
   const handleAddToCart = async (item) => {
-    setAddedItems((prev) => ({ ...prev, [item.id]: true }));
+    setAddingIds((prev) => ({ ...prev, [item.id]: true }));
     try {
       if (addToCart) {
+        const itemPrice = parseFloat(item.discount_price || item.price || 0);
         await addToCart(item.id, 1, {
-          name_en: item.title,
-          name_ar: item.title,
-          price: item.price,
-          image: item.image,
+          ...item,
+          name_en: item.name_en || item.name || item.title,
+          name_ar: item.name_ar || item.name || item.title,
+          price: itemPrice,
+          image: item.image || item.image_url || item.img,
         });
       }
     } catch (e) {
       // Handled in context
+    } finally {
+      setAddingIds((prev) => ({ ...prev, [item.id]: false }));
     }
   };
 
@@ -143,6 +150,10 @@ export default function RecommendedProducts() {
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
+
+  if (!loading && recommendedProducts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="mt-10 mb-8 select-none">
@@ -194,9 +205,26 @@ export default function RecommendedProducts() {
           className="flex items-stretch gap-3 sm:gap-4 overflow-x-auto scrollbar-none py-2 px-1 scroll-smooth"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {RECOMMENDED_ITEMS.map((item) => {
-            const isWishlisted = !!wishlist[item.id];
-            const isAdded = !!addedItems[item.id];
+          {recommendedProducts.map((item) => {
+            const isWishlisted = isInWishlist ? isInWishlist(item.id) : false;
+            const isAdding = !!addingIds[item.id];
+
+            const itemImage = item.image || item.image_url || (Array.isArray(item.images) && item.images[0]);
+            const itemName = locale === 'ar' ? (item.name_ar || item.name_en || item.title || item.name) : (item.name_en || item.name_ar || item.title || item.name);
+            const itemPrice = parseFloat(item.discount_price || item.price || 0);
+            const itemMrp = parseFloat(item.price || item.mrp || item.original_price || 0);
+
+            let discountTag = '';
+            if (item.vat_percentage && parseFloat(item.vat_percentage) > 0) {
+              discountTag = `${Math.round(item.vat_percentage)}% OFF`;
+            } else if (itemMrp > itemPrice && itemMrp > 0) {
+              discountTag = `${Math.round(((itemMrp - itemPrice) / itemMrp) * 100)}% OFF`;
+            }
+
+            const unitText = [item.unit_value, item.unit_type, item.pack_size].filter(Boolean).join(' ') || item.unit || item.tag_en || '';
+            const ratingVal = item.rating || item.avg_rating;
+            const reviewsCount = item.reviews || item.review_count;
+            const badgeText = item.is_best_seller ? (locale === 'ar' ? 'الأكثر مبيعاً' : 'Best Seller') : (item.tag_en || item.tag_ar || '');
 
             return (
               <div
@@ -207,13 +235,15 @@ export default function RecommendedProducts() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     {/* Badge */}
-                    <span className="bg-[#043927] text-white text-[11px] font-extrabold px-2.5 py-1 rounded-full tracking-wide font-sans shadow-2xs">
-                      {item.badge}
-                    </span>
+                    {badgeText ? (
+                      <span className="bg-[#043927] text-white text-[11px] font-extrabold px-2.5 py-1 rounded-full tracking-wide font-sans shadow-2xs">
+                        {badgeText}
+                      </span>
+                    ) : <span />}
 
                     {/* Wishlist Heart */}
                     <button
-                      onClick={() => toggleWishlist(item.id)}
+                      onClick={() => toggleWishlist && toggleWishlist(item)}
                       className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors cursor-pointer"
                       title="Add to Wishlist"
                     >
@@ -230,33 +260,20 @@ export default function RecommendedProducts() {
                   {/* Product Image Box & Floating Action Button */}
                   <div className="relative w-full h-44 bg-[#FAFAFA] rounded-xl flex items-center justify-center p-2 mb-3 border border-slate-100 overflow-hidden">
                     <img
-                      src={item.image}
-                      alt={item.title}
+                      src={getImageUrl(itemImage)}
+                      alt={itemName}
                       className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 group-hover/card:scale-105"
                     />
 
-                    {/* Pagination Dots (if multi-image card like item 3) */}
-                    {item.hasDots && (
-                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/80 backdrop-blur-xs px-2 py-0.5 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-900" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                      </div>
-                    )}
-
-                    {/* Action Button: Blue Cart button when added, or White '+' button */}
+                    {/* Action Button */}
                     <button
                       onClick={() => handleAddToCart(item)}
-                      className={`absolute bottom-2 right-2 transition-all duration-200 cursor-pointer ${
-                        isAdded
-                          ? 'w-10 h-10 rounded-xl bg-[#0070F3] hover:bg-[#005ECB] text-white shadow-md flex items-center justify-center scale-100'
-                          : 'w-9 h-9 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 shadow-2xs flex items-center justify-center active:scale-95'
-                      }`}
-                      title={isAdded ? 'In Cart' : 'Add to Cart'}
+                      disabled={isAdding}
+                      className="absolute bottom-2 right-2 transition-all duration-200 cursor-pointer w-9 h-9 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 shadow-2xs flex items-center justify-center active:scale-95"
+                      title="Add to Cart"
                     >
-                      {isAdded ? (
-                        <ShoppingCart className="w-5 h-5 fill-current" />
+                      {isAdding ? (
+                        <div className="w-4 h-4 border-2 border-[#043927] border-t-transparent rounded-full animate-spin" />
                       ) : (
                         <Plus className="w-5 h-5 stroke-[2.5]" />
                       )}
@@ -265,68 +282,50 @@ export default function RecommendedProducts() {
 
                   {/* Product Title */}
                   <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 h-10 mb-2 font-sans hover:text-[#043927] transition-colors cursor-pointer">
-                    {item.title}
+                    {itemName}
                   </h3>
 
                   {/* Rating Row */}
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <div className="flex items-center text-emerald-700">
-                      <Star className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600 mr-0.5" />
-                      <span className="font-extrabold text-xs text-slate-900">
-                        {item.rating}
-                      </span>
+                  {ratingVal && (
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <div className="flex items-center text-amber-500">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 mr-0.5" />
+                        <span className="font-extrabold text-xs text-slate-900">
+                          {ratingVal}
+                        </span>
+                      </div>
+                      {reviewsCount && (
+                        <span className="text-xs text-slate-400 font-medium">
+                          ({reviewsCount})
+                        </span>
+                      )}
                     </div>
-                    <span className="text-xs text-slate-400 font-medium">
-                      ({item.reviewCount})
-                    </span>
-                  </div>
+                  )}
 
                   {/* Price Row */}
-                  <div className="flex items-baseline gap-1.5 mb-1 flex-wrap">
-                    <span className="text-base sm:text-lg font-black text-slate-900 font-sans tracking-tight">
-                      AED {item.price}
+                  <div className="flex items-baseline gap-1.5 mb-1 flex-wrap font-sans">
+                    <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                      SAR {itemPrice.toFixed(2)}
                     </span>
-                    <span className="text-xs text-slate-400 line-through font-semibold">
-                      {item.originalPrice}
-                    </span>
-                    <span className="text-xs font-black text-emerald-600 font-sans">
-                      {item.discountPercent}
-                    </span>
+                    {itemMrp > itemPrice && (
+                      <span className="text-xs text-slate-400 line-through font-semibold">
+                        {itemMrp.toFixed(2)}
+                      </span>
+                    )}
+                    {discountTag && (
+                      <span className="text-xs font-black text-emerald-600 font-sans">
+                        {discountTag}
+                      </span>
+                    )}
                   </div>
 
                   {/* Volume / Unit Price Pill */}
-                  <div className="text-[11px] font-semibold text-slate-500 bg-slate-50 rounded-md px-2 py-0.5 border border-slate-150 inline-block mb-3">
-                    {item.unitPrice}
-                  </div>
+                  {unitText && (
+                    <div className="text-[11px] font-semibold text-slate-500 bg-slate-50 rounded-md px-2 py-0.5 border border-slate-150 inline-block mb-3">
+                      {unitText}
+                    </div>
+                  )}
                 </div>
-
-                {/* Bottom Tag highlight */}
-                {item.bottomTag && (
-                  <div className="pt-2 border-t border-slate-100 mt-auto">
-                    {item.bottomTag.type === 'red' && (
-                      <div className="flex items-center gap-1.5 text-xs text-rose-600 font-bold">
-                        <div className="w-4 h-4 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                          <TrendingDown className="w-2.5 h-2.5 stroke-[3]" />
-                        </div>
-                        <span className="truncate">{item.bottomTag.text}</span>
-                      </div>
-                    )}
-
-                    {item.bottomTag.type === 'purple' && (
-                      <div className="flex items-center gap-1.5 text-xs text-purple-700 font-bold">
-                        <Star className="w-3.5 h-3.5 fill-purple-600 text-purple-600 shrink-0" />
-                        <span className="truncate">{item.bottomTag.text}</span>
-                      </div>
-                    )}
-
-                    {item.bottomTag.type === 'blue' && (
-                      <div className="flex items-center gap-1.5 text-xs text-blue-600 font-bold">
-                        <Truck className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{item.bottomTag.text}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             );
           })}

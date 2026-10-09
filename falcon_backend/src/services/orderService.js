@@ -1,4 +1,4 @@
-const { Order, OrderItem, OrderStatusHistory, Payment, Product, Address, Customer, User, Driver, Delivery, sequelize } = require('../models');
+const { Order, OrderItem, OrderStatusHistory, Payment, Product, ProductImage, Address, Customer, User, Driver, Delivery, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const cartService = require('./cartService');
 const { ORDER_STATUS, VALID_STATUS_TRANSITIONS } = require('../constants/orderStatus');
@@ -153,8 +153,37 @@ class OrderService {
     return await Order.findAll({
       where: { customer_id: customerId },
       include: [
-        { model: OrderItem, as: 'items' },
+        {
+          model: OrderItem,
+          as: 'items',
+          include: [
+            {
+              model: Product,
+              as: 'product',
+              attributes: ['id', 'name_en', 'name_ar', 'price', 'discount_price', 'pack_size', 'unit_type', 'unit_value'],
+              include: [
+                {
+                  model: ProductImage,
+                  as: 'images',
+                  attributes: ['id', 'image_url', 'is_primary']
+                }
+              ]
+            }
+          ]
+        },
         { model: Payment, as: 'payment' },
+        { model: Address, as: 'address' },
+        {
+          model: Delivery,
+          as: 'delivery',
+          include: [
+            {
+              model: Driver,
+              as: 'driver',
+              include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }]
+            }
+          ]
+        }
       ],
       order: [['createdAt', 'DESC']],
     });

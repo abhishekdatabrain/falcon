@@ -609,7 +609,17 @@ export default function AdminProductsPage() {
                                     src={getImageUrl(firstImg)}
                                     alt={prod.name_en}
                                     className="w-12 h-12 object-cover rounded-xl border border-slate-200 shrink-0 bg-slate-50"
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.style.display = 'none';
+                                      if (e.currentTarget.nextSibling) {
+                                        e.currentTarget.nextSibling.style.display = 'flex';
+                                      }
+                                    }}
                                   />
+                                  <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 shrink-0 flex items-center justify-center text-emerald-600" style={{ display: 'none' }}>
+                                    <ImageIcon className="w-5 h-5" />
+                                  </div>
                                   {imgList.length > 1 && (
                                     <span className="absolute -top-1.5 -right-1.5 bg-[#05A764] text-white text-[9px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                                       +{imgList.length - 1}

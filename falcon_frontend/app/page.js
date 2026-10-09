@@ -818,7 +818,7 @@ export default function HomePage() {
                 } else if (prod.img) {
                   imgRaw = prod.img;
                 }
-                const finalImg = imgRaw ? getImageUrl(imgRaw) : 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+                const finalImg = imgRaw ? getImageUrl(imgRaw) : '';
 
                 const currentPrice = parseFloat(prod.price);
                 const isDiscounted = prod.discount_price && parseFloat(prod.discount_price) < currentPrice;
@@ -838,7 +838,7 @@ export default function HomePage() {
                   <Link
                     key={prod.id ? `${prod.id}-${idx}` : `deal-${idx}`}
                     href={prod.id ? `/products/${prod.id}` : '/products'}
-                    className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer min-h-[410px]"
+                    className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer h-full"
                   >
                     {/* Top Badges */}
                     <div className="flex items-center justify-between z-10 mb-1">
@@ -1170,7 +1170,7 @@ export default function HomePage() {
             {DEALS_PRODUCTS.map((prod, idx) => (
               <div
                 key={'pop-' + prod.id + idx}
-                className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer min-h-[410px]"
+                className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer h-full"
               >
                 {/* Top Badges */}
                 <div className="flex items-center justify-between z-10 mb-1">
