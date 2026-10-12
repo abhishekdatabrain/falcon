@@ -24,6 +24,7 @@ const Notification = require('./Notification');
 const RefreshToken = require('./RefreshToken');
 const Wishlist = require('./Wishlist');
 const StockLog = require('./StockLog');
+const HeroBanner = require('./HeroBanner');
 
 // --- User Associations ---
 User.hasOne(Customer, { foreignKey: 'user_id', as: 'customer', onDelete: 'CASCADE' });
@@ -162,4 +163,5 @@ module.exports = {
   Notification,
   RefreshToken,
   Wishlist,
+  HeroBanner,
 };

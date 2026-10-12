@@ -15,6 +15,7 @@ const feedbackRoutes = require('./feedbackRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const wishlistRoutes = require('./wishlistRoutes');
 const uploadRoutes = require('./uploadRoutes');
+const heroBannerRoutes = require('./heroBannerRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/customers', customerRoutes);
@@ -30,5 +31,6 @@ router.use('/feedback', feedbackRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/wishlist', wishlistRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/hero-banners', heroBannerRoutes);
 
 module.exports = router;

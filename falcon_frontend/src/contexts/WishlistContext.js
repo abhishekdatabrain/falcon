@@ -16,8 +16,8 @@ export function WishlistProvider({ children }) {
   // Load wishlist from localStorage or API only for authenticated user
   useEffect(() => {
     const loadWishlist = async () => {
-      // If user is not authenticated, reset wishlist
-      if (!user) {
+      // If user is not authenticated as a customer, reset wishlist
+      if (!user || user.role !== 'CUSTOMER') {
         setWishlist([]);
         if (typeof window !== 'undefined') {
           localStorage.removeItem('user_wishlist');
@@ -62,8 +62,8 @@ export function WishlistProvider({ children }) {
   };
 
   const toggleWishlist = async (product) => {
-    // Require authentication: show toast message instead of redirecting
-    if (!user) {
+    // Require customer authentication: show toast message instead of redirecting
+    if (!user || user.role !== 'CUSTOMER') {
       showToast(
         locale === 'ar'
           ? 'يرجى تسجيل الدخول لإضافة المنتجات إلى قائمة المفضلة'
@@ -107,12 +107,12 @@ export function WishlistProvider({ children }) {
   };
 
   const isInWishlist = (productId) => {
-    if (!user) return false;
+    if (!user || user.role !== 'CUSTOMER') return false;
     return wishlist.some((item) => item.id === productId);
   };
 
   const removeFromWishlist = async (productId) => {
-    if (!user) {
+    if (!user || user.role !== 'CUSTOMER') {
       showToast(
         locale === 'ar'
           ? 'يرجى تسجيل الدخول لإدارة قائمة المفضلة'

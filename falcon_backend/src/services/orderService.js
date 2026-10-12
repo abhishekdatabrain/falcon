@@ -1,4 +1,4 @@
-const { Order, OrderItem, OrderStatusHistory, Payment, Product, ProductImage, Address, Customer, User, Driver, Delivery, sequelize } = require('../models');
+const { Order, OrderItem, OrderStatusHistory, Payment, Product, ProductImage, Address, Customer, User, Driver, Delivery, Feedback, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const cartService = require('./cartService');
 const { ORDER_STATUS, VALID_STATUS_TRANSITIONS } = require('../constants/orderStatus');
@@ -98,15 +98,36 @@ class OrderService {
     });
   }
 
+  async getOrderConfirmation(orderId) {
+    const options = {
+      include: [
+        { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] },
+        { model: Address, as: 'address' },
+        { model: OrderItem, as: 'items', include: [{ model: Product, as: 'product', include: [{ model: ProductImage, as: 'images' }] }] },
+        { model: OrderStatusHistory, as: 'status_history' },
+        { model: Payment, as: 'payment', include: ['confirmation'] },
+        { model: Delivery, as: 'delivery', include: [{ model: Driver, as: 'driver', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] }] },
+        { model: Feedback, as: 'feedback' },
+      ],
+    };
+
+    const order = await Order.findByPk(orderId, options);
+    if (!order) {
+      throw new Error('Order not found');
+    }
+    return order;
+  }
+
   async getOrderById(orderId, userId = null, role = null, transaction = null) {
     const options = {
       include: [
         { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] },
         { model: Address, as: 'address' },
-        { model: OrderItem, as: 'items' },
+        { model: OrderItem, as: 'items', include: [{ model: Product, as: 'product', include: [{ model: ProductImage, as: 'images' }] }] },
         { model: OrderStatusHistory, as: 'status_history' },
         { model: Payment, as: 'payment', include: ['confirmation'] },
         { model: Delivery, as: 'delivery', include: [{ model: Driver, as: 'driver', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] }] },
+        { model: Feedback, as: 'feedback' },
       ],
     };
 
@@ -183,7 +204,8 @@ class OrderService {
               include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }]
             }
           ]
-        }
+        },
+        { model: Feedback, as: 'feedback' },
       ],
       order: [['createdAt', 'DESC']],
     });

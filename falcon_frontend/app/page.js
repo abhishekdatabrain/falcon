@@ -6,15 +6,11 @@ import { useCart } from '../src/contexts/CartContext';
 import { useWishlist } from '../src/contexts/WishlistContext';
 import { useToast } from '../src/contexts/ToastContext';
 import { fetchApi, getImageUrl } from '../src/services/api';
-import { ShoppingBag, Truck, ShieldCheck, FileCheck, ArrowRight, Star, Sparkles, CheckCircle2, Leaf, Tag, ChevronRight, ChevronLeft, Gift, Headphones, Shield, Smartphone, Heart, Flame, TrendingUp } from 'lucide-react';
+import { ShoppingBag, Truck, ShieldCheck, FileCheck, ArrowRight, Star, Sparkles, CheckCircle2, Leaf, Tag, ChevronRight, ChevronLeft, Gift, Headphones, Shield, Smartphone, Heart, Flame, TrendingUp, Plus, Minus, Trash2, Loader2 } from 'lucide-react';
+import WaveDivider from '../src/components/WaveDivider';
 
 const SAFE_DEFAULT_CATEGORIES = [
-  { id: 'cat-frozen', slug: 'frozen', name_en: 'Frozen food', name_ar: 'أطعمة مجمدة', image_url: '/categories/cat_frozen_food.jpg' },
-  { id: 'cat-household', slug: 'household', name_en: 'Household Essentials', name_ar: 'المستلزمات المنزلية', image_url: '/categories/cat_household.jpg' },
-  { id: 'cat-groceries', slug: 'groceries', name_en: 'Groceries', name_ar: 'البقالة والسلع', image_url: '/categories/cat_groceries.jpg' },
-  { id: 'cat-snacks', slug: 'snacks', name_en: 'Snacks & Biscuits', name_ar: 'المسليات والبسكويت', image_url: '/categories/cat_snacks.jpg' },
-  { id: 'cat-personal-care', slug: 'personal-care', name_en: 'Personal Care', name_ar: 'العناية الشخصية', image_url: '/categories/cat_personal_care.jpg' },
-  { id: 'cat-dairy', slug: 'dairy', name_en: 'Dairy Items', name_ar: 'منتجات الألبان', image_url: '/categories/cat_dairy.jpg' },
+
 ];
 
 const HERO_SLIDES = [
@@ -70,7 +66,6 @@ const getCategoryImageUrl = (cat) => {
     return cat.image_url;
   }
   const name = (cat?.name_en || '').toLowerCase();
-  return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop';
 };
 
 
@@ -248,8 +243,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_headphones.jpg',
   },
@@ -264,8 +259,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_lays.jpg',
   },
@@ -280,8 +275,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_ariel.jpg',
   },
@@ -296,8 +291,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_almarai_milk.jpg',
   },
@@ -312,8 +307,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_headphones.jpg',
   },
@@ -328,8 +323,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_lays.jpg',
   },
@@ -344,8 +339,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_headphones.jpg',
   },
@@ -360,8 +355,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_lays.jpg',
   },
@@ -376,8 +371,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_ariel.jpg',
   },
@@ -392,8 +387,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_almarai_milk.jpg',
   },
@@ -408,8 +403,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_headphones.jpg',
   },
@@ -424,8 +419,8 @@ const DEALS_PRODUCTS = [
     rating: '4.9',
     reviews: '1,420',
     price: '12.50',
-    mrp: 'AED 24.9',
-    savings_en: 'Save AED 50 (14% off)',
+    mrp: 'SAR 24.9',
+    savings_en: 'Save SAR 50 (14% off)',
     savings_ar: 'وفر ٥٠ درهم (١٤٪ خصم)',
     img: '/products/prod_lays.jpg',
   },
@@ -441,7 +436,7 @@ const PROMO_CARDS_BANNER = [
     desc_ar: 'مواد أساسية طازجة، مستلزمات المؤونة والمزيد',
     btn_en: 'Order Now',
     btn_ar: 'اطلب الآن',
-    img: '/promo/promo_groceries.jpg',
+    img: '/promo/promo_groceries.png',
     href: '/products?category=groceries',
   },
   {
@@ -453,7 +448,7 @@ const PROMO_CARDS_BANNER = [
     desc_ar: 'التنظيف، العناية بالمنزل والمستلزمات اليومية',
     btn_en: 'Order Now',
     btn_ar: 'اطلب الآن',
-    img: '/promo/promo_cleaning.jpg',
+    img: '/promo/promo_cleaning.png',
     href: '/products?category=household',
   },
   {
@@ -471,127 +466,37 @@ const PROMO_CARDS_BANNER = [
 ];
 
 const HOUSEHOLD_SUBCATEGORIES = [
-  {
-    id: 'hh-1',
-    title_en: 'Laundry Care',
-    title_ar: 'العناية بالغسيل',
-    img: 'https://images.unsplash.com/photo-1585842378054-ee2e52f94ba2?w=400&auto=format&fit=crop',
-    href: '/products?category=household&sub=laundry',
-  },
-  {
-    id: 'hh-2',
-    title_en: 'Toilet Cleaner',
-    title_ar: 'منظف المرحاض',
-    img: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&auto=format&fit=crop',
-    href: '/products?category=household&sub=toilet-cleaner',
-  },
-  {
-    id: 'hh-3',
-    title_en: 'Vacuum Cleaner',
-    title_ar: 'مكنسة كهربائية',
-    img: 'https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&auto=format&fit=crop',
-    href: '/products?category=household&sub=vacuum',
-  },
-  {
-    id: 'hh-4',
-    title_en: 'Storage',
-    title_ar: 'التخزين والمنظمات',
-    img: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400&auto=format&fit=crop',
-    href: '/products?category=household&sub=storage',
-  },
-  {
-    id: 'hh-5',
-    title_en: 'Lights & Lamps',
-    title_ar: 'الإضاءة والمصابيح',
-    img: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400&auto=format&fit=crop',
-    href: '/products?category=household&sub=lighting',
-  },
-  {
-    id: 'hh-6',
-    title_en: 'Chairs',
-    title_ar: 'الكراسي والمقاعد',
-    img: 'https://images.unsplash.com/photo-1580481072645-022f9a6d8310?w=400&auto=format&fit=crop',
-    href: '/products?category=household&sub=chairs',
-  },
+
 ];
 
 const GROCERIES_SUBCATEGORIES = [
-  {
-    id: 'gr-1',
-    title_en: 'Rice & Grains',
-    title_ar: 'الأرز والحبوب',
-    img: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&auto=format&fit=crop',
-    href: '/products?category=groceries&sub=rice-grains',
-  },
-  {
-    id: 'gr-2',
-    title_en: 'Flour & Baking',
-    title_ar: 'الدقيق والمخبوزات',
-    img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop',
-    href: '/products?category=groceries&sub=flour-baking',
-  },
-  {
-    id: 'gr-3',
-    title_en: 'Pulses & Lentils',
-    title_ar: 'البقوليات والعدس',
-    img: 'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?w=400&auto=format&fit=crop',
-    href: '/products?category=groceries&sub=pulses-lentils',
-  },
-  {
-    id: 'gr-4',
-    title_en: 'Pasta & Noodles',
-    title_ar: 'المعكرونة والنودلز',
-    img: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281358?w=400&auto=format&fit=crop',
-    href: '/products?category=groceries&sub=pasta-noodles',
-  },
-  {
-    id: 'gr-5',
-    title_en: 'Tea & Coffee',
-    title_ar: 'الشاي والقهوة',
-    img: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop',
-    href: '/products?category=groceries&sub=tea-coffee',
-  },
-  {
-    id: 'gr-6',
-    title_en: 'Sugar & Sweeteners',
-    title_ar: 'السكر والمحليات',
-    img: 'https://images.unsplash.com/photo-1581441363689-1f3c3c414635?w=400&auto=format&fit=crop',
-    href: '/products?category=groceries&sub=sugar-sweeteners',
-  },
+
 ];
 
 export default function HomePage() {
   const { t, locale } = useLanguage();
-  const { addToCart } = useCart();
+  const { cart, addToCart, updateQuantity, removeItem } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { showToast } = useToast();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [bestDealsProducts, setBestDealsProducts] = useState([]);
+  const [heroBanners, setHeroBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [actionId, setActionId] = useState(null);
   const [productSlideIndex, setProductSlideIndex] = useState(0);
   const [categorySlideIndex, setCategorySlideIndex] = useState(0);
   const [trendingSlideIndex, setTrendingSlideIndex] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
-
-  useEffect(() => {
     const loadData = async () => {
       try {
-        const [catRes, prodRes, dealsRes] = await Promise.all([
+        const [catRes, prodRes, dealsRes, heroRes] = await Promise.all([
           fetchApi('/categories?type=parent'),
           fetchApi('/products?limit=50'),
           fetchApi('/products?is_best_deal=true'),
+          fetchApi('/hero-banners').catch(() => ({ success: false })),
         ]);
 
         if (catRes.success) {
@@ -605,6 +510,9 @@ export default function HomePage() {
           const dealsArr = dealsRes.data?.products?.products || dealsRes.data?.products || (Array.isArray(dealsRes.data) ? dealsRes.data : []);
           setBestDealsProducts(dealsArr);
         }
+        if (heroRes && heroRes.success && heroRes.data?.banners?.length > 0) {
+          setHeroBanners(heroRes.data.banners);
+        }
       } catch (err) {
         console.error('Error loading home data:', err);
         showToast(err.message || 'Error loading page content', 'error');
@@ -615,131 +523,190 @@ export default function HomePage() {
     loadData();
   }, []);
 
-  const handleAddToCart = async (productId) => {
+  const getCartItem = (productId) => {
+    if (!cart?.items || !productId) return null;
+    return cart.items.find(
+      (item) => item.product_id === productId || item.product?.id === productId || item.productId === productId
+    );
+  };
+
+  const handleAddToCart = async (productId, prodData = null) => {
     try {
       setAddingId(productId);
-      await addToCart(productId, 1);
+      setActionId(productId);
+      await addToCart(productId, 1, prodData);
     } catch (err) {
       // Toast message managed by CartContext
     } finally {
       setAddingId(null);
+      setActionId(null);
+    }
+  };
+
+  const handleIncrement = async (productId, prodData = null) => {
+    const item = getCartItem(productId);
+    if (!item) {
+      await handleAddToCart(productId, prodData);
+      return;
+    }
+    try {
+      setActionId(productId);
+      await updateQuantity(item.id, item.quantity + 1);
+    } catch (err) {
+      // Handled by context
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleDecrement = async (productId) => {
+    const item = getCartItem(productId);
+    if (!item) return;
+    try {
+      setActionId(productId);
+      if (item.quantity <= 1) {
+        await removeItem(item.id);
+      } else {
+        await updateQuantity(item.id, item.quantity - 1);
+      }
+    } catch (err) {
+      // Handled by context
+    } finally {
+      setActionId(null);
     }
   };
 
   return (
     <div className="space-y-16 pb-16 font-sans bg-[#fbfcfb]">
 
-      {/* 1. Hero Section (Delivered Simply Landing Banner) */}
-      <section className="bg-[#FAF7F0] relative overflow-hidden pt-10 md:pt-16 pb-0 font-sans border-b border-amber-100/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center min-h-[480px]">
+      {/* 1. Hero Section (Delivered Simply Landing Banner with Dynamic Admin Management) */}
+      {(() => {
+        const activeHero = (heroBanners && heroBanners.length > 0) ? heroBanners[0] : {};
 
-            {/* Left Column Content */}
-            <div className="lg:col-span-6 space-y-7 text-left rtl:text-right pt-2 pb-8 lg:pb-16">
+        const titleText = locale === 'ar'
+          ? (activeHero.title_ar || 'كل ما تحتاجه')
+          : (activeHero.title_en || 'Everything You need');
 
-              {/* Main Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-[64px] font-black text-black tracking-tight leading-[1.08]">
-                {locale === 'ar' ? (
-                  <>
-                    كل ما تحتاجه <br />
-                    <span className="text-[#05A764] inline-block mt-1">يصلك بكل بساطة</span>
-                  </>
-                ) : (
-                  <>
-                    Everything You need <br />
-                    <span className="text-[#05A764] inline-block mt-1">Delivered Simply</span>
-                  </>
-                )}
-              </h1>
+        const subtitleText = locale === 'ar'
+          ? (activeHero.subtitle_ar || 'يصلك بكل بساطة')
+          : (activeHero.subtitle_en || 'Delivered Simply');
 
-              {/* Subheadline */}
-              <p className="text-[#475569] font-medium text-base sm:text-lg lg:text-[20px] max-w-lg leading-relaxed">
-                {locale === 'ar'
-                  ? 'تسوق البقالة والوجبات الخفيفة والعناية الشخصية والمزيد بأفضل الأسعار. طازجة يمكنك الوثوق بها.'
-                  : 'Shop groceries, snacks, personal care and more at great prices. Freshness you can trust.'}
-              </p>
+        const descText = locale === 'ar'
+          ? (activeHero.desc_ar || 'تسوق البقالة والوجبات الخفيفة والعناية الشخصية والمزيد بأفضل الأسعار. طازجة يمكنك الوثوق بها.')
+          : (activeHero.desc_en || 'Shop groceries, snacks, personal care and more at great prices. Freshness you can trust.');
 
-              {/* Shop Now CTA Button */}
-              <div className="pt-1">
-                <Link
-                  href="/products"
-                  className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-[#043927] hover:bg-[#02281b] text-white font-bold text-base shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer group"
-                >
-                  <span className="tracking-wide">{locale === 'ar' ? 'تسوق الآن' : 'Shop Now'}</span>
-                  <ArrowRight className="w-5 h-5 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
-                </Link>
-              </div>
+        const btnText = locale === 'ar'
+          ? (activeHero.btn_text_ar || 'تسوق الآن')
+          : (activeHero.btn_text_en || 'Shop Now');
 
-              {/* Trust Badges Row */}
-              <div className="pt-8 border-t border-amber-200/50 flex flex-wrap items-center gap-6 sm:gap-10 text-xs text-slate-700 font-sans">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
-                    <Truck className="w-5 h-5" />
-                  </div>
-                  <div className="flex flex-col leading-tight">
-                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{locale === 'ar' ? 'سريع وموثوق' : 'Fast & Reliable'}</span>
-                    <span className="text-[11px] sm:text-xs text-slate-500 font-medium">{locale === 'ar' ? 'التوصيل' : 'Delivery'}</span>
-                  </div>
-                </div>
+        const btnLink = activeHero.btn_link || '/products';
 
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
-                    <Tag className="w-5 h-5" />
-                  </div>
-                  <div className="flex flex-col leading-tight">
-                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{locale === 'ar' ? 'أسعار رائعة' : 'Great Prices'}</span>
-                    <span className="text-[11px] sm:text-xs text-slate-500 font-medium">{locale === 'ar' ? 'كل يوم' : 'Everyday'}</span>
-                  </div>
-                </div>
+        const heroImage = activeHero.image_url
+          ? getImageUrl(activeHero.image_url)
+          : '/hero_grocery_bag_fresh.png';
 
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                  <div className="flex flex-col leading-tight">
-                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{locale === 'ar' ? 'آمن ومحمي' : 'Secure'}</span>
-                    <span className="text-[11px] sm:text-xs text-slate-500 font-medium">{locale === 'ar' ? 'المدفوعات' : 'Payments'}</span>
-                  </div>
-                </div>
-              </div>
+        const heroBg = activeHero.bg_color || '#FAF7F0';
 
-            </div>
-
-            {/* Right Column Visual Image */}
-            <div className="lg:col-span-6 relative flex justify-center items-end pb-4 lg:pb-0">
-              <div className="relative w-full max-w-lg lg:max-w-xl">
-                <img
-                  src="/hero_grocery_bag.jpg"
-                  alt="Fresh grocery bag filled with fresh vegetables, Lay's chips, fruits, and essentials"
-                  className="w-full h-auto object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-[1.01]"
-                />
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Wavy Wave Curve Bottom Decorative Banner */}
-        <div className="w-full overflow-hidden leading-none relative z-10 pointer-events-none -mb-1 bg-[#FAF7F0]">
-          <svg
-            viewBox="0 0 1440 140"
-            className="w-full h-16 sm:h-24 lg:h-32 block"
-            xmlns="http://www.w3.org/2000/svg"
-            preserveAspectRatio="none"
+        return (
+          <section
+            style={{ backgroundColor: heroBg }}
+            className="relative overflow-hidden font-sans border-amber-100/60 lg:h-[calc(115vh-125px)] lg:min-h-[460px] lg:max-h-[620px] flex flex-col justify-between pt-2 sm:pt-4 pb-0"
           >
-            {/* Gold Upper Wavy Layer */}
-            <path
-              fill="#DA9628"
-              d="M 0,25 C 180,85 360,95 560,50 C 760,5 980,5 1180,80 C 1300,125 1380,50 1440,0 L 1440,140 L 0,140 Z"
-            />
-            {/* Dark Green Main Bottom Layer */}
-            <path
-              fill="#043927"
-              d="M 0,45 C 180,105 360,115 560,70 C 760,25 980,25 1180,100 C 1300,145 1380,70 1440,20 L 1440,140 L 0,140 Z"
-            />
-          </svg>
-        </div>
-      </section>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col justify-center my-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center py-1 sm:py-2">
+
+                {/* Left Column Content */}
+                <div className="lg:col-span-7 space-y-3 sm:space-y-3.5 text-left rtl:text-right">
+
+                  {/* Main Headline */}
+                  <h1 className="text-3xl sm:text-4xl lg:text-[40px] xl:text-[46px] font-black text-black tracking-tight leading-[1.06]">
+                    {titleText}
+                    {subtitleText && (
+                      <>
+                        <br />
+                        <span className="text-[#01813E] inline-block mt-0.5">
+                          {subtitleText}
+                        </span>
+                      </>
+                    )}
+                  </h1>
+
+                  {/* Subheadline */}
+                  <p className="text-[#475569] font-medium text-xs sm:text-sm lg:text-[15px] max-w-lg leading-snug">
+                    {descText}
+                  </p>
+
+                  {/* Shop Now CTA Button */}
+                  <div className="pt-0.5">
+                    <Link
+                      href={btnLink}
+                      className="inline-flex items-center justify-center gap-2.5 px-6 py-2.5 sm:px-7 sm:py-2.5 rounded-full bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer group"
+                    >
+                      <span className="tracking-wide">{btnText}</span>
+                      <ArrowRight className="w-4 h-4 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
+                    </Link>
+                  </div>
+
+                  {/* Trust Badges Row */}
+                  <div className="pt-2.5 sm:pt-3 border-t border-amber-200/50 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-700 font-sans">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
+                        <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </div>
+                      <div className="flex flex-col leading-tight">
+                        <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">{locale === 'ar' ? 'سريع وموثوق' : 'Fast & Reliable'}</span>
+                        <span className="text-[10px] text-slate-500 font-medium">{locale === 'ar' ? 'التوصيل' : 'Delivery'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
+                        <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </div>
+                      <div className="flex flex-col leading-tight">
+                        <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">{locale === 'ar' ? 'أسعار رائعة' : 'Great Prices'}</span>
+                        <span className="text-[10px] text-slate-500 font-medium">{locale === 'ar' ? 'كل يوم' : 'Everyday'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
+                        <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </div>
+                      <div className="flex flex-col leading-tight">
+                        <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">{locale === 'ar' ? 'آمن ومحمي' : 'Secure'}</span>
+                        <span className="text-[10px] text-slate-500 font-medium">{locale === 'ar' ? 'المدفوعات' : 'Payments'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Right Column Visual Image */}
+                <div className="lg:col-span-5 relative flex items-center justify-center py-1 sm:py-2 h-full">
+                  <div className="relative w-full flex items-center justify-center h-full max-h-[260px] sm:max-h-[300px] lg:max-h-[330px]">
+                    <img
+                      src={heroImage}
+                      alt={titleText}
+                      className="max-h-[220px] sm:max-h-[270px] lg:max-h-[300px] w-auto h-full object-contain drop-shadow-xl transition-transform duration-500 hover:scale-[1.02]"
+                      onError={(e) => {
+                        e.target.src = '/hero_grocery_bag_fresh.png';
+                      }}
+                    />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Wavy Wave Curve Bottom Decorative Banner */}
+            <WaveDivider className="-mb-1 shrink-0" />
+          </section>
+        );
+      })()}
+
+
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
 
@@ -908,36 +875,100 @@ export default function HomePage() {
                         </div>
                       </div>
 
-                      {/* Price & Add to Cart Action Row */}
-                      <div className="pt-1.5 border-t border-slate-100 flex items-end justify-between gap-1">
-                        <div>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-sm sm:text-base font-black text-slate-900 font-sans">
-                              SAR {finalPrice.toFixed(2)}
-                            </span>
-                            {originalPrice && (
-                              <span className="text-[10px] text-slate-400 line-through font-normal">
-                                SAR {originalPrice.toFixed(2)}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[10px] font-bold text-[#00B074] block leading-tight">
-                            {locale === 'ar' ? 'عرض خاص' : 'Best Deal Offer'}
+                      {/* Price & Add to Cart / Quantity Action Row */}
+                      <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 mt-auto">
+                        <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                          <span className="text-sm sm:text-[15px] font-black text-slate-900 font-sans whitespace-nowrap leading-tight">
+                            <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
+                            {finalPrice.toFixed(2)}
                           </span>
+                          {originalPrice && (
+                            <span className="text-[10px] text-slate-400 line-through font-normal whitespace-nowrap">
+                              SAR {originalPrice.toFixed(2)}
+                            </span>
+                          )}
                         </div>
 
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleAddToCart(prod.id);
-                          }}
-                          disabled={addingId === prod.id}
-                          className="px-2.5 py-1.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white font-bold text-[11px] shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center gap-1 shrink-0 disabled:opacity-60"
-                        >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          <span>{addingId === prod.id ? '...' : (locale === 'ar' ? 'أضف' : 'Add to Cart')}</span>
-                        </button>
+                        {/* Quantity Counter or Add to Cart Button */}
+                        {(() => {
+                          const cartItem = getCartItem(prod.id);
+                          const inCart = cartItem && cartItem.quantity > 0;
+                          const isBusy = addingId === prod.id || actionId === prod.id;
+
+                          if (inCart) {
+                            return (
+                              <div
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                className="h-8 w-full bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between p-0.5 px-1 shadow-2xs"
+                              >
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDecrement(prod.id);
+                                  }}
+                                  disabled={isBusy}
+                                  className="w-6.5 h-6.5 rounded-lg bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                                  title={cartItem.quantity === 1 ? (locale === 'ar' ? 'حذف' : 'Remove') : (locale === 'ar' ? 'إنقاص' : 'Decrease')}
+                                >
+                                  {cartItem.quantity === 1 ? (
+                                    <Minus className="w-3 h-3 stroke-[2.5]" />
+                                  ) : (
+                                    <Minus className="w-3 h-3 stroke-[2.5]" />
+                                  )}
+                                </button>
+
+                                <span className="flex-1 text-center text-xs font-black text-slate-900 font-sans select-none">
+                                  {isBusy ? (
+                                    <Loader2 className="w-3 h-3 animate-spin mx-auto text-emerald-600" />
+                                  ) : (
+                                    cartItem.quantity
+                                  )}
+                                </span>
+
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleIncrement(prod.id, prod);
+                                  }}
+                                  disabled={isBusy}
+                                  className="w-6.5 h-6.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                                  title={locale === 'ar' ? 'زيادة' : 'Increase'}
+                                >
+                                  <Plus className="w-3 h-3 stroke-[2.5]" />
+                                </button>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleAddToCart(prod.id, prod);
+                              }}
+                              disabled={isBusy}
+                              className="h-8 w-full rounded-xl bg-[#00B074] hover:bg-[#009663] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all hover:scale-[1.01] cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
+                            >
+                              {isBusy ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <>
+                                  <ShoppingBag className="w-3.5 h-3.5" />
+                                  <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
+                                </>
+                              )}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   </Link>
@@ -1231,33 +1262,105 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Price & Add to Cart Action Row */}
-                  <div className="pt-1.5 border-t border-slate-100 flex items-end justify-between gap-1">
-                    <div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm sm:text-base font-black text-slate-900 font-sans">
-                          SAR {prod.price}
+                  {/* Price & Add to Cart / Quantity Action Row */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 mt-auto">
+                    <div className="flex flex-col min-w-0 pr-1 rtl:pr-0 rtl:pl-1">
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-sm sm:text-[15px] font-black text-slate-900 font-sans whitespace-nowrap leading-tight">
+                          <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
+                          {prod.price}
                         </span>
-                        <span className="text-[10px] text-slate-400 line-through font-normal">
-                          {prod.mrp}
-                        </span>
+                        {prod.mrp && (
+                          <span className="text-[10px] text-slate-400 line-through font-normal whitespace-nowrap">
+                            {prod.mrp}
+                          </span>
+                        )}
                       </div>
-                      <span className="text-[10px] font-bold text-[#00B074] block leading-tight">
+                      <span className="text-[10px] font-bold text-[#00B074] block leading-tight truncate mt-0.5">
                         {locale === 'ar' ? prod.savings_ar : prod.savings_en}
                       </span>
                     </div>
 
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleAddToCart(prod.id);
-                      }}
-                      className="px-2.5 py-1.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white font-bold text-[11px] shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center gap-1 shrink-0"
-                    >
-                      <ShoppingBag className="w-3.5 h-3.5" />
-                      <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
-                    </button>
+                    {/* Quantity Counter or Add to Cart Button */}
+                    {(() => {
+                      const cartItem = getCartItem(prod.id);
+                      const inCart = cartItem && cartItem.quantity > 0;
+                      const isBusy = addingId === prod.id || actionId === prod.id;
+
+                      if (inCart) {
+                        return (
+                          <div
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            className="h-8 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center p-0.5 gap-1 shrink-0 shadow-2xs"
+                          >
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDecrement(prod.id);
+                              }}
+                              disabled={isBusy}
+                              className="w-6.5 h-6.5 rounded-lg bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                              title={cartItem.quantity === 1 ? (locale === 'ar' ? 'حذف' : 'Remove') : (locale === 'ar' ? 'إنقاص' : 'Decrease')}
+                            >
+                              {cartItem.quantity === 1 ? (
+                                <Trash2 className="w-3 h-3 text-rose-500" />
+                              ) : (
+                                <Minus className="w-3 h-3 stroke-[2.5]" />
+                              )}
+                            </button>
+
+                            <span className="w-5 text-center text-xs font-black text-slate-900 font-sans select-none">
+                              {isBusy ? (
+                                <Loader2 className="w-3 h-3 animate-spin mx-auto text-emerald-600" />
+                              ) : (
+                                cartItem.quantity
+                              )}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleIncrement(prod.id, prod);
+                              }}
+                              disabled={isBusy}
+                              className="w-6.5 h-6.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                              title={locale === 'ar' ? 'زيادة' : 'Increase'}
+                            >
+                              <Plus className="w-3 h-3 stroke-[2.5]" />
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleAddToCart(prod.id, prod);
+                          }}
+                          disabled={isBusy}
+                          className="h-8 px-2.5 sm:px-3 rounded-xl bg-[#00B074] hover:bg-[#009663] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center gap-1 shrink-0 disabled:opacity-60"
+                        >
+                          {isBusy ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <>
+                              <ShoppingBag className="w-3.5 h-3.5" />
+                              <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
+                            </>
+                          )}
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

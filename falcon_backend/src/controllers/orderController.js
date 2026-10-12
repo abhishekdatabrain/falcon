@@ -27,6 +27,16 @@ class OrderController {
     }
   }
 
+  async getOrderConfirmation(req, res, next) {
+    try {
+      const { id } = req.params;
+      const order = await orderService.getOrderConfirmation(id);
+      return sendSuccess(res, 'Order confirmation retrieved', { order });
+    } catch (error) {
+      return sendError(res, error.message, [], 404);
+    }
+  }
+
   async getOrderById(req, res, next) {
     try {
       const { id } = req.params;

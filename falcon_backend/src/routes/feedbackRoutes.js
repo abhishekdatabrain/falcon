@@ -8,6 +8,7 @@ const ROLES = require('../constants/roles');
 router.use(authenticate);
 
 router.post('/', authorize(ROLES.CUSTOMER), (req, res, next) => feedbackController.submitFeedback(req, res, next));
+router.get('/order/:orderId', (req, res, next) => feedbackController.getFeedbackByOrderId(req, res, next));
 router.get('/', authorize(ROLES.ADMIN), (req, res, next) => feedbackController.getAllFeedbackAdmin(req, res, next));
 
 module.exports = router;

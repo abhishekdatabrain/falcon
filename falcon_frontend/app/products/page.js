@@ -25,13 +25,15 @@ import {
   Zap,
   Tag,
   SlidersHorizontal,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 
 function ProductsCatalogContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { locale } = useLanguage();
-  const { addToCart, items } = useCart();
+  const { addToCart, cart, updateQuantity, removeItem } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
   const categoryIdParam = searchParams.get('categoryId') || searchParams.get('category') || '';
@@ -49,6 +51,7 @@ function ProductsCatalogContent() {
   const [selectedSubSubSubcategory, setSelectedSubSubSubcategory] = useState(subSubSubcategoryIdParam);
   const [expandedCats, setExpandedCats] = useState(new Set());
   const [addingId, setAddingId] = useState(null);
+  const [actionId, setActionId] = useState(null);
   const [activeFilterChip, setActiveFilterChip] = useState('ALL');
   const [priceRange, setPriceRange] = useState(150);
   const [minPrice, setMinPrice] = useState(5);
@@ -142,6 +145,48 @@ function ProductsCatalogContent() {
     });
   }, [categories]);
 
+  const getCategoryBannerImage = (cat) => {
+    if (cat?.image_url && typeof cat.image_url === 'string' && cat.image_url.trim() !== '') {
+      return getImageUrl(cat.image_url);
+    }
+    const nameStr = (cat?.slug || cat?.name_en || cat?.name_ar || '').toLowerCase();
+    if (nameStr.includes('frozen')) return '/categories/cat_frozen_food.jpg';
+    if (nameStr.includes('house') || nameStr.includes('clean')) return '/categories/cat_household.jpg';
+    if (nameStr.includes('groc') || nameStr.includes('veg') || nameStr.includes('fruit')) return '/categories/cat_groceries.jpg';
+    if (nameStr.includes('snack') || nameStr.includes('biscuit')) return '/categories/cat_snacks.jpg';
+    if (nameStr.includes('person') || nameStr.includes('care')) return '/categories/cat_personal_care.jpg';
+    if (nameStr.includes('dairy') || nameStr.includes('milk')) return '/categories/cat_dairy.jpg';
+    return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500';
+  };
+
+  const activeCategoryObj = useMemo(() => {
+    const activeId = selectedSubSubSubcategory || selectedSubSubcategory || selectedSubcategory || selectedCategory;
+    if (!activeId || !categories || categories.length === 0) return null;
+
+    const findCategory = (list) => {
+      if (!list || !Array.isArray(list)) return null;
+      for (const item of list) {
+        if (
+          String(item.id) === String(activeId) ||
+          (item.slug && String(item.slug).toLowerCase() === String(activeId).toLowerCase())
+        ) {
+          return item;
+        }
+        if (item.subcategories && item.subcategories.length > 0) {
+          const found = findCategory(item.subcategories);
+          if (found) return found;
+        }
+        if (item.children && item.children.length > 0) {
+          const found = findCategory(item.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    return findCategory(categories);
+  }, [selectedCategory, selectedSubcategory, selectedSubSubcategory, selectedSubSubSubcategory, categories]);
+
   const toggleCatExpand = (catId, e) => {
     e.stopPropagation();
     setExpandedCats((prev) => {
@@ -198,69 +243,122 @@ function ProductsCatalogContent() {
   const renderCategoryNode = (node, level = 1) => {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedCats.has(node.id) || 
-      (selectedSubcategory && node.children?.some(c => c.id === selectedSubcategory)) ||
-      (selectedSubSubcategory && node.children?.some(c => c.children?.some(cc => cc.id === selectedSubSubcategory)));
+      (selectedSubcategory && node.children?.some(c => String(c.id) === String(selectedSubcategory))) ||
+      (selectedSubSubcategory && node.children?.some(c => c.children?.some(cc => String(cc.id) === String(selectedSubSubcategory))));
 
     const isSelected =
-      (level === 1 && selectedCategory === node.id && !selectedSubcategory) ||
-      (level === 2 && selectedSubcategory === node.id && !selectedSubSubcategory) ||
-      (level === 3 && selectedSubSubcategory === node.id && !selectedSubSubSubcategory) ||
-      (level === 4 && selectedSubSubSubcategory === node.id);
+      (level === 1 && String(selectedCategory) === String(node.id) && !selectedSubcategory) ||
+      (level === 2 && String(selectedSubcategory) === String(node.id) && !selectedSubSubcategory) ||
+      (level === 3 && String(selectedSubSubcategory) === String(node.id) && !selectedSubSubSubcategory) ||
+      (level === 4 && String(selectedSubSubSubcategory) === String(node.id));
+
+    const isAncestorActive = isExpanded || isSelected ||
+      (selectedCategory && String(selectedCategory) === String(node.id));
 
     const name = (locale === 'ar' ? node.name_ar : node.name_en) || node.name_en || node.name || '';
 
     return (
-      <div key={node.id} className="space-y-1">
+      <div key={node.id} className="space-y-1 font-sans">
+        
+        {/* Category Item Row */}
         <div
-          onClick={() => handleSelectCat(node, level)}
-          className={`flex items-center justify-between py-1.5 px-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group ${
-            isSelected ? 'bg-emerald-50/90 text-[#043927]' : 'text-slate-700'
+          onClick={() => {
+            if (hasChildren && !isExpanded) {
+              setExpandedCats((prev) => new Set(prev).add(node.id));
+            }
+            handleSelectCat(node, level);
+          }}
+          className={`flex items-center justify-between py-2 px-3 rounded-xl transition-all cursor-pointer group select-none ${
+            isAncestorActive || isSelected
+              ? 'bg-emerald-50/90 text-[#043927] font-extrabold border border-emerald-100/90 shadow-2xs'
+              : 'hover:bg-slate-100/80 text-slate-700 font-medium'
           }`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            {/* Blue / Green Checkbox matching screenshot */}
-            <div
-              className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${
-                isSelected
-                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
-                  : 'border-slate-300 bg-white group-hover:border-[#043927]'
-              }`}
-            >
-              {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
-            </div>
+            {/* Collapse/Expand Toggle (- / +) for parents, or Checkbox */}
+            {hasChildren ? (
+              <button
+                type="button"
+                onClick={(e) => toggleCatExpand(node.id, e)}
+                className="w-4 h-4 flex items-center justify-center text-[#043927] font-black hover:opacity-80 transition-opacity shrink-0"
+              >
+                {isExpanded ? (
+                  <span className="text-lg leading-none font-black">−</span>
+                ) : (
+                  <span className="text-base leading-none font-bold">+</span>
+                )}
+              </button>
+            ) : (
+              /* Blue / White Checkbox matching reference screenshot */
+              <div
+                className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${
+                  isSelected
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                    : 'border-slate-300 bg-white group-hover:border-[#043927]'
+                }`}
+              >
+                {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+              </div>
+            )}
 
             {/* Category Name */}
-            <span className={`text-xs truncate ${isSelected ? 'font-bold text-[#043927]' : 'font-medium group-hover:text-[#043927]'}`}>
+            <span className={`text-xs truncate font-sans ${isAncestorActive || isSelected ? 'font-black text-[#043927]' : 'font-semibold text-slate-800 group-hover:text-[#043927]'}`}>
               {name}
             </span>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0 ml-1">
+          <div className="flex items-center gap-1.5 shrink-0 ml-1">
             {node.count !== undefined && (
-              <span className="text-slate-400 text-[11px]">({node.count})</span>
+              <span className="text-slate-400 text-[11px] font-medium">({node.count})</span>
             )}
             {hasChildren && (
               <button
                 type="button"
                 onClick={(e) => toggleCatExpand(node.id, e)}
-                className="p-1 text-slate-400 hover:text-[#043927] hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                className="p-1 text-[#043927] hover:bg-emerald-100/60 rounded-md transition-colors cursor-pointer"
               >
                 {isExpanded ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-[#043927]" />
+                  <ChevronDown className="w-3.5 h-3.5 text-[#043927] stroke-[2.5]" />
                 ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180 stroke-[2]" />
                 )}
               </button>
             )}
           </div>
         </div>
 
-        {/* Render Nested Child Categories */}
+        {/* Render Nested Children (With Vertical Line Indicator & "All [Category]" Option) */}
         {hasChildren && isExpanded && (
-          <div className="pl-3.5 rtl:pr-3.5 border-l border-slate-200/80 rtl:border-r rtl:border-l-0 ml-2 rtl:mr-2 space-y-1 pt-0.5 pb-1">
+          <div className="pl-4 rtl:pr-4 border-l-2 border-emerald-100/80 rtl:border-r-2 rtl:border-l-0 ml-4 rtl:mr-4 space-y-1.5 pt-1 pb-1">
+            
+            {/* "All [Category Name]" Option */}
+            <div
+              onClick={() => handleSelectCat(node, level)}
+              className={`flex items-center gap-2.5 py-1.5 px-3 rounded-xl cursor-pointer transition-colors ${
+                isSelected
+                  ? 'bg-emerald-50/90 text-[#043927] font-black border border-emerald-200/80 shadow-2xs'
+                  : 'hover:bg-slate-100/70 text-slate-700'
+              }`}
+            >
+              <div
+                className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${
+                  isSelected
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                    : 'border-slate-300 bg-white'
+                }`}
+              >
+                {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+              </div>
+              <span className={`text-xs font-semibold ${isSelected ? 'text-[#043927] font-black' : 'text-slate-700'}`}>
+                {locale === 'ar' ? `كل ${name}` : `All ${name}`}
+              </span>
+            </div>
+
+            {/* Child Subcategories */}
             {node.children.map((child) => renderCategoryNode(child, level + 1))}
           </div>
         )}
+
       </div>
     );
   };
@@ -276,27 +374,64 @@ function ProductsCatalogContent() {
     router.push('/products');
   };
 
-  const handleAddToCart = async (productId, productObj) => {
+  const getCartItem = (productId) => {
+    if (!cart?.items || !productId) return null;
+    return cart.items.find(
+      (item) => item.product_id === productId || item.productId === productId || item.product?.id === productId
+    );
+  };
+
+  const handleAddToCart = async (productId, prodData = null) => {
     try {
       setAddingId(productId);
-      await addToCart(productId, 1, productObj);
+      setActionId(productId);
+      await addToCart(productId, 1, prodData);
     } catch (err) {
       // Toast notification is managed by CartContext
     } finally {
       setAddingId(null);
+      setActionId(null);
     }
   };
 
-  const getCartQty = (prodId) => {
-    const found = items?.find((i) => i.product_id === prodId || i.id === prodId);
-    return found ? found.quantity : 0;
+  const handleIncrement = async (productId, prodData = null) => {
+    const item = getCartItem(productId);
+    if (!item) {
+      await handleAddToCart(productId, prodData);
+      return;
+    }
+    try {
+      setActionId(productId);
+      await updateQuantity(item.id, item.quantity + 1);
+    } catch (err) {
+      // Toast notification is managed by CartContext
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleDecrement = async (productId) => {
+    const item = getCartItem(productId);
+    if (!item) return;
+    try {
+      setActionId(productId);
+      if (item.quantity <= 1) {
+        await removeItem(item.id);
+      } else {
+        await updateQuantity(item.id, item.quantity - 1);
+      }
+    } catch (err) {
+      // Toast notification is managed by CartContext
+    } finally {
+      setActionId(null);
+    }
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-20 font-sans bg-[#fbfcfb]">
 
-      {/* 1. Category Hero Banner */}
-      <div className="bg-[#043927] rounded-3xl p-6 sm:p-10 relative overflow-hidden text-white shadow-md font-sans">
+      {/* 1. Dynamic Category Hero Banner */}
+      <div className="bg-[#043927] rounded-3xl p-6 sm:p-8 min-h-[206px] relative overflow-hidden text-white shadow-md font-sans">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           
           {/* Left Text Block */}
@@ -310,27 +445,35 @@ function ProductsCatalogContent() {
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black tracking-tight leading-tight font-sans">
-              {locale === 'ar' ? 'فواكه وخضروات طازجة من المزرعة' : 'Fresh Farm Fruits & Groceries'}
+            <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black tracking-tight leading-tight font-heading">
+              {activeCategoryObj
+                ? (locale === 'ar' ? (activeCategoryObj.name_ar || activeCategoryObj.name_en) : (activeCategoryObj.name_en || activeCategoryObj.name))
+                : (locale === 'ar' ? 'فواكه وخضروات طازجة من المزرعة' : 'Fresh Farm Fruits & Groceries')}
             </h1>
 
-            <p className="text-[#A3E062] font-medium text-xs sm:text-sm lg:text-base max-w-2xl leading-relaxed">
-              {locale === 'ar'
-                ? 'منتجات مزارع طازجة منتقاة بعناية وموثقة 100٪ للتغذية اليومية لعائلتك، مباشرة من المزرعة إلى مائدتك.'
-                : 'Hand-picked 100% certified fresh farm produce, fruits, herbs and whole foods for your daily nutrition. Direct farm-to-table for your family\'s health.'}
+            <p className="text-[#A3E062] font-medium text-xs sm:text-sm lg:text-base max-w-2xl leading-relaxed font-sans">
+              {activeCategoryObj?.description
+                ? (locale === 'ar' ? (activeCategoryObj.description_ar || activeCategoryObj.description) : (activeCategoryObj.description_en || activeCategoryObj.description))
+                : (locale === 'ar'
+                    ? 'منتجات مزارع طازجة منتقاة بعناية وموثقة 100٪ للتغذية اليومية لعائلتك، مباشرة من المزرعة إلى مائدتك.'
+                    : 'Hand-picked 100% certified fresh farm produce, fruits, herbs and whole foods for your daily nutrition. Direct farm-to-table for your family\'s health.')}
             </p>
           </div>
 
           {/* Right Crate Visual Illustration */}
           <div className="lg:col-span-4 flex justify-center lg:justify-end z-10">
-            <div className="relative w-48 sm:w-56 h-36 sm:h-44 bg-emerald-900/50 rounded-2xl border border-emerald-600/40 p-3 flex flex-col items-center justify-center text-center shadow-inner">
+            <div className="relative w-48 sm:w-64 h-36 sm:h-40 bg-emerald-950/60 rounded-2xl border border-emerald-600/40 p-2 flex flex-col items-center justify-center text-center shadow-inner overflow-hidden">
               <img
-                src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=400"
-                alt="Farm Fresh Crate"
+                src={getCategoryBannerImage(activeCategoryObj)}
+                alt={activeCategoryObj?.name_en || 'Category Banner'}
                 className="w-full h-full object-cover rounded-xl opacity-90 hover:opacity-100 transition-opacity"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500';
+                }}
               />
-              <span className="absolute bottom-2 bg-emerald-950/90 text-amber-300 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full border border-amber-400/40">
-                🌿 Farm Fresh Produce
+              <span className="absolute bottom-2 bg-emerald-950/90 text-amber-300 font-extrabold text-[10px] px-3 py-1 rounded-full border border-amber-400/40 shadow-xs whitespace-nowrap max-w-[90%] truncate">
+                🌿 {activeCategoryObj ? (locale === 'ar' ? (activeCategoryObj.name_ar || activeCategoryObj.name_en) : (activeCategoryObj.name_en || activeCategoryObj.name)) : 'Farm Fresh Produce'}
               </span>
             </div>
           </div>
@@ -347,9 +490,15 @@ function ProductsCatalogContent() {
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
           <Link href="/" className="hover:text-emerald-700 transition-colors">{locale === 'ar' ? 'الرئيسية' : 'Home'}</Link>
           <span>›</span>
-          <span className="hover:text-emerald-700 transition-colors">{locale === 'ar' ? 'البقالة' : 'Groceries'}</span>
-          <span>›</span>
-          <span className="text-slate-900 font-bold">{locale === 'ar' ? 'المنتجات الطازجة والفواكه' : 'Fresh Produce & Fruits'}</span>
+          <Link href="/products" className="hover:text-emerald-700 transition-colors">{locale === 'ar' ? 'البقالة والمنتجات' : 'Groceries & Products'}</Link>
+          {activeCategoryObj && (
+            <>
+              <span>›</span>
+              <span className="text-slate-900 font-bold">
+                {locale === 'ar' ? (activeCategoryObj.name_ar || activeCategoryObj.name_en) : (activeCategoryObj.name_en || activeCategoryObj.name)}
+              </span>
+            </>
+          )}
         </div>
 
         {/* Filter Chips Row & Sort Control */}
@@ -566,7 +715,6 @@ function ProductsCatalogContent() {
           {/* Product Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-4.5">
             {products.map((prod) => {
-              const qtyInCart = getCartQty(prod.id);
               const isWish = isInWishlist(prod.id);
 const currentPrice = parseFloat(prod.price);
                 const isDiscounted = prod.discount_price && parseFloat(prod.discount_price) < currentPrice;
@@ -641,45 +789,104 @@ const currentPrice = parseFloat(prod.price);
                       </h3>
                     </div>
 
-                    {/* Price & Add to Cart Action Row */}
-                    <div className="pt-2 border-t border-slate-100 flex items-end justify-between gap-1 mt-auto">
-                      <div>
-                        <div className="flex items-baseline gap-1">
-                            <span className="text-sm sm:text-base font-black text-slate-900 font-sans">
-                              SAR {finalPrice.toFixed(2)}
+                    {/* Price & Add to Cart / Quantity Action Row */}
+                    <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 mt-auto">
+                      <div className="flex flex-col min-w-0">
+                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                          <span className="text-sm sm:text-[15px] font-black text-slate-900 font-sans whitespace-nowrap leading-tight">
+                            <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
+                            {finalPrice.toFixed(2)}
+                          </span>
+                          {originalPrice && (
+                            <span className="text-[10px] text-slate-400 line-through font-normal whitespace-nowrap">
+                              SAR {originalPrice.toFixed(2)}
                             </span>
-                            {originalPrice && (
-                              <span className="text-[10px] text-slate-400 line-through font-normal">
-                                SAR {originalPrice.toFixed(2)}
-                              </span>
-                            )}
-                          </div>
+                          )}
+                        </div>
+                       
                       </div>
 
-                      {/* Add Button or Quantity Selector */}
-                      {qtyInCart > 0 ? (
-                        <div className="flex items-center gap-1.5 bg-[#043927] text-white rounded-lg px-2 py-1 text-xs font-bold shadow-2xs">
-                          <button onClick={() => handleAddToCart(prod.id, prod)} className="p-0.5 hover:text-amber-300">
-                            -
+                      {/* Quantity Counter or Add to Cart Button */}
+                      {(() => {
+                        const cartItem = getCartItem(prod.id);
+                        const inCart = cartItem && cartItem.quantity > 0;
+                        const isBusy = addingId === prod.id || actionId === prod.id;
+
+                        if (inCart) {
+                          return (
+                            <div
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              className="h-8 w-full bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between p-0.5 px-1 shadow-2xs"
+                            >
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleDecrement(prod.id);
+                                }}
+                                disabled={isBusy}
+                                className="w-6.5 h-6.5 rounded-lg bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                                title={cartItem.quantity === 1 ? (locale === 'ar' ? 'حذف' : 'Remove') : (locale === 'ar' ? 'إنقاص' : 'Decrease')}
+                              >
+                                {cartItem.quantity === 1 ? (
+                                  <Minus className="w-3 h-3 stroke-[2.5]" />
+                                  
+                                ) : (
+                                  <Minus className="w-3 h-3 stroke-[2.5]" />
+                                )}
+                              </button>
+
+                              <span className="flex-1 text-center text-xs font-black text-slate-900 font-sans select-none">
+                                {isBusy ? (
+                                  <Loader2 className="w-3 h-3 animate-spin mx-auto text-emerald-600" />
+                                ) : (
+                                  cartItem.quantity
+                                )}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleIncrement(prod.id, prod);
+                                }}
+                                disabled={isBusy}
+                                className="w-6.5 h-6.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                                title={locale === 'ar' ? 'زيادة' : 'Increase'}
+                              >
+                                <Plus className="w-3 h-3 stroke-[2.5]" />
+                              </button>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleAddToCart(prod.id, prod);
+                            }}
+                            disabled={isBusy}
+                            className="h-8 w-full rounded-xl bg-[#00B074] hover:bg-[#009663] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all hover:scale-[1.01] cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
+                          >
+                            {isBusy ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <>
+                                <ShoppingBag className="w-3.5 h-3.5" />
+                                <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
+                              </>
+                            )}
                           </button>
-                          <span>{qtyInCart} in cart</span>
-                          <button onClick={() => handleAddToCart(prod.id, prod)} className="p-0.5 hover:text-amber-300">
-                            +
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleAddToCart(prod.id, prod);
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-[#043927] hover:bg-[#02281b] text-white font-bold text-[11px] shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center gap-1 shrink-0"
-                        >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
-                        </button>
-                      )}
+                        );
+                      })()}
                     </div>
                   </div>
 

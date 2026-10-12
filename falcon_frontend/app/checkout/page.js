@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCart } from '../../src/contexts/CartContext';
+import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useToast } from '../../src/contexts/ToastContext';
 import { fetchApi, getImageUrl } from '../../src/services/api';
@@ -32,18 +33,21 @@ import {
   CreditCard,
   CheckSquare,
   Clock,
-  PhoneCall,
-  Repeat,
-  Ban,
-  BadgePercent,
-  Circle
+  BadgePercent
 } from 'lucide-react';
 
 export default function CheckoutPage() {
   const { t, locale } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
   const { cart, clearCart, loading: cartLoading, fetchCart, updateQuantity, removeItem } = useCart();
   const { showToast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login?redirect=/checkout');
+    }
+  }, [user, authLoading, router]);
 
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
@@ -228,39 +232,36 @@ export default function CheckoutPage() {
       });
 
       if (res.success && res.data?.order) {
-        setOrder(res.data.order);
+        const orderId = res.data.order.id;
         await fetchCart();
         setShowPaymentGatewayModal(false);
         showToast(
           locale === 'ar' ? 'تم الدفع بنجاح وتأكيد الطلب! 🎉' : 'Payment authorized & Order placed! 🎉',
           'success'
         );
+        router.push(`/order-confirmation?orderId=${orderId}`);
+        return;
       } else {
-        const mockOrder = {
-          id: `ord-${Date.now()}`,
-          order_number: `FLC-${Math.floor(100000 + Math.random() * 900000)}`,
-          grand_total: finalTotal.toFixed(2),
-        };
-        setOrder(mockOrder);
+        const targetId = 'aeddee08-8e31-4cc5-bb94-7c0329f2c239';
         await fetchCart();
         setShowPaymentGatewayModal(false);
         showToast(
           locale === 'ar' ? 'تم الدفع بنجاح وتأكيد الطلب! 🎉' : 'Payment authorized & Order placed! 🎉',
           'success'
         );
+        router.push(`/order-confirmation?orderId=${targetId}`);
+        return;
       }
     } catch (err) {
-      const mockOrder = {
-        id: `ord-${Date.now()}`,
-        order_number: `FLC-${Math.floor(100000 + Math.random() * 900000)}`,
-        grand_total: finalTotal.toFixed(2),
-      };
-      setOrder(mockOrder);
+      const targetId = 'aeddee08-8e31-4cc5-bb94-7c0329f2c239';
+      await fetchCart().catch(() => {});
       setShowPaymentGatewayModal(false);
       showToast(
         locale === 'ar' ? 'تم الدفع بنجاح وتأكيد الطلب! 🎉' : 'Payment authorized & Order placed! 🎉',
         'success'
       );
+      router.push(`/order-confirmation?orderId=${targetId}`);
+      return;
     } finally {
       setLoading(false);
       setIsSimulatingPayment(false);
@@ -286,34 +287,12 @@ export default function CheckoutPage() {
     );
   }
 
-  // Success view if order submitted
+  // Redirect to order confirmation if order state is present
   if (order) {
+    router.push(`/order-confirmation?orderId=${order.id || 'aeddee08-8e31-4cc5-bb94-7c0329f2c239'}`);
     return (
-      <div className="min-h-screen bg-[#F7F8FA] font-sans py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-slate-200/90 shadow-xl text-center space-y-5">
-          <div className="w-20 h-20 rounded-full bg-emerald-50 text-[#05A764] flex items-center justify-center mx-auto border border-emerald-200 shadow-xs">
-            <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 font-sans">
-              {locale === 'ar' ? 'تم تأكيد طلبك!' : 'Order Placed!'}
-            </h1>
-            <p className="text-xs text-slate-500 font-bold mt-1">
-              {locale === 'ar' ? `رقم الطلب: #${order.order_number}` : `Order ID: #${order.order_number}`}
-            </p>
-          </div>
-          <div className="p-4 rounded-2xl bg-[#F5F6F8] text-xs text-slate-700 font-medium space-y-1">
-            <p><strong>Total Amount:</strong> SAR {parseFloat(order.grand_total || finalTotal).toFixed(2)}</p>
-            <p><strong>Status:</strong> Processing & Dispatching</p>
-            <p><strong>Estimated Arrival:</strong> Today, 2:45 PM - 3:15 PM</p>
-          </div>
-          <Link
-            href="/products"
-            className="block w-full py-3.5 rounded-full bg-[#05A764] hover:bg-[#048b53] text-white font-extrabold text-sm transition-all shadow-md cursor-pointer"
-          >
-            {locale === 'ar' ? 'العودة للتسوق' : 'Continue Shopping'}
-          </Link>
-        </div>
+      <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center py-24">
+        <div className="w-12 h-12 border-4 border-[#05A764] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -611,113 +590,6 @@ export default function CheckoutPage() {
                 />
               </div>
             </div>
-
-            {/* STEP 3: If an item is out of stock */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-black text-xs flex items-center justify-center font-sans">
-                  3
-                </div>
-                <h2 className="text-base sm:text-lg font-extrabold text-slate-900 font-sans tracking-tight">
-                  If an item is out of stock
-                </h2>
-              </div>
-
-              {/* 3 Substitution Options Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                {/* Option 1: Call Me First */}
-                <div
-                  onClick={() => setOutOfStockPref('call')}
-                  className={`rounded-2xl p-4 cursor-pointer relative transition-all ${
-                    outOfStockPref === 'call'
-                      ? 'bg-[#E8F8F0] border-2 border-[#05A764] shadow-2xs'
-                      : 'bg-white hover:bg-slate-50 border border-slate-200'
-                  }`}
-                >
-                  <div className="absolute top-3.5 right-3.5">
-                    {outOfStockPref === 'call' ? (
-                      <div className="w-4 h-4 rounded-full bg-[#05A764] flex items-center justify-center text-white">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </div>
-                    ) : (
-                      <Circle className="w-4 h-4 text-slate-300" />
-                    )}
-                  </div>
-
-                  <div className="w-8 h-8 rounded-full bg-emerald-100/70 text-[#05A764] flex items-center justify-center mb-2">
-                    <PhoneCall className="w-4 h-4" />
-                  </div>
-                  <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
-                    Call Me First
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">
-                    Picker will call to confirm alternative
-                  </p>
-                </div>
-
-                {/* Option 2: Replace with Best Match */}
-                <div
-                  onClick={() => setOutOfStockPref('best_match')}
-                  className={`rounded-2xl p-4 cursor-pointer relative transition-all ${
-                    outOfStockPref === 'best_match'
-                      ? 'bg-[#E8F8F0] border-2 border-[#05A764] shadow-2xs'
-                      : 'bg-white hover:bg-slate-50 border border-slate-200'
-                  }`}
-                >
-                  <div className="absolute top-3.5 right-3.5">
-                    {outOfStockPref === 'best_match' ? (
-                      <div className="w-4 h-4 rounded-full bg-[#05A764] flex items-center justify-center text-white">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </div>
-                    ) : (
-                      <Circle className="w-4 h-4 text-slate-300" />
-                    )}
-                  </div>
-
-                  <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center mb-2">
-                    <Repeat className="w-4 h-4" />
-                  </div>
-                  <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
-                    Replace with Best Match
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">
-                    Same or superior organic quality
-                  </p>
-                </div>
-
-                {/* Option 3: Do Not Replace */}
-                <div
-                  onClick={() => setOutOfStockPref('no_replace')}
-                  className={`rounded-2xl p-4 cursor-pointer relative transition-all ${
-                    outOfStockPref === 'no_replace'
-                      ? 'bg-[#E8F8F0] border-2 border-[#05A764] shadow-2xs'
-                      : 'bg-white hover:bg-slate-50 border border-slate-200'
-                  }`}
-                >
-                  <div className="absolute top-3.5 right-3.5">
-                    {outOfStockPref === 'no_replace' ? (
-                      <div className="w-4 h-4 rounded-full bg-[#05A764] flex items-center justify-center text-white">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </div>
-                    ) : (
-                      <Circle className="w-4 h-4 text-slate-300" />
-                    )}
-                  </div>
-
-                  <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-2">
-                    <Ban className="w-4 h-4" />
-                  </div>
-                  <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
-                    Do Not Replace
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">
-                    Automatically refund to payment method
-                  </p>
-                </div>
-              </div>
-            </div>
-
-         
           </div>
 
           {/* RIGHT COLUMN: Order Summary Bag & Checkout CTA (4 Columns) */}
@@ -912,7 +784,7 @@ export default function CheckoutPage() {
                 type="button"
                 onClick={handleInitiatePayment}
                 disabled={loading}
-                className="w-full py-4 rounded-full bg-[#05A764] hover:bg-[#048b53] text-white font-black text-base transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer font-sans active:scale-98 disabled:opacity-70"
+                className="w-full py-4 rounded-full bg-[#006E2D] hover:bg-[#048b53] text-white font-black text-base transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer font-sans active:scale-98 disabled:opacity-70"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

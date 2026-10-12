@@ -18,6 +18,17 @@ class FeedbackController {
     }
   }
 
+  async getFeedbackByOrderId(req, res, next) {
+    try {
+      const { orderId } = req.params;
+      const customerId = req.user?.customer?.id;
+      const feedback = await feedbackService.getFeedbackByOrderId(orderId, customerId);
+      return sendSuccess(res, 'Feedback retrieved', { feedback });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
   async getAllFeedbackAdmin(req, res, next) {
     try {
       const feedbacks = await feedbackService.getAllFeedbackAdmin();

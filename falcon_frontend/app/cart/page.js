@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '../../src/contexts/CartContext';
+import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { getImageUrl } from '../../src/services/api';
 import RecommendedProducts from '../../src/components/RecommendedProducts';
@@ -65,6 +66,7 @@ const DEMO_CART_ITEMS = [
 
 export default function CartPage() {
   const { t, locale } = useLanguage();
+  const { user } = useAuth();
   const { cart, updateQuantity, removeItem, clearCart, loading } = useCart();
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   console.log(cart, "cart");
@@ -147,8 +149,8 @@ export default function CartPage() {
           <div className="lg:col-span-8 space-y-4">
             {itemsToDisplay.map((item) => {
               const itemPrice = parseFloat(item.discount_price);
-              const itemMrp = parseFloat(item.price || (itemPrice * 1.4).toFixed(2));
-              const discountTag = item.vat_percentage || `${Math.round(((itemMrp - itemPrice) / itemMrp) * 100)}% OFF`;
+              const itemMrp = parseFloat(item.price || (item.price * 1.4).toFixed(2));
+              const discountTag = item.vat_percentage + `% OFF`;
               const offers = item.offers || [
                 { text_en: 'Extra 15% off', text_ar: 'خصم إضافي ١٥٪' },
                 { text_en: '15% cashback up to SAR 15', text_ar: 'كاشباك ١٥٪ حتى ١٥ ريال' },
@@ -192,7 +194,8 @@ export default function CartPage() {
                           className="p-1 rounded-lg hover:bg-rose-50 text-rose-500 transition-colors cursor-pointer"
                           title="Decrease / Delete"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Minus className="w-3 h-3 stroke-[2.5]" />
+                          
                         </button>
 
                         <span className="font-extrabold text-sm text-slate-900 font-sans">
@@ -218,13 +221,14 @@ export default function CartPage() {
                         </h3>
 
                         {/* Top-Right Trash Delete Button */}
-                        <button
+                        {/* <button
                           onClick={() => removeItem(item.id)}
                           className="p-2 rounded-xl bg-rose-50/80 hover:bg-rose-100 text-rose-500 border border-rose-100 transition-colors cursor-pointer shrink-0"
                           title="Remove item"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          <Minus className="w-3 h-3 stroke-[2.5]" />
+
+                        </button> */}
                       </div>
 
                       {/* Size Chip */}
@@ -266,7 +270,7 @@ export default function CartPage() {
                       </div>
 
                       {/* Value Badges Row */}
-                      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 font-medium pt-2 border-t border-slate-100">
+                      {/* <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 font-medium pt-2 border-t border-slate-100">
                         <div className="flex items-center gap-1.5">
                           <Truck className="w-3.5 h-3.5 text-slate-400" />
                           <span>{locale === 'ar' ? 'توصيل مجاني' : 'Free Shipping'}</span>
@@ -279,7 +283,7 @@ export default function CartPage() {
                           <Store className="w-3.5 h-3.5 text-slate-400" />
                           <span>{locale === 'ar' ? `البائع: ${item.seller || 'Falcon Grocery'}` : `Sold by ${item.seller || 'Falcon Grocery'}`}</span>
                         </div>
-                      </div>
+                      </div> */}
 
                     </div>
 
@@ -287,11 +291,11 @@ export default function CartPage() {
                     <div className="text-right sm:text-right w-full sm:w-auto shrink-0 space-y-1">
                       <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2">
                         <div className="flex items-center gap-1.5">
-                          {discountTag && (
+                          {/* {discountTag && (
                             <span className="text-[#05A764] font-black text-xs sm:text-sm">
-                              {discountTag} % OFF
+                              {discountTag} 
                             </span>
-                          )}
+                          )} */}
                           {itemMrp > itemPrice && (
                             <span className="text-slate-400 line-through text-xs font-medium">
                               {itemMrp.toFixed(2)}
@@ -403,7 +407,7 @@ export default function CartPage() {
 
               {/* Primary CTA Checkout Button */}
               <Link
-                href="/checkout"
+                href={user && user.role === 'CUSTOMER' ? "/checkout" : "/login?redirect=/checkout"}
                 className="w-full py-4 rounded-2xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-base sm:text-lg transition-all shadow-md hover:shadow-xl flex items-center justify-center gap-2.5 cursor-pointer text-center font-sans group"
               >
                 <span>{locale === 'ar' ? 'المتابعة للشراء' : 'Checkout'}</span>

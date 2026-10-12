@@ -11,7 +11,7 @@ import {
   Search,
   User,
   Heart,
-  ShoppingBag,
+  ShoppingCart,
   Menu,
   X,
   ChevronDown,
@@ -29,6 +29,7 @@ export default function Navbar() {
   const router = useRouter();
   const { t, locale, toggleLanguage } = useLanguage();
   const { user, logout } = useAuth();
+  const isCustomer = Boolean(user && user.role === 'CUSTOMER');
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
 
@@ -46,7 +47,7 @@ export default function Navbar() {
           setDbCategories(parentsOnly);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Hide Navbar on Admin pages
@@ -74,15 +75,15 @@ export default function Navbar() {
 
   const navCategories = dbCategories && dbCategories.length > 0
     ? [
-        { name_en: 'Deals & Offers', name_ar: 'العروض والخصومات', href: '/products?deals=true' },
-        ...dbCategories.map(c => ({
-          name_en: c.name_en,
-          name_ar: c.name_ar,
-          href: `/products?category=${encodeURIComponent(c.slug || c.name_en.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}`
-        })),
-        { name_en: 'New Arrivals', name_ar: 'وصل حديثاً', href: '/products?sort=newest' },
-        { name_en: 'Help', name_ar: 'المساعدة', href: '/contact' },
-      ]
+      { name_en: 'Deals & Offers', name_ar: 'العروض والخصومات', href: '/products?deals=true' },
+      ...dbCategories.map(c => ({
+        name_en: c.name_en,
+        name_ar: c.name_ar,
+        href: `/products?category=${encodeURIComponent(c.slug || c.name_en.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}`
+      })),
+      { name_en: 'New Arrivals', name_ar: 'وصل حديثاً', href: '/products?sort=newest' },
+      { name_en: 'Help', name_ar: 'المساعدة', href: '/contact' },
+    ]
     : defaultNavCategories;
 
   return (
@@ -90,7 +91,7 @@ export default function Navbar() {
       {/* Primary Main Navbar (Dark Green Bar) */}
       <div className="bg-[#043927] text-white py-3.5 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/60">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          
+
           {/* Left Side: Logo & Deliver To Location Selector */}
           <div className="flex items-center gap-6 shrink-0">
             {/* Logo */}
@@ -128,7 +129,7 @@ export default function Navbar() {
 
           {/* Right Side Actions: Language, Account, Wishlist, Cart */}
           <div className="flex items-center gap-4 sm:gap-6 text-xs font-bold text-white shrink-0">
-            
+
             {/* Language Switcher */}
             <button
               onClick={toggleLanguage}
@@ -139,7 +140,7 @@ export default function Navbar() {
 
             {/* User Account / Auth Dropdown */}
             <div className="relative">
-              {user ? (
+              {isCustomer ? (
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors cursor-pointer"
@@ -151,11 +152,11 @@ export default function Navbar() {
               ) : (
                 <Link href="/login" className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors">
                   <User className="w-4.5 h-4.5" />
-                  <span className="hidden md:inline-block">{t('nav.account') || 'Account'}</span>
+                  <span className="hidden md:inline-block">{t('Account') || 'Account'}</span>
                 </Link>
               )}
 
-              {userDropdownOpen && user && (
+              {userDropdownOpen && isCustomer && (
                 <div className="absolute right-0 rtl:left-0 rtl:right-auto top-8 w-48 bg-white text-slate-900 rounded-2xl shadow-xl border border-slate-200 py-2 z-50 space-y-1">
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="font-bold text-xs text-slate-900 truncate">{user.name}</p>
@@ -168,15 +169,7 @@ export default function Navbar() {
                   >
                     {t('nav.myOrders') || 'My Orders'}
                   </Link>
-                  {user.role === 'ADMIN' && (
-                    <Link
-                      href="/admin/dashboard"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="block px-4 py-2 hover:bg-slate-50 text-xs font-bold text-emerald-700"
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
+                 
                   <button
                     onClick={() => {
                       setUserDropdownOpen(false);
@@ -194,7 +187,7 @@ export default function Navbar() {
             {/* Wishlist */}
             <Link href="/wishlist" className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors relative">
               <Heart className="w-4.5 h-4.5" />
-              <span className="hidden md:inline-block">{t('nav.wishlist') || 'Wishlist'}</span>
+              <span className="hidden md:inline-block">{t('Wishlist')}</span>
               {wishlistCount > 0 && (
                 <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center -mt-2 -ml-1">
                   {wishlistCount}
@@ -204,7 +197,7 @@ export default function Navbar() {
 
             {/* Cart */}
             <Link href="/cart" className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors relative">
-              <ShoppingBag className="w-4.5 h-4.5" />
+              <ShoppingCart className="w-5 h-5" />
               <span className="hidden md:inline-block">{t('nav.cart') || 'Cart'}</span>
               {cartCount > 0 && (
                 <span className="w-4.5 h-4.5 rounded-full bg-emerald-400 text-emerald-950 text-[11px] font-black flex items-center justify-center -mt-2 -ml-1 shadow-sm">
@@ -227,12 +220,12 @@ export default function Navbar() {
       </div>
 
       {/* Sub-header Category Navigation Bar */}
-      <div className="bg-[#032d1f] text-white py-2 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/80 shadow-xs">
+      <div className="bg-[#F8F3EA] text-black py-2 px-4 sm:px-6 lg:px-8 border-b border-black shadow-xs">
         <div className="max-w-7xl mx-auto flex items-center gap-6 overflow-x-auto scrollbar-none font-semibold text-xs whitespace-nowrap">
           {/* All Categories Button */}
           <Link
             href="/products"
-            className="flex items-center gap-1.5 hover:text-emerald-300 text-white font-extrabold pr-3 border-r border-emerald-800 rtl:border-l rtl:border-r-0 rtl:pl-3 rtl:pr-0"
+            className="flex items-center gap-1.5 hover:text-emerald-300 text-black font-extrabold pr-3 border-r border-black rtl:border-l rtl:border-r-0 rtl:pl-3 rtl:pr-0"
           >
             <Menu className="w-4 h-4 text-emerald-400" />
             <span>{locale === 'ar' ? 'جميع الاقسام' : 'All'}</span>
@@ -243,7 +236,7 @@ export default function Navbar() {
             <Link
               key={idx}
               href={cat.href}
-              className="text-emerald-100/90 hover:text-white hover:underline transition-colors py-0.5"
+              className="text-black hover:text-black hover:underline transition-colors py-0.5"
             >
               {locale === 'ar' ? cat.name_ar : cat.name_en}
             </Link>

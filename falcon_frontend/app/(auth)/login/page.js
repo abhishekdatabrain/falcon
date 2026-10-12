@@ -35,7 +35,8 @@ export default function LoginPage() {
           );
           return;
         }
-        router.push('/');
+        const redirectParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('redirect') : null;
+        router.push(redirectParam || '/');
       }
     } catch (err) {
       setError(err.message || (locale === 'ar' ? 'فشل تسجيل الدخول. يرجى التحقق من البيانات.' : 'Login failed. Please check your credentials.'));

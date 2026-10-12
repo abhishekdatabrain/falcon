@@ -3,7 +3,8 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Leaf, ArrowRight, Truck, Tag, ShieldCheck } from 'lucide-react';
+import { Leaf } from 'lucide-react';
+import FooterWaveDivider from './FooterWaveDivider';
 
 export default function Footer() {
   const pathname = usePathname();
@@ -15,111 +16,38 @@ export default function Footer() {
   }
 
   return (
-    <footer className="relative bg-[#043927] text-slate-200 font-sans mt-20 overflow-hidden">
+    <footer className="relative bg-[#043927] text-slate-200 font-sans mt-16 overflow-hidden">
       
-      {/* Off-White Top Container: Trust Badges Bar + Dual Wavy Banner */}
-      <div className="w-full bg-[#F8FAF8] pt-8 overflow-hidden relative">
-        
-        {/* Trust Badges Bar */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
-          <div className="flex flex-wrap items-center gap-6 sm:gap-10 font-sans">
-            
-            {/* Feature 1: Fast & Reliable Delivery */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#043927] shrink-0 border border-emerald-200/60 shadow-2xs">
-                <Truck className="w-5 h-5 text-[#043927]" />
-              </div>
-              <div className="leading-tight">
-                <span className="font-extrabold text-slate-900 text-xs sm:text-sm block">
-                  {locale === 'ar' ? 'سريع وموثوق' : 'Fast & Reliable'}
-                </span>
-                <span className="text-[11px] text-slate-500 font-medium block">
-                  {locale === 'ar' ? 'التوصيل' : 'Delivery'}
-                </span>
-              </div>
-            </div>
-
-            {/* Feature 2: Great Prices Everyday */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#043927] shrink-0 border border-emerald-200/60 shadow-2xs">
-                <Tag className="w-5 h-5 text-[#043927]" />
-              </div>
-              <div className="leading-tight">
-                <span className="font-extrabold text-slate-900 text-xs sm:text-sm block">
-                  {locale === 'ar' ? 'أسعار رائعة' : 'Great Prices'}
-                </span>
-                <span className="text-[11px] text-slate-500 font-medium block">
-                  {locale === 'ar' ? 'كل يوم' : 'Everyday'}
-                </span>
-              </div>
-            </div>
-
-            {/* Feature 3: Secure Payments */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#043927] shrink-0 border border-emerald-200/60 shadow-2xs">
-                <ShieldCheck className="w-5 h-5 text-[#043927]" />
-              </div>
-              <div className="leading-tight">
-                <span className="font-extrabold text-slate-900 text-xs sm:text-sm block">
-                  {locale === 'ar' ? 'آمن ومحمي' : 'Secure'}
-                </span>
-                <span className="text-[11px] text-slate-500 font-medium block">
-                  {locale === 'ar' ? 'المدفوعات' : 'Payments'}
-                </span>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Dual Wavy Banner SVG */}
-        <div className="w-full overflow-hidden leading-none relative pointer-events-none -mb-1">
-          <svg
-            viewBox="0 0 1440 140"
-            className="w-full h-16 sm:h-24 lg:h-28 block"
-            xmlns="http://www.w3.org/2000/svg"
-            preserveAspectRatio="none"
-          >
-            {/* Gold Accent Upper Wave */}
-            <path
-              fill="#DA9628"
-              d="M 0,25 C 180,85 360,95 560,50 C 760,5 980,5 1180,80 C 1300,125 1380,50 1440,0 L 1440,140 L 0,140 Z"
-            />
-            {/* Deep Forest Green Main Footer Layer */}
-            <path
-              fill="#043927"
-              d="M 0,45 C 180,105 360,115 560,70 C 760,25 980,25 1180,100 C 1300,145 1380,70 1440,20 L 1440,140 L 0,140 Z"
-            />
-          </svg>
-        </div>
-
+      {/* Top Decorative Wave Divider */}
+      <div className="w-full bg-white leading-none relative z-10 pointer-events-none -mb-1">
+        <FooterWaveDivider />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-8 relative z-20">
         
-        {/* Main 5-Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-6 items-start">
+        {/* Main Grid: Brand Column + 4 Link Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-8 items-start">
           
-          {/* Col 1: Brand, Tagline, Socials & App Badges */}
+          {/* Col 1: Brand, Tagline, Socials & App Downloads */}
           <div className="lg:col-span-4 space-y-6">
             
             {/* Logo */}
             <Link href="/" className="inline-flex items-center gap-1.5 group">
-              <span className="text-3xl sm:text-4xl font-black text-white tracking-tight font-sans">Logo</span>
+              <span className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-heading">Logo</span>
               <Leaf className="w-6 h-6 text-[#05A764] fill-[#05A764] -mt-1 group-hover:rotate-12 transition-transform" />
             </Link>
 
             {/* Tagline */}
-            <p className="text-[#C68A27] font-semibold text-base sm:text-lg leading-snug font-sans">
+            <p className="text-[#DA9628] font-semibold text-base sm:text-lg leading-snug font-sans">
               {locale === 'ar' ? 'المستلزمات اليومية، تصلك بكل بساطة.' : 'Everyday essentials, delivered simply.'}
             </p>
 
-            {/* Social Icons */}
+            {/* Social Media Circular Buttons */}
             <div className="flex items-center gap-3 pt-1">
               {/* X / Twitter */}
               <a
                 href="#"
-                className="w-9 h-9 rounded-full border border-emerald-700/80 bg-emerald-950/40 text-slate-200 flex items-center justify-center hover:bg-[#C68A27] hover:border-[#C68A27] hover:text-white transition-all shadow-2xs"
+                className="w-9 h-9 rounded-full border border-emerald-700/80 bg-emerald-950/40 text-slate-200 flex items-center justify-center hover:bg-[#DA9628] hover:border-[#DA9628] hover:text-white transition-all shadow-2xs"
                 title="X (Twitter)"
               >
                 <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -130,7 +58,7 @@ export default function Footer() {
               {/* Instagram */}
               <a
                 href="#"
-                className="w-9 h-9 rounded-full border border-emerald-700/80 bg-emerald-950/40 text-slate-200 flex items-center justify-center hover:bg-[#C68A27] hover:border-[#C68A27] hover:text-white transition-all shadow-2xs"
+                className="w-9 h-9 rounded-full border border-emerald-700/80 bg-emerald-950/40 text-slate-200 flex items-center justify-center hover:bg-[#DA9628] hover:border-[#DA9628] hover:text-white transition-all shadow-2xs"
                 title="Instagram"
               >
                 <svg className="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
@@ -143,7 +71,7 @@ export default function Footer() {
               {/* Facebook */}
               <a
                 href="#"
-                className="w-9 h-9 rounded-full border border-emerald-700/80 bg-emerald-950/40 text-slate-200 flex items-center justify-center hover:bg-[#C68A27] hover:border-[#C68A27] hover:text-white transition-all shadow-2xs"
+                className="w-9 h-9 rounded-full border border-emerald-700/80 bg-emerald-950/40 text-slate-200 flex items-center justify-center hover:bg-[#DA9628] hover:border-[#DA9628] hover:text-white transition-all shadow-2xs"
                 title="Facebook"
               >
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -155,7 +83,7 @@ export default function Footer() {
             {/* Download Our App */}
             <div className="space-y-3 pt-3">
               <div className="flex items-center gap-2 text-white font-extrabold text-xs sm:text-sm tracking-wide font-sans">
-                <span className="w-0.5 h-4 bg-[#C68A27] inline-block"></span>
+                <span className="w-0.5 h-4 bg-[#DA9628] inline-block"></span>
                 <span>{locale === 'ar' ? 'تنزيل تطبيقنا' : 'Download Our App'}</span>
               </div>
 
@@ -194,58 +122,58 @@ export default function Footer() {
 
           {/* Col 2: Shop */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-base font-extrabold text-white tracking-tight font-sans">
+            <h4 className="text-base font-extrabold text-white tracking-tight font-heading">
               {locale === 'ar' ? 'التسوق' : 'Shop'}
             </h4>
-            <div className="w-7 h-0.5 bg-[#C68A27] -mt-1 mb-4"></div>
+            <div className="w-7 h-0.5 bg-[#DA9628] -mt-1 mb-4"></div>
             <ul className="space-y-2.5 text-xs sm:text-sm text-slate-300 font-medium">
               <li><Link href="/products?category=groceries" className="hover:text-white transition-colors">{locale === 'ar' ? 'البقالة' : 'Groceries'}</Link></li>
               <li><Link href="/products?category=snacks" className="hover:text-white transition-colors">{locale === 'ar' ? 'الوجبات الخفيفة' : 'Snacks'}</Link></li>
               <li><Link href="/products?category=personal-care" className="hover:text-white transition-colors">{locale === 'ar' ? 'العناية الشخصية' : 'Personal Care'}</Link></li>
               <li><Link href="/products?category=household" className="hover:text-white transition-colors">{locale === 'ar' ? 'المستلزمات المنزلية' : 'Household'}</Link></li>
               <li><Link href="/products?category=frozen" className="hover:text-white transition-colors">{locale === 'ar' ? 'الأطعمة المجمدة' : 'Frozen Foods'}</Link></li>
-              <li><Link href="/products?tag=new-arrivals" className="hover:text-white transition-colors">{locale === 'ar' ? 'وصل حديثاً' : 'New Arrivals'}</Link></li>
+              <li><Link href="/products" className="hover:text-white transition-colors">{locale === 'ar' ? 'وصل حديثاً' : 'New Arrivals'}</Link></li>
             </ul>
           </div>
 
           {/* Col 3: Customer Care */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-base font-extrabold text-white tracking-tight font-sans">
+            <h4 className="text-base font-extrabold text-white tracking-tight font-heading">
               {locale === 'ar' ? 'خدمة العملاء' : 'Customer Care'}
             </h4>
-            <div className="w-7 h-0.5 bg-[#C68A27] -mt-1 mb-4"></div>
+            <div className="w-7 h-0.5 bg-[#DA9628] -mt-1 mb-4"></div>
             <ul className="space-y-2.5 text-xs sm:text-sm text-slate-300 font-medium">
               <li><Link href="/contact" className="hover:text-white transition-colors">{locale === 'ar' ? 'مركز المساعدة' : 'Help Center'}</Link></li>
               <li><Link href="/contact" className="hover:text-white transition-colors">{locale === 'ar' ? 'اتصل بنا' : 'Contact Us'}</Link></li>
-              <li><Link href="/contact" className="hover:text-white transition-colors">{locale === 'ar' ? 'معلومات التوصيل' : 'Delivery Information'}</Link></li>
-              <li><Link href="/orders" className="hover:text-white transition-colors">{locale === 'ar' ? 'تتبع الطلب' : 'Track Order'}</Link></li>
+              <li><Link href="/about" className="hover:text-white transition-colors">{locale === 'ar' ? 'معلومات التوصيل' : 'Delivery Information'}</Link></li>
+              <li><Link href="/orders/track" className="hover:text-white transition-colors">{locale === 'ar' ? 'تتبع الطلب' : 'Track Order'}</Link></li>
               <li><Link href="/contact" className="hover:text-white transition-colors">{locale === 'ar' ? 'الأسئلة الشائعة' : 'FAQs'}</Link></li>
             </ul>
           </div>
 
           {/* Col 4: My Account */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-base font-extrabold text-white tracking-tight font-sans">
+            <h4 className="text-base font-extrabold text-white tracking-tight font-heading">
               {locale === 'ar' ? 'حسابي' : 'My Account'}
             </h4>
-            <div className="w-7 h-0.5 bg-[#C68A27] -mt-1 mb-4"></div>
+            <div className="w-7 h-0.5 bg-[#DA9628] -mt-1 mb-4"></div>
             <ul className="space-y-2.5 text-xs sm:text-sm text-slate-300 font-medium">
-              <li><Link href="/login" className="hover:text-white transition-colors">{locale === 'ar' ? 'ملفي الشخصي' : 'My Profile'}</Link></li>
+              <li><Link href="/profile" className="hover:text-white transition-colors">{locale === 'ar' ? 'ملفي الشخصي' : 'My Profile'}</Link></li>
               <li><Link href="/orders" className="hover:text-white transition-colors">{locale === 'ar' ? 'طلباتي' : 'My Orders'}</Link></li>
-              <li><Link href="/login" className="hover:text-white transition-colors">{locale === 'ar' ? 'العناوين' : 'Addresses'}</Link></li>
+              <li><Link href="/addresses" className="hover:text-white transition-colors">{locale === 'ar' ? 'العناوين' : 'Addresses'}</Link></li>
               <li><Link href="/orders" className="hover:text-white transition-colors">{locale === 'ar' ? 'سجل الطلبات' : 'Order History'}</Link></li>
             </ul>
           </div>
 
           {/* Col 5: Quick Links */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-base font-extrabold text-white tracking-tight font-sans">
+            <h4 className="text-base font-extrabold text-white tracking-tight font-heading">
               {locale === 'ar' ? 'روابط سريعة' : 'Quick Links'}
             </h4>
-            <div className="w-7 h-0.5 bg-[#C68A27] -mt-1 mb-4"></div>
+            <div className="w-7 h-0.5 bg-[#DA9628] -mt-1 mb-4"></div>
             <ul className="space-y-2.5 text-xs sm:text-sm text-slate-300 font-medium">
               <li><Link href="/about" className="hover:text-white transition-colors">{locale === 'ar' ? 'من نحن' : 'About Us'}</Link></li>
-              <li><Link href="/products?tag=deals" className="hover:text-white transition-colors">{locale === 'ar' ? 'العروض والخصومات' : 'Deals & Offers'}</Link></li>
+              <li><Link href="/products?on_sale=true" className="hover:text-white transition-colors">{locale === 'ar' ? 'العروض والخصومات' : 'Deals & Offers'}</Link></li>
               <li><Link href="/about" className="hover:text-white transition-colors">{locale === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}</Link></li>
               <li><Link href="/about" className="hover:text-white transition-colors">{locale === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}</Link></li>
             </ul>
@@ -254,7 +182,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Copyright & Language Switcher Bar */}
-        <div className="pt-8 mt-12 border-t border-emerald-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-300 font-sans">
+        <div className="pt-8 mt-12 border-t border-emerald-900/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-300 font-sans">
           <p className="text-center sm:text-left rtl:sm:text-right">
             © 2026 Logo. All rights reserved.
           </p>
@@ -281,4 +209,3 @@ export default function Footer() {
     </footer>
   );
 }
-

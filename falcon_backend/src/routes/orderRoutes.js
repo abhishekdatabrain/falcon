@@ -5,6 +5,9 @@ const { authenticate } = require('../middleware/auth');
 const { authorize } = require('../middleware/rbac');
 const ROLES = require('../constants/roles');
 
+// Public Order Confirmation Route (by UUID)
+router.get('/confirmation/:id', (req, res, next) => orderController.getOrderConfirmation(req, res, next));
+
 router.use(authenticate);
 
 // Customer Routes

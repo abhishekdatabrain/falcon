@@ -36,20 +36,53 @@ class ProductService {
       where.is_best_deal = String(val) === 'true';
     }
 
-    if (categoryId) {
-      where.category_id = categoryId;
-    }
+    const activeLeafId = subSubSubcategoryId || sub_sub_subcategory_id;
+    const activeSubSubId = subSubcategoryId || sub_subcategory_id;
+    const activeSubId = subcategoryId;
+    const activeCatId = categoryId;
 
-    if (subcategoryId) {
-      where.subcategory_id = subcategoryId;
-    }
+    const targetFilterId = activeLeafId || activeSubSubId || activeSubId || activeCatId;
 
-    if (subSubcategoryId || sub_subcategory_id) {
-      where.sub_subcategory_id = subSubcategoryId || sub_subcategory_id;
-    }
+    if (targetFilterId) {
+      const catObj = await Category.findOne({
+        where: {
+          [Op.or]: [
+            { id: targetFilterId },
+            { slug: targetFilterId }
+          ]
+        }
+      });
 
-    if (subSubSubcategoryId || sub_sub_subcategory_id) {
-      where.sub_sub_subcategory_id = subSubSubcategoryId || sub_sub_subcategory_id;
+      if (catObj) {
+        // Collect catObj.id and all descendant category IDs recursively
+        const getDescendantIds = async (parentIds) => {
+          const children = await Category.findAll({
+            where: { parent_id: { [Op.in]: parentIds } },
+            attributes: ['id']
+          });
+          if (children.length === 0) return [];
+          const childIds = children.map(c => c.id);
+          const deeper = await getDescendantIds(childIds);
+          return [...childIds, ...deeper];
+        };
+
+        const descendantIds = await getDescendantIds([catObj.id]);
+        const allTargetIds = Array.from(new Set([catObj.id, ...descendantIds]));
+
+        where[Op.or] = [
+          { category_id: { [Op.in]: allTargetIds } },
+          { subcategory_id: { [Op.in]: allTargetIds } },
+          { sub_subcategory_id: { [Op.in]: allTargetIds } },
+          { sub_sub_subcategory_id: { [Op.in]: allTargetIds } }
+        ];
+      } else {
+        where[Op.or] = [
+          { category_id: targetFilterId },
+          { subcategory_id: targetFilterId },
+          { sub_subcategory_id: targetFilterId },
+          { sub_sub_subcategory_id: targetFilterId }
+        ];
+      }
     }
 
     if (search) {

@@ -27,7 +27,7 @@ const startServer = async () => {
       logger.info('Database models synchronized successfully.');
 
       // Auto-create default Admin if database is fresh
-      const { User, Admin, Driver } = require('./src/models');
+      const { User, Admin, Driver, HeroBanner } = require('./src/models');
       const { hashPassword } = require('./src/utils/password');
       const ROLES = require('./src/constants/roles');
       const { DRIVER_STATUS, DRIVER_AVAILABILITY } = require('./src/constants/driverStatus');
@@ -70,6 +70,48 @@ const startServer = async () => {
           availability_status: DRIVER_AVAILABILITY.AVAILABLE,
         });
         logger.info('✓ Default Driver created: driver1@platform.com / Driver@123456');
+      }
+
+      const heroBannerCount = await HeroBanner.count();
+      if (heroBannerCount === 0) {
+        logger.info('No Hero Banners found in DB. Auto-seeding initial hero slides...');
+        await HeroBanner.bulkCreate([
+          {
+            title_en: 'Everything You Need',
+            title_ar: 'كل ما تحتاجه',
+            subtitle_en: 'Delivered Simply',
+            subtitle_ar: 'يصلك بكل بساطة',
+            desc_en: 'Shop groceries, snacks, personal care and more at great prices. Freshness you can trust.',
+            desc_ar: 'تسوق البقالة والوجبات الخفيفة والعناية الشخصية والمزيد بأفضل الأسعار. طازجة يمكنك الوثوق بها.',
+            tag_en: 'Daily Grocery',
+            tag_ar: 'البقالة اليومية',
+            btn_text_en: 'Shop Now',
+            btn_text_ar: 'تسوق الآن',
+            btn_link: '/products',
+            image_url: '/hero_grocery_bag_fresh.png',
+            bg_color: '#FAF7F0',
+            order_index: 0,
+            is_active: true,
+          },
+          {
+            title_en: 'Fresh Organic Fruits & Veggies',
+            title_ar: 'فواكه وخضروات عضوية طازجة',
+            subtitle_en: 'Directly From Local Farms',
+            subtitle_ar: 'مباشرة من المزارع المحلية',
+            desc_en: 'Enjoy hand-picked watermelons, kiwis, berries and fresh produce delivered in express cold chain.',
+            desc_ar: 'استمتع بالبطيخ والكيوي والفواكه الاستوائية المنتقاة بعناية والتوصيل السريع.',
+            tag_en: 'Farm Fresh',
+            tag_ar: 'طازج من المزرعة',
+            btn_text_en: 'Explore Produce',
+            btn_text_ar: 'استكشف المنتجات',
+            btn_link: '/products',
+            image_url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800',
+            bg_color: '#FAF7F0',
+            order_index: 1,
+            is_active: true,
+          },
+        ]);
+        logger.info('✓ Default Hero Banners seeded successfully.');
       }
     } catch (syncErr) {
       logger.warn('Sequelize sync/seed warning: %s', syncErr.message);

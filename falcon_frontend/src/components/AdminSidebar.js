@@ -14,9 +14,10 @@ import {
   MapPin,
   FileText,
   MessageSquare,
-  Bell,
+  Sparkles,
   ChevronDown,
   ChevronRight,
+  Bell,
 } from 'lucide-react';
 
 export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPaymentsCount = 0 }) {
@@ -48,6 +49,7 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
       items: [
         { href: '/admin/products', label: locale === 'ar' ? 'إدارة المنتجات' : 'Product Management', icon: ShoppingBag },
         { href: '/admin/categories', label: locale === 'ar' ? 'إدارة الأقسام والتصنيفات' : 'Category Management', icon: FolderTree },
+        { href: '/admin/hero-banners', label: locale === 'ar' ? 'إدارة البنرات والهيرو' : 'Hero Banners', icon: Sparkles },
       ],
     },
     {

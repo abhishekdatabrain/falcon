@@ -1,30 +1,55 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Raleway:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap');
 @import "tailwindcss";
 
+@theme {
+  --font-heading: 'Raleway', sans-serif;
+  --font-sans: 'Inter', sans-serif;
+}
+
 :root {
-  --font-en: 'Raleway', sans-serif;
+  --font-heading: 'Raleway', sans-serif;
+  --font-sans: 'Inter', sans-serif;
   --font-ar: 'Tajawal', sans-serif;
   --bg-light: #ffffff;
   --text-main: #0f172a;
 }
 
 html {
-  font-family: var(--font-en);
+  font-family: 'Inter', sans-serif;
   background-color: #ffffff;
   color: #0f172a;
   scroll-behavior: smooth;
 }
 
-html[dir="rtl"] {
-  font-family: var(--font-ar);
-}
-
 body {
+  font-family: 'Inter', sans-serif;
   min-height: 100vh;
   background-color: #ffffff;
   color: #0f172a;
   overflow-x: hidden;
-  
+}
+
+/* Headings font: Raleway */
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: 'Raleway', sans-serif;
+}
+
+/* Subheadings and body text font: Inter */
+p, span, div, input, select, textarea, button, label, .font-sans, .font-body {
+  font-family: 'Inter', sans-serif;
+}
+
+html[dir="rtl"],
+html[dir="rtl"] body,
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3,
+html[dir="rtl"] h4,
+html[dir="rtl"] h5,
+html[dir="rtl"] h6,
+html[dir="rtl"] p,
+html[dir="rtl"] span {
+  font-family: 'Tajawal', sans-serif;
 }
 
 /* Glassmorphism & Visual Aesthetics */

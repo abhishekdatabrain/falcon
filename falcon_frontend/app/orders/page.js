@@ -2,7 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { useToast } from '../../src/contexts/ToastContext';
 import { fetchApi, getImageUrl } from '../../src/services/api';
+import { downloadOrderInvoice } from '../../src/services/invoiceService';
 import {
   Package,
   Clock,
@@ -33,18 +35,21 @@ import {
   Sparkles,
   AlertCircle,
   ExternalLink,
-  ChevronDown
+  ChevronDown,
+  Loader2,
+  Download
 } from 'lucide-react';
 
 export default function OrdersPage() {
   const { t, locale } = useLanguage();
+  const { showToast } = useToast();
   const [profile, setProfile] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'DELIVERED' | 'SCHEDULED' | 'CANCELLED'
-  const [quickFilter, setQuickFilter] = useState('ALL'); // 'ALL' | 'HARVEST' | 'ORGANIC'
   const [timeframe, setTimeframe] = useState('3_months');
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -75,6 +80,63 @@ export default function OrdersPage() {
 
   const isOrderActive = (status) =>
     ['OUT_FOR_DELIVERY', 'ARRIVED', 'PAYMENT_VERIFIED', 'PACKING', 'DRIVER_ASSIGNED', 'DRIVER_ACCEPTED', 'PENDING_PAYMENT', 'PAYMENT_SUBMITTED'].includes(status);
+
+  // Retrieve user rating for this order / product
+  const getOrderRating = (ord) => {
+    // 1. From backend ord.feedback
+    if (ord?.feedback && ord.feedback.rating) {
+      return Number(ord.feedback.rating);
+    }
+    // 2. From localStorage per-order cache
+    if (typeof window !== 'undefined' && ord?.id) {
+      try {
+        const cached = localStorage.getItem(`falcon_reviews_${ord.id}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed[ord.id]?.rating) return Number(parsed[ord.id].rating);
+          if (parsed.rating) return Number(parsed.rating);
+          const first = Object.values(parsed).find((v) => v && v.rating);
+          if (first?.rating) return Number(first.rating);
+        }
+        const mapCached = localStorage.getItem('falcon_reviews_map');
+        if (mapCached) {
+          const parsedMap = JSON.parse(mapCached);
+          if (parsedMap[ord.id]?.rating) return Number(parsedMap[ord.id].rating);
+        }
+      } catch (e) {}
+    }
+    return null;
+  };
+
+  const handleDownloadInvoice = async (ord) => {
+    if (!ord) return;
+    try {
+      setDownloadingInvoiceId(ord.id);
+      showToast(
+        locale === 'ar'
+          ? 'جاري تجهيز وتحميل الفاتورة الضريبية ZATCA...'
+          : 'Preparing & downloading ZATCA Tax Invoice PDF...',
+        'info'
+      );
+      await downloadOrderInvoice(ord, locale);
+      showToast(
+        locale === 'ar'
+          ? 'تم تجهيز الفاتورة الضريبية بنجاح!'
+          : 'ZATCA Tax Invoice ready!',
+        'success'
+      );
+    } catch (err) {
+      console.error('Invoice download error:', err);
+      showToast(
+        locale === 'ar'
+          ? 'فشل تحميل الفاتورة الضريبية'
+          : 'Failed to download ZATCA invoice',
+        'error'
+      );
+    } finally {
+      setDownloadingInvoiceId(null);
+    }
+  };
 
   // Filtering Logic
   const filteredOrders = orders.filter((ord) => {
@@ -123,7 +185,7 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-[#F4F6F4] font-sans pb-24 text-slate-800">
-      
+
       {/* Top Breadcrumb Navigation */}
       <div className="bg-white border-b border-slate-200/80 py-3 px-4 sm:px-6 lg:px-8 text-xs font-semibold text-slate-500">
         <div className="max-w-7xl mx-auto flex items-center gap-2">
@@ -143,10 +205,10 @@ export default function OrdersPage() {
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
+
           {/* ================= LEFT SIDEBAR (CUSTOMER PROFILE & NAVIGATION) ================= */}
           <div className="lg:col-span-3 space-y-4">
-            
+
             {/* User Profile Card */}
             <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-4 font-sans">
               <div className="flex items-center gap-3">
@@ -157,9 +219,7 @@ export default function OrdersPage() {
                   <h3 className="font-extrabold text-slate-900 text-sm leading-tight truncate">
                     {profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Mohammed Al-Salem' : 'Mohammed Al-Salem'}
                   </h3>
-                  <span className="inline-block bg-amber-50 text-amber-800 border border-amber-200/80 text-[10px] font-black px-2 py-0.5 rounded-md mt-0.5 uppercase tracking-wider">
-                    ⭐ GOLD VIP MEMBER
-                  </span>
+
                   <p className="text-[11px] text-slate-400 font-medium mt-0.5">
                     {profile?.user?.mobile || profile?.mobile || '+966 50 123 4567'}
                   </p>
@@ -167,7 +227,7 @@ export default function OrdersPage() {
               </div>
 
               {/* Stats Box */}
-              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 text-xs">
+              {/* <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 text-xs">
                 <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
                   <span className="text-[10px] font-bold text-slate-400 block uppercase">MartPoints</span>
                   <span className="font-black text-slate-900 text-sm block">1,420 pts</span>
@@ -178,7 +238,7 @@ export default function OrdersPage() {
                   <span className="font-black text-slate-900 text-sm block">SAR 384</span>
                   <span className="text-[9px] font-extrabold text-emerald-700 block mt-0.5">Active</span>
                 </div>
-              </div>
+              </div> */}
 
               {/* Delivery Zone Banner */}
               <div className="bg-emerald-50/80 border border-emerald-200/70 p-3 rounded-2xl flex items-center justify-between text-xs">
@@ -192,7 +252,7 @@ export default function OrdersPage() {
 
             {/* Account Sidebar Navigation Links */}
             <div className="bg-white rounded-3xl p-3 border border-slate-200/90 shadow-xs space-y-1">
-              
+
               <Link
                 href="/profile"
                 className="flex items-center justify-between p-3 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
@@ -359,11 +419,10 @@ export default function OrdersPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('ALL')}
-                className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                  activeTab === 'ALL'
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                }`}
+                className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'ALL'
+                    ? 'bg-[#054529] text-white border-[#054529] shadow-xs'
+                    : 'bg-white text-slate-600 border-[#054529] hover:bg-slate-50'
+                  }`}
               >
                 <span>All Orders</span>
                 <span className="px-1.5 py-0.2 rounded-md bg-white/20 text-xs">{orders.length}</span>
@@ -372,11 +431,10 @@ export default function OrdersPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('ACTIVE')}
-                className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                  activeTab === 'ACTIVE'
+                className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'ACTIVE'
                     ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
                     : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50/50'
-                }`}
+                  }`}
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span>Active & In-Transit</span>
@@ -386,11 +444,10 @@ export default function OrdersPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('DELIVERED')}
-                className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                  activeTab === 'DELIVERED'
+                className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'DELIVERED'
                     ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <span>Delivered</span>
                 <span className="px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-700 text-xs">{deliveredCount}</span>
@@ -399,11 +456,10 @@ export default function OrdersPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('SCHEDULED')}
-                className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                  activeTab === 'SCHEDULED'
+                className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'SCHEDULED'
                     ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <RotateCcw className="w-3.5 h-3.5 text-blue-600" />
                 <span>Scheduled / Subscriptions</span>
@@ -413,57 +469,19 @@ export default function OrdersPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('CANCELLED')}
-                className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                  activeTab === 'CANCELLED'
+                className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'CANCELLED'
                     ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <span>Cancelled</span>
                 <span className="px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-700 text-xs">{cancelledCount}</span>
               </button>
             </div>
 
-            {/* Quick Category Filter & Timeframe Selector Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-bold pt-1">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <span className="text-slate-400 uppercase text-[10px] tracking-wider shrink-0">Quick Filter:</span>
-                <button
-                  type="button"
-                  onClick={() => setQuickFilter('ALL')}
-                  className={`px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                    quickFilter === 'ALL'
-                      ? 'bg-[#043927] text-white border-[#043927]'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  All Groceries
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickFilter('HARVEST')}
-                  className={`px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                    quickFilter === 'HARVEST'
-                      ? 'bg-[#043927] text-white border-[#043927]'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  Farm Harvest Only
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickFilter('ORGANIC')}
-                  className={`px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                    quickFilter === 'ORGANIC'
-                      ? 'bg-[#043927] text-white border-[#043927]'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  Organic Box
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 text-slate-500 shrink-0 self-end sm:self-auto">
+            {/* Timeframe Selector Bar */}
+            <div className="flex items-center justify-end gap-3 text-xs font-bold pt-1">
+              <div className="flex items-center gap-2 text-slate-500 shrink-0">
                 <span className="text-slate-400 uppercase text-[10px] tracking-wider">Timeframe:</span>
                 <select
                   value={timeframe}
@@ -669,9 +687,23 @@ export default function OrdersPage() {
                               <PhoneCall className="w-3.5 h-3.5 text-slate-500" />
                               <span>Call / Chat Driver</span>
                             </button>
-                            <button type="button" className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer">
-                              <FileText className="w-3.5 h-3.5 text-slate-500" />
-                              <span>ZATCA Invoice</span>
+                            <button
+                              type="button"
+                              disabled={downloadingInvoiceId === ord.id}
+                              onClick={() => handleDownloadInvoice(ord)}
+                              className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 hover:border-slate-300 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 shadow-2xs active:scale-98"
+                              title={locale === 'ar' ? 'تحميل فاتورة ZATCA' : 'Download ZATCA Invoice'}
+                            >
+                              {downloadingInvoiceId === ord.id ? (
+                                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                              ) : (
+                                <FileText className="w-3.5 h-3.5 text-slate-500" />
+                              )}
+                              <span>
+                                {downloadingInvoiceId === ord.id
+                                  ? (locale === 'ar' ? 'جاري التحميل...' : 'Downloading...')
+                                  : (locale === 'ar' ? 'فاتورة ZATCA' : 'ZATCA Invoice')}
+                              </span>
                             </button>
                           </div>
 
@@ -998,21 +1030,71 @@ export default function OrdersPage() {
                           <div className="flex items-center gap-2">
                             <button type="button" className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
                               <RotateCcw className="w-4 h-4 text-[#05A764]" />
-                              <span>Buy Again / Reorder Basket</span>
+                              <span>Order Again</span>
                             </button>
-                            <button type="button" className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-amber-700 font-bold hover:bg-amber-50 transition-colors flex items-center gap-1 cursor-pointer">
-                              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                              <span>Rate Delivery ⭐⭐⭐⭐⭐</span>
-                            </button>
+                            {/* Dynamic Product Rating Display */}
+                            {(() => {
+                              const ratingVal = getOrderRating(ord);
+                              if (ratingVal) {
+                                return (
+                                  <Link
+                                    href={`/orders/${ord.id}`}
+                                    className="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-extrabold hover:bg-amber-100 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                                    title={locale === 'ar' ? 'عرض تقييم المنتج' : 'View Product Rating'}
+                                  >
+                                    <div className="flex items-center gap-0.5 text-amber-500">
+                                      {[1, 2, 3, 4, 5].map((star) => (
+                                        <Star
+                                          key={star}
+                                          className={`w-3.5 h-3.5 ${
+                                            star <= ratingVal
+                                              ? 'text-amber-500 fill-amber-400'
+                                              : 'text-slate-300 fill-slate-100'
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                    <span className="text-xs font-black text-amber-900 ml-0.5">
+                                      {ratingVal}.0 ★ {locale === 'ar' ? 'تم التقييم' : 'Rated'}
+                                    </span>
+                                  </Link>
+                                );
+                              }
+
+                              return (
+                                <Link
+                                  href={`/orders/${ord.id}`}
+                                  className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors flex items-center gap-1.5 cursor-pointer"
+                                  title={locale === 'ar' ? 'تقييم المنتج' : 'Rate Product'}
+                                >
+                                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                                  <span>{locale === 'ar' ? 'تقييم المنتج' : 'Rate Product'}</span>
+                                </Link>
+                              );
+                            })()}
                           </div>
 
                           <div className="flex items-center gap-2 text-slate-500 font-semibold">
-                            <button type="button" className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer">
-                              <FileText className="w-3.5 h-3.5 text-slate-500" />
-                              <span>ZATCA Tax Invoice (PDF)</span>
+                            <button
+                              type="button"
+                              disabled={downloadingInvoiceId === ord.id}
+                              onClick={() => handleDownloadInvoice(ord)}
+                              className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 hover:border-slate-300 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 shadow-2xs active:scale-98"
+                              title={locale === 'ar' ? 'تحميل الفاتورة الضريبية ZATCA (PDF)' : 'Download ZATCA Tax Invoice (PDF)'}
+                            >
+                              {downloadingInvoiceId === ord.id ? (
+                                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                              ) : (
+                                <FileText className="w-3.5 h-3.5 text-slate-500" />
+                              )}
+                              <span>
+                                {downloadingInvoiceId === ord.id
+                                  ? (locale === 'ar' ? 'جاري التحميل...' : 'Downloading...')
+                                  : (locale === 'ar' ? 'فاتورة ضريبية ZATCA (PDF)' : 'ZATCA Tax Invoice (PDF)')}
+                              </span>
                             </button>
                             <Link href={`/orders/${ord.id}`} className="hover:text-slate-900 transition-colors flex items-center gap-1">
-                              <span>Need Help?</span>
+                              <span>View Order Details</span>
                               <ChevronRight className="w-3.5 h-3.5" />
                             </Link>
                           </div>
