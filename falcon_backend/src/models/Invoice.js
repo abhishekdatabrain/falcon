@@ -21,7 +21,7 @@ const Invoice = sequelize.define('Invoice', {
   order_id: {
     type: DataTypes.UUID,
     allowNull: false,
-    unique: true,
+    unique: false,
     references: {
       model: 'orders',
       key: 'id',
@@ -67,6 +67,41 @@ const Invoice = sequelize.define('Invoice', {
   },
   pdf_file_url: {
     type: DataTypes.STRING,
+    allowNull: true,
+  },
+  invoice_type: {
+    type: DataTypes.STRING,
+    defaultValue: 'SIMPLIFIED',
+    allowNull: false,
+  },
+  zatca_status: {
+    type: DataTypes.STRING,
+    defaultValue: 'REPORTED',
+    allowNull: false,
+  },
+  invoice_counter: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1,
+    allowNull: false,
+  },
+  invoice_hash: {
+    type: DataTypes.STRING(128),
+    allowNull: true,
+  },
+  previous_invoice_hash: {
+    type: DataTypes.STRING(128),
+    allowNull: true,
+  },
+  xml_file_url: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  original_invoice_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+  },
+  notes: {
+    type: DataTypes.TEXT,
     allowNull: true,
   },
 }, {

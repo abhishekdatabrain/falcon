@@ -1,4 +1,4 @@
-const { Cart, CartItem, Product, ProductImage, Customer } = require('../models');
+const { Cart, CartItem, Product, ProductVariant, ProductImage, Customer } = require('../models');
 
 class CartService {
   async getOrCreateCart(customerId) {
@@ -14,6 +14,10 @@ class CartService {
               as: 'product',
               include: [{ model: ProductImage, as: 'images', where: { is_primary: true }, required: false }],
             },
+            {
+              model: ProductVariant,
+              as: 'variant',
+            },
           ],
         },
       ],
@@ -27,31 +31,53 @@ class CartService {
     return cart;
   }
 
-  async addItemToCart(customerId, productId, quantity = 1) {
+  async addItemToCart(customerId, productId, quantity = 1, variantId = null) {
     const product = await Product.findByPk(productId);
     if (!product || !product.is_active || !product.is_available) {
       throw new Error('Product is unavailable for purchase');
     }
 
-    if (product.stock_quantity < quantity) {
-      throw new Error(`Insufficient stock available. Current stock: ${product.stock_quantity}`);
+    let variant = null;
+    if (variantId) {
+      variant = await ProductVariant.findOne({
+        where: { id: variantId, product_id: productId },
+      });
+      if (!variant || !variant.is_active) {
+        throw new Error('Selected variant is unavailable for purchase');
+      }
+      if (variant.stock_quantity < quantity) {
+        throw new Error(`Insufficient stock available for this variant. Current stock: ${variant.stock_quantity}`);
+      }
+    } else {
+      if (product.stock_quantity < quantity) {
+        throw new Error(`Insufficient stock available. Current stock: ${product.stock_quantity}`);
+      }
     }
 
     const cart = await this.getOrCreateCart(customerId);
+    const itemWhere = {
+      cart_id: cart.id,
+      product_id: productId,
+      variant_id: variantId || null,
+    };
+
     let item = await CartItem.findOne({
-      where: { cart_id: cart.id, product_id: productId },
+      where: itemWhere,
     });
+
+    const maxStock = variant ? variant.stock_quantity : product.stock_quantity;
 
     if (item) {
       const newQuantity = item.quantity + quantity;
-      if (product.stock_quantity < newQuantity) {
-        throw new Error(`Cannot add more. Exceeds available stock of ${product.stock_quantity}`);
+      if (maxStock < newQuantity) {
+        throw new Error(`Cannot add more. Exceeds available stock of ${maxStock}`);
       }
       await item.update({ quantity: newQuantity });
     } else {
       item = await CartItem.create({
         cart_id: cart.id,
         product_id: productId,
+        variant_id: variantId || null,
         quantity,
       });
     }
@@ -67,15 +93,19 @@ class CartService {
     const cart = await this.getOrCreateCart(customerId);
     const item = await CartItem.findOne({
       where: { id: itemId, cart_id: cart.id },
-      include: [{ model: Product, as: 'product' }],
+      include: [
+        { model: Product, as: 'product' },
+        { model: ProductVariant, as: 'variant' },
+      ],
     });
 
     if (!item) {
       throw new Error('Cart item not found');
     }
 
-    if (item.product.stock_quantity < quantity) {
-      throw new Error(`Insufficient stock available. Current stock: ${item.product.stock_quantity}`);
+    const maxStock = item.variant ? item.variant.stock_quantity : item.product.stock_quantity;
+    if (maxStock < quantity) {
+      throw new Error(`Insufficient stock available. Current stock: ${maxStock}`);
     }
 
     await item.update({ quantity });
@@ -104,26 +134,43 @@ class CartService {
     let subtotal = 0;
 
     const items = cart.items.map(item => {
-      console.log(item.product, "item_product");
-      const price = parseFloat(item.product.price);
-      const discount_price = item.product.discount_price ? parseFloat(item.product.discount_price) : null;
-      const lineTotal = discount_price ? discount_price * item.quantity : price * item.quantity;
+      const v = item.variant;
+      const p = item.product;
+
+      const price = v ? parseFloat(v.price) : parseFloat(p.price);
+      const discount_price = v
+        ? (v.discount_price !== null && v.discount_price !== undefined ? parseFloat(v.discount_price) : null)
+        : (p.discount_price !== null && p.discount_price !== undefined ? parseFloat(p.discount_price) : null);
+
+      const effectivePrice = discount_price !== null && discount_price < price ? discount_price : price;
+      const lineTotal = effectivePrice * item.quantity;
       subtotal += lineTotal;
+
+      const unitValue = v ? v.unit_value : p.unit_value;
+      const unitType = v ? v.unit_type : p.unit_type;
+      const packSize = v ? v.pack_size : p.pack_size;
+      const stockAvailable = v ? v.stock_quantity : p.stock_quantity;
+      const image = (v && v.image_url)
+        ? v.image_url
+        : (p.images && p.images.length > 0 ? p.images[0].image_url : null);
+
       return {
         id: item.id,
         productId: item.product_id,
-        name_en: item.product.name_en,
-        name_ar: item.product.name_ar,
+        variantId: item.variant_id || null,
+        name_en: p.name_en,
+        name_ar: p.name_ar,
+        sku: v ? v.sku : p.sku,
         price,
-        discount_price: item.product.discount_price,
-        vat_percentage: item.product.vat_percentage,
-        unit_value: item.product.unit_value,
-        unit_type: item.product.unit_type,
-        pack_size: item.product.pack_size,
+        discount_price,
+        vat_percentage: p.vat_percentage,
+        unit_value: unitValue,
+        unit_type: unitType,
+        pack_size: packSize,
         quantity: item.quantity,
-        stockAvailable: item.product.stock_quantity,
+        stockAvailable,
         lineTotal,
-        image: item.product.images && item.product.images.length > 0 ? item.product.images[0].image_url : null,
+        image,
       };
     });
 

@@ -16,6 +16,9 @@ const notificationRoutes = require('./notificationRoutes');
 const wishlistRoutes = require('./wishlistRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const heroBannerRoutes = require('./heroBannerRoutes');
+const promoBannerRoutes = require('./promoBannerRoutes');
+const categorySectionRoutes = require('./categorySectionRoutes');
+const homepageCmsRoutes = require('./homepageCmsRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/customers', customerRoutes);
@@ -32,5 +35,8 @@ router.use('/notifications', notificationRoutes);
 router.use('/wishlist', wishlistRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/hero-banners', heroBannerRoutes);
+router.use('/promo-banners', promoBannerRoutes);
+router.use('/category-sections', categorySectionRoutes);
+router.use('/homepage-cms', homepageCmsRoutes);
 
 module.exports = router;

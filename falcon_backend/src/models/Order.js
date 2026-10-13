@@ -60,15 +60,25 @@ const Order = sequelize.define('Order', {
       ORDER_STATUS.PAYMENT_SUBMITTED,
       ORDER_STATUS.PAYMENT_VERIFIED,
       ORDER_STATUS.PAYMENT_REJECTED,
+      ORDER_STATUS.CONFIRMED,
+      ORDER_STATUS.PROCESSING,
+      ORDER_STATUS.PACKED,
       ORDER_STATUS.DRIVER_ASSIGNED,
       ORDER_STATUS.DRIVER_ACCEPTED,
       ORDER_STATUS.OUT_FOR_DELIVERY,
       ORDER_STATUS.ARRIVED,
       ORDER_STATUS.DELIVERED,
-      ORDER_STATUS.CANCELLED
+      ORDER_STATUS.CANCELLED,
+      ORDER_STATUS.DELIVERY_FAILED,
+      ORDER_STATUS.RETURNED
     ),
     allowNull: false,
     defaultValue: ORDER_STATUS.PENDING_PAYMENT,
+  },
+  payment_method: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'COD',
   },
   notes: {
     type: DataTypes.TEXT,
@@ -82,6 +92,7 @@ const Order = sequelize.define('Order', {
     { fields: ['order_number'] },
     { fields: ['customer_id'] },
     { fields: ['order_status'] },
+    { fields: ['payment_method'] },
   ],
 });
 

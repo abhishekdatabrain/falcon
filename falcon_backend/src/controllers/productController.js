@@ -23,9 +23,10 @@ class ProductController {
 
   async createProduct(req, res, next) {
     try {
-      const { category_id, sku, name_en, name_ar, price } = req.body;
-      if (!category_id || !sku || !name_en || !name_ar || price === undefined) {
-        return sendError(res, 'Category, SKU, English & Arabic names, and price are required', [], 400);
+      const { category_id, sku, name_en, name_ar, price, has_variants, variants } = req.body;
+      const hasValidPrice = (price !== undefined && price !== '') || (Boolean(has_variants) && Array.isArray(variants) && variants.length > 0 && variants[0]?.price !== undefined);
+      if (!category_id || !sku || !name_en || !name_ar || !hasValidPrice) {
+        return sendError(res, 'Category, SKU, English & Arabic names, and price (or variant prices) are required', [], 400);
       }
       const product = await productService.createProduct(req.body);
       return sendSuccess(res, 'Product created successfully', { product }, 201);

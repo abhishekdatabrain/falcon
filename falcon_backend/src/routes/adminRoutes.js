@@ -19,9 +19,21 @@ router.put('/drivers/:driverId/account-status', (req, res, next) => adminControl
 router.get('/drivers/:driverId/location', (req, res, next) => adminController.getDriverLocation(req, res, next));
 // Order & Delivery Management Routes
 router.get('/orders', (req, res, next) => adminController.getAllOrders(req, res, next));
+router.get('/orders/:orderId', (req, res, next) => adminController.getOrderById(req, res, next));
 router.put('/orders/:orderId/status', (req, res, next) => adminController.updateOrderStatus(req, res, next));
 router.post('/orders/:orderId/assign-driver', (req, res, next) => adminController.assignDriverToOrder(req, res, next));
+router.post('/orders/:orderId/verify-payment', (req, res, next) => adminController.verifyOrderPayment(req, res, next));
+router.post('/orders/:orderId/refund-payment', (req, res, next) => adminController.refundOrderPayment(req, res, next));
 router.get('/deliveries', (req, res, next) => adminController.getDeliveries(req, res, next));
+
+// Invoice & ZATCA Management Routes
+router.get('/invoices', (req, res, next) => adminController.getInvoices(req, res, next));
+router.get('/invoices/:invoiceId', (req, res, next) => adminController.getInvoiceById(req, res, next));
+router.post('/invoices/generate/:orderId', (req, res, next) => adminController.generateInvoiceForOrder(req, res, next));
+router.post('/invoices/:invoiceId/credit-note', (req, res, next) => adminController.createCreditNote(req, res, next));
+router.get('/invoices/:invoiceId/download-pdf', (req, res, next) => adminController.downloadInvoicePdf(req, res, next));
+router.get('/invoices/:invoiceId/download-xml', (req, res, next) => adminController.downloadInvoiceXml(req, res, next));
+router.post('/invoices/:invoiceId/report-zatca', (req, res, next) => adminController.reportInvoiceToZatca(req, res, next));
 
 // Customer Management Routes
 router.post('/customers', (req, res, next) => adminController.createCustomer(req, res, next));

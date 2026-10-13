@@ -146,6 +146,9 @@ export default function AdminProductsPage() {
     is_new_arrival: true,
     is_best_seller: false,
     is_best_deal: false,
+    is_popular_pick: false,
+    has_variants: false,
+    variants: [],
     images: [],
   });
 
@@ -226,6 +229,9 @@ export default function AdminProductsPage() {
       is_new_arrival: true,
       is_best_seller: false,
       is_best_deal: false,
+      is_popular_pick: false,
+      has_variants: false,
+      variants: [],
       images: [],
     });
   };
@@ -246,6 +252,22 @@ export default function AdminProductsPage() {
       initialImgs = [prod.image_url];
     }
     setUrlInput('');
+
+    const loadedVariants = Array.isArray(prod.variants)
+      ? prod.variants.map((v) => ({
+          id: v.id,
+          sku: v.sku || '',
+          unit_value: v.unit_value || '',
+          unit_type: v.unit_type || 'kg',
+          pack_size: v.pack_size || '',
+          price: v.price !== undefined ? String(v.price) : '',
+          discount_price: v.discount_price !== undefined && v.discount_price !== null ? String(v.discount_price) : '',
+          stock_quantity: v.stock_quantity !== undefined ? String(v.stock_quantity) : '0',
+          image_url: v.image_url || '',
+          is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+        }))
+      : [];
+
     setProductForm({
       category_id: prod.category_id || '',
       subcategory_id: prod.subcategory_id || '',
@@ -274,9 +296,91 @@ export default function AdminProductsPage() {
       is_new_arrival: prod.is_new_arrival !== undefined ? prod.is_new_arrival : true,
       is_best_seller: prod.is_best_seller !== undefined ? prod.is_best_seller : false,
       is_best_deal: prod.is_best_deal !== undefined ? prod.is_best_deal : false,
+      is_popular_pick: prod.is_popular_pick !== undefined ? prod.is_popular_pick : false,
+      has_variants: Boolean(prod.has_variants),
+      variants: loadedVariants,
       images: initialImgs,
     });
     setViewMode('form');
+  };
+
+  const handleAddVariant = () => {
+    const nextIdx = (productForm.variants?.length || 0) + 1;
+    const baseSku = productForm.sku ? productForm.sku.trim() : 'VAR';
+    const newVariant = {
+      id: null,
+      sku: `${baseSku}-V${nextIdx}`.toUpperCase(),
+      unit_value: '',
+      unit_type: productForm.unit_type || 'kg',
+      pack_size: '',
+      price: productForm.price || '',
+      discount_price: '',
+      stock_quantity: '10',
+      image_url: productForm.images?.[0] || '',
+      is_active: true,
+    };
+    setProductForm((prev) => ({
+      ...prev,
+      variants: [...(prev.variants || []), newVariant],
+    }));
+  };
+
+  const handleRemoveVariant = (index) => {
+    setProductForm((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleUpdateVariant = (index, field, value) => {
+    setProductForm((prev) => {
+      const nextVars = [...prev.variants];
+      nextVars[index] = { ...nextVars[index], [field]: value };
+      return { ...prev, variants: nextVars };
+    });
+  };
+
+  const handleApplyPresetVariants = (presetType) => {
+    const baseSku = productForm.sku ? productForm.sku.trim() : 'ITEM';
+    let presets = [];
+    if (presetType === 'rice') {
+      presets = [
+        { unit_value: '1', unit_type: 'kg', pack_size: '1kg Pouch', price: '12.00', discount_price: '', stock_quantity: '50' },
+        { unit_value: '5', unit_type: 'kg', pack_size: '5kg Bag', price: '55.00', discount_price: '50.00', stock_quantity: '30' },
+        { unit_value: '10', unit_type: 'kg', pack_size: '10kg Sack', price: '105.00', discount_price: '95.00', stock_quantity: '20' },
+      ];
+    } else if (presetType === 'oil') {
+      presets = [
+        { unit_value: '1', unit_type: 'L', pack_size: '1L Bottle', price: '14.50', discount_price: '', stock_quantity: '40' },
+        { unit_value: '2', unit_type: 'L', pack_size: '2L Can', price: '27.00', discount_price: '25.00', stock_quantity: '30' },
+        { unit_value: '5', unit_type: 'L', pack_size: '5L Jerry Can', price: '65.00', discount_price: '59.00', stock_quantity: '15' },
+      ];
+    } else if (presetType === 'eggs') {
+      presets = [
+        { unit_value: '6', unit_type: 'pcs', pack_size: '6 Pack Carton', price: '8.50', discount_price: '', stock_quantity: '60' },
+        { unit_value: '12', unit_type: 'pcs', pack_size: '12 Pack Carton (Dozen)', price: '16.00', discount_price: '14.50', stock_quantity: '45' },
+        { unit_value: '30', unit_type: 'pcs', pack_size: '30 Pieces Tray', price: '36.00', discount_price: '32.00', stock_quantity: '25' },
+      ];
+    }
+
+    const generated = presets.map((p) => ({
+      id: null,
+      sku: `${baseSku}-${p.unit_value}${p.unit_type}`.toUpperCase().replace(/\s+/g, ''),
+      unit_value: p.unit_value,
+      unit_type: p.unit_type,
+      pack_size: p.pack_size,
+      price: p.price,
+      discount_price: p.discount_price,
+      stock_quantity: p.stock_quantity,
+      image_url: productForm.images?.[0] || '',
+      is_active: true,
+    }));
+
+    setProductForm((prev) => ({
+      ...prev,
+      has_variants: true,
+      variants: [...(prev.variants || []), ...generated],
+    }));
   };
 
   const handleAddImage = (url) => {
@@ -413,8 +517,57 @@ export default function AdminProductsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      if (productForm.has_variants) {
+        if (!productForm.variants || productForm.variants.length === 0) {
+          throw new Error(locale === 'ar' ? 'يرجى إضافة متغير واحد على الأقل أو تعطيل خيار المتغيرات' : 'Please add at least one variant or disable Has Variants toggle');
+        }
+
+        const skuSet = new Set();
+        for (let i = 0; i < productForm.variants.length; i++) {
+          const v = productForm.variants[i];
+          const skuCode = (v.sku || '').trim().toUpperCase();
+          if (!skuCode) {
+            throw new Error(locale === 'ar' ? `رمز SKU مفقود في الصف #${i + 1}` : `Variant row #${i + 1} is missing a SKU code`);
+          }
+          if (skuSet.has(skuCode)) {
+            throw new Error(locale === 'ar' ? `رمز SKU مكرر "${skuCode}" في المتغيرات` : `Duplicate SKU "${skuCode}" found in variants`);
+          }
+          skuSet.add(skuCode);
+
+          const priceVal = parseFloat(v.price);
+          if (isNaN(priceVal) || priceVal < 0) {
+            throw new Error(locale === 'ar' ? `سعر غير صالح في الصف #${i + 1} (${skuCode})` : `Invalid price for variant row #${i + 1} (${skuCode})`);
+          }
+
+          if (v.discount_price !== '' && v.discount_price !== null && v.discount_price !== undefined) {
+            const discVal = parseFloat(v.discount_price);
+            if (isNaN(discVal) || discVal < 0) {
+              throw new Error(locale === 'ar' ? `سعر الخصم غير صالح في الصف #${i + 1} (${skuCode})` : `Invalid discount price for variant row #${i + 1} (${skuCode})`);
+            }
+          }
+
+          const stockVal = parseInt(v.stock_quantity !== '' ? v.stock_quantity : '0', 10);
+          if (isNaN(stockVal) || stockVal < 0) {
+            throw new Error(locale === 'ar' ? `المخزون لا يمكن أن يكون سالباً في الصف #${i + 1} (${skuCode})` : `Variant stock cannot be negative for row #${i + 1} (${skuCode})`);
+          }
+        }
+      }
+
+      let finalPrice = productForm.price;
+      let finalStock = productForm.stock_quantity;
+      if (productForm.has_variants && productForm.variants?.length > 0) {
+        const minVarPrice = Math.min(...productForm.variants.map(v => parseFloat(v.price)));
+        const sumVarStock = productForm.variants.reduce((acc, v) => acc + parseInt(v.stock_quantity || '0', 10), 0);
+        if (!finalPrice || finalPrice === '') {
+          finalPrice = String(minVarPrice);
+        }
+        finalStock = String(sumVarStock);
+      }
+
       const payload = {
         ...productForm,
+        price: finalPrice,
+        stock_quantity: finalStock,
         category_id: productForm.category_id || null,
         subcategory_id: productForm.subcategory_id || null,
         sub_subcategory_id: productForm.sub_subcategory_id || null,
@@ -426,6 +579,21 @@ export default function AdminProductsPage() {
         sold_by: productForm.sold_by || null,
         purchase_price: productForm.purchase_price !== '' && productForm.purchase_price !== null ? parseFloat(productForm.purchase_price) : null,
         discount_price: productForm.discount_price !== '' && productForm.discount_price !== null ? parseFloat(productForm.discount_price) : null,
+        has_variants: Boolean(productForm.has_variants),
+        variants: productForm.has_variants && Array.isArray(productForm.variants)
+          ? productForm.variants.map((v) => ({
+              id: v.id || undefined,
+              sku: (v.sku || '').trim(),
+              unit_value: v.unit_value || null,
+              unit_type: v.unit_type || null,
+              pack_size: v.pack_size || null,
+              price: parseFloat(v.price),
+              discount_price: v.discount_price !== '' && v.discount_price !== null ? parseFloat(v.discount_price) : null,
+              stock_quantity: parseInt(v.stock_quantity !== '' ? v.stock_quantity : '0', 10),
+              image_url: v.image_url || null,
+              is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+            }))
+          : [],
         images: productForm.images.filter(Boolean),
       };
 
@@ -639,6 +807,11 @@ export default function AdminProductsPage() {
                                   {prod.name_ar}
                                 </p>
                                 <div className="flex flex-wrap gap-1 mt-1">
+                                  {prod.is_popular_pick && (
+                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-200">
+                                      ⭐ Popular Pick
+                                    </span>
+                                  )}
                                   {prod.is_best_deal && (
                                     <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 border border-rose-200">
                                       🔥 Best Deal
@@ -652,6 +825,11 @@ export default function AdminProductsPage() {
                                   {prod.is_featured && (
                                     <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
                                       ✨ Featured
+                                    </span>
+                                  )}
+                                  {prod.has_variants && (
+                                    <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                      ⚡ {prod.variants?.length || 0} Variants
                                     </span>
                                   )}
                                 </div>
@@ -686,7 +864,17 @@ export default function AdminProductsPage() {
                           </td>
 
                           <td className="px-6 py-4 font-black text-slate-900 text-base font-sans whitespace-nowrap">
-                            {parseFloat(prod.price).toFixed(2)} <span className="text-xs font-bold text-slate-500">SAR</span>
+                            {prod.has_variants && prod.variants && prod.variants.length > 0 ? (
+                              <div>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase block">From</span>
+                                <span>{Math.min(...prod.variants.map((v) => parseFloat(v.price) || 0)).toFixed(2)}</span>
+                                <span className="text-xs font-bold text-slate-500 ml-1">SAR</span>
+                              </div>
+                            ) : (
+                              <>
+                                {parseFloat(prod.price).toFixed(2)} <span className="text-xs font-bold text-slate-500">SAR</span>
+                              </>
+                            )}
                           </td>
 
                           {/* Stock Column */}
@@ -707,7 +895,11 @@ export default function AdminProductsPage() {
 
                           {/* Unit & Size Column */}
                           <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-700">
-                            {prod.unit ? (
+                            {prod.has_variants && prod.variants && prod.variants.length > 0 ? (
+                              <span className="inline-block bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl text-emerald-900 font-bold font-sans">
+                                {prod.variants.map((v) => `${v.unit_value || ''}${v.unit_type || ''}`).filter(Boolean).join(', ')}
+                              </span>
+                            ) : prod.unit ? (
                               <span className="inline-block bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-slate-800 font-semibold font-sans">
                                 {prod.unit_value} ({prod.unit_type} {prod.pack_size})
                               </span>
@@ -1161,213 +1353,590 @@ export default function AdminProductsPage() {
               {/* Left Column (2 Cols) */}
               <div className="lg:col-span-2 space-y-6">
 
-                {/* CARD 3: UNIT & PACKAGING */}
-                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
-                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                    <Package className="w-4 h-4 text-[#05A764]" /> 3. Unit & Packaging
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* Unit Type * */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        Unit Type *
-                      </label>
-                      <select
-                        required
-                        value={productForm.unit_type}
-                        onChange={(e) => setProductForm({ ...productForm, unit_type: e.target.value })}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
-                      >
-                        <option value="g">Gram (g)</option>
-                        <option value="kg">Kilogram (kg)</option>
-                        <option value="ml">Milliliter (ml)</option>
-                        <option value="L">Liter (L)</option>
-                        <option value="PCS">Piece (Pcs)</option>
-                        <option value="Box">Box</option>
-                        <option value="Pack">Pack / Bundle</option>
-                      </select>
+                {/* HAS VARIANTS TOGGLE BANNER */}
+                <div className="bg-gradient-to-r from-emerald-50 via-teal-50/40 to-white rounded-3xl p-6 border-2 border-emerald-200/90 shadow-xs space-y-4 font-sans">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Layers className="w-5 h-5 text-[#043927]" />
+                        <h3 className="text-base font-extrabold text-[#043927] tracking-tight">
+                          Product Variants (Has Variants)
+                        </h3>
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 border border-emerald-300">
+                          Super Mart
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-medium">
+                        Enable to create multiple sizes or pack variations (e.g. Rice 1kg / 5kg / 10kg, Oil 1L / 5L, Eggs 6pcs / 12pcs).
+                      </p>
                     </div>
 
-                    {/* Unit Value * */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        Unit Value *
+                    <div className="flex items-center gap-3 shrink-0 bg-white px-4 py-2.5 rounded-2xl border border-emerald-200 shadow-2xs">
+                      <span className="text-xs font-black text-slate-800">
+                        {productForm.has_variants ? 'Variants Enabled' : 'Single Product (No Variants)'}
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={productForm.has_variants}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            setProductForm((prev) => ({
+                              ...prev,
+                              has_variants: isChecked,
+                              variants: isChecked && (!prev.variants || prev.variants.length === 0)
+                                ? [{
+                                    id: null,
+                                    sku: prev.sku ? `${prev.sku}-V1` : 'SKU-V1',
+                                    unit_value: prev.unit_value || '1',
+                                    unit_type: prev.unit_type || 'kg',
+                                    pack_size: prev.pack_size || '',
+                                    price: prev.price || '',
+                                    discount_price: prev.discount_price || '',
+                                    stock_quantity: prev.stock_quantity || '10',
+                                    image_url: prev.images?.[0] || '',
+                                    is_active: true,
+                                  }]
+                                : prev.variants,
+                            }));
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
                       </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. 200, 500, 1.5, 1"
-                        value={productForm.unit_value}
-                        onChange={(e) => setProductForm({ ...productForm, unit_value: e.target.value })}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
-                      />
-                    </div>
-
-                    {/* Pack Size */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        Pack Size
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Pack of 6, Box of 12"
-                        value={productForm.pack_size}
-                        onChange={(e) => setProductForm({ ...productForm, pack_size: e.target.value })}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
-                      />
-                    </div>
-
-                    {/* Sold By */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        Sold By
-                      </label>
-                      <select
-                        value={productForm.sold_by}
-                        onChange={(e) => setProductForm({ ...productForm, sold_by: e.target.value })}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
-                      >
-                        <option value="Piece">Piece / Item</option>
-                        <option value="Weight">Weight (kg / g)</option>
-                        <option value="Volume">Volume (L / ml)</option>
-                        <option value="Box">Box / Bundle</option>
-                      </select>
                     </div>
                   </div>
                 </div>
 
-                {/* CARD 4: INVENTORY & STOCK */}
-                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                    <ShoppingBag className="w-4 h-4 text-[#05A764]" /> 4. Inventory & Stock
-                  </h3>
+                {/* CONDITIONAL RENDERING BASED ON has_variants */}
+                {!productForm.has_variants ? (
+                  <>
+                    {/* CARD 3: UNIT & PACKAGING (Single Product) */}
+                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
+                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                        <Package className="w-4 h-4 text-[#05A764]" /> 3. Unit & Packaging
+                      </h3>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        SKU Code *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="GROC-001"
-                        value={productForm.sku}
-                        onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-mono font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
-                      />
-                    </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Unit Type *
+                          </label>
+                          <select
+                            required={!productForm.has_variants}
+                            value={productForm.unit_type}
+                            onChange={(e) => setProductForm({ ...productForm, unit_type: e.target.value })}
+                            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
+                          >
+                            <option value="g">Gram (g)</option>
+                            <option value="kg">Kilogram (kg)</option>
+                            <option value="ml">Milliliter (ml)</option>
+                            <option value="L">Liter (L)</option>
+                            <option value="PCS">Piece (Pcs)</option>
+                            <option value="Box">Box</option>
+                            <option value="Pack">Pack / Bundle</option>
+                          </select>
+                        </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        Fresh Stock Qty *
-                      </label>
-                      <input
-                        type="number"
-                        required
-                        placeholder="100"
-                        value={productForm.stock_quantity}
-                        onChange={(e) => setProductForm({ ...productForm, stock_quantity: e.target.value })}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
-                      />
-                    </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Unit Value *
+                          </label>
+                          <input
+                            type="text"
+                            required={!productForm.has_variants}
+                            placeholder="e.g. 200, 500, 1.5, 1"
+                            value={productForm.unit_value}
+                            onChange={(e) => setProductForm({ ...productForm, unit_value: e.target.value })}
+                            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                          />
+                        </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        Product Status *
-                      </label>
-                      <select
-                        value={productForm.is_active ? 'true' : 'false'}
-                        onChange={(e) => setProductForm({ ...productForm, is_active: e.target.value === 'true' })}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
-                      >
-                        <option value="true">Active (Enabled)</option>
-                        <option value="false">Disabled (Hidden)</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Pack Size
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Pack of 6, Box of 12"
+                            value={productForm.pack_size}
+                            onChange={(e) => setProductForm({ ...productForm, pack_size: e.target.value })}
+                            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                          />
+                        </div>
 
-                {/* CARD 5: PRICING */}
-                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
-                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                    <Tag className="w-4 h-4 text-[#05A764]" /> 5. Pricing
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {/* Selling Price * */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        Selling Price *
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="0.01"
-                          required
-                          placeholder="14.50"
-                          value={productForm.price}
-                          onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                          className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-black focus:outline-none focus:bg-white focus:border-[#043927]"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-emerald-700">SAR</span>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Sold By
+                          </label>
+                          <select
+                            value={productForm.sold_by}
+                            onChange={(e) => setProductForm({ ...productForm, sold_by: e.target.value })}
+                            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
+                          >
+                            <option value="Piece">Piece / Item</option>
+                            <option value="Weight">Weight (kg / g)</option>
+                            <option value="Volume">Volume (L / ml)</option>
+                            <option value="Box">Box / Bundle</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Discount Price */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        Discount Price
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="0.01"
-                          placeholder="e.g. 12.00"
-                          value={productForm.discount_price}
-                          onChange={(e) => setProductForm({ ...productForm, discount_price: e.target.value })}
-                          className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">SAR</span>
+                    {/* CARD 4: INVENTORY & STOCK (Single Product) */}
+                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                        <ShoppingBag className="w-4 h-4 text-[#05A764]" /> 4. Inventory & Stock
+                      </h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            SKU Code *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="GROC-001"
+                            value={productForm.sku}
+                            onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
+                            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-mono font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Fresh Stock Qty *
+                          </label>
+                          <input
+                            type="number"
+                            required={!productForm.has_variants}
+                            placeholder="100"
+                            value={productForm.stock_quantity}
+                            onChange={(e) => setProductForm({ ...productForm, stock_quantity: e.target.value })}
+                            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Product Status *
+                          </label>
+                          <select
+                            value={productForm.is_active ? 'true' : 'false'}
+                            onChange={(e) => setProductForm({ ...productForm, is_active: e.target.value === 'true' })}
+                            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
+                          >
+                            <option value="true">Active (Enabled)</option>
+                            <option value="false">Disabled (Hidden)</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
 
-                    {/* VAT % */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        VAT %
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="0.1"
-                          placeholder="15"
-                          value={productForm.vat_percentage}
-                          onChange={(e) => setProductForm({ ...productForm, vat_percentage: e.target.value })}
-                          className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">%</span>
+                    {/* CARD 5: PRICING (Single Product) */}
+                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
+                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                        <Tag className="w-4 h-4 text-[#05A764]" /> 5. Pricing
+                      </h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Selling Price *
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="0.01"
+                              required={!productForm.has_variants}
+                              placeholder="14.50"
+                              value={productForm.price}
+                              onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                              className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-black focus:outline-none focus:bg-white focus:border-[#043927]"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-emerald-700">SAR</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Discount Price
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="0.01"
+                              placeholder="e.g. 12.00"
+                              value={productForm.discount_price}
+                              onChange={(e) => setProductForm({ ...productForm, discount_price: e.target.value })}
+                              className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">SAR</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            VAT %
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="0.1"
+                              placeholder="15"
+                              value={productForm.vat_percentage}
+                              onChange={(e) => setProductForm({ ...productForm, vat_percentage: e.target.value })}
+                              className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between mt-2">
+                        <div className="space-y-0.5">
+                          <span className="text-xs font-extrabold text-slate-900 block">Price Includes VAT</span>
+                          <span className="text-[11px] text-slate-500 font-medium">When enabled, the selling price already includes calculated tax (ZATCA compliant).</span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={productForm.price_includes_vat}
+                            onChange={(e) => setProductForm({ ...productForm, price_includes_vat: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
+                        </label>
                       </div>
                     </div>
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    {/* VARIANTS ACTIVE: BASE SKU & TAX SETTINGS */}
+                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
+                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                        <ShoppingBag className="w-4 h-4 text-[#05A764]" /> Base SKU & Tax Settings
+                      </h3>
 
-                  {/* Price Includes VAT Toggle Checkbox */}
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between mt-2">
-                    <div className="space-y-0.5">
-                      <span className="text-xs font-extrabold text-slate-900 block">Price Includes VAT</span>
-                      <span className="text-[11px] text-slate-500 font-medium">When enabled, the selling price already includes calculated tax (ZATCA compliant).</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Base SKU Code *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. RICE-BASM"
+                            value={productForm.sku}
+                            onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
+                            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-mono font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            VAT %
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="0.1"
+                              placeholder="15"
+                              value={productForm.vat_percentage}
+                              onChange={(e) => setProductForm({ ...productForm, vat_percentage: e.target.value })}
+                              className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">%</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Product Status *
+                          </label>
+                          <select
+                            value={productForm.is_active ? 'true' : 'false'}
+                            onChange={(e) => setProductForm({ ...productForm, is_active: e.target.value === 'true' })}
+                            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
+                          >
+                            <option value="true">Active (Enabled)</option>
+                            <option value="false">Disabled (Hidden)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between mt-2">
+                        <div className="space-y-0.5">
+                          <span className="text-xs font-extrabold text-slate-900 block">Prices Include VAT</span>
+                          <span className="text-[11px] text-slate-500 font-medium">When enabled, variant selling prices include tax.</span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={productForm.price_includes_vat}
+                            onChange={(e) => setProductForm({ ...productForm, price_includes_vat: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
+                        </label>
+                      </div>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={productForm.price_includes_vat}
-                        onChange={(e) => setProductForm({ ...productForm, price_includes_vat: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
-                    </label>
-                  </div>
-                </div>
+
+                    {/* DYNAMIC PRODUCT VARIANTS TABLE & PRESETS */}
+                    <div className="bg-white rounded-3xl p-6 border-2 border-[#05A764]/40 shadow-xs space-y-5 font-sans">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Layers className="w-5 h-5 text-[#043927]" />
+                            <h3 className="text-base font-black text-slate-900">
+                              Product Variants ({productForm.variants?.length || 0})
+                            </h3>
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium mt-0.5">
+                            Configure SKU, packaging size, stock and pricing for each variant.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleAddVariant}
+                          className="px-4 py-2 bg-[#043927] hover:bg-[#05A764] text-white rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs shrink-0 self-start sm:self-auto"
+                        >
+                          <Plus className="w-4 h-4" /> Add Variant
+                        </button>
+                      </div>
+
+                      {/* QUICK PRESET CHIPS */}
+                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Quick Super Mart Presets:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleApplyPresetVariants('rice')}
+                          className="px-3 py-1 bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[#043927]"
+                        >
+                          🌾 Rice (1kg / 5kg / 10kg)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleApplyPresetVariants('oil')}
+                          className="px-3 py-1 bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[#043927]"
+                        >
+                          🌻 Oil (1L / 2L / 5L)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleApplyPresetVariants('eggs')}
+                          className="px-3 py-1 bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[#043927]"
+                        >
+                          🥚 Eggs (6pcs / 12pcs / 30pcs)
+                        </button>
+                      </div>
+
+                      {/* VARIANTS ROWS */}
+                      {(!productForm.variants || productForm.variants.length === 0) ? (
+                        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-300 space-y-2">
+                          <Layers className="w-8 h-8 text-slate-300 mx-auto" />
+                          <p className="text-sm font-bold text-slate-700">No Variants Added Yet</p>
+                          <p className="text-xs text-slate-400">Click &quot;Add Variant&quot; or choose a quick preset above.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {productForm.variants.map((v, vIdx) => (
+                            <div
+                              key={vIdx}
+                              className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white hover:border-[#05A764]/70 shadow-2xs transition-all space-y-3 relative group"
+                            >
+                              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-6 h-6 rounded-lg bg-[#043927] text-white text-xs font-black flex items-center justify-center">
+                                    {vIdx + 1}
+                                  </span>
+                                  <span className="text-xs font-extrabold text-slate-900">
+                                    Variant {vIdx + 1}: {v.unit_value ? `${v.unit_value} ${v.unit_type}` : 'Untitled'}
+                                  </span>
+                                  {v.sku && (
+                                    <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
+                                      {v.sku}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={v.is_active !== false}
+                                      onChange={(e) => handleUpdateVariant(vIdx, 'is_active', e.target.checked)}
+                                      className="rounded text-[#043927] focus:ring-[#043927]"
+                                    />
+                                    <span>Active</span>
+                                  </label>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveVariant(vIdx)}
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                    title="Delete Variant"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                                {/* Unit Value */}
+                                <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    Value *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. 1, 5, 500"
+                                    value={v.unit_value}
+                                    onChange={(e) => handleUpdateVariant(vIdx, 'unit_value', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927]"
+                                  />
+                                </div>
+
+                                {/* Unit Type */}
+                                <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    Type *
+                                  </label>
+                                  <select
+                                    value={v.unit_type}
+                                    onChange={(e) => handleUpdateVariant(vIdx, 'unit_type', e.target.value)}
+                                    className="w-full px-2 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
+                                  >
+                                    <option value="kg">kg</option>
+                                    <option value="g">g</option>
+                                    <option value="L">L</option>
+                                    <option value="ml">ml</option>
+                                    <option value="pcs">pcs</option>
+                                    <option value="Pack">Pack</option>
+                                    <option value="Tray">Tray</option>
+                                    <option value="Box">Box</option>
+                                  </select>
+                                </div>
+
+                                {/* Pack Size */}
+                                <div className="col-span-2 sm:col-span-2 lg:col-span-1">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    Pack Size
+                                  </label>
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. 5kg Sack"
+                                    value={v.pack_size}
+                                    onChange={(e) => handleUpdateVariant(vIdx, 'pack_size', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927]"
+                                  />
+                                </div>
+
+                                {/* SKU */}
+                                <div className="col-span-2 sm:col-span-2 lg:col-span-2">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    Variant SKU *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    required
+                                    placeholder="RICE-5KG"
+                                    value={v.sku}
+                                    onChange={(e) => handleUpdateVariant(vIdx, 'sku', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927]"
+                                  />
+                                </div>
+
+                                {/* Price */}
+                                <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    Price (SAR) *
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    required
+                                    placeholder="45.00"
+                                    value={v.price}
+                                    onChange={(e) => handleUpdateVariant(vIdx, 'price', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-black text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927]"
+                                  />
+                                </div>
+
+                                {/* Discount Price */}
+                                <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    Discount
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="39.99"
+                                    value={v.discount_price}
+                                    onChange={(e) => handleUpdateVariant(vIdx, 'discount_price', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-[#043927]"
+                                  />
+                                </div>
+
+                                {/* Stock */}
+                                <div className="col-span-2 sm:col-span-2 lg:col-span-1">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    Stock *
+                                  </label>
+                                  <input
+                                    type="number"
+                                    required
+                                    min="0"
+                                    placeholder="25"
+                                    value={v.stock_quantity}
+                                    onChange={(e) => handleUpdateVariant(vIdx, 'stock_quantity', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927]"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Variant Image URL row */}
+                              <div className="pt-2 flex items-center gap-3">
+                                <label className="text-[11px] font-bold text-slate-500 whitespace-nowrap">
+                                  Variant Image (optional):
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="Paste image URL (or leave blank to inherit main product image)"
+                                  value={v.image_url}
+                                  onChange={(e) => handleUpdateVariant(vIdx, 'image_url', e.target.value)}
+                                  className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:bg-white focus:border-[#043927]"
+                                />
+                                {v.image_url && (
+                                  <img
+                                    src={getImageUrl(v.image_url)}
+                                    alt="Variant preview"
+                                    className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-200 shrink-0"
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* SUMMARY BAR */}
+                          <div className="bg-emerald-50/80 p-4 rounded-2xl border border-emerald-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <span className="font-extrabold text-[#043927]">
+                              Total Stock: {productForm.variants.reduce((acc, v) => acc + parseInt(v.stock_quantity || '0', 10), 0)} units across {productForm.variants.length} variants
+                            </span>
+                            <span className="font-bold text-slate-700">
+                              Price Range: SAR {Math.min(...productForm.variants.map(v => parseFloat(v.price) || 0)).toFixed(2)} - SAR {Math.max(...productForm.variants.map(v => parseFloat(v.price) || 0)).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
 
               </div>
 
@@ -1460,6 +2029,23 @@ export default function AdminProductsPage() {
                           type="checkbox"
                           checked={productForm.is_best_deal}
                           onChange={(e) => setProductForm({ ...productForm, is_best_deal: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
+                      </label>
+                    </div>
+
+                    {/* Popular Pick */}
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
+                      <div className="space-y-0.5 pr-2">
+                        <span className="text-xs font-extrabold text-slate-900 block">Popular Pick</span>
+                        <span className="text-[10px] text-slate-500 font-medium block">Display ⭐ Popular Pick</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={productForm.is_popular_pick}
+                          onChange={(e) => setProductForm({ ...productForm, is_popular_pick: e.target.checked })}
                           className="sr-only peer"
                         />
                         <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>

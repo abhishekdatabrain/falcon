@@ -99,9 +99,16 @@ export default function AdminDeliveriesTrackingPage() {
           setStats(res.data.stats);
         }
 
-        // Auto-select first active delivery if none selected
-        if (res.data.deliveries && res.data.deliveries.length > 0 && !selectedDelivery) {
-          setSelectedDelivery(res.data.deliveries[0]);
+        // Auto-select first active delivery or update current selection
+        if (res.data.deliveries && res.data.deliveries.length > 0) {
+          if (!selectedDelivery) {
+            setSelectedDelivery(res.data.deliveries[0]);
+          } else {
+            const updatedMatch = res.data.deliveries.find((d) => d.id === selectedDelivery.id);
+            if (updatedMatch) {
+              setSelectedDelivery(updatedMatch);
+            }
+          }
         }
       }
     } catch (err) {
@@ -127,9 +134,15 @@ export default function AdminDeliveriesTrackingPage() {
   };
 
   useEffect(() => {
-    loadDeliveriesData();
     loadDriversList();
-  }, [statusFilter]);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadDeliveriesData();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [statusFilter, searchQuery]);
 
   // Handle Socket Room Connection for Selected Active Delivery
   useEffect(() => {
@@ -582,7 +595,9 @@ export default function AdminDeliveriesTrackingPage() {
                     const badge = getStatusBadge(del.status);
                     const orderNo = del.order?.order_number || 'N/A';
                     const driverEmail = del.driver?.user?.email || 'Unassigned Driver';
-                    const customerName = del.order?.customer?.user?.email || 'Customer';
+                    const customerName = del.order?.customer
+                      ? `${del.order.customer.first_name || ''} ${del.order.customer.last_name || ''}`.trim() || del.order.customer.user?.email || 'Customer'
+                      : del.order?.customer?.user?.email || 'Customer';
                     const addressStr = del.order?.address
                       ? `${del.order.address.area || ''}, ${del.order.address.city || ''}`
                       : 'Address specified';
@@ -616,7 +631,7 @@ export default function AdminDeliveriesTrackingPage() {
                           </p>
                           <p className="flex items-center gap-1.5 text-slate-600">
                             <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            <span className="truncate">📍 {addressStr}</span>
+                            <span className="truncate">{customerName} • {addressStr}</span>
                           </p>
                         </div>
                       </div>

@@ -44,8 +44,9 @@ class PaymentController {
       const adminId = req.user.admin ? req.user.admin.id : null;
       const userId = req.user.id;
       const { paymentId } = req.params;
-      const payment = await paymentService.verifyPayment(paymentId, adminId, userId);
-      return sendSuccess(res, 'Payment verified successfully. Order ready for driver assignment.', { payment });
+      const options = req.body || {};
+      const payment = await paymentService.verifyPayment(paymentId, adminId, userId, options);
+      return sendSuccess(res, 'Payment verified successfully and marked as PAID.', { payment });
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }
@@ -63,7 +64,49 @@ class PaymentController {
       }
 
       const payment = await paymentService.rejectPayment(paymentId, adminId, userId, rejectionReason);
-      return sendSuccess(res, 'Payment rejected', { payment });
+      return sendSuccess(res, 'Payment marked as rejected/failed', { payment });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async refundPaymentAdmin(req, res, next) {
+    try {
+      const adminId = req.user.admin ? req.user.admin.id : null;
+      const userId = req.user.id;
+      const { paymentId } = req.params;
+      const { refundReason } = req.body;
+
+      const payment = await paymentService.refundPayment(paymentId, adminId, userId, refundReason);
+      return sendSuccess(res, 'Payment refunded successfully and stock restored', { payment });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async verifyGatewayPayment(req, res, next) {
+    try {
+      const adminId = req.user?.admin ? req.user.admin.id : null;
+      const userId = req.user?.id;
+      const { orderId, gateway, razorpay_payment_id, razorpay_order_id, razorpay_signature, cashfree_order_id, cashfree_payment_id } = req.body;
+
+      if (!orderId || !gateway) {
+        return sendError(res, 'orderId and gateway are required for gateway verification', [], 400);
+      }
+
+      const payment = await paymentService.verifyServerSideGateway({
+        orderId,
+        gateway,
+        razorpay_payment_id,
+        razorpay_order_id,
+        razorpay_signature,
+        cashfree_order_id,
+        cashfree_payment_id,
+        adminId,
+        userId,
+      });
+
+      return sendSuccess(res, `${gateway} payment verified successfully by server`, { payment });
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }

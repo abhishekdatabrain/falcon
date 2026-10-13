@@ -25,6 +25,15 @@ const OrderItem = sequelize.define('OrderItem', {
     },
     onDelete: 'RESTRICT',
   },
+  variant_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'product_variants',
+      key: 'id',
+    },
+    onDelete: 'SET NULL',
+  },
   product_name_en: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -57,6 +66,7 @@ const OrderItem = sequelize.define('OrderItem', {
   indexes: [
     { fields: ['order_id'] },
     { fields: ['product_id'] },
+    { fields: ['variant_id'] },
   ],
 });
 

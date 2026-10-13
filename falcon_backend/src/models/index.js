@@ -6,6 +6,7 @@ const Admin = require('./Admin');
 const Address = require('./Address');
 const Category = require('./Category');
 const Product = require('./Product');
+const ProductVariant = require('./ProductVariant');
 const ProductImage = require('./ProductImage');
 const Cart = require('./Cart');
 const CartItem = require('./CartItem');
@@ -25,6 +26,11 @@ const RefreshToken = require('./RefreshToken');
 const Wishlist = require('./Wishlist');
 const StockLog = require('./StockLog');
 const HeroBanner = require('./HeroBanner');
+const PromoBanner = require('./PromoBanner');
+const HomepageCategorySection = require('./HomepageCategorySection');
+const HomepageCategoryItem = require('./HomepageCategoryItem');
+const HomepageSection = require('./HomepageSection');
+const HomepageSetting = require('./HomepageSetting');
 
 // --- User Associations ---
 User.hasOne(Customer, { foreignKey: 'user_id', as: 'customer', onDelete: 'CASCADE' });
@@ -77,6 +83,9 @@ Product.belongsTo(Category, { foreignKey: 'sub_sub_subcategory_id', as: 'sub_sub
 Product.hasMany(ProductImage, { foreignKey: 'product_id', as: 'images', onDelete: 'CASCADE' });
 ProductImage.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 
+Product.hasMany(ProductVariant, { foreignKey: 'product_id', as: 'variants', onDelete: 'CASCADE' });
+ProductVariant.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
+
 Product.hasMany(StockLog, { foreignKey: 'product_id', as: 'stock_logs', onDelete: 'CASCADE' });
 StockLog.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 Cart.hasMany(CartItem, { foreignKey: 'cart_id', as: 'items', onDelete: 'CASCADE' });
@@ -84,6 +93,9 @@ CartItem.belongsTo(Cart, { foreignKey: 'cart_id', as: 'cart' });
 
 CartItem.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 Product.hasMany(CartItem, { foreignKey: 'product_id', as: 'cart_items' });
+
+CartItem.belongsTo(ProductVariant, { foreignKey: 'variant_id', as: 'variant' });
+ProductVariant.hasMany(CartItem, { foreignKey: 'variant_id', as: 'cart_items' });
 
 // --- Order & Item Associations ---
 Address.hasMany(Order, { foreignKey: 'address_id', as: 'orders' });
@@ -95,8 +107,13 @@ OrderItem.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
 OrderItem.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 Product.hasMany(OrderItem, { foreignKey: 'product_id', as: 'order_items' });
 
+OrderItem.belongsTo(ProductVariant, { foreignKey: 'variant_id', as: 'variant' });
+ProductVariant.hasMany(OrderItem, { foreignKey: 'variant_id', as: 'order_items' });
+
 Order.hasMany(OrderStatusHistory, { foreignKey: 'order_id', as: 'status_history', onDelete: 'CASCADE' });
 OrderStatusHistory.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+OrderStatusHistory.belongsTo(User, { foreignKey: 'changed_by_user_id', as: 'changed_by' });
+User.hasMany(OrderStatusHistory, { foreignKey: 'changed_by_user_id', as: 'order_status_changes' });
 
 // --- Payment Associations ---
 Order.hasOne(Payment, { foreignKey: 'order_id', as: 'payment', onDelete: 'CASCADE' });
@@ -111,6 +128,7 @@ DriverAssignment.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
 
 Driver.hasMany(DriverAssignment, { foreignKey: 'driver_id', as: 'assignments' });
 DriverAssignment.belongsTo(Driver, { foreignKey: 'driver_id', as: 'driver' });
+DriverAssignment.belongsTo(Driver, { foreignKey: 'previous_driver_id', as: 'previous_driver' });
 
 Admin.hasMany(DriverAssignment, { foreignKey: 'assigned_by_admin_id', as: 'assigned_drivers' });
 DriverAssignment.belongsTo(Admin, { foreignKey: 'assigned_by_admin_id', as: 'assigned_by_admin' });
@@ -132,9 +150,17 @@ Invoice.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
 Invoice.hasMany(InvoiceItem, { foreignKey: 'invoice_id', as: 'items', onDelete: 'CASCADE' });
 InvoiceItem.belongsTo(Invoice, { foreignKey: 'invoice_id', as: 'invoice' });
 
+Invoice.belongsTo(Invoice, { foreignKey: 'original_invoice_id', as: 'original_invoice' });
+Invoice.hasMany(Invoice, { foreignKey: 'original_invoice_id', as: 'credit_notes' });
+
 // --- Feedback Associations ---
 Order.hasOne(Feedback, { foreignKey: 'order_id', as: 'feedback', onDelete: 'CASCADE' });
 Feedback.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+
+// --- Homepage Category Showcase Associations ---
+HomepageCategorySection.hasMany(HomepageCategoryItem, { foreignKey: 'section_id', as: 'items', onDelete: 'CASCADE' });
+HomepageCategoryItem.belongsTo(HomepageCategorySection, { foreignKey: 'section_id', as: 'section' });
+HomepageCategoryItem.belongsTo(Category, { foreignKey: 'category_id', as: 'category' });
 
 module.exports = {
   sequelize,
@@ -145,6 +171,7 @@ module.exports = {
   Address,
   Category,
   Product,
+  ProductVariant,
   ProductImage,
   StockLog,
   Cart,
@@ -164,4 +191,9 @@ module.exports = {
   RefreshToken,
   Wishlist,
   HeroBanner,
+  PromoBanner,
+  HomepageCategorySection,
+  HomepageCategoryItem,
+  HomepageSection,
+  HomepageSetting,
 };

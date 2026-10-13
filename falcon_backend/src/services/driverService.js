@@ -1,4 +1,4 @@
-const { Driver, Delivery, Order, Customer, Address, OrderItem, DriverAssignment, DriverLocation, OrderStatusHistory, User, sequelize } = require('../models');
+const { Driver, Delivery, Order, Customer, Address, OrderItem, Product, DriverAssignment, DriverLocation, OrderStatusHistory, User, sequelize } = require('../models');
 const { ORDER_STATUS, VALID_STATUS_TRANSITIONS } = require('../constants/orderStatus');
 const { DRIVER_AVAILABILITY } = require('../constants/driverStatus');
 const ROLES = require('../constants/roles');
@@ -8,7 +8,7 @@ class DriverService {
   async getDriverProfileByUserId(userId) {
     const driver = await Driver.findOne({
       where: { user_id: userId },
-      include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }],
+      include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile', 'status'] }],
     });
     if (!driver) {
       throw new Error('Driver profile not found');
@@ -26,7 +26,7 @@ class DriverService {
           include: [
             { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] },
             { model: Address, as: 'address' },
-            { model: OrderItem, as: 'items' },
+            { model: OrderItem, as: 'items', include: [{ model: Product, as: 'product' }] },
           ],
         },
       ],
@@ -152,6 +152,52 @@ class DriverService {
       heading,
       recorded_at: new Date(),
     });
+  }
+
+  async updateDriverProfile(userId, { mobile, email, vehicle_details }) {
+    const driver = await Driver.findOne({
+      where: { user_id: userId },
+      include: ['user'],
+    });
+    if (!driver) {
+      throw new Error('Driver profile not found');
+    }
+
+    await sequelize.transaction(async (t) => {
+      const userUpdate = {};
+      if (email) userUpdate.email = email;
+      if (mobile) userUpdate.mobile = mobile;
+      if (Object.keys(userUpdate).length > 0) {
+        await driver.user.update(userUpdate, { transaction: t });
+      }
+
+      if (vehicle_details !== undefined) {
+        await driver.update({ vehicle_details }, { transaction: t });
+      }
+    });
+
+    return await this.getDriverProfileByUserId(userId);
+  }
+
+  async changeDriverPassword(userId, { currentPassword, newPassword }) {
+    const { comparePassword, hashPassword } = require('../utils/password');
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const isValid = await comparePassword(currentPassword, user.password_hash);
+    if (!isValid) {
+      throw new Error('Current password is incorrect');
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      throw new Error('New password must be at least 6 characters');
+    }
+
+    const newHash = await hashPassword(newPassword);
+    await user.update({ password_hash: newHash });
+    return true;
   }
 }
 

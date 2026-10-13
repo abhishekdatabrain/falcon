@@ -139,6 +139,14 @@ const Product = sequelize.define('Product', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  is_popular_pick: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  has_variants: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
 }, {
   tableName: 'products',
   timestamps: true,

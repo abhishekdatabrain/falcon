@@ -10,8 +10,8 @@ export default function Footer() {
   const pathname = usePathname();
   const { locale, setLanguage } = useLanguage();
 
-  // Hide global footer on Admin routes
-  if (pathname?.startsWith('/admin')) {
+  // Hide global footer on Admin and Driver routes
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/driver')) {
     return null;
   }
 

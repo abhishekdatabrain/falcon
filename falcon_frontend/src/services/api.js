@@ -5,6 +5,10 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v
  * Supports relative paths, full http/https URLs, and data URLs.
  */
 export const getImageUrl = (url) => {
+  if (!url) return '';
+  if (typeof url === 'object') {
+    url = url.image_url || url.url || url.path || url.src || '';
+  }
   if (!url || typeof url !== 'string') return '';
   const targetUrl = url.trim();
   if (!targetUrl) return '';

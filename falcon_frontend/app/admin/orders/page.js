@@ -1,7 +1,8 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { fetchApi } from '../../../src/services/api';
+import { useRouter } from 'next/navigation';
+import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import {
@@ -35,9 +36,14 @@ import {
   XCircle,
   HelpCircle,
   SlidersHorizontal,
+  RotateCcw,
+  ExternalLink,
+  ArrowUpDown,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function AdminOrdersPage() {
+  const router = useRouter();
   const { locale } = useLanguage();
   const { showToast } = useToast();
 
@@ -48,10 +54,10 @@ export default function AdminOrdersPage() {
   const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
 
-  // Quick Tab Filter: ALL, ACTIVE, COMPLETED, CANCELLED
+  // Status Tabs (Requirement 8): ALL, PENDING, PROCESSING, OUT_FOR_DELIVERY, COMPLETED, CANCELLED, RETURNED
   const [activeTab, setActiveTab] = useState('ALL');
 
-  // Search & Filter States
+  // Search & Filter States (Requirement 3)
   const [searchQuery, setSearchQuery] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('ALL');
@@ -61,14 +67,16 @@ export default function AdminOrdersPage() {
   const [toDate, setToDate] = useState('');
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('DESC');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Drawer / Modals State
-  const [selectedOrder, setSelectedOrder] = useState(null); // For Order Details Drawer
-  const [detailsTab, setDetailsTab] = useState('overview'); // 'overview', 'progress', 'history'
+  // Quick View Drawer & Modals State
+  const [selectedOrder, setSelectedOrder] = useState(null); // For Quick Preview Drawer
+  const [drawerTab, setDrawerTab] = useState('overview'); // 'overview', 'progress', 'history'
 
   const [assignModalOrder, setAssignModalOrder] = useState(null); // For Assign Driver Modal
   const [assignDriverId, setAssignDriverId] = useState('');
@@ -79,11 +87,16 @@ export default function AdminOrdersPage() {
   const [statusNote, setStatusNote] = useState('');
 
   const [paymentModalOrder, setPaymentModalOrder] = useState(null); // For Payment Verification Modal
+  const [verifyGateway, setVerifyGateway] = useState('Razorpay');
+  const [verifyTxnId, setVerifyTxnId] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+
+  const [refundModalOrder, setRefundModalOrder] = useState(null); // For Payment Refund Modal
+  const [refundReason, setRefundReason] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch Orders and Drivers
+  // Fetch Orders and Drivers from Backend REST API
   const loadData = async (page = currentPage) => {
     try {
       setLoading(true);
@@ -101,6 +114,8 @@ export default function AdminOrdersPage() {
       if (toDate) params.append('toDate', toDate);
       if (minAmount) params.append('minAmount', minAmount);
       if (maxAmount) params.append('maxAmount', maxAmount);
+      params.append('sortBy', sortBy);
+      params.append('sortOrder', sortOrder);
 
       const [ordRes, drvRes] = await Promise.all([
         fetchApi(`/admin/orders?${params.toString()}`),
@@ -141,6 +156,8 @@ export default function AdminOrdersPage() {
     toDate,
     minAmount,
     maxAmount,
+    sortBy,
+    sortOrder,
   ]);
 
   const handlePageChange = (newPage) => {
@@ -160,11 +177,13 @@ export default function AdminOrdersPage() {
     setToDate('');
     setMinAmount('');
     setMaxAmount('');
+    setSortBy('createdAt');
+    setSortOrder('DESC');
     setActiveTab('ALL');
     setCurrentPage(1);
   };
 
-  // 1. Assign / Reassign Driver Handler
+  // 1. Assign / Reassign Driver Handler (Requirement 5)
   const handleConfirmAssignDriver = async (e) => {
     e.preventDefault();
     if (!assignModalOrder || !assignDriverId) {
@@ -198,7 +217,7 @@ export default function AdminOrdersPage() {
     }
   };
 
-  // 2. Update Order Status Handler
+  // 2. Update Order Status Handler (Requirement 6)
   const handleConfirmUpdateStatus = async (e) => {
     e.preventDefault();
     if (!statusModalOrder || !targetStatus) return;
@@ -230,21 +249,29 @@ export default function AdminOrdersPage() {
     }
   };
 
-  // 3. Verify Payment Handler
-  const handleConfirmVerifyPayment = async (paymentId) => {
+  // 3. Verify Payment Handler (Requirement 4)
+  const handleConfirmVerifyPayment = async () => {
+    if (!paymentModalOrder) return;
     try {
       setSubmitting(true);
+      const paymentId = paymentModalOrder.payment?.id;
       const res = await fetchApi(`/payments/${paymentId}/verify`, {
         method: 'POST',
+        body: JSON.stringify({
+          gateway: verifyGateway,
+          transactionId: verifyTxnId.trim() || undefined,
+          paymentMethod: verifyGateway,
+        }),
       });
       if (res.success) {
         showToast(
-          locale === 'ar' ? 'تم توثيق الدفع بنجاح!' : 'Payment verified successfully!',
+          locale === 'ar' ? 'تم توثيق الدفع بنجاح!' : 'Payment verified successfully and marked as PAID!',
           'success'
         );
         setPaymentModalOrder(null);
+        setVerifyTxnId('');
         if (selectedOrder) {
-          const updated = await fetchApi(`/orders/${selectedOrder.id}`);
+          const updated = await fetchApi(`/admin/orders/${selectedOrder.id}`);
           if (updated.success) setSelectedOrder(updated.data.order);
         }
         await loadData(currentPage);
@@ -256,7 +283,7 @@ export default function AdminOrdersPage() {
     }
   };
 
-  // 4. Reject Payment Handler
+  // 4. Reject Payment Handler (Requirement 4)
   const handleConfirmRejectPayment = async (e) => {
     e.preventDefault();
     if (!paymentModalOrder || !rejectionReason.trim()) {
@@ -272,7 +299,7 @@ export default function AdminOrdersPage() {
       });
       if (res.success) {
         showToast(
-          locale === 'ar' ? 'تم رفض الدفع' : 'Payment rejected',
+          locale === 'ar' ? 'تم رفض الدفع' : 'Payment marked as rejected',
           'success'
         );
         setPaymentModalOrder(null);
@@ -286,43 +313,81 @@ export default function AdminOrdersPage() {
     }
   };
 
-  // Open Full Order Details Drawer
-  const openOrderDetails = async (orderId, initialTab = 'overview') => {
-    setDetailsTab(initialTab);
+  // 5. Refund Payment Handler (Requirement 4)
+  const handleConfirmRefundPayment = async (e) => {
+    e.preventDefault();
+    if (!refundModalOrder) return;
     try {
-      const res = await fetchApi(`/orders/${orderId}`);
+      setSubmitting(true);
+      const paymentId = refundModalOrder.payment?.id;
+      const res = await fetchApi(`/payments/${paymentId}/refund`, {
+        method: 'POST',
+        body: JSON.stringify({ refundReason: refundReason.trim() || 'Refund processed by Admin' }),
+      });
+      if (res.success) {
+        showToast(
+          locale === 'ar' ? 'تم رد المبلغ واسترجاع المخزون بنجاح!' : 'Payment refunded and stock restored!',
+          'success'
+        );
+        setRefundModalOrder(null);
+        setRefundReason('');
+        await loadData(currentPage);
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to refund payment', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Open Quick Drawer
+  const openOrderDrawer = async (orderId, initialTab = 'overview') => {
+    setDrawerTab(initialTab);
+    try {
+      const res = await fetchApi(`/admin/orders/${orderId}`);
       if (res.success) {
         setSelectedOrder(res.data.order);
+      } else {
+        const altRes = await fetchApi(`/orders/${orderId}`);
+        if (altRes.success) setSelectedOrder(altRes.data.order);
       }
     } catch (err) {
       showToast(err.message || 'Failed to fetch order details', 'error');
     }
   };
 
-  // Render Status Badge Pill
+  // Render Order Status Badge Pill
   const renderStatusBadge = (status) => {
     switch (status) {
       case 'DELIVERED':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">DELIVERED</span>;
-      case 'PAYMENT_VERIFIED':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">CONFIRMED (PAID)</span>;
-      case 'DRIVER_ASSIGNED':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-purple-50 text-purple-700 border border-purple-200">DRIVER ASSIGNED</span>;
-      case 'DRIVER_ACCEPTED':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-700 border border-blue-200">DRIVER ACCEPTED</span>;
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">DELIVERED</span>;
       case 'OUT_FOR_DELIVERY':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-cyan-50 text-cyan-700 border border-cyan-200 animate-pulse">OUT FOR DELIVERY</span>;
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-cyan-50 text-cyan-700 border border-cyan-200 animate-pulse">OUT FOR DELIVERY</span>;
+      case 'PACKED':
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-teal-50 text-teal-700 border border-teal-200">PACKED</span>;
+      case 'PROCESSING':
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">PROCESSING</span>;
+      case 'CONFIRMED':
+      case 'PAYMENT_VERIFIED':
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200">CONFIRMED (PAID)</span>;
+      case 'DRIVER_ASSIGNED':
+      case 'DRIVER_ACCEPTED':
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-purple-50 text-purple-700 border border-purple-200">DRIVER ASSIGNED</span>;
       case 'ARRIVED':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200">ARRIVED</span>;
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">ARRIVED</span>;
       case 'PENDING_PAYMENT':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200">PENDING PAYMENT</span>;
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">PENDING PAYMENT</span>;
       case 'PAYMENT_SUBMITTED':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-700 border border-blue-200">PAYMENT SUBMITTED</span>;
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200">PAYMENT SUBMITTED</span>;
       case 'CANCELLED':
       case 'PAYMENT_REJECTED':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">CANCELLED</span>;
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200">CANCELLED</span>;
+      case 'DELIVERY_FAILED':
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200">DELIVERY FAILED</span>;
+      case 'RETURNED':
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-orange-50 text-orange-700 border border-orange-200">RETURNED</span>;
       default:
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-700 border border-slate-200">{status}</span>;
+        return <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 border border-slate-200">{status}</span>;
     }
   };
 
@@ -330,15 +395,37 @@ export default function AdminOrdersPage() {
   const renderPaymentBadge = (payment) => {
     if (!payment) return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">Unpaid</span>;
     switch (payment.status) {
+      case 'PAID':
       case 'VERIFIED':
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">✓ PAID</span>;
-      case 'SUBMITTED':
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-300">REVIEW SUBMITTED</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">✓ PAID</span>;
+      case 'REFUNDED':
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-orange-100 text-orange-800 border border-orange-300">↺ REFUNDED</span>;
+      case 'FAILED':
       case 'REJECTED':
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">✗ REJECTED</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">✗ FAILED</span>;
+      case 'SUBMITTED':
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-300">UNDER REVIEW</span>;
       default:
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">PENDING</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">PENDING</span>;
     }
+  };
+
+  // Render Payment Method Badge
+  const renderPaymentMethodBadge = (method) => {
+    const m = (method || '').toUpperCase();
+    if (m.includes('RAZORPAY')) {
+      return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Razorpay</span>;
+    }
+    if (m.includes('CASHFREE')) {
+      return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">Cashfree</span>;
+    }
+    if (m.includes('COD') || m.includes('CASH')) {
+      return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">COD</span>;
+    }
+    if (m.includes('BANK')) {
+      return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">Bank Transfer</span>;
+    }
+    return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">{method || 'COD'}</span>;
   };
 
   return (
@@ -352,7 +439,7 @@ export default function AdminOrdersPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-black text-slate-900">
-                {locale === 'ar' ? 'إدارة وتتبع الطلبات الشاملة' : 'Order Management'}
+                {locale === 'ar' ? 'إدارة الطلبات الشاملة' : 'Order Management'}
               </h1>
               <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
                 {stats?.total || 0} {locale === 'ar' ? 'طلب' : 'Total Orders'}
@@ -379,7 +466,7 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Top Dynamic Dashboard Summary Cards (Requirement 10) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs">
           <div className="text-[11px] text-slate-500 font-semibold">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</div>
           <div className="text-lg font-black text-slate-900 mt-0.5">{stats?.total || 0}</div>
@@ -391,7 +478,7 @@ export default function AdminOrdersPage() {
         </div>
 
         <div className="bg-indigo-50/80 rounded-2xl p-3.5 border border-indigo-200 shadow-xs">
-          <div className="text-[11px] text-indigo-800 font-semibold">{locale === 'ar' ? 'قيد التجهيز/التعيين' : 'Processing'}</div>
+          <div className="text-[11px] text-indigo-800 font-semibold">{locale === 'ar' ? 'قيد التجهيز' : 'Processing'}</div>
           <div className="text-lg font-black text-indigo-900 mt-0.5">{stats?.processing || 0}</div>
         </div>
 
@@ -406,65 +493,97 @@ export default function AdminOrdersPage() {
         </div>
 
         <div className="bg-rose-50/80 rounded-2xl p-3.5 border border-rose-200 shadow-xs">
-          <div className="text-[11px] text-rose-800 font-semibold">{locale === 'ar' ? 'ملغية/مرفوضة' : 'Cancelled'}</div>
+          <div className="text-[11px] text-rose-800 font-semibold">{locale === 'ar' ? 'ملغية' : 'Cancelled'}</div>
           <div className="text-lg font-black text-rose-900 mt-0.5">{stats?.cancelled || 0}</div>
         </div>
 
-        <div className="bg-blue-50/80 rounded-2xl p-3.5 border border-blue-200 shadow-xs">
-          <div className="text-[11px] text-blue-800 font-semibold">{locale === 'ar' ? 'مدفوعات معلقة' : 'Pending Pay'}</div>
-          <div className="text-lg font-black text-blue-900 mt-0.5">{stats?.pendingPayments || 0}</div>
-        </div>
-
-        <div className="bg-teal-50/80 rounded-2xl p-3.5 border border-teal-200 shadow-xs">
-          <div className="text-[11px] text-teal-800 font-semibold">{locale === 'ar' ? 'مدفوعات مؤكدة' : 'Completed Pay'}</div>
-          <div className="text-lg font-black text-teal-900 mt-0.5">{stats?.completedPayments || 0}</div>
+        <div className="bg-orange-50/80 rounded-2xl p-3.5 border border-orange-200 shadow-xs">
+          <div className="text-[11px] text-orange-800 font-semibold">{locale === 'ar' ? 'مسترجعة' : 'Returned'}</div>
+          <div className="text-lg font-black text-orange-900 mt-0.5">{stats?.returned || 0}</div>
         </div>
       </div>
 
-      {/* Quick Filter Tabs Navigation (Requirement 8) */}
+      {/* Status-Based Quick Filter Tabs (Requirement 8) */}
       <div className="bg-white rounded-2xl p-2 border border-slate-200 shadow-xs flex items-center gap-2 overflow-x-auto">
         <button
           onClick={() => { setActiveTab('ALL'); setCurrentPage(1); }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'ALL'
+          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'ALL'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100'
-            }`}
+          }`}
         >
           {locale === 'ar' ? 'جميع الطلبات' : 'All Orders'} ({stats?.total || 0})
         </button>
 
         <button
-          onClick={() => { setActiveTab('ACTIVE'); setCurrentPage(1); }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'ACTIVE'
+          onClick={() => { setActiveTab('PENDING'); setCurrentPage(1); }}
+          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'PENDING'
+              ? 'bg-amber-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          ⏳ {locale === 'ar' ? 'قيد الانتظار' : 'Pending'} ({stats?.pending || 0})
+        </button>
+
+        <button
+          onClick={() => { setActiveTab('PROCESSING'); setCurrentPage(1); }}
+          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'PROCESSING'
               ? 'bg-indigo-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100'
-            }`}
+          }`}
         >
-          ⚡ {locale === 'ar' ? 'الطلبات النشطة' : 'Active Orders'} ({(stats?.pending || 0) + (stats?.processing || 0) + (stats?.outForDelivery || 0)})
+          ⚙️ {locale === 'ar' ? 'قيد المعالجة' : 'Processing'} ({stats?.processing || 0})
+        </button>
+
+        <button
+          onClick={() => { setActiveTab('OUT_FOR_DELIVERY'); setCurrentPage(1); }}
+          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'OUT_FOR_DELIVERY'
+              ? 'bg-cyan-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          🚚 {locale === 'ar' ? 'خرج للتوصيل' : 'Out for Delivery'} ({stats?.outForDelivery || 0})
         </button>
 
         <button
           onClick={() => { setActiveTab('COMPLETED'); setCurrentPage(1); }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'COMPLETED'
+          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'COMPLETED'
               ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100'
-            }`}
+          }`}
         >
-          ✓ {locale === 'ar' ? 'الطلبات المكتملة' : 'Completed Orders'} ({stats?.delivered || 0})
+          ✓ {locale === 'ar' ? 'المكتملة' : 'Completed'} ({stats?.delivered || 0})
         </button>
 
         <button
           onClick={() => { setActiveTab('CANCELLED'); setCurrentPage(1); }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'CANCELLED'
+          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'CANCELLED'
               ? 'bg-rose-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100'
-            }`}
+          }`}
         >
-          ✕ {locale === 'ar' ? 'الطلبات الملغية' : 'Cancelled Orders'} ({stats?.cancelled || 0})
+          ✕ {locale === 'ar' ? 'الملغية' : 'Cancelled'} ({stats?.cancelled || 0})
+        </button>
+
+        <button
+          onClick={() => { setActiveTab('RETURNED'); setCurrentPage(1); }}
+          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'RETURNED'
+              ? 'bg-orange-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          ↺ {locale === 'ar' ? 'المسترجعة' : 'Returned'} ({stats?.returned || 0})
         </button>
       </div>
 
-      {/* Control Bar: Search & Advanced Filters Panel (Requirement 2) */}
+      {/* Control Bar: Search & Advanced Filters Panel (Requirement 3) */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Main Search Bar */}
@@ -484,17 +603,38 @@ export default function AdminOrdersPage() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+          <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
+            {/* Sorting Select */}
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="text-slate-400 font-bold hidden sm:inline">Sort:</span>
+              <select
+                value={`${sortBy}:${sortOrder}`}
+                onChange={(e) => {
+                  const [field, order] = e.target.value.split(':');
+                  setSortBy(field);
+                  setSortOrder(order);
+                }}
+                className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:bg-white outline-hidden cursor-pointer text-xs"
+              >
+                <option value="createdAt:DESC">Date (Newest First)</option>
+                <option value="createdAt:ASC">Date (Oldest First)</option>
+                <option value="grand_total:DESC">Amount (Highest First)</option>
+                <option value="grand_total:ASC">Amount (Lowest First)</option>
+                <option value="order_number:DESC">Order # (Descending)</option>
+              </select>
+            </div>
+
             <button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${showAdvancedFilters || orderStatusFilter !== 'ALL' || paymentStatusFilter !== 'ALL' || driverFilter !== 'ALL' || fromDate || minAmount
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                showAdvancedFilters || orderStatusFilter !== 'ALL' || paymentStatusFilter !== 'ALL' || paymentMethodFilter !== 'ALL' || driverFilter !== 'ALL' || fromDate || minAmount
                   ? 'bg-indigo-50 text-indigo-700 border-indigo-300'
                   : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                }`}
+              }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
               <span>{locale === 'ar' ? 'الفلاتر المتقدمة' : 'Advanced Filters'}</span>
-              {(orderStatusFilter !== 'ALL' || paymentStatusFilter !== 'ALL' || driverFilter !== 'ALL' || fromDate || minAmount) && (
+              {(orderStatusFilter !== 'ALL' || paymentStatusFilter !== 'ALL' || paymentMethodFilter !== 'ALL' || driverFilter !== 'ALL' || fromDate || minAmount) && (
                 <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping"></span>
               )}
             </button>
@@ -508,9 +648,9 @@ export default function AdminOrdersPage() {
           </div>
         </div>
 
-        {/* Expandable Advanced Filters Grid */}
+        {/* Expandable Advanced Filters Grid (Requirement 3) */}
         {showAdvancedFilters && (
-          <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 animate-in fade-in duration-150 text-xs">
+          <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 animate-in fade-in duration-150 text-xs">
             {/* Order Status Select */}
             <div>
               <label className="block text-[11px] font-bold text-slate-500 mb-1">{locale === 'ar' ? 'حالة الطلب' : 'Order Status'}</label>
@@ -520,12 +660,15 @@ export default function AdminOrdersPage() {
                 className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:bg-white outline-hidden cursor-pointer"
               >
                 <option value="ALL">All Statuses</option>
-                <option value="PENDING_PAYMENT">PENDING_PAYMENT</option>
-                <option value="PAYMENT_SUBMITTED">PAYMENT_SUBMITTED</option>
-                <option value="PAYMENT_VERIFIED">PAYMENT_VERIFIED</option>
-                <option value="DRIVER_ASSIGNED">DRIVER_ASSIGNED</option>
-                <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
+                <option value="PENDING_PAYMENT">PENDING PAYMENT</option>
+                <option value="CONFIRMED">CONFIRMED</option>
+                <option value="PROCESSING">PROCESSING</option>
+                <option value="PACKED">PACKED</option>
+                <option value="DRIVER_ASSIGNED">DRIVER ASSIGNED</option>
+                <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
                 <option value="DELIVERED">DELIVERED</option>
+                <option value="DELIVERY_FAILED">DELIVERY FAILED</option>
+                <option value="RETURNED">RETURNED</option>
                 <option value="CANCELLED">CANCELLED</option>
               </select>
             </div>
@@ -540,9 +683,26 @@ export default function AdminOrdersPage() {
               >
                 <option value="ALL">All Payment Statuses</option>
                 <option value="PENDING">PENDING</option>
-                <option value="SUBMITTED">SUBMITTED</option>
-                <option value="VERIFIED">VERIFIED</option>
-                <option value="REJECTED">REJECTED</option>
+                <option value="PAID">PAID</option>
+                <option value="SUBMITTED">UNDER REVIEW</option>
+                <option value="FAILED">FAILED</option>
+                <option value="REFUNDED">REFUNDED</option>
+              </select>
+            </div>
+
+            {/* Payment Method Select */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 mb-1">{locale === 'ar' ? 'طريقة الدفع' : 'Payment Method'}</label>
+              <select
+                value={paymentMethodFilter}
+                onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:bg-white outline-hidden cursor-pointer"
+              >
+                <option value="ALL">All Payment Methods</option>
+                <option value="Razorpay">Razorpay</option>
+                <option value="Cashfree">Cashfree</option>
+                <option value="COD">Cash on Delivery (COD)</option>
+                <option value="Bank Transfer">Bank Transfer</option>
               </select>
             </div>
 
@@ -557,7 +717,7 @@ export default function AdminOrdersPage() {
                 <option value="ALL">All Drivers</option>
                 {drivers.map((drv) => (
                   <option key={drv.id} value={drv.id}>
-                    {drv.user?.email}
+                    {drv.user?.email} ({drv.availability_status || 'AVAILABLE'})
                   </option>
                 ))}
               </select>
@@ -581,18 +741,6 @@ export default function AdminOrdersPage() {
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-medium focus:bg-white outline-hidden"
-              />
-            </div>
-
-            {/* Min Amount */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-500 mb-1">{locale === 'ar' ? 'الحد الأدنى للمبلغ' : 'Min Amount (SAR)'}</label>
-              <input
-                type="number"
-                placeholder="e.g. 50"
-                value={minAmount}
-                onChange={(e) => setMinAmount(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-medium focus:bg-white outline-hidden"
               />
             </div>
@@ -625,74 +773,88 @@ export default function AdminOrdersPage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <thead className="bg-slate-50/90 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <tr>
-                  <th className="px-6 py-4 whitespace-nowrap">{locale === 'ar' ? 'رقم الطلب والتاريخ' : 'Order ID & Date'}</th>
-                  <th className="px-6 py-4 whitespace-nowrap">{locale === 'ar' ? 'بيانات العميل' : 'Customer Info'}</th>
-                  <th className="px-6 py-4 whitespace-nowrap">{locale === 'ar' ? 'إجمالي المبلغ' : 'Total Amount'}</th>
-                  <th className="px-6 py-4 whitespace-nowrap">{locale === 'ar' ? 'حالة الدفع' : 'Payment Status'}</th>
-                  <th className="px-6 py-4 whitespace-nowrap">{locale === 'ar' ? 'حالة الطلب' : 'Order Status'}</th>
-                  <th className="px-6 py-4 whitespace-nowrap">{locale === 'ar' ? 'السائق المسند' : 'Assigned Driver'}</th>
-                  <th className="px-6 py-4 whitespace-nowrap">{locale === 'ar' ? 'عنوان التوصيل' : 'Delivery Address'}</th>
-                  <th className="px-6 py-4 text-right whitespace-nowrap">{locale === 'ar' ? 'الإجراءات' : 'Actions'}</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Order ID & Date</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Customer Name</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Customer Mobile</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Total Amount</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Payment Method</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Payment Status</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Order Status</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Assigned Driver</th>
+                  <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {orders.map((ord) => {
                   const cust = ord.customer || {};
                   const custUser = cust.user || {};
-                  const addr = ord.address || {};
                   const drv = ord.delivery?.driver || null;
                   const drvUser = drv?.user || {};
+                  const pay = ord.payment || {};
 
                   return (
                     <tr key={ord.id} className="hover:bg-slate-50/80 transition-all">
-                      {/* Order Number & Timestamp */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-100">
+                      {/* 1. Order ID & Date */}
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-100">
                             <Package className="w-4 h-4" />
                           </div>
                           <div>
-                            <button
-                              onClick={() => openOrderDetails(ord.id)}
-                              className="text-xs font-black text-slate-900 font-mono hover:text-indigo-600 text-left transition-colors cursor-pointer"
+                            <Link
+                              href={`/admin/orders/${ord.id}`}
+                              className="text-xs font-black text-slate-900 font-mono hover:text-indigo-600 transition-colors"
+                              title="Open dedicated order page"
                             >
                               #{ord.order_number}
-                            </button>
-                            <div className="text-[11px] text-slate-400 font-medium">
-                              {new Date(ord.createdAt).toLocaleString()}
+                            </Link>
+                            <div className="text-[10px] text-slate-400 font-medium">
+                              {new Date(ord.createdAt).toLocaleDateString()} {new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Customer Info */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-xs font-extrabold text-slate-900">
-                            {cust.first_name ? `${cust.first_name} ${cust.last_name || ''}` : 'Customer'}
-                          </div>
-                          <div className="text-[11px] text-slate-500 font-mono">
-                            {custUser.mobile || custUser.email || 'N/A'}
-                          </div>
+                      {/* 2. Customer Name */}
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <div className="text-xs font-extrabold text-slate-900">
+                          {cust.first_name ? `${cust.first_name} ${cust.last_name || ''}` : 'Customer'}
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate max-w-[140px]">
+                          {custUser.email || 'N/A'}
                         </div>
                       </td>
 
-                      {/* Total Amount */}
-                      <td className="px-6 py-4 whitespace-nowrap font-mono font-black text-xs text-slate-900">
+                      {/* 3. Customer Mobile */}
+                      <td className="px-5 py-3.5 whitespace-nowrap font-mono text-xs text-slate-700 font-medium">
+                        {custUser.mobile || 'N/A'}
+                      </td>
+
+                      {/* 4. Total Amount */}
+                      <td className="px-5 py-3.5 whitespace-nowrap font-mono font-black text-xs text-slate-900">
                         {parseFloat(ord.grand_total || 0).toFixed(2)} SAR
                       </td>
 
-                      {/* Payment Status Pill */}
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      {/* 5. Payment Method */}
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        {renderPaymentMethodBadge(ord.payment_method || pay.payment_method)}
+                      </td>
+
+                      {/* 6. Payment Status */}
+                      <td className="px-5 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          {renderPaymentBadge(ord.payment)}
-                          {ord.payment?.status === 'SUBMITTED' && (
+                          {renderPaymentBadge(pay)}
+                          {pay.status !== 'PAID' && pay.status !== 'VERIFIED' && (
                             <button
-                              onClick={() => setPaymentModalOrder(ord)}
-                              className="px-2 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-bold hover:bg-blue-700 transition-all cursor-pointer"
-                              title="Verify Bank Payment"
+                              onClick={() => {
+                                setPaymentModalOrder(ord);
+                                setVerifyGateway(ord.payment_method || 'Razorpay');
+                                setVerifyTxnId(pay.transaction_id || '');
+                              }}
+                              className="px-1.5 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-bold transition-all cursor-pointer"
+                              title="Verify Payment"
                             >
                               Verify
                             </button>
@@ -700,68 +862,73 @@ export default function AdminOrdersPage() {
                         </div>
                       </td>
 
-                      {/* Order Status Badge */}
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      {/* 7. Order Status */}
+                      <td className="px-5 py-3.5 whitespace-nowrap">
                         {renderStatusBadge(ord.order_status)}
                       </td>
 
-                      {/* Assigned Driver */}
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      {/* 8. Assigned Driver */}
+                      <td className="px-5 py-3.5 whitespace-nowrap">
                         {drv ? (
                           <div className="flex items-center gap-1.5">
-                            <Truck className="w-3.5 h-3.5 text-cyan-600" />
-                            <span className="text-xs font-bold text-slate-800">{drvUser.email}</span>
+                            <Truck className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+                            <div>
+                              <div className="text-xs font-bold text-slate-800 leading-tight">
+                                {drvUser.email}
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                {drvUser.mobile || ''}
+                              </div>
+                            </div>
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-400 italic">Unassigned</span>
+                          <span className="text-[11px] text-slate-400 italic">Unassigned</span>
                         )}
                       </td>
 
-                      {/* Address */}
-                      <td className="px-6 py-4">
-                        <div className="text-xs text-slate-700 font-medium max-w-xs truncate flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span>{addr.street ? `${addr.building_number || ''} ${addr.street}, ${addr.city || 'Riyadh'}` : 'Delivery Location'}</span>
-                        </div>
-                      </td>
-
-                      {/* Actions Buttons Column */}
-                      <td className="px-6 py-4 text-right whitespace-nowrap">
+                      {/* 9. Actions Column */}
+                      <td className="px-5 py-3.5 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* View Details */}
-                          <button
-                            onClick={() => openOrderDetails(ord.id, 'overview')}
-                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
-                            title="View Complete Order Details"
+                          {/* Dedicated Page Link */}
+                          <Link
+                            href={`/admin/orders/${ord.id}`}
+                            className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-all cursor-pointer"
+                            title="Open Full Details Page"
                           >
-                            <Eye className="w-4 h-4" />
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </Link>
+
+                          {/* Quick Drawer Preview */}
+                          <button
+                            onClick={() => openOrderDrawer(ord.id, 'overview')}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
+                            title="Quick Drawer Preview"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
                           </button>
 
                           {/* Assign Driver */}
                           <button
-                            onClick={() => { setAssignModalOrder(ord); setAssignDriverId(ord.delivery?.driver_id || ''); }}
-                            className="p-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 transition-all cursor-pointer"
+                            onClick={() => {
+                              setAssignModalOrder(ord);
+                              setAssignDriverId(ord.delivery?.driver_id || '');
+                            }}
+                            className="p-1.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 transition-all cursor-pointer"
                             title="Assign or Reassign Driver"
                           >
-                            <UserCheck className="w-4 h-4" />
+                            <UserCheck className="w-3.5 h-3.5" />
                           </button>
 
                           {/* Update Status */}
                           <button
-                            onClick={() => { setStatusModalOrder(ord); setTargetStatus(ord.order_status); }}
-                            className="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-all cursor-pointer"
+                            onClick={() => {
+                              setStatusModalOrder(ord);
+                              setTargetStatus(ord.order_status);
+                            }}
+                            className="p-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-all cursor-pointer"
                             title="Update Order Status"
                           >
-                            <SlidersHorizontal className="w-4 h-4" />
-                          </button>
-
-                          {/* View Audit History */}
-                          <button
-                            onClick={() => openOrderDetails(ord.id, 'history')}
-                            className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-all cursor-pointer"
-                            title="View Complete History Log"
-                          >
-                            <Clock className="w-4 h-4" />
+                            <SlidersHorizontal className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
@@ -802,11 +969,11 @@ export default function AdminOrdersPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 3. ORDER DETAILS DRAWER / MODAL (3 TAB PANELS) */}
+      {/* QUICK PREVIEW DRAWER */}
       {/* ========================================================================= */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-end p-0 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-3xl h-full shadow-2xl border-l border-slate-200 flex flex-col overflow-hidden">
+          <div className="bg-white w-full max-w-2xl h-full shadow-2xl border-l border-slate-200 flex flex-col overflow-hidden">
             {/* Drawer Header */}
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/90">
               <div className="flex items-center gap-3">
@@ -815,323 +982,185 @@ export default function AdminOrdersPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-black text-slate-900">Order #{selectedOrder.order_number}</h2>
+                    <h2 className="text-base font-black text-slate-900 font-mono">#{selectedOrder.order_number}</h2>
                     {renderStatusBadge(selectedOrder.order_status)}
                   </div>
-                  <p className="text-xs text-slate-500">Placed on {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+                  <p className="text-[11px] text-slate-500">Placed on {new Date(selectedOrder.createdAt).toLocaleString()}</p>
                 </div>
               </div>
-              <button onClick={() => setSelectedOrder(null)} className="p-2 rounded-xl bg-slate-100 text-slate-400 hover:text-slate-700 cursor-pointer">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/admin/orders/${selectedOrder.id}`}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-bold text-xs flex items-center gap-1"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Full Page</span>
+                </Link>
+                <button onClick={() => setSelectedOrder(null)} className="p-2 rounded-xl bg-slate-100 text-slate-400 hover:text-slate-700 cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            {/* Drawer Sub-Header Tabs Navigation */}
+            {/* Drawer Tabs Navigation */}
             <div className="px-6 pt-3 border-b border-slate-200 flex items-center gap-6 bg-slate-50/50 text-xs font-bold">
               <button
-                onClick={() => setDetailsTab('overview')}
-                className={`pb-3 border-b-2 transition-all cursor-pointer ${detailsTab === 'overview'
+                onClick={() => setDrawerTab('overview')}
+                className={`pb-3 border-b-2 transition-all cursor-pointer ${
+                  drawerTab === 'overview'
                     ? 'border-indigo-600 text-indigo-700'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
+                }`}
               >
-                Overview & Products
+                Overview & Items
               </button>
               <button
-                onClick={() => setDetailsTab('progress')}
-                className={`pb-3 border-b-2 transition-all cursor-pointer ${detailsTab === 'progress'
+                onClick={() => setDrawerTab('progress')}
+                className={`pb-3 border-b-2 transition-all cursor-pointer ${
+                  drawerTab === 'progress'
                     ? 'border-indigo-600 text-indigo-700'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
+                }`}
               >
-                Delivery Progress & GPS Tracker
+                Delivery Timeline
               </button>
               <button
-                onClick={() => setDetailsTab('history')}
-                className={`pb-3 border-b-2 transition-all cursor-pointer ${detailsTab === 'history'
+                onClick={() => setDrawerTab('history')}
+                className={`pb-3 border-b-2 transition-all cursor-pointer ${
+                  drawerTab === 'history'
                     ? 'border-indigo-600 text-indigo-700'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
+                }`}
               >
-                Activity History Log ({selectedOrder.status_history?.length || 0})
+                Audit History ({selectedOrder.status_history?.length || 0})
               </button>
             </div>
 
             {/* Drawer Body Content */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-6 text-xs custom-scrollbar">
-              {/* TAB 1: OVERVIEW & PRODUCTS */}
-              {detailsTab === 'overview' && (
+            <div className="p-6 overflow-y-auto flex-1 space-y-5 text-xs">
+              {drawerTab === 'overview' && (
                 <>
-                  {/* Customer & Address Section */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Customer Information</div>
-                      <div className="text-sm font-extrabold text-slate-900">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Customer</div>
+                      <div className="font-extrabold text-slate-900">
                         {selectedOrder.customer?.first_name} {selectedOrder.customer?.last_name}
                       </div>
-                      <div className="flex items-center gap-2 text-slate-600 font-medium">
-                        <Phone className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{selectedOrder.customer?.user?.mobile || 'No mobile listed'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-600 font-medium">
-                        <Mail className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{selectedOrder.customer?.user?.email || 'N/A'}</span>
-                      </div>
+                      <div className="text-slate-600 font-mono">{selectedOrder.customer?.user?.mobile || 'N/A'}</div>
+                      <div className="text-slate-500 truncate">{selectedOrder.customer?.user?.email || 'N/A'}</div>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Delivery Address</div>
-                      <div className="text-xs font-bold text-slate-800 flex items-start gap-1.5">
-                        <MapPin className="w-4 h-4 text-cyan-600 shrink-0 mt-0.5" />
-                        <span>
-                          {selectedOrder.address?.building_number && `Building ${selectedOrder.address.building_number}, `}
-                          {selectedOrder.address?.street}, {selectedOrder.address?.area}, {selectedOrder.address?.city || 'Riyadh'}
-                        </span>
+                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Delivery Address</div>
+                      <div className="font-bold text-slate-800">
+                        {selectedOrder.address?.street || 'Delivery Address'}, {selectedOrder.address?.city || 'Riyadh'}
                       </div>
-                      <div className="text-[11px] text-slate-500 font-medium">
-                        Postal Code: {selectedOrder.address?.postal_code || '11564'}
-                      </div>
+                      <div className="text-slate-500">Postal: {selectedOrder.address?.postal_code || '11564'}</div>
                     </div>
                   </div>
 
-                  {/* Payment Info Card & Verification */}
-                  <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200 space-y-3">
+                  {/* Payment Card */}
+                  <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-indigo-700" />
-                        <span className="font-extrabold text-indigo-950 text-xs">Payment Information</span>
-                      </div>
+                      <span className="font-extrabold text-indigo-950">Payment Status</span>
                       {renderPaymentBadge(selectedOrder.payment)}
                     </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-slate-700">
+                    <div className="grid grid-cols-2 gap-2 text-slate-700 pt-1">
                       <div>
-                        <span className="text-[10px] text-slate-400 block font-semibold">Payment Method</span>
-                        <strong className="text-slate-900">Bank Transfer / Cash</strong>
+                        <span className="text-[10px] text-slate-400 block font-semibold">Method / Gateway</span>
+                        <strong className="text-slate-900">{selectedOrder.payment_method || selectedOrder.payment?.payment_method || 'COD'}</strong>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 block font-semibold">Bank Name</span>
-                        <strong className="text-slate-900">{selectedOrder.payment?.confirmation?.bank_name || 'Saudi National Bank'}</strong>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-400 block font-semibold">Transaction / Ref #</span>
-                        <strong className="text-slate-900 font-mono">{selectedOrder.payment?.confirmation?.payment_reference || 'REF-9876543'}</strong>
+                        <span className="text-[10px] text-slate-400 block font-semibold">Transaction ID</span>
+                        <strong className="text-slate-900 font-mono">{selectedOrder.payment?.transaction_id || 'PENDING'}</strong>
                       </div>
                     </div>
-
-                    {selectedOrder.payment?.status === 'SUBMITTED' && (
-                      <div className="pt-2 border-t border-indigo-200/80 flex items-center justify-between">
-                        <span className="text-[11px] font-extrabold text-blue-800">
-                          Proof file submitted by customer. Please verify to enable dispatch.
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleConfirmVerifyPayment(selectedOrder.payment.id)}
-                            disabled={submitting}
-                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all cursor-pointer shadow-xs"
-                          >
-                            Verify Payment
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Products Table */}
-                  <div className="space-y-3">
-                    <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">Ordered Products ({selectedOrder.items?.length || 0})</h3>
-                    <div className="border border-slate-200 rounded-2xl overflow-hidden">
-                      <table className="w-full text-left text-xs text-slate-600">
-                        <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 uppercase">
-                          <tr>
-                            <th className="px-4 py-3">Product Name</th>
-                            <th className="px-4 py-3">Price</th>
-                            <th className="px-4 py-3 text-center">Qty</th>
-                            <th className="px-4 py-3 text-right">Tax (15%)</th>
-                            <th className="px-4 py-3 text-right">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {(selectedOrder.items || []).map((item) => (
-                            <tr key={item.id}>
-                              <td className="px-4 py-3 font-bold text-slate-900">{item.product_name_en}</td>
-                              <td className="px-4 py-3 font-mono">{parseFloat(item.unit_price).toFixed(2)} SAR</td>
-                              <td className="px-4 py-3 font-mono font-bold text-center">{item.quantity}</td>
-                              <td className="px-4 py-3 font-mono text-right">{parseFloat(item.tax_amount || 0).toFixed(2)} SAR</td>
-                              <td className="px-4 py-3 font-mono font-bold text-right text-slate-900">{parseFloat(item.total_price).toFixed(2)} SAR</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  {/* Products */}
+                  <div className="space-y-2">
+                    <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">Ordered Products ({selectedOrder.items?.length || 0})</h3>
+                    <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                      {(selectedOrder.items || []).map((it) => (
+                        <div key={it.id} className="p-3 flex items-center justify-between">
+                          <div>
+                            <div className="font-bold text-slate-900">{it.product_name_en}</div>
+                            <div className="text-[11px] text-slate-500 font-mono">Qty: {it.quantity} × {parseFloat(it.unit_price).toFixed(2)} SAR</div>
+                          </div>
+                          <div className="font-mono font-bold text-slate-900">{parseFloat(it.total_price).toFixed(2)} SAR</div>
+                        </div>
+                      ))}
                     </div>
 
-                    {/* Total Breakdown Summary */}
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs text-right max-w-xs ml-auto font-medium">
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Subtotal:</span>
-                        <span className="font-mono">{parseFloat(selectedOrder.subtotal || 0).toFixed(2)} SAR</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">VAT (15%):</span>
-                        <span className="font-mono">{parseFloat(selectedOrder.tax_total || 0).toFixed(2)} SAR</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Delivery Charge:</span>
-                        <span className="font-mono">{parseFloat(selectedOrder.delivery_fee || 0).toFixed(2)} SAR</span>
-                      </div>
-                      {parseFloat(selectedOrder.discount_total || 0) > 0 && (
-                        <div className="flex justify-between text-emerald-600">
-                          <span>Discount:</span>
-                          <span className="font-mono">-{parseFloat(selectedOrder.discount_total).toFixed(2)} SAR</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-sm font-black text-slate-900 border-t border-slate-200 pt-2 mt-1">
-                        <span>Grand Total:</span>
-                        <span className="font-mono text-emerald-700">{parseFloat(selectedOrder.grand_total || 0).toFixed(2)} SAR</span>
-                      </div>
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center font-bold">
+                      <span>Grand Total:</span>
+                      <span className="font-mono text-emerald-700 text-sm">{parseFloat(selectedOrder.grand_total || 0).toFixed(2)} SAR</span>
                     </div>
                   </div>
                 </>
               )}
 
-              {/* TAB 2: DELIVERY PROGRESS & LIVE GPS TRACKING (Requirement 7) */}
-              {detailsTab === 'progress' && (
-                <div className="space-y-6">
-                  {/* 7-Stage Visual Timeline Progress */}
-                  <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-                    <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-indigo-600" />
-                      Visual Delivery Timeline
-                    </h3>
-
-                    <div className="relative pl-6 space-y-6 border-l-2 border-slate-200">
-                      {[
-                        { title: '1. Order Placed', statusKey: 'PENDING_PAYMENT' },
-                        { title: '2. Payment Verified', statusKey: 'PAYMENT_VERIFIED' },
-                        { title: '3. Processing Order', statusKey: 'PROCESSING' },
-                        { title: '4. Ready for Pickup', statusKey: 'READY_FOR_PICKUP' },
-                        { title: '5. Driver Assigned', statusKey: 'DRIVER_ASSIGNED' },
-                        { title: '6. Out for Delivery', statusKey: 'OUT_FOR_DELIVERY' },
-                        { title: '7. Order Delivered', statusKey: 'DELIVERED' },
-                      ].map((stage, idx) => {
-                        const historyMatch = (selectedOrder.status_history || []).find(h => h.to_status === stage.statusKey);
-                        const isCurrent = selectedOrder.order_status === stage.statusKey;
-                        const isPassed = !!historyMatch || isCurrent;
-
-                        return (
-                          <div key={idx} className="relative">
-                            <span className={`absolute -left-[31px] top-0 w-4 h-4 rounded-full border-2 ${isCurrent
-                                ? 'bg-indigo-600 border-white ring-4 ring-indigo-100 animate-pulse'
-                                : isPassed
-                                  ? 'bg-emerald-500 border-white'
-                                  : 'bg-slate-300 border-white'
-                              }`}></span>
-                            <div className="space-y-0.5">
-                              <div className={`font-black text-xs ${isCurrent ? 'text-indigo-700' : isPassed ? 'text-slate-900' : 'text-slate-400'}`}>
-                                {stage.title}
-                              </div>
-                              {historyMatch ? (
-                                <div className="text-[11px] text-slate-500 font-mono">
-                                  Completed at {new Date(historyMatch.createdAt).toLocaleString()} {historyMatch.notes && `• Note: ${historyMatch.notes}`}
-                                </div>
-                              ) : (
-                                <div className="text-[11px] text-slate-400 italic">Stage pending</div>
-                              )}
+              {drawerTab === 'progress' && (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                  <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">Visual Progress Timeline</h3>
+                  <div className="relative pl-5 space-y-5 border-l-2 border-slate-200">
+                    {[
+                      { title: 'Order Confirmed', key: 'CONFIRMED', alt: 'PAYMENT_VERIFIED' },
+                      { title: 'Processing Order', key: 'PROCESSING' },
+                      { title: 'Packed', key: 'PACKED' },
+                      { title: 'Driver Assigned', key: 'DRIVER_ASSIGNED', alt: 'DRIVER_ACCEPTED' },
+                      { title: 'Out for Delivery', key: 'OUT_FOR_DELIVERY', alt: 'ARRIVED' },
+                      { title: 'Delivered', key: 'DELIVERED' },
+                    ].map((st, i) => {
+                      const match = (selectedOrder.status_history || []).find((h) => h.to_status === st.key || (st.alt && h.to_status === st.alt));
+                      const isCurrent = selectedOrder.order_status === st.key || (st.alt && selectedOrder.order_status === st.alt);
+                      const isPassed = !!match || isCurrent;
+                      return (
+                        <div key={i} className="relative">
+                          <span className={`absolute -left-[27px] top-0 w-3.5 h-3.5 rounded-full border-2 ${
+                            isCurrent ? 'bg-indigo-600 border-white ring-2 ring-indigo-200 animate-pulse' : isPassed ? 'bg-emerald-500 border-white' : 'bg-slate-300 border-white'
+                          }`}></span>
+                          <div>
+                            <div className={`font-bold ${isCurrent ? 'text-indigo-700' : isPassed ? 'text-slate-900' : 'text-slate-400'}`}>
+                              {st.title}
                             </div>
+                            {match && <div className="text-[10px] text-slate-500 font-mono">{new Date(match.createdAt).toLocaleString()}</div>}
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Driver & GPS Live Tracker Card */}
-                  <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-4 shadow-xl">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                      <div className="flex items-center gap-2">
-                        <Navigation className="w-5 h-5 text-cyan-400 animate-pulse" />
-                        <h4 className="font-extrabold text-sm text-white">Live Driver GPS Radar Tracker</h4>
-                      </div>
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-500/40">
-                        GPS Active (35 km/h)
-                      </span>
-                    </div>
-
-                    {selectedOrder.delivery?.driver ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                        <div className="space-y-1">
-                          <span className="text-slate-400 text-[10px] uppercase font-bold block">Assigned Driver</span>
-                          <div className="font-extrabold text-white text-sm">{selectedOrder.delivery.driver.user?.email}</div>
-                          <div className="text-slate-400 font-mono">Phone: {selectedOrder.delivery.driver.user?.mobile || 'N/A'}</div>
                         </div>
-
-                        <div className="space-y-1 font-mono text-slate-300">
-                          <div>Latitude: <strong className="text-cyan-400">24.7136 N</strong></div>
-                          <div>Longitude: <strong className="text-cyan-400">46.6753 E</strong></div>
-                          <div>Target ETA: <strong className="text-emerald-400">18 minutes</strong></div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-slate-400">
-                        No active driver assigned to this order yet.
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* TAB 3: COMPLETE ORDER HISTORY AUDIT LOG (Requirement 9) */}
-              {detailsTab === 'history' && (
-                <div className="space-y-4">
-                  <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-purple-600" />
-                    Chronological Activity Audit Log
-                  </h3>
-
-                  {(selectedOrder.status_history || []).length === 0 ? (
-                    <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-200">
-                      No status history recorded yet.
+              {drawerTab === 'history' && (
+                <div className="space-y-2.5">
+                  {(selectedOrder.status_history || []).map((h) => (
+                    <div key={h.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                      <div className="flex justify-between font-bold text-slate-900">
+                        <span>{h.from_status ? `${h.from_status} → ${h.to_status}` : `Initialized: ${h.to_status}`}</span>
+                        <span className="font-mono text-slate-400 text-[10px]">{new Date(h.createdAt).toLocaleTimeString()}</span>
+                      </div>
+                      {h.notes && <p className="text-slate-600">{h.notes}</p>}
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {(selectedOrder.status_history || []).map((hist) => (
-                        <div key={hist.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-black text-slate-900 text-xs">
-                              {hist.from_status ? `${hist.from_status} → ${hist.to_status}` : `Initialized: ${hist.to_status}`}
-                            </span>
-                            <span className="text-[11px] font-mono text-slate-400">{new Date(hist.createdAt).toLocaleString()}</span>
-                          </div>
-                          {hist.notes && <p className="text-slate-600 text-xs">{hist.notes}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* Drawer Footer Actions */}
+            {/* Drawer Footer */}
             <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/90">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => { setAssignModalOrder(selectedOrder); setAssignDriverId(selectedOrder.delivery?.driver_id || ''); }}
-                  className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold transition-all cursor-pointer"
-                >
-                  Assign Driver
-                </button>
-                <button
-                  onClick={() => { setStatusModalOrder(selectedOrder); setTargetStatus(selectedOrder.order_status); }}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all cursor-pointer"
-                >
-                  Update Status
-                </button>
-              </div>
-
+              <Link
+                href={`/admin/orders/${selectedOrder.id}`}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
+              >
+                Go to Dedicated Page
+              </Link>
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="px-5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs"
               >
-                Close Drawer
+                Close Preview
               </button>
             </div>
           </div>
@@ -1139,7 +1168,7 @@ export default function AdminOrdersPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 5. ASSIGN DRIVER MODAL */}
+      {/* ASSIGN DRIVER MODAL (Requirement 5) */}
       {/* ========================================================================= */}
       {assignModalOrder && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -1155,27 +1184,27 @@ export default function AdminOrdersPage() {
 
             <form onSubmit={handleConfirmAssignDriver} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-600 font-bold mb-1.5">Select Available Driver *</label>
+                <label className="block text-slate-600 font-bold mb-1.5">Select Available Delivery Driver *</label>
                 <select
                   value={assignDriverId}
                   onChange={(e) => setAssignDriverId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 outline-hidden"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 outline-hidden cursor-pointer"
                   required
                 >
                   <option value="">-- Choose active driver --</option>
                   {drivers.map((drv) => (
                     <option key={drv.id} value={drv.id}>
-                      {drv.user?.email} ({drv.availability_status || 'OFFLINE'}) - License: {drv.license_number}
+                      {drv.user?.email} ({drv.availability_status || 'AVAILABLE'}) - Mobile: {drv.user?.mobile || 'N/A'}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-slate-600 font-bold mb-1.5">Reassignment / Dispatch Notes (Optional)</label>
+                <label className="block text-slate-600 font-bold mb-1.5">Reassignment / Dispatch Remarks</label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. Dispatched for express delivery"
+                  placeholder="e.g. Assigned for express delivery"
                   value={assignReason}
                   onChange={(e) => setAssignReason(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 outline-hidden"
@@ -1186,14 +1215,14 @@ export default function AdminOrdersPage() {
                 <button
                   type="button"
                   onClick={() => setAssignModalOrder(null)}
-                  className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200"
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-black shadow-md shadow-cyan-500/20"
+                  className="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-black shadow-md shadow-cyan-500/20 cursor-pointer"
                 >
                   {submitting ? 'Assigning...' : 'Confirm Assignment'}
                 </button>
@@ -1204,7 +1233,7 @@ export default function AdminOrdersPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 6. UPDATE STATUS MODAL */}
+      {/* UPDATE STATUS MODAL (Requirement 6) */}
       {/* ========================================================================= */}
       {statusModalOrder && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -1224,24 +1253,27 @@ export default function AdminOrdersPage() {
                 <select
                   value={targetStatus}
                   onChange={(e) => setTargetStatus(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-extrabold focus:border-indigo-500 outline-hidden"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-extrabold focus:border-indigo-500 outline-hidden cursor-pointer"
                   required
                 >
-                  <option value="PENDING_PAYMENT">PENDING_PAYMENT</option>
-                  <option value="PAYMENT_SUBMITTED">PAYMENT_SUBMITTED</option>
-                  <option value="PAYMENT_VERIFIED">PAYMENT_VERIFIED</option>
-                  <option value="DRIVER_ASSIGNED">DRIVER_ASSIGNED</option>
-                  <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
+                  <option value="PENDING_PAYMENT">PENDING (Pending Payment)</option>
+                  <option value="CONFIRMED">CONFIRMED (Payment Verified)</option>
+                  <option value="PROCESSING">PROCESSING</option>
+                  <option value="PACKED">PACKED</option>
+                  <option value="DRIVER_ASSIGNED">DRIVER ASSIGNED</option>
+                  <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
                   <option value="DELIVERED">DELIVERED</option>
+                  <option value="DELIVERY_FAILED">DELIVERY FAILED</option>
+                  <option value="RETURNED">RETURNED</option>
                   <option value="CANCELLED">CANCELLED</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-slate-600 font-bold mb-1.5">Status Update Note / Cancellation Reason</label>
+                <label className="block text-slate-600 font-bold mb-1.5">Status Update Remarks / Notes</label>
                 <textarea
                   rows={2}
-                  placeholder="Enter reason or audit note..."
+                  placeholder="Enter remarks or reason for update..."
                   value={statusNote}
                   onChange={(e) => setStatusNote(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 outline-hidden"
@@ -1252,14 +1284,14 @@ export default function AdminOrdersPage() {
                 <button
                   type="button"
                   onClick={() => setStatusModalOrder(null)}
-                  className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200"
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-md shadow-indigo-500/20"
+                  className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-md shadow-indigo-500/20 cursor-pointer"
                 >
                   {submitting ? 'Updating...' : 'Update Status'}
                 </button>
@@ -1270,7 +1302,7 @@ export default function AdminOrdersPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 4. PAYMENT VERIFICATION / REJECTION MODAL */}
+      {/* VERIFY PAYMENT MODAL (Requirement 4) */}
       {/* ========================================================================= */}
       {paymentModalOrder && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -1285,20 +1317,44 @@ export default function AdminOrdersPage() {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 font-medium">
-                <div>Bank Name: <strong>{paymentModalOrder.payment?.confirmation?.bank_name || 'Saudi National Bank'}</strong></div>
-                <div>Reference ID: <strong className="font-mono">{paymentModalOrder.payment?.confirmation?.payment_reference || 'REF-876543'}</strong></div>
-                <div>Amount: <strong className="font-mono text-emerald-700">{parseFloat(paymentModalOrder.grand_total || 0).toFixed(2)} SAR</strong></div>
+              <div className="p-3 bg-indigo-50/70 rounded-xl border border-indigo-200 space-y-1">
+                <div>Amount to Verify: <strong className="font-mono text-emerald-700">{parseFloat(paymentModalOrder.grand_total || 0).toFixed(2)} SAR</strong></div>
+                <div>Current Payment Status: <strong>{paymentModalOrder.payment?.status || 'PENDING'}</strong></div>
               </div>
 
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Rejection Reason (If rejecting)</label>
+                <label className="block text-slate-600 font-bold mb-1">Select Gateway / Method</label>
+                <select
+                  value={verifyGateway}
+                  onChange={(e) => setVerifyGateway(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold outline-hidden cursor-pointer"
+                >
+                  <option value="Razorpay">Razorpay Gateway</option>
+                  <option value="Cashfree">Cashfree Gateway</option>
+                  <option value="Bank Transfer">Bank Transfer / Manual Slip</option>
+                  <option value="COD">Cash on Delivery (COD)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Transaction ID / Reference Number</label>
                 <input
                   type="text"
-                  placeholder="e.g. Invalid transaction reference"
+                  placeholder="e.g. pay_Rzp827361 or REF-987654"
+                  value={verifyTxnId}
+                  onChange={(e) => setVerifyTxnId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-mono outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Rejection Reason (If rejecting payment)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Invalid reference / payment unverified"
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 outline-hidden"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 outline-hidden"
                 />
               </div>
 
@@ -1307,17 +1363,17 @@ export default function AdminOrdersPage() {
                   type="button"
                   onClick={handleConfirmRejectPayment}
                   disabled={submitting || !rejectionReason.trim()}
-                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold disabled:opacity-40"
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold disabled:opacity-40 cursor-pointer"
                 >
                   Reject Payment
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleConfirmVerifyPayment(paymentModalOrder.payment?.id)}
+                  onClick={handleConfirmVerifyPayment}
                   disabled={submitting}
-                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black shadow-md shadow-emerald-500/20"
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black shadow-md shadow-emerald-500/20 cursor-pointer"
                 >
-                  Verify & Confirm
+                  {submitting ? 'Verifying...' : 'Verify & Mark Paid'}
                 </button>
               </div>
             </div>

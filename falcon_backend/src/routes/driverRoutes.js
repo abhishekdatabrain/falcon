@@ -12,5 +12,7 @@ router.post('/deliveries/:deliveryId/accept', (req, res, next) => driverControll
 router.post('/deliveries/:deliveryId/status', (req, res, next) => driverController.updateDeliveryStatus(req, res, next));
 router.put('/availability', (req, res, next) => driverController.updateAvailability(req, res, next));
 router.post('/gps-location', (req, res, next) => driverController.logGpsLocation(req, res, next));
+router.put('/profile', (req, res, next) => driverController.updateProfile(req, res, next));
+router.put('/change-password', (req, res, next) => driverController.changePassword(req, res, next));
 
 module.exports = router;

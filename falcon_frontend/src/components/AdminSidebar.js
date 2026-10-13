@@ -43,13 +43,23 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
       ],
     },
     {
+      key: 'homepage_cms',
+      title: locale === 'ar' ? 'إدارة الصفحة الرئيسية (CMS)' : 'Homepage CMS',
+      isExpandable: true,
+      items: [
+        { href: '/admin/homepage-cms', label: locale === 'ar' ? 'إدارة الصفحة الرئيسية' : 'Homepage Management', icon: LayoutDashboard },
+        { href: '/admin/hero-banners', label: locale === 'ar' ? 'شريط البانر الرئيسي' : 'Hero Banners', icon: Sparkles },
+        { href: '/admin/promo-banners', label: locale === 'ar' ? 'البطاقات الترويجية' : 'Promotional Cards', icon: LayoutDashboard },
+        { href: '/admin/category-sections', label: locale === 'ar' ? 'معرض الفئات' : 'Category Showcase', icon: FolderTree },
+      ],
+    },
+    {
       key: 'catalog',
       title: locale === 'ar' ? 'إدارة الكتالوج والمخزون' : 'Catalog & Inventory',
       isExpandable: true,
       items: [
         { href: '/admin/products', label: locale === 'ar' ? 'إدارة المنتجات' : 'Product Management', icon: ShoppingBag },
         { href: '/admin/categories', label: locale === 'ar' ? 'إدارة الأقسام والتصنيفات' : 'Category Management', icon: FolderTree },
-        { href: '/admin/hero-banners', label: locale === 'ar' ? 'إدارة البنرات والهيرو' : 'Hero Banners', icon: Sparkles },
       ],
     },
     {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import { fetchApi, getImageUrl } from '../../../src/services/api';
@@ -267,6 +268,19 @@ export default function AdminHeroBannersPage() {
           <Plus className="w-5 h-5" />
           <span>{locale === 'ar' ? 'إضافة شريحة جديد' : 'Add New Slide'}</span>
         </button>
+      </div>
+
+      {/* Switcher Tabs to Jump between Hero Banners and Promotional Cards */}
+      <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 max-w-md">
+        <span className="flex-1 py-2 text-center text-xs font-extrabold bg-white text-slate-900 rounded-xl shadow-xs border border-slate-200/80">
+          {locale === 'ar' ? 'سلايدر الهيرو الرئيسي' : 'Hero Carousel Banners'}
+        </span>
+        <Link
+          href="/admin/promo-banners"
+          className="flex-1 py-2 text-center text-xs font-bold text-slate-600 hover:text-slate-900 transition-all rounded-xl"
+        >
+          {locale === 'ar' ? 'البطاقات الترويجية الثلاثية' : 'Promotional Cards (3 Grid)'}
+        </Link>
       </div>
 
       {/* Hero Banners Grid / List */}

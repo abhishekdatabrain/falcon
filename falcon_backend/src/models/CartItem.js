@@ -25,6 +25,15 @@ const CartItem = sequelize.define('CartItem', {
     },
     onDelete: 'CASCADE',
   },
+  variant_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'product_variants',
+      key: 'id',
+    },
+    onDelete: 'CASCADE',
+  },
   quantity: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -37,6 +46,7 @@ const CartItem = sequelize.define('CartItem', {
   indexes: [
     { fields: ['cart_id'] },
     { fields: ['product_id'] },
+    { fields: ['variant_id'] },
   ],
 });
 

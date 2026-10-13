@@ -56,13 +56,25 @@ function ProductsCatalogContent() {
   const [priceRange, setPriceRange] = useState(150);
   const [minPrice, setMinPrice] = useState(5);
   const [selectedBrands, setSelectedBrands] = useState([]);
+  const [availableBrands, setAvailableBrands] = useState([]);
+  const sortParam = searchParams.get('sort') || searchParams.get('sortBy') || 'featured';
+  const [sortOption, setSortOption] = useState(sortParam);
+
+  // Dynamic Pagination State
+  const pageParam = parseInt(searchParams.get('page') || '1', 10);
+  const [currentPage, setCurrentPage] = useState(pageParam || 1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     if (categoryIdParam !== selectedCategory) setSelectedCategory(categoryIdParam);
     if (subcategoryIdParam !== selectedSubcategory) setSelectedSubcategory(subcategoryIdParam);
     if (subSubcategoryIdParam !== selectedSubSubcategory) setSelectedSubSubcategory(subSubcategoryIdParam);
     if (subSubSubcategoryIdParam !== selectedSubSubSubcategory) setSelectedSubSubSubcategory(subSubSubcategoryIdParam);
-  }, [categoryIdParam, subcategoryIdParam, subSubcategoryIdParam, subSubSubcategoryIdParam]);
+    if (pageParam && pageParam !== currentPage) setCurrentPage(pageParam);
+    if (sortParam && sortParam !== sortOption) setSortOption(sortParam);
+  }, [categoryIdParam, subcategoryIdParam, subSubcategoryIdParam, subSubSubcategoryIdParam, pageParam, sortParam]);
 
   const loadCategories = async () => {
     try {
@@ -78,7 +90,7 @@ function ProductsCatalogContent() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      let query = `/products?limit=50&search=${encodeURIComponent(search)}`;
+      let query = `/products?page=${currentPage}&limit=${itemsPerPage}&search=${encodeURIComponent(search)}`;
       if (selectedCategory) query += `&categoryId=${selectedCategory}`;
       if (selectedSubcategory) query += `&subcategoryId=${selectedSubcategory}`;
       if (selectedSubSubcategory) query += `&subSubcategoryId=${selectedSubSubcategory}`;
@@ -87,16 +99,36 @@ function ProductsCatalogContent() {
       if (minPrice !== undefined && minPrice !== null && minPrice !== '') query += `&minPrice=${minPrice}`;
       if (priceRange !== undefined && priceRange !== null && priceRange !== '') query += `&maxPrice=${priceRange}`;
 
+      if (selectedBrands.length > 0) {
+        query += `&brands=${encodeURIComponent(selectedBrands.join(','))}`;
+      }
+
+      query += `&sort=${encodeURIComponent(sortOption)}`;
+
       const res = await fetchApi(query);
       if (res.success && res.data) {
         const fetched = res.data.products?.products || res.data.products || (Array.isArray(res.data) ? res.data : []);
         setProducts(fetched);
+        if (res.data.pagination) {
+          setTotalItems(res.data.pagination.total ?? 0);
+          setTotalPages(res.data.pagination.totalPages ?? 1);
+        } else {
+          setTotalItems(fetched.length);
+          setTotalPages(1);
+        }
+        if (Array.isArray(res.data.brands)) {
+          setAvailableBrands(res.data.brands);
+        }
       } else {
         setProducts([]);
+        setTotalItems(0);
+        setTotalPages(1);
       }
     } catch (err) {
       console.error('API product load error:', err);
       setProducts([]);
+      setTotalItems(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -106,12 +138,47 @@ function ProductsCatalogContent() {
     loadCategories();
   }, []);
 
+  // When filters, brands or search change, reset page back to 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, selectedSubcategory, selectedSubSubcategory, selectedSubSubSubcategory, search, minPrice, priceRange, sortOption, selectedBrands]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       loadProducts();
     }, 250);
     return () => clearTimeout(timer);
-  }, [selectedCategory, selectedSubcategory, selectedSubSubcategory, selectedSubSubSubcategory, search, minPrice, priceRange]);
+  }, [selectedCategory, selectedSubcategory, selectedSubSubcategory, selectedSubSubSubcategory, search, minPrice, priceRange, sortOption, selectedBrands, currentPage, itemsPerPage]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages || newPage === currentPage) return;
+    setCurrentPage(newPage);
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set('page', newPage);
+    router.push(`/products?${newParams.toString()}`, { scroll: false });
+
+    // Smooth scroll to catalog main view
+    const mainElem = document.getElementById('products-catalog-main');
+    if (mainElem) {
+      mainElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 4) {
+        pages.push(1, 2, 3, 4, 5, '...', totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   const displayCategoryTree = useMemo(() => {
     if (!categories || categories.length === 0) {
@@ -237,7 +304,7 @@ function ProductsCatalogContent() {
     newParams.delete('category');
     newParams.delete('sub');
 
-    router.push(`/products?${newParams.toString()}`);
+    router.push(`/products?${newParams.toString()}`, { scroll: false });
   };
 
   const renderCategoryNode = (node, level = 1) => {
@@ -363,6 +430,15 @@ function ProductsCatalogContent() {
     );
   };
 
+  const toggleBrand = (brandName) => {
+    setSelectedBrands((prev) => {
+      const next = prev.includes(brandName)
+        ? prev.filter((b) => b !== brandName)
+        : [...prev, brandName];
+      return next;
+    });
+  };
+
   const resetAllFilters = () => {
     setActiveFilterChip('ALL');
     setSelectedCategory('');
@@ -371,7 +447,9 @@ function ProductsCatalogContent() {
     setSelectedSubSubSubcategory('');
     setMinPrice(5);
     setPriceRange(200);
-    router.push('/products');
+    setSelectedBrands([]);
+    setCurrentPage(1);
+    router.push('/products', { scroll: false });
   };
 
   const getCartItem = (productId) => {
@@ -532,14 +610,25 @@ function ProductsCatalogContent() {
 
           {/* Right Items Count & Sort Selector */}
           <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 shrink-0 self-end sm:self-auto">
-            <span>{locale === 'ar' ? 'عرض ١٤٨ منتج' : 'Showing 148 items'}</span>
+            <span>{locale === 'ar' ? `عرض ${totalItems} منتج` : `Showing ${totalItems} items`}</span>
             <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
               <span className="text-slate-400">{locale === 'ar' ? 'ترتيب حسب:' : 'Sort By:'}</span>
-              <select className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer">
-                <option>{locale === 'ar' ? 'المميزة' : 'Featured'}</option>
-                <option>{locale === 'ar' ? 'السعر: من الأقل' : 'Price: Low to High'}</option>
-                <option>{locale === 'ar' ? 'السعر: من الأعلى' : 'Price: High to Low'}</option>
-                <option>{locale === 'ar' ? 'الأعلى تقييماً' : 'Highest Rated'}</option>
+              <select
+                value={sortOption}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSortOption(val);
+                  const newParams = new URLSearchParams(searchParams.toString());
+                  newParams.set('sort', val);
+                  newParams.set('page', '1');
+                  router.push(`/products?${newParams.toString()}`, { scroll: false });
+                }}
+                className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer"
+              >
+                <option value="featured">{locale === 'ar' ? 'المميزة' : 'Featured'}</option>
+                <option value="price_asc">{locale === 'ar' ? 'السعر: من الأقل' : 'Price: Low to High'}</option>
+                <option value="price_desc">{locale === 'ar' ? 'السعر: من الأعلى' : 'Price: High to Low'}</option>
+                <option value="rating">{locale === 'ar' ? 'الأعلى تقييماً' : 'Highest Rated'}</option>
               </select>
             </div>
           </div>
@@ -640,7 +729,7 @@ function ProductsCatalogContent() {
           </div>
 
           {/* 4. Dietary & Harvest Type */}
-          <div className="space-y-3 pt-3 border-t border-slate-100">
+          {/* <div className="space-y-3 pt-3 border-t border-slate-100">
             <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
               {locale === 'ar' ? 'نوع الحصاد' : 'Dietary & Harvest Type'}
             </h4>
@@ -661,68 +750,106 @@ function ProductsCatalogContent() {
                 </label>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* 5. Trusted Farm Brands */}
-          <div className="space-y-3 pt-3 border-t border-slate-100">
-            <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
-              {locale === 'ar' ? 'العلامات التجارية الموثوقة' : 'Trusted Farm Brands'}
-            </h4>
+          <div className="space-y-3 pt-3 border-t border-slate-100 font-sans">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
+                {locale === 'ar' ? 'العلامات التجارية الموثوقة' : 'Trusted Farm Brands'}
+              </h4>
+              {selectedBrands.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedBrands([])}
+                  className="text-[10px] text-emerald-700 font-bold hover:underline cursor-pointer"
+                >
+                  {locale === 'ar' ? 'إعادة ضبط' : 'Clear'}
+                </button>
+              )}
+            </div>
             <div className="space-y-2 text-xs font-medium text-slate-700">
-              {[
-                { name: 'FreshKart Organic Farms', count: 41 },
-                { name: 'Almarai / Al Kabeer', count: 35 },
-                { name: 'NADEC Foods', count: 28 },
-                { name: 'Sunbulah / Hayat', count: 19 },
-                { name: 'Emirates Selection', count: 11 },
-              ].map((brand, idx) => (
-                <label key={idx} className="flex items-center justify-between hover:text-[#043927] cursor-pointer">
-                  <div className="flex items-center gap-2.5">
-                    <input
-                      type="checkbox"
-                      defaultChecked={selectedBrands.includes(brand.name)}
-                      className="w-4 h-4 rounded border-slate-300 text-[#043927]"
-                    />
-                    <span>{brand.name}</span>
-                  </div>
-                  <span className="text-slate-400 text-[11px]">({brand.count})</span>
-                </label>
-              ))}
+              {(() => {
+                // If DB has brands, use DB brands; otherwise fallback to default list
+                const displayBrands = (availableBrands && availableBrands.length > 0)
+                  ? availableBrands
+                  : [
+                      { name: 'FreshKart Organic Farms', count: 41 },
+                      { name: 'Almarai / Al Kabeer', count: 35 },
+                      { name: 'NADEC Foods', count: 28 },
+                      { name: 'Sunbulah / Hayat', count: 19 },
+                      { name: 'Emirates Selection', count: 11 },
+                    ];
+
+                return displayBrands.map((brand, idx) => {
+                  const isChecked = selectedBrands.includes(brand.name);
+                  return (
+                    <label
+                      key={idx}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleBrand(brand.name);
+                      }}
+                      className={`flex items-center justify-between transition-colors cursor-pointer select-none py-0.5 ${
+                        isChecked ? 'text-[#043927] font-bold' : 'text-slate-700 hover:text-[#043927]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${
+                            isChecked
+                              ? 'bg-[#043927] border-[#043927] text-white shadow-2xs'
+                              : 'border-slate-300 bg-white hover:border-[#043927]'
+                          }`}
+                        >
+                          {isChecked && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                        </div>
+                        <span className="text-xs">{brand.name}</span>
+                      </div>
+                      <span className="text-slate-400 text-[11px] font-normal">({brand.count})</span>
+                    </label>
+                  );
+                });
+              })()}
             </div>
           </div>
 
           {/* 6. Customer Ratings */}
-          <div className="space-y-3 pt-3 border-t border-slate-100">
-            <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
-              {locale === 'ar' ? 'تقييم العملاء' : 'Customer Ratings'}
-            </h4>
-            <div className="space-y-2 text-xs font-medium text-slate-700">
-              <label className="flex items-center gap-2 cursor-pointer text-amber-500 font-bold">
-                <input type="radio" name="rating" defaultChecked className="w-4 h-4 text-[#043927]" />
-                <span className="flex items-center gap-1">
-                  <span>★★★★☆</span>
-                  <span className="text-slate-700 font-semibold">4.0 & Up (112)</span>
-                </span>
-              </label>
-            </div>
-          </div>
+        
 
         </aside>
 
         {/* RIGHT MAIN CONTENT AREA: 4-Column Product Cards Grid (9 Columns) */}
-        <main className="lg:col-span-9 w-full space-y-6">
+        <main id="products-catalog-main" className="lg:col-span-9 w-full space-y-6">
 
           {/* Product Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-4.5">
             {products.map((prod) => {
               const isWish = isInWishlist(prod.id);
-const currentPrice = parseFloat(prod.price);
+              const currentPrice = parseFloat(prod.price || 0);
+              let finalPrice = currentPrice;
+              let originalPrice = null;
+              const hasVariants = Boolean(prod.has_variants && prod.variants && prod.variants.length > 0);
+
+              if (hasVariants) {
+                const activeVariants = prod.variants.filter((v) => v.is_active !== false);
+                const varsToUse = activeVariants.length > 0 ? activeVariants : prod.variants;
+                const prices = varsToUse
+                  .map((v) => parseFloat(v.discount_price || v.price))
+                  .filter((p) => !isNaN(p) && p > 0);
+                if (prices.length > 0) {
+                  finalPrice = Math.min(...prices);
+                }
+              } else {
                 const isDiscounted = prod.discount_price && parseFloat(prod.discount_price) < currentPrice;
-                const finalPrice = isDiscounted ? parseFloat(prod.discount_price) : currentPrice;
-                const originalPrice = isDiscounted ? currentPrice : (prod.purchase_price ? parseFloat(prod.purchase_price) : null);
+                finalPrice = isDiscounted ? parseFloat(prod.discount_price) : currentPrice;
+                originalPrice = isDiscounted ? currentPrice : (prod.purchase_price ? parseFloat(prod.purchase_price) : null);
+              }
+
               return (
                 <div
                   key={prod.id}
+                  onClick={() => router.push(`/products/${prod.id}`)}
                   className="group bg-white rounded-2xl border border-slate-200/90 hover:border-[#05A764] shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer h-full"
                 >
                   {/* Top Badges */}
@@ -737,7 +864,7 @@ const currentPrice = parseFloat(prod.price);
                       }`}
                     >
                       <Star className="w-2.5 h-2.5 fill-current text-white" />
-                      <span>{prod.badge || 'BEST SELLER'}</span>
+                      <span>{prod.badge || (hasVariants ? (locale === 'ar' ? 'متعدد الأحجام' : 'MULTI-PACK') : 'BEST SELLER')}</span>
                     </span>
 
                     <button
@@ -768,9 +895,16 @@ const currentPrice = parseFloat(prod.price);
                       {/* Weight Tag & Rating Row */}
                       <div className="flex items-center justify-between text-[11px] font-medium mb-1.5 gap-1">
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="bg-slate-100 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded-md inline-block shrink-0">
-                            {prod.unit || '400g Tray'}
-                          </span>
+                          {hasVariants ? (
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-md inline-flex items-center gap-1 shrink-0">
+                              <Zap className="w-2.5 h-2.5 text-amber-500" />
+                              {prod.variants.length} {locale === 'ar' ? 'خيارات' : 'Options'}
+                            </span>
+                          ) : (
+                            <span className="bg-slate-100 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded-md inline-block shrink-0">
+                              {prod.unit || (prod.unit_value && prod.unit_type ? `${prod.unit_value} ${prod.unit_type}` : '400g Tray')}
+                            </span>
+                          )}
                           {prod.brand_en && (
                             <span className="text-slate-400 truncate uppercase font-bold text-[10px]">
                               {prod.brand_en}
@@ -797,17 +931,33 @@ const currentPrice = parseFloat(prod.price);
                             <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
                             {finalPrice.toFixed(2)}
                           </span>
-                          {originalPrice && (
+                          {!hasVariants && originalPrice && (
                             <span className="text-[10px] text-slate-400 line-through font-normal whitespace-nowrap">
                               SAR {originalPrice.toFixed(2)}
                             </span>
                           )}
                         </div>
-                       
                       </div>
 
-                      {/* Quantity Counter or Add to Cart Button */}
+                      {/* Quantity Counter, Select Options, or Add to Cart Button */}
                       {(() => {
+                        if (hasVariants) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                router.push(`/products/${prod.id}`);
+                              }}
+                              className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#00B074] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                              <Zap className="w-3.5 h-3.5 text-amber-300" />
+                              <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
+                            </button>
+                          );
+                        }
+
                         const cartItem = getCartItem(prod.id);
                         const inCart = cartItem && cartItem.quantity > 0;
                         const isBusy = addingId === prod.id || actionId === prod.id;
@@ -832,12 +982,7 @@ const currentPrice = parseFloat(prod.price);
                                 className="w-6.5 h-6.5 rounded-lg bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
                                 title={cartItem.quantity === 1 ? (locale === 'ar' ? 'حذف' : 'Remove') : (locale === 'ar' ? 'إنقاص' : 'Decrease')}
                               >
-                                {cartItem.quantity === 1 ? (
-                                  <Minus className="w-3 h-3 stroke-[2.5]" />
-                                  
-                                ) : (
-                                  <Minus className="w-3 h-3 stroke-[2.5]" />
-                                )}
+                                <Minus className="w-3 h-3 stroke-[2.5]" />
                               </button>
 
                               <span className="flex-1 text-center text-xs font-black text-slate-900 font-sans select-none">
@@ -874,7 +1019,7 @@ const currentPrice = parseFloat(prod.price);
                               handleAddToCart(prod.id, prod);
                             }}
                             disabled={isBusy}
-                            className="h-8 w-full rounded-xl bg-[#00B074] hover:bg-[#009663] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all hover:scale-[1.01] cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
+                            className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all hover:scale-[1.01] cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
                           >
                             {isBusy ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -898,35 +1043,70 @@ const currentPrice = parseFloat(prod.price);
           {/* Pagination & Item Controls Bar */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4 font-sans text-xs">
             <span className="text-slate-500 font-medium">
-              {locale === 'ar' ? 'عرض ١ - ١٢ من أصل ١٤٨ منتج' : 'Showing 1 - 12 of 148 items'}
+              {totalItems === 0
+                ? (locale === 'ar' ? 'لا توجد منتجات' : 'No items found')
+                : (locale === 'ar'
+                    ? `عرض ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, totalItems)} من أصل ${totalItems} منتج`
+                    : `Showing ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} items`)}
             </span>
 
-            {/* Pagination Buttons */}
-            <div className="flex items-center gap-1.5">
-              <button className="w-8 h-8 rounded-lg border border-slate-200 text-slate-400 flex items-center justify-center hover:bg-slate-50 cursor-pointer">
-                ‹
-              </button>
-              <button className="w-8 h-8 rounded-lg bg-[#043927] text-white font-bold flex items-center justify-center shadow-2xs">
-                1
-              </button>
-              <button className="w-8 h-8 rounded-lg border border-slate-200 text-slate-700 font-bold flex items-center justify-center hover:bg-slate-50 cursor-pointer">
-                2
-              </button>
-              <button className="w-8 h-8 rounded-lg border border-slate-200 text-slate-700 font-bold flex items-center justify-center hover:bg-slate-50 cursor-pointer">
-                3
-              </button>
-              <span className="px-1 text-slate-400">...</span>
-              <button className="w-8 h-8 rounded-lg border border-slate-200 text-slate-700 font-bold flex items-center justify-center hover:bg-slate-50 cursor-pointer">
-                13
-              </button>
-              <button className="w-8 h-8 rounded-lg border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 cursor-pointer">
-                ›
-              </button>
-            </div>
+            {/* Server-Side Pagination Buttons */}
+            {totalItems > 0 && (
+              <div className="flex items-center gap-1.5">
+                {/* Previous Button */}
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                  className="w-8 h-8 rounded-lg border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Previous Page"
+                >
+                  <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
+                </button>
+
+                {/* Page Numbers */}
+                {getPageNumbers().map((p, pIdx) => {
+                  if (p === '...') {
+                    return (
+                      <span key={`dots-${pIdx}`} className="px-1 text-slate-400 font-bold select-none">
+                        ...
+                      </span>
+                    );
+                  }
+
+                  const isActive = p === currentPage;
+                  return (
+                    <button
+                      key={`page-${p}`}
+                      type="button"
+                      onClick={() => handlePageChange(p)}
+                      className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-[#043927] text-white shadow-2xs'
+                          : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+
+                {/* Next Button */}
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  className="w-8 h-8 rounded-lg border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Next Page"
+                >
+                  <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Bottom Trust Feature Cards (3 Columns) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 font-sans">
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 font-sans">
             <div className="bg-[#F0FDF4] p-4.5 rounded-2xl border border-emerald-100 flex items-start gap-3 shadow-2xs">
               <div className="w-10 h-10 rounded-xl bg-[#05A764] text-white flex items-center justify-center shrink-0">
                 <ShieldCheck className="w-5 h-5" />
@@ -962,7 +1142,7 @@ const currentPrice = parseFloat(prod.price);
                 </p>
               </div>
             </div>
-          </div>
+          </div> */}
 
         </main>
 

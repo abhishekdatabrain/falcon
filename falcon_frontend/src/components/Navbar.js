@@ -50,8 +50,8 @@ export default function Navbar() {
       .catch(() => { });
   }, []);
 
-  // Hide Navbar on Admin pages
-  if (pathname?.startsWith('/admin')) {
+  // Hide Navbar on Admin and Driver pages
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/driver')) {
     return null;
   }
 

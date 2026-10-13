@@ -96,6 +96,7 @@ export const CartProvider = ({ children }) => {
               method: 'POST',
               body: JSON.stringify({
                 productId: item.productId || item.product_id,
+                variantId: item.variantId || item.variant_id || null,
                 quantity: item.quantity || 1,
               }),
             });
@@ -147,12 +148,13 @@ export const CartProvider = ({ children }) => {
       ? pData.img || pData.image || (pData.images && (typeof pData.images[0] === 'string' ? pData.images[0] : pData.images[0]?.image_url)) || pData.image_url
       : null;
     const finalImg = typeof img === 'string' ? img : img?.image_url;
+    const variantId = pData?.variant_id || pData?.variantId || null;
 
     // GUEST USER (Not logged in)
     if (!user || user.role !== 'CUSTOMER') {
       const guestItems = getGuestItems();
       const existingIdx = guestItems.findIndex(
-        (it) => it.productId === productId || it.product_id === productId || it.id === productId || it.id === `guest-${productId}`
+        (it) => (it.productId === productId || it.product_id === productId) && String(it.variantId || '') === String(variantId || '')
       );
 
       const parsedPrice = parseFloat(pData?.price || 0);
@@ -161,12 +163,16 @@ export const CartProvider = ({ children }) => {
       if (existingIdx > -1) {
         guestItems[existingIdx].quantity += quantity;
       } else {
+        const itemKey = variantId ? `${productId}-${variantId}` : productId;
         guestItems.push({
-          id: `guest-${productId}`,
+          id: `guest-${itemKey}`,
           productId: productId,
           product_id: productId,
+          variantId: variantId,
+          variant_id: variantId,
           name_en: pData?.name_en || pData?.title_en || 'Product',
           name_ar: pData?.name_ar || pData?.title_ar || pData?.name_en || 'منتج',
+          sku: pData?.sku || '',
           price: parsedPrice,
           discount_price: parsedDiscountPrice,
           image: finalImg,
@@ -194,7 +200,7 @@ export const CartProvider = ({ children }) => {
     try {
       const res = await fetchApi('/cart/items', {
         method: 'POST',
-        body: JSON.stringify({ productId, quantity }),
+        body: JSON.stringify({ productId, quantity, variantId }),
       });
       if (res.success && res.data) {
         setCart(res.data);

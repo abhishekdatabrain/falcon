@@ -1,4 +1,4 @@
-const { Product, ProductImage, Category, StockLog, sequelize } = require('../models');
+const { Product, ProductVariant, ProductImage, Category, StockLog, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 class ProductService {
@@ -23,6 +23,8 @@ class ProductService {
       is_best_seller,
       is_best_deal,
       isBestDeal,
+      is_popular_pick,
+      isPopularPick,
     } = query;
 
     const where = {};
@@ -34,6 +36,11 @@ class ProductService {
     if (is_best_deal !== undefined || isBestDeal !== undefined) {
       const val = is_best_deal !== undefined ? is_best_deal : isBestDeal;
       where.is_best_deal = String(val) === 'true';
+    }
+
+    if (is_popular_pick !== undefined || isPopularPick !== undefined) {
+      const val = is_popular_pick !== undefined ? is_popular_pick : isPopularPick;
+      where.is_popular_pick = String(val) === 'true';
     }
 
     const activeLeafId = subSubSubcategoryId || sub_sub_subcategory_id;
@@ -106,9 +113,42 @@ class ProductService {
       where.price = priceFilter;
     }
 
+    const activeBrand = query.brand || query.brands;
+    if (activeBrand) {
+      const brandList = Array.isArray(activeBrand)
+        ? activeBrand
+        : String(activeBrand).split(',').map(b => b.trim()).filter(Boolean);
+      if (brandList.length > 0) {
+        where.brand = { [Op.in]: brandList };
+      }
+    }
+
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
     const offset = (pageNum - 1) * limitNum;
+
+    // Build robust server-side order clause based on sort / sortBy / sortOrder
+    let orderClause = [['created_at', 'DESC']];
+    const sortKey = (query.sort || sortBy || '').toLowerCase();
+    const sortDir = (query.sortOrder || sortOrder || 'DESC').toUpperCase();
+
+    if (sortKey === 'price_asc' || (sortKey === 'price' && sortDir === 'ASC')) {
+      orderClause = [['price', 'ASC']];
+    } else if (sortKey === 'price_desc' || (sortKey === 'price' && sortDir === 'DESC')) {
+      orderClause = [['price', 'DESC']];
+    } else if (sortKey === 'rating' || sortKey === 'highest_rated') {
+      orderClause = [['is_best_seller', 'DESC'], ['created_at', 'DESC']];
+    } else if (sortKey === 'featured') {
+      orderClause = [['is_featured', 'DESC'], ['created_at', 'DESC']];
+    } else if (sortKey === 'newest') {
+      orderClause = [['created_at', 'DESC']];
+    } else if (sortKey === 'oldest') {
+      orderClause = [['created_at', 'ASC']];
+    } else if (sortKey === 'name_asc') {
+      orderClause = [['name_en', 'ASC']];
+    } else if (sortKey === 'name_desc') {
+      orderClause = [['name_en', 'DESC']];
+    }
 
     const { rows: products, count: total } = await Product.findAndCountAll({
       where,
@@ -120,12 +160,43 @@ class ProductService {
         {
           model: ProductImage, as: 'images', attributes: ['id', 'image_url', 'is_primary', 'display_order'], separate: true, order: [['display_order', 'ASC']]
         },
+        {
+          model: ProductVariant, as: 'variants', separate: true, order: [['price', 'ASC']]
+        },
       ],
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: orderClause,
       limit: limitNum,
       offset,
       distinct: true,
     });
+
+    // Fetch dynamic brands list with counts
+    let brandFacets = [];
+    try {
+      const dbBrands = await Product.findAll({
+        attributes: [
+          'brand',
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+        ],
+        where: {
+          brand: {
+            [Op.ne]: null,
+            [Op.ne]: '',
+          },
+          ...(onlyActive ? { is_active: true, is_available: true } : {})
+        },
+        group: ['brand'],
+        order: [[sequelize.literal('count'), 'DESC']],
+        raw: true,
+      });
+
+      brandFacets = (dbBrands || []).map(b => ({
+        name: b.brand,
+        count: parseInt(b.count || '0', 10),
+      })).filter(b => b.name && b.name.trim() !== '');
+    } catch (bErr) {
+      console.warn('Brand aggregation error:', bErr.message);
+    }
 
     return {
       products,
@@ -135,6 +206,7 @@ class ProductService {
         limit: limitNum,
         totalPages: Math.ceil(total / limitNum),
       },
+      brands: brandFacets,
     };
   }
 
@@ -146,6 +218,7 @@ class ProductService {
         { model: Category, as: 'sub_subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         { model: Category, as: 'sub_sub_subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         { model: ProductImage, as: 'images' },
+        { model: ProductVariant, as: 'variants', separate: true, order: [['price', 'ASC']] },
       ],
     });
 
@@ -156,15 +229,119 @@ class ProductService {
     return product;
   }
 
+  async validateVariants(variants, existingProductId = null) {
+    if (!Array.isArray(variants) || variants.length === 0) {
+      throw new Error('At least one variant must be provided when variants are enabled');
+    }
+
+    const skuSet = new Set();
+    for (const v of variants) {
+      const sku = (v.sku || '').trim();
+      if (!sku) {
+        throw new Error('Each variant must have a valid SKU');
+      }
+      if (skuSet.has(sku)) {
+        throw new Error(`Duplicate SKU "${sku}" found within product variants`);
+      }
+      skuSet.add(sku);
+
+      const price = parseFloat(v.price);
+      if (isNaN(price) || price < 0) {
+        throw new Error(`Variant price must be a valid non-negative number for SKU "${sku}"`);
+      }
+
+      if (v.discount_price !== undefined && v.discount_price !== null && v.discount_price !== '') {
+        const disc = parseFloat(v.discount_price);
+        if (isNaN(disc) || disc < 0) {
+          throw new Error(`Variant discount price must be a valid non-negative number for SKU "${sku}"`);
+        }
+      }
+
+      const stock = parseInt(v.stock_quantity !== undefined ? v.stock_quantity : 0, 10);
+      if (isNaN(stock) || stock < 0) {
+        throw new Error(`Variant stock cannot be negative for SKU "${sku}"`);
+      }
+
+      // Check for SKU conflicts in Products table
+      const conflictProduct = await Product.findOne({
+        where: {
+          sku,
+          ...(existingProductId ? { id: { [Op.ne]: existingProductId } } : {}),
+        },
+      });
+      if (conflictProduct) {
+        throw new Error(`Variant SKU "${sku}" conflicts with an existing product SKU`);
+      }
+
+      // Check for SKU conflicts in ProductVariants table
+      const conflictVariant = await ProductVariant.findOne({
+        where: {
+          sku,
+          ...(existingProductId ? { product_id: { [Op.ne]: existingProductId } } : {}),
+        },
+      });
+      if (conflictVariant) {
+        throw new Error(`Variant SKU "${sku}" is already in use by another product variant`);
+      }
+    }
+  }
+
   async createProduct(data) {
-    const { category_id, subcategory_id, sub_subcategory_id, sub_sub_subcategory_id, sku, name_en, name_ar, description_en, description_ar, brand, unit, unit_type, unit_value, pack_size, sold_by, price, purchase_price, discount_price, vat_percentage, price_includes_vat, stock_quantity, is_available, is_active, is_featured, is_new_arrival, is_best_seller, is_best_deal, images } = data;
+    const {
+      category_id,
+      subcategory_id,
+      sub_subcategory_id,
+      sub_sub_subcategory_id,
+      sku,
+      name_en,
+      name_ar,
+      description_en,
+      description_ar,
+      brand,
+      unit,
+      unit_type,
+      unit_value,
+      pack_size,
+      sold_by,
+      price,
+      purchase_price,
+      discount_price,
+      vat_percentage,
+      price_includes_vat,
+      stock_quantity,
+      is_available,
+      is_active,
+      is_featured,
+      is_new_arrival,
+      is_best_seller,
+      is_best_deal,
+      is_popular_pick,
+      has_variants,
+      variants,
+      images,
+    } = data;
 
     const existingSku = await Product.findOne({ where: { sku } });
     if (existingSku) {
       throw new Error(`Product SKU "${sku}" already exists`);
     }
 
+    const hasVariantsBool = Boolean(has_variants);
+    if (hasVariantsBool) {
+      await this.validateVariants(variants);
+    }
+
     const computedUnit = (unit_value && unit_type) ? `${unit_value} ${unit_type}` : (unit || 'PCS');
+
+    let basePrice = price;
+    let baseStock = stock_quantity || 0;
+    if (hasVariantsBool && variants && variants.length > 0) {
+      const minVariantPrice = Math.min(...variants.map(v => parseFloat(v.price)));
+      if (basePrice === undefined || basePrice === null || basePrice === '') {
+        basePrice = minVariantPrice;
+      }
+      baseStock = variants.reduce((sum, v) => sum + parseInt(v.stock_quantity || 0, 10), 0);
+    }
 
     return await sequelize.transaction(async (t) => {
       const product = await Product.create({
@@ -183,19 +360,37 @@ class ProductService {
         unit_value: unit_value || null,
         pack_size: pack_size || null,
         sold_by: sold_by || null,
-        price,
+        price: basePrice,
         purchase_price: purchase_price ? parseFloat(purchase_price) : null,
         discount_price: discount_price ? parseFloat(discount_price) : null,
         vat_percentage: vat_percentage !== undefined && vat_percentage !== '' ? parseFloat(vat_percentage) : 15.00,
         price_includes_vat: price_includes_vat !== undefined ? Boolean(price_includes_vat) : true,
-        stock_quantity: stock_quantity || 0,
-        is_available: is_available !== undefined ? Boolean(is_available) : (stock_quantity || 0) > 0,
+        stock_quantity: baseStock,
+        is_available: is_available !== undefined ? Boolean(is_available) : baseStock > 0,
         is_active: is_active !== undefined ? Boolean(is_active) : true,
         is_featured: is_featured !== undefined ? Boolean(is_featured) : false,
         is_new_arrival: is_new_arrival !== undefined ? Boolean(is_new_arrival) : true,
         is_best_seller: is_best_seller !== undefined ? Boolean(is_best_seller) : false,
         is_best_deal: is_best_deal !== undefined ? Boolean(is_best_deal) : false,
+        is_popular_pick: is_popular_pick !== undefined ? Boolean(is_popular_pick) : false,
+        has_variants: hasVariantsBool,
       }, { transaction: t });
+
+      if (hasVariantsBool && Array.isArray(variants) && variants.length > 0) {
+        const variantRecords = variants.map((v) => ({
+          product_id: product.id,
+          sku: v.sku.trim(),
+          unit_value: v.unit_value || null,
+          unit_type: v.unit_type || null,
+          pack_size: v.pack_size || null,
+          price: parseFloat(v.price),
+          discount_price: v.discount_price !== undefined && v.discount_price !== null && v.discount_price !== '' ? parseFloat(v.discount_price) : null,
+          stock_quantity: parseInt(v.stock_quantity || 0, 10),
+          image_url: v.image_url || null,
+          is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+        }));
+        await ProductVariant.bulkCreate(variantRecords, { transaction: t });
+      }
 
       if (images && Array.isArray(images) && images.length > 0) {
         const imageRecords = images.map((url, idx) => ({
@@ -214,6 +409,7 @@ class ProductService {
           { model: Category, as: 'sub_subcategory' },
           { model: Category, as: 'sub_sub_subcategory' },
           { model: ProductImage, as: 'images' },
+          { model: ProductVariant, as: 'variants', separate: true, order: [['price', 'ASC']] },
         ],
         transaction: t,
       });
@@ -238,10 +434,64 @@ class ProductService {
       cleanData.unit = `${cleanData.unit_value} ${cleanData.unit_type}`;
     }
 
+    const hasVariantsBool = cleanData.has_variants !== undefined ? Boolean(cleanData.has_variants) : product.has_variants;
+    if (hasVariantsBool && cleanData.variants) {
+      await this.validateVariants(cleanData.variants, id);
+    }
+
     return await sequelize.transaction(async (t) => {
+      if (hasVariantsBool && cleanData.variants && cleanData.variants.length > 0) {
+        const existingVariants = await ProductVariant.findAll({ where: { product_id: id }, transaction: t });
+        const existingIds = existingVariants.map(ev => ev.id);
+        const incomingIds = cleanData.variants.map(v => v.id).filter(Boolean);
+
+        // Delete variants that were removed
+        const toDeleteIds = existingIds.filter(eId => !incomingIds.includes(eId));
+        if (toDeleteIds.length > 0) {
+          await ProductVariant.destroy({ where: { id: { [Op.in]: toDeleteIds } }, transaction: t });
+        }
+
+        // Upsert variants
+        for (const v of cleanData.variants) {
+          const varPayload = {
+            product_id: id,
+            sku: v.sku.trim(),
+            unit_value: v.unit_value || null,
+            unit_type: v.unit_type || null,
+            pack_size: v.pack_size || null,
+            price: parseFloat(v.price),
+            discount_price: v.discount_price !== undefined && v.discount_price !== null && v.discount_price !== '' ? parseFloat(v.discount_price) : null,
+            stock_quantity: parseInt(v.stock_quantity || 0, 10),
+            image_url: v.image_url || null,
+            is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+          };
+
+          if (v.id && existingIds.includes(v.id)) {
+            await ProductVariant.update(varPayload, { where: { id: v.id }, transaction: t });
+          } else {
+            await ProductVariant.create(varPayload, { transaction: t });
+          }
+        }
+
+        // Sync product level stock and base price
+        const totalStock = cleanData.variants.reduce((sum, v) => sum + parseInt(v.stock_quantity || 0, 10), 0);
+        cleanData.stock_quantity = totalStock;
+        cleanData.is_available = totalStock > 0;
+        const minVariantPrice = Math.min(...cleanData.variants.map(v => parseFloat(v.price)));
+        if (!cleanData.price || cleanData.price === '') {
+          cleanData.price = minVariantPrice;
+        }
+      } else if (cleanData.has_variants === false && product.has_variants) {
+        // Toggled off variants
+        await ProductVariant.destroy({ where: { product_id: id }, transaction: t });
+      }
+
       if (cleanData.stock_quantity !== undefined) {
         cleanData.is_available = cleanData.stock_quantity > 0;
       }
+
+      // Remove variants array from cleanData before calling product.update
+      delete cleanData.variants;
 
       await product.update(cleanData, { transaction: t });
 
@@ -263,6 +513,7 @@ class ProductService {
           { model: Category, as: 'sub_subcategory' },
           { model: Category, as: 'sub_sub_subcategory' },
           { model: ProductImage, as: 'images' },
+          { model: ProductVariant, as: 'variants', separate: true, order: [['price', 'ASC']] },
         ],
         transaction: t,
       });

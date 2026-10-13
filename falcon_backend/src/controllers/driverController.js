@@ -81,6 +81,33 @@ class DriverController {
       return sendError(res, error.message, [], 400);
     }
   }
+
+  async updateProfile(req, res, next) {
+    try {
+      const { mobile, email, vehicle_details } = req.body;
+      const updated = await driverService.updateDriverProfile(req.user.id, {
+        mobile,
+        email,
+        vehicle_details,
+      });
+      return sendSuccess(res, 'Driver profile updated successfully', { driver: updated });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async changePassword(req, res, next) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      if (!currentPassword || !newPassword) {
+        return sendError(res, 'Current password and new password are required', [], 400);
+      }
+      await driverService.changeDriverPassword(req.user.id, { currentPassword, newPassword });
+      return sendSuccess(res, 'Password changed successfully');
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
 }
 
 module.exports = new DriverController();

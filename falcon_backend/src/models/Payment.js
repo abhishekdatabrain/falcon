@@ -22,9 +22,29 @@ const Payment = sequelize.define('Payment', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
   },
+  payment_method: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'COD',
+  },
+  payment_gateway: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  transaction_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  gateway_raw_response: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+  },
   status: {
     type: DataTypes.ENUM(
       PAYMENT_STATUS.PENDING,
+      PAYMENT_STATUS.PAID,
+      PAYMENT_STATUS.FAILED,
+      PAYMENT_STATUS.REFUNDED,
       PAYMENT_STATUS.SUBMITTED,
       PAYMENT_STATUS.UNDER_REVIEW,
       PAYMENT_STATUS.VERIFIED,
@@ -56,6 +76,8 @@ const Payment = sequelize.define('Payment', {
   indexes: [
     { fields: ['order_id'] },
     { fields: ['status'] },
+    { fields: ['payment_method'] },
+    { fields: ['transaction_id'] },
   ],
 });
 

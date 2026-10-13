@@ -16,7 +16,7 @@ router.post(
   (req, res, next) => paymentController.submitPayment(req, res, next)
 );
 
-// Admin routes to review and verify/reject
+// Admin routes to review and verify/reject/refund
 router.get(
   '/pending',
   authorize(ROLES.ADMIN),
@@ -33,6 +33,18 @@ router.post(
   '/:paymentId/reject',
   authorize(ROLES.ADMIN),
   (req, res, next) => paymentController.rejectPaymentAdmin(req, res, next)
+);
+
+router.post(
+  '/:paymentId/refund',
+  authorize(ROLES.ADMIN),
+  (req, res, next) => paymentController.refundPaymentAdmin(req, res, next)
+);
+
+router.post(
+  '/verify-gateway',
+  authorize(ROLES.ADMIN, ROLES.CUSTOMER),
+  (req, res, next) => paymentController.verifyGatewayPayment(req, res, next)
 );
 
 module.exports = router;

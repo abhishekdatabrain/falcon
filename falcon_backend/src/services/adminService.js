@@ -187,17 +187,20 @@ class AdminService {
   }
 
   async updateDriver(driverId, data) {
-    const { email, mobile, license_number, vehicle_details } = data;
+    const { email, mobile, license_number, vehicle_details, password } = data;
     const driver = await Driver.findByPk(driverId, { include: ['user'] });
     if (!driver) {
       throw new Error('Driver not found');
     }
 
     await sequelize.transaction(async (t) => {
-      if (email || mobile) {
-        const userUpdate = {};
-        if (email) userUpdate.email = email;
-        if (mobile) userUpdate.mobile = mobile;
+      const userUpdate = {};
+      if (email) userUpdate.email = email;
+      if (mobile) userUpdate.mobile = mobile;
+      if (password && password.trim()) {
+        userUpdate.password_hash = await hashPassword(password.trim());
+      }
+      if (Object.keys(userUpdate).length > 0) {
         await driver.user.update(userUpdate, { transaction: t });
       }
 
@@ -231,19 +234,12 @@ class AdminService {
 
     const lastLocation = await DriverLocation.findOne({
       where: { driver_id: driverId },
-      order: [['createdAt', 'DESC']],
+      order: [['recorded_at', 'DESC']],
     });
 
     return {
       driver,
-      location: lastLocation || {
-        latitude: 24.7136,
-        longitude: 46.6753,
-        speed: 35,
-        heading: 90,
-        updatedAt: new Date(),
-        isSimulated: true,
-      },
+      location: lastLocation || null,
     };
   }
 
@@ -258,16 +254,14 @@ class AdminService {
       throw new Error('Selected driver is not active or valid');
     }
 
-    if (driver.availability_status === DRIVER_AVAILABILITY.OFFLINE) {
-      throw new Error('Selected driver is currently OFFLINE');
-    }
-
     let effectiveAdminId = adminId;
     if (!effectiveAdminId && userId) {
       const { Admin } = require('../models');
       const adminRecord = await Admin.findOne({ where: { user_id: userId } });
       if (adminRecord) effectiveAdminId = adminRecord.id;
     }
+
+    const notificationService = require('./notificationService');
 
     return await sequelize.transaction(async (t) => {
       let delivery = await Delivery.findOne({ where: { order_id: orderId }, transaction: t });
@@ -293,20 +287,50 @@ class AdminService {
           driver_id: driverId,
           assigned_by_admin_id: effectiveAdminId,
           previous_driver_id: previousDriverId,
-          reassignment_reason: reassignmentReason,
+          reassignment_reason: reassignmentReason || null,
         }, { transaction: t });
       }
+
+      const notes = reassignmentReason
+        ? `Driver assigned by Admin. Driver ID: ${driverId}. Notes: ${reassignmentReason}`
+        : `Driver assigned by Admin. Assigned Driver ID: ${driverId}`;
 
       await OrderStatusHistory.create({
         order_id: order.id,
         from_status: prevStatus,
         to_status: ORDER_STATUS.DRIVER_ASSIGNED,
         changed_by_user_id: userId || null,
-        notes: `Driver assigned by Admin. Assigned Driver ID: ${driverId}`,
+        notes,
       }, { transaction: t });
 
       // Update driver availability to BUSY
       await driver.update({ availability_status: DRIVER_AVAILABILITY.BUSY }, { transaction: t });
+
+      // Send real-time notifications to assigned driver
+      if (driver.user_id) {
+        notificationService.createNotification(
+          driver.user_id,
+          'ORDER_ASSIGNED',
+          `New Order Assigned #${order.order_number}`,
+          `تم إسناد طلب جديد لك #${order.order_number}`,
+          `You have been assigned order #${order.order_number}. ${reassignmentReason ? `Notes: ${reassignmentReason}` : 'Please prepare for pickup.'}`,
+          `تم إسناد الطلب #${order.order_number} إليك.`
+        ).catch(() => { });
+      }
+
+      if (previousDriverId && previousDriverId !== driverId) {
+        const prevDriver = await Driver.findByPk(previousDriverId);
+        if (prevDriver && prevDriver.user_id) {
+          notificationService.createNotification(
+            prevDriver.user_id,
+            'ORDER_REASSIGNED',
+            `Order #${order.order_number} Reassigned`,
+            `تم إعادة إسناد الطلب #${order.order_number}`,
+            `Order #${order.order_number} has been reassigned by admin.`,
+            `تم إعادة إسناد الطلب #${order.order_number}.`
+          ).catch(() => { });
+        }
+      }
 
       return delivery;
     });
@@ -458,25 +482,36 @@ class AdminService {
         {
           model: DriverLocation,
           as: 'locations',
-          limit: 1,
-          order: [['createdAt', 'DESC']],
+          limit: 10,
+          order: [['recorded_at', 'DESC']],
         },
       ],
       order: [['updatedAt', 'DESC']],
     });
 
     // Unassigned orders awaiting driver assignment
-    const unassignedOrders = await Order.findAll({
+    const unassignedCandidateOrders = await Order.findAll({
       where: {
-        order_status: [ORDER_STATUS.PAYMENT_VERIFIED],
+        order_status: [
+          ORDER_STATUS.CONFIRMED,
+          ORDER_STATUS.PAYMENT_VERIFIED,
+          ORDER_STATUS.PROCESSING,
+          ORDER_STATUS.PACKED,
+          ORDER_STATUS.PENDING_PAYMENT,
+        ],
       },
       include: [
         { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile'] }] },
         'address',
         'items',
-        'delivery',
+        { model: Delivery, as: 'delivery', required: false },
       ],
       order: [['createdAt', 'DESC']],
+    });
+
+    const unassignedOrders = unassignedCandidateOrders.filter((ord) => {
+      if (!ord.delivery || !ord.delivery.driver_id) return true;
+      return false;
     });
 
     const activeCount = await Delivery.count({

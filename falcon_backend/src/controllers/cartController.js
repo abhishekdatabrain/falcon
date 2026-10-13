@@ -15,12 +15,17 @@ class CartController {
   async addItem(req, res, next) {
     try {
       const customerId = req.user.customer.id;
-      const { productId, quantity } = req.body;
+      const { productId, quantity, variantId, variant_id } = req.body;
       if (!productId) {
         return sendError(res, 'productId is required', [], 400);
       }
 
-      await cartService.addItemToCart(customerId, productId, quantity ? parseInt(quantity, 10) : 1);
+      await cartService.addItemToCart(
+        customerId,
+        productId,
+        quantity ? parseInt(quantity, 10) : 1,
+        variantId || variant_id || null
+      );
       const totals = await cartService.calculateCartTotals(customerId);
       return sendSuccess(res, 'Item added to cart', totals);
     } catch (error) {
