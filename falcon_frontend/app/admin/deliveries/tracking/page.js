@@ -168,8 +168,8 @@ export default function AdminDeliveriesTrackingPage() {
       const handleLocationUpdate = (data) => {
         if (data.deliveryId === deliveryId) {
           setLiveTelemetry({
-            lat: parseFloat(data.latitude),
-            lng: parseFloat(data.longitude),
+            lat: parseFloat(data.latitude || data.lat),
+            lng: parseFloat(data.longitude || data.lng),
             speed: data.speed || 40,
             heading: data.heading || 0,
             timestamp: data.timestamp || new Date().toISOString(),
@@ -178,13 +178,43 @@ export default function AdminDeliveriesTrackingPage() {
       };
 
       socket.on('location_updated', handleLocationUpdate);
+      socket.on('driver_location_update', handleLocationUpdate);
 
       return () => {
         leaveDeliveryRoom(deliveryId);
         socket.off('location_updated', handleLocationUpdate);
+        socket.off('driver_location_update', handleLocationUpdate);
       };
     }
   }, [selectedDelivery, socket]);
+
+  // Global Admin Room Real-time Sync for Order Assignments & Status Updates
+  useEffect(() => {
+    if (!socket) return;
+    socket.emit('join_admin_room');
+
+    const handleGlobalStatusUpdate = (data) => {
+      loadDeliveriesData();
+      if (data && data.notes) {
+        showNotification(`Update: ${data.notes}`);
+      }
+    };
+
+    const handleGlobalOrderAssigned = (data) => {
+      loadDeliveriesData();
+      if (data && data.orderNumber) {
+        showNotification(`Order #${data.orderNumber} assigned to driver.`);
+      }
+    };
+
+    socket.on('order_status_update', handleGlobalStatusUpdate);
+    socket.on('order_assigned', handleGlobalOrderAssigned);
+
+    return () => {
+      socket.off('order_status_update', handleGlobalStatusUpdate);
+      socket.off('order_assigned', handleGlobalOrderAssigned);
+    };
+  }, [socket]);
 
   // Clean up simulation on unmount
   useEffect(() => {

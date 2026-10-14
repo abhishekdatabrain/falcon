@@ -1,12 +1,12 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useCart } from '../../src/contexts/CartContext';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { useLanguage } from '../../src/contexts/LanguageContext';
-import { getImageUrl } from '../../src/services/api';
-import RecommendedProducts from '../../src/components/RecommendedProducts';
-import CouponCard from '../../src/components/CouponCard';
+import { useCart } from '@/src/contexts/CartContext';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { useLanguage } from '@/src/contexts/LanguageContext';
+import { fetchApi, getImageUrl } from '@/src/services/api';
+import RecommendedProducts from '@/src/components/RecommendedProducts';
+import CouponCard from '@/src/components/CouponCard';
 import {
   ShoppingBag,
   Trash2,
@@ -91,9 +91,31 @@ export default function CartPage() {
 
   const calculateCouponDiscount = () => {
     if (!appliedCoupon) return 0;
-    if (appliedCoupon.code === 'FALCON15') return subtotal * 0.15;
-    if (appliedCoupon.code === 'WELCOME10') return subtotal * 0.10;
-    return 5.00;
+    if (appliedCoupon.discountAmount) return appliedCoupon.discountAmount;
+    if (appliedCoupon.discount_type === 'FIXED') return Math.min(subtotal, parseFloat(appliedCoupon.discount_value || 0));
+    const pct = parseFloat(appliedCoupon.discount_value) || (appliedCoupon.code === 'WELCOME10' ? 10 : 15);
+    return Math.round((subtotal * pct) / 100 * 100) / 100;
+  };
+
+  const handleCartApplyCoupon = async (code) => {
+    try {
+      const res = await fetchApi('/coupons/validate', {
+        method: 'POST',
+        body: JSON.stringify({ code, subtotal }),
+      });
+      if (res.success && res.data?.valid) {
+        setAppliedCoupon({
+          code: res.data.coupon.code,
+          discountAmount: res.data.discountAmount,
+          discount_type: res.data.coupon.discount_type,
+          discount_value: res.data.coupon.discount_value,
+        });
+      } else {
+        setAppliedCoupon({ code });
+      }
+    } catch (_) {
+      setAppliedCoupon({ code });
+    }
   };
 
   const couponDiscount = calculateCouponDiscount();
@@ -322,7 +344,7 @@ export default function CartPage() {
             {/* Got a Coupon Component */}
             <CouponCard
               appliedCoupon={appliedCoupon}
-              onApplyCoupon={(code) => setAppliedCoupon({ code })}
+              onApplyCoupon={handleCartApplyCoupon}
               onRemoveCoupon={() => setAppliedCoupon(null)}
             />
 
@@ -362,24 +384,7 @@ export default function CartPage() {
                   </span>
                 </div>
 
-                {/* Supermall Express Shipping Fee */}
-                <div className="flex items-center justify-between text-slate-600 font-medium">
-                  <span>{locale === 'ar' ? 'رسوم الشحن السريع' : 'Express Shipping Fee'}</span>
-                  <span className="text-[#05A764] font-extrabold text-sm tracking-wide">
-                    FREE
-                  </span>
-                </div>
-
-                {/* Service Fee */}
-                <div className="flex items-center justify-between text-slate-600 font-medium">
-                  <span className="border-b border-dotted border-slate-400 cursor-help" title="Standard platform service fee">
-                    {locale === 'ar' ? 'رسوم الخدمة' : 'Service Fee'}
-                  </span>
-                  <span className="font-extrabold text-slate-900">
-                    SAR {serviceFee.toFixed(2)}
-                  </span>
-                </div>
-
+            
                 {/* Coupon Discount Row (if applied) */}
                 {appliedCoupon && (
                   <div className="flex items-center justify-between text-emerald-700 font-bold bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-100">
@@ -408,7 +413,7 @@ export default function CartPage() {
               {/* Primary CTA Checkout Button */}
               <Link
                 href={user && user.role === 'CUSTOMER' ? "/checkout" : "/login?redirect=/checkout"}
-                className="w-full py-4 rounded-2xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-base sm:text-lg transition-all shadow-md hover:shadow-xl flex items-center justify-center gap-2.5 cursor-pointer text-center font-sans group"
+                className="w-full py-2 rounded-2xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-base sm:text-lg transition-all shadow-md hover:shadow-xl flex items-center justify-center gap-2.5 cursor-pointer text-center font-sans group"
               >
                 <span>{locale === 'ar' ? 'المتابعة للشراء' : 'Checkout'}</span>
                 <ArrowRight className="w-5 h-5 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />

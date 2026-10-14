@@ -38,6 +38,26 @@ const Delivery = sequelize.define('Delivery', {
     allowNull: false,
     defaultValue: 'ASSIGNED',
   },
+  otp: {
+    type: DataTypes.STRING(10),
+    allowNull: true,
+  },
+  otp_verified_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  proof_image: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+  },
+  proof_notes: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  failure_reason: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
 }, {
   tableName: 'deliveries',
   timestamps: true,

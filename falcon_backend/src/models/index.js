@@ -31,6 +31,8 @@ const HomepageCategorySection = require('./HomepageCategorySection');
 const HomepageCategoryItem = require('./HomepageCategoryItem');
 const HomepageSection = require('./HomepageSection');
 const HomepageSetting = require('./HomepageSetting');
+const Coupon = require('./Coupon');
+const DeliverySlot = require('./DeliverySlot');
 
 // --- User Associations ---
 User.hasOne(Customer, { foreignKey: 'user_id', as: 'customer', onDelete: 'CASCADE' });
@@ -196,4 +198,6 @@ module.exports = {
   HomepageCategoryItem,
   HomepageSection,
   HomepageSetting,
+  Coupon,
+  DeliverySlot,
 };

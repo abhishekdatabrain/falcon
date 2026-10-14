@@ -48,7 +48,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'DELIVERED' | 'SCHEDULED' | 'CANCELLED'
-  const [timeframe, setTimeframe] = useState('3_months');
+  const [timeframe, setTimeframe] = useState('');
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
 
   useEffect(() => {
@@ -78,8 +78,76 @@ export default function OrdersPage() {
     loadData();
   }, []);
 
+  // Smart dynamic date/time formatters
+  const formatPlacedTime = (dateInput) => {
+    if (!dateInput) return locale === 'ar' ? 'اليوم' : 'Today';
+    try {
+      const d = new Date(dateInput);
+      if (isNaN(d.getTime())) return String(dateInput);
+
+      const now = new Date();
+      const isToday =
+        d.getDate() === now.getDate() &&
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear();
+
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const isYesterday =
+        d.getDate() === yesterday.getDate() &&
+        d.getMonth() === yesterday.getMonth() &&
+        d.getFullYear() === yesterday.getFullYear();
+
+      const timeStr = d.toLocaleTimeString(locale === 'ar' ? 'ar-SA' : 'en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+
+      if (isToday) {
+        return locale === 'ar' ? `اليوم، ${timeStr}` : `Today, ${timeStr}`;
+      }
+      if (isYesterday) {
+        return locale === 'ar' ? `أمس، ${timeStr}` : `Yesterday, ${timeStr}`;
+      }
+
+      const dateStr = d.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      return `${dateStr}, ${timeStr}`;
+    } catch {
+      return String(dateInput);
+    }
+  };
+
+  const formatDeliveredTime = (ord) => {
+    if (!ord) return locale === 'ar' ? 'اليوم' : 'Today';
+    // 1. Check delivery.end_time
+    let targetDate = ord.delivery?.end_time;
+    // 2. Check status_history for DELIVERED
+    if (!targetDate && Array.isArray(ord.status_history) && ord.status_history.length > 0) {
+      const delHistory = ord.status_history.find((h) => h.to_status === 'DELIVERED');
+      if (delHistory?.createdAt) targetDate = delHistory.createdAt;
+    }
+    // 3. Fallback to updatedAt if status is DELIVERED
+    if (!targetDate && ord.order_status === 'DELIVERED') {
+      targetDate = ord.updatedAt;
+    }
+    // 4. Fallback to delivery_date
+    if (!targetDate && ord.delivery_date) {
+      return ord.delivery_slot ? `${ord.delivery_date}, ${ord.delivery_slot}` : ord.delivery_date;
+    }
+    // 5. Fallback to createdAt
+    if (!targetDate) {
+      targetDate = ord.createdAt;
+    }
+    return formatPlacedTime(targetDate);
+  };
+
   const isOrderActive = (status) =>
-    ['OUT_FOR_DELIVERY', 'ARRIVED', 'PAYMENT_VERIFIED', 'PACKING', 'DRIVER_ASSIGNED', 'DRIVER_ACCEPTED', 'PENDING_PAYMENT', 'PAYMENT_SUBMITTED'].includes(status);
+    ['PENDING_PAYMENT', 'PAYMENT_SUBMITTED', 'PAYMENT_VERIFIED', 'CONFIRMED', 'PROCESSING', 'PACKING', 'PACKED', 'DRIVER_ASSIGNED', 'DRIVER_ACCEPTED', 'OUT_FOR_DELIVERY', 'ARRIVED'].includes(status);
 
   // Retrieve user rating for this order / product
   const getOrderRating = (ord) => {
@@ -150,7 +218,7 @@ export default function OrdersPage() {
     if (activeTab === 'SCHEDULED' && ord.order_status !== 'SCHEDULED' && ord.type !== 'SUBSCRIPTION') {
       return false;
     }
-    if (activeTab === 'CANCELLED' && !['CANCELLED', 'PAYMENT_REJECTED'].includes(ord.order_status)) {
+    if (activeTab === 'CANCELLED' && !['CANCELLED', 'PAYMENT_REJECTED', 'RETURNED', 'DELIVERY_FAILED'].includes(ord.order_status)) {
       return false;
     }
 
@@ -170,7 +238,7 @@ export default function OrdersPage() {
   const activeCount = orders.filter(o => isOrderActive(o.order_status)).length;
   const deliveredCount = orders.filter(o => o.order_status === 'DELIVERED').length;
   const scheduledCount = orders.filter(o => o.order_status === 'SCHEDULED' || o.type === 'SUBSCRIPTION').length;
-  const cancelledCount = orders.filter(o => ['CANCELLED', 'PAYMENT_REJECTED'].includes(o.order_status)).length;
+  const cancelledCount = orders.filter(o => ['CANCELLED', 'PAYMENT_REJECTED', 'RETURNED', 'DELIVERY_FAILED'].includes(o.order_status)).length;
 
   if (loading) {
     return (
@@ -455,19 +523,6 @@ export default function OrdersPage() {
 
               <button
                 type="button"
-                onClick={() => setActiveTab('SCHEDULED')}
-                className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'SCHEDULED'
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                  }`}
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-blue-600" />
-                <span>Scheduled / Subscriptions</span>
-                <span className="px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-700 text-xs">{scheduledCount}</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setActiveTab('CANCELLED')}
                 className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'CANCELLED'
                     ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
@@ -521,17 +576,19 @@ export default function OrdersPage() {
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="font-black text-slate-900 text-sm">Order #{ord.order_number}</span>
                             <span className="bg-emerald-100 text-emerald-900 font-black px-2.5 py-0.5 rounded-md text-[10px] uppercase border border-emerald-200">
-                              {ord.type || 'Express'}
+                              {ord.type || 'Express Cold-Chain'}
                             </span>
                             <span className="text-slate-300">|</span>
-                            <span className="text-slate-500 font-semibold">Placed: {ord.placed_time || 'Today, 2:15 PM'}</span>
+                            <span className="text-slate-500 font-semibold">
+                              {locale === 'ar' ? 'تاريخ الطلب:' : 'Placed:'} {formatPlacedTime(ord.createdAt)}
+                            </span>
                             <span className="text-slate-300">•</span>
-                            <span className="text-slate-500 font-semibold">{ord.payment_method || 'Paid via Apple Pay (Mada)'}</span>
+                            <span className="text-slate-500 font-semibold">{ord.payment_method || 'Mada / Apple Pay'}</span>
                           </div>
 
                           <div className="text-right">
                             <span className="text-base font-black text-slate-900 block">SAR {parseFloat(ord.grand_total || 0).toFixed(2)}</span>
-                            <span className="text-[11px] font-bold text-slate-500 block">{ord.total_items || ord.items?.length || 7} fresh items</span>
+                            <span className="text-[11px] font-bold text-slate-500 block">{ord.items?.length || 0} {locale === 'ar' ? 'منتجات' : 'fresh items'}</span>
                           </div>
                         </div>
 
@@ -544,19 +601,19 @@ export default function OrdersPage() {
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <h4 className="font-black text-[#043927] text-sm">Out for Delivery</h4>
+                                  <h4 className="font-black text-[#043927] text-sm">{locale === 'ar' ? 'السائق في الطريق إليك' : 'Out for Delivery'}</h4>
                                   <span className="text-xs font-extrabold text-emerald-800">
-                                    • {ord.delivery_eta || 'Arriving in ~18 mins (2:35 PM)'}
+                                    • {ord.delivery_slot ? `${ord.delivery_date || 'Today'} (${ord.delivery_slot})` : (locale === 'ar' ? 'يصل قريباً' : 'Arriving in ~20 mins')}
                                   </span>
                                 </div>
                                 <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                                  Driver {ord.driver_name || 'Tariq K.'} {ord.driver_status || 'approaching Villa 14, Al Malqa'}
+                                  Courier {ord.delivery?.driver?.user?.name || ord.driver_name || 'Assigned Courier'} {ord.delivery_slot ? `• Slot: ${ord.delivery_slot}` : 'is en route with refrigerated groceries'}
                                 </p>
                               </div>
                             </div>
 
                             <span className="bg-white border border-emerald-300 text-emerald-900 font-black text-[10px] px-3 py-1 rounded-full shadow-2xs whitespace-nowrap self-start sm:self-center">
-                              🌡️ COLD-CHAIN {ord.temp_status || '3.8°C (Optimal)'}
+                              🌡️ COLD-CHAIN {ord.temp_status || '3.5°C (Optimal)'}
                             </span>
                           </div>
 
@@ -708,56 +765,99 @@ export default function OrdersPage() {
                           </div>
 
                           <Link
-                            href={`/orders/${ord.id}`}
+                            href={`/track-order?orderNumber=${ord.order_number}`}
                             className="px-5 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
                           >
                             <MapPin className="w-4 h-4 text-[#05A764]" />
-                            <span>Track Live on Map</span>
+                            <span>{locale === 'ar' ? 'تتبع مباشر على Google Map' : 'Track Live on Google Map'}</span>
                           </Link>
                         </div>
                       </div>
                     );
                   }
 
-                  // ---------------- CARD TYPE 2: HARVEST PICKING & PACKING ----------------
-                  if (ord.order_status === 'PACKING') {
+                  // ---------------- CARD TYPE 2: CONFIRMED, PROCESSING, PACKED & DISPATCH QUEUE ----------------
+                  if (['PENDING_PAYMENT', 'PAYMENT_SUBMITTED', 'PAYMENT_VERIFIED', 'CONFIRMED', 'PROCESSING', 'PACKING', 'PACKED', 'DRIVER_ASSIGNED', 'DRIVER_ACCEPTED'].includes(ord.order_status)) {
+                    const isPending = ['PENDING_PAYMENT', 'PAYMENT_SUBMITTED'].includes(ord.order_status);
+                    const isConfirmed = ['CONFIRMED', 'PAYMENT_VERIFIED'].includes(ord.order_status);
+                    const isPacked = ['PACKED', 'DRIVER_ASSIGNED', 'DRIVER_ACCEPTED'].includes(ord.order_status);
+
+                    let statusBadgeText = 'Processing';
+                    if (isPending) statusBadgeText = locale === 'ar' ? 'في انتظار الدفع' : 'Payment Verification';
+                    else if (isConfirmed) statusBadgeText = locale === 'ar' ? 'تم تأكيد الطلب' : 'Order Confirmed';
+                    else if (isPacked) statusBadgeText = locale === 'ar' ? 'جاهز للتوصيل' : 'Packed & Ready';
+                    else statusBadgeText = locale === 'ar' ? 'جاري التجهيز' : 'Harvest & Packing';
+
+                    let bannerEmoji = '🚜';
+                    let bannerTitle = locale === 'ar' ? 'جاري الحصاد والتجهيز' : 'Harvest Picking & Packing';
+                    let bannerDesc = locale === 'ar'
+                      ? 'يتم قطف المنتجات وتجهيزها في الصناديق الحرارية المبردة.'
+                      : 'Items being picked from partner farms and packed into chilled thermal bags.';
+
+                    if (isPending) {
+                      bannerEmoji = '💳';
+                      bannerTitle = locale === 'ar' ? 'في انتظار التحقق من الدفع' : 'Payment Verification in Progress';
+                      bannerDesc = locale === 'ar'
+                        ? 'تم استلام طلبك وبانتظار تأكيد الدفع لبدء الحصاد والتجهيز.'
+                        : 'Your order was received. Verifying payment before dispatching to packing hubs.';
+                    } else if (isConfirmed) {
+                      bannerEmoji = '🌿';
+                      bannerTitle = locale === 'ar' ? 'تم تأكيد الطلب وحجز المنتجات' : 'Order Confirmed & Farm Reserved';
+                      bannerDesc = locale === 'ar'
+                        ? `تم تأكيد طلبك ومجدول للتوصيل في: ${ord.delivery_date || 'اليوم'} (${ord.delivery_slot || 'الفترة القياسية'}).`
+                        : `Order verified and scheduled for dispatch on ${ord.delivery_date || 'Today'} (${ord.delivery_slot || 'Standard Slot'}).`;
+                    } else if (isPacked) {
+                      bannerEmoji = '📦';
+                      bannerTitle = locale === 'ar' ? 'تم التجهيز والتغليف المبرد' : 'Chilled Cold-Box Packed & Sealed';
+                      bannerDesc = locale === 'ar'
+                        ? 'تم فحص جودة التبريد وإغلاق الصندوق الحراري بانتظار استلام الكابتن.'
+                        : 'Thermal cold box sealed at optimal 3.5°C. Awaiting courier transit.';
+                    }
+
                     return (
                       <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 font-sans">
                         {/* Top Bar Header */}
                         <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="font-black text-slate-900 text-sm">Order #{ord.order_number}</span>
+                            <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase border ${
+                              isConfirmed ? 'bg-blue-50 text-blue-800 border-blue-200' : isPacked ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'
+                            }`}>
+                              {statusBadgeText}
+                            </span>
                             <span className="text-slate-300">|</span>
-                            <span className="text-slate-500 font-semibold">Placed: {ord.placed_time || 'Today, 11:30 AM'}</span>
+                            <span className="text-slate-500 font-semibold">
+                              {locale === 'ar' ? 'تاريخ الطلب:' : 'Placed:'} {formatPlacedTime(ord.createdAt)}
+                            </span>
                             <span className="text-slate-300">•</span>
                             <span className="text-emerald-800 font-extrabold flex items-center gap-1">
-                              ⏱️ Slot: {ord.delivery_slot || '6:00 PM - 7:30 PM Today'}
+                              ⏱️ {locale === 'ar' ? 'الفترة:' : 'Slot:'} {ord.delivery_slot ? `${ord.delivery_date ? `${ord.delivery_date} • ` : ''}${ord.delivery_slot}` : (locale === 'ar' ? 'فترة مجدولة' : 'Scheduled Delivery')}
                             </span>
                           </div>
 
                           <div className="text-right">
                             <span className="text-base font-black text-slate-900 block">SAR {parseFloat(ord.grand_total || 0).toFixed(2)}</span>
-                            <span className="text-[11px] font-bold text-slate-500 block">{ord.total_items || 4} farm items</span>
+                            <span className="text-[11px] font-bold text-slate-500 block">{ord.items?.length || 0} {locale === 'ar' ? 'منتجات' : 'farm items'}</span>
                           </div>
                         </div>
 
-                        {/* Amber Picking Alert */}
+                        {/* Alert Banner */}
                         <div className="px-6 space-y-4">
                           <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs font-bold text-lg">
-                                🚜
+                                {bannerEmoji}
                               </div>
                               <div>
-                                <h4 className="font-black text-amber-950 text-sm">Harvest Picking & Packing</h4>
+                                <h4 className="font-black text-amber-950 text-sm">{bannerTitle}</h4>
                                 <p className="text-xs text-amber-900/80 font-medium mt-0.5">
-                                  Items being hand-picked from {ord.picking_farm || 'Al-Kharj partner farms'}. Cold-pack prep starting shortly.
+                                  {bannerDesc}
                                 </p>
                               </div>
                             </div>
 
                             <span className="bg-amber-950 text-amber-300 font-extrabold text-[10px] px-3 py-1 rounded-full border border-amber-800 shadow-2xs whitespace-nowrap self-start sm:self-center">
-                              ⏱️ Add Items Open ({ord.time_left_to_add || '15 mins left'})
+                              {ord.delivery_date || (locale === 'ar' ? 'طلب مجدول' : 'Scheduled Slot')}
                             </span>
                           </div>
 
@@ -765,7 +865,7 @@ export default function OrdersPage() {
                           {ord.items && ord.items.length > 0 && (
                             <div className="space-y-2 font-sans pt-1">
                               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                                Items Being Picked ({ord.items.length}):
+                                {locale === 'ar' ? 'المنتجات الجاري تجهيزها' : 'Items Being Prepared'} ({ord.items.length}):
                               </span>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                                 {ord.items.map((item, idx) => {
@@ -828,17 +928,34 @@ export default function OrdersPage() {
 
                         {/* Bottom Actions */}
                         <div className="bg-slate-50/80 px-6 py-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-                          <button type="button" className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
-                            <Plus className="w-4 h-4 text-[#05A764]" />
-                            <span>Add Items to Basket (+SAR 0 Delivery Fee)</span>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/track-order?orderNumber=${ord.order_number}`}
+                              className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <MapPin className="w-4 h-4 text-[#05A764]" />
+                              <span>{locale === 'ar' ? 'تتبع على الخريطة' : 'Track on Google Map'}</span>
+                            </Link>
+
+                            <button
+                              type="button"
+                              disabled={downloadingInvoiceId === ord.id}
+                              onClick={() => handleDownloadInvoice(ord)}
+                              className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                              title={locale === 'ar' ? 'تحميل فاتورة ZATCA' : 'Download ZATCA Invoice'}
+                            >
+                              {downloadingInvoiceId === ord.id ? (
+                                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                              ) : (
+                                <FileText className="w-3.5 h-3.5 text-slate-500" />
+                              )}
+                              <span>{locale === 'ar' ? 'الفاتورة' : 'Invoice'}</span>
+                            </button>
+                          </div>
 
                           <div className="flex items-center gap-2">
-                            <button type="button" className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 transition-colors cursor-pointer">
-                              Edit Delivery Slot
-                            </button>
                             <Link href={`/orders/${ord.id}`} className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 transition-colors cursor-pointer">
-                              Order Details
+                              {locale === 'ar' ? 'تفاصيل الطلب' : 'Order Details'}
                             </Link>
                           </div>
                         </div>
@@ -911,26 +1028,30 @@ export default function OrdersPage() {
                     );
                   }
 
-                  // ---------------- CARD TYPE 4 & 5: DELIVERED SUCCESSFUL ORDER ----------------
-                  return (
-                    <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 font-sans">
-                      {/* Top Bar */}
-                      <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <span className="font-black text-slate-900 text-sm">Order #{ord.order_number}</span>
-                          <span className="text-slate-300">•</span>
-                          <span className="text-slate-500 font-semibold">Delivered: {ord.delivered_time || 'Yesterday, 6:40 PM'}</span>
-                          <span className="text-slate-300">•</span>
-                          <span className="text-emerald-700 font-extrabold flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Delivered Successfully
-                          </span>
-                        </div>
+                  // ---------------- CARD TYPE 4: DELIVERED SUCCESSFUL ORDER ----------------
+                  if (ord.order_status === 'DELIVERED') {
+                    return (
+                      <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 font-sans">
+                        {/* Top Bar */}
+                        <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span className="font-black text-slate-900 text-sm">Order #{ord.order_number}</span>
+                            <span className="text-slate-300">•</span>
+                            <span className="text-slate-500 font-semibold">
+                              {locale === 'ar' ? 'تم التوصيل:' : 'Delivered:'} {formatDeliveredTime(ord)}
+                            </span>
+                            <span className="text-slate-300">•</span>
+                            <span className="text-emerald-700 font-extrabold flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>{locale === 'ar' ? 'تم التوصيل بنجاح' : 'Delivered Successfully'}</span>
+                            </span>
+                          </div>
 
-                        <div className="text-right">
-                          <span className="text-base font-black text-slate-900 block">SAR {parseFloat(ord.grand_total || 0).toFixed(2)}</span>
-                          <span className="text-[11px] font-bold text-slate-500 block">{ord.total_items || ord.items?.length || 11} items</span>
+                          <div className="text-right">
+                            <span className="text-base font-black text-slate-900 block">SAR {parseFloat(ord.grand_total || 0).toFixed(2)}</span>
+                            <span className="text-[11px] font-bold text-slate-500 block">{ord.items?.length || 0} {locale === 'ar' ? 'منتجات' : 'items'}</span>
+                          </div>
                         </div>
-                      </div>
 
                       <div className="px-6 space-y-3">
                         {/* Delivery Handover Proof Banner */}
@@ -1102,7 +1223,153 @@ export default function OrdersPage() {
                       )}
                     </div>
                   );
-                })
+                }
+
+                // ---------------- CARD TYPE 5: CANCELLED, RETURNED OR OTHER STATUS ----------------
+                const isCancelled = ['CANCELLED', 'PAYMENT_REJECTED'].includes(ord.order_status);
+                const isReturned = ['RETURNED', 'DELIVERY_FAILED'].includes(ord.order_status);
+
+                return (
+                  <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 font-sans opacity-95">
+                    {/* Top Bar */}
+                    <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="font-black text-slate-900 text-sm">Order #{ord.order_number}</span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-slate-500 font-semibold">
+                          {locale === 'ar' ? 'تاريخ التحديث:' : 'Updated:'} {formatPlacedTime(ord.updatedAt || ord.createdAt)}
+                        </span>
+                        <span className="text-slate-300">•</span>
+                        {isCancelled ? (
+                          <span className="text-rose-600 font-extrabold flex items-center gap-1">
+                            <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+                            <span>{locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled'}</span>
+                          </span>
+                        ) : isReturned ? (
+                          <span className="text-purple-700 font-extrabold flex items-center gap-1">
+                            <RotateCcw className="w-3.5 h-3.5 text-purple-600" />
+                            <span>{locale === 'ar' ? 'تم إرجاع الطلب' : 'Delivery Returned'}</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-700 font-extrabold flex items-center gap-1">
+                            <Package className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Status: {ord.order_status}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-base font-black text-slate-500 block line-through">SAR {parseFloat(ord.grand_total || 0).toFixed(2)}</span>
+                        <span className="text-[11px] font-bold text-slate-400 block">{ord.items?.length || 0} {locale === 'ar' ? 'منتجات' : 'items'}</span>
+                      </div>
+                    </div>
+
+                    <div className="px-6 space-y-3">
+                      {/* Notice Banner */}
+                      <div className={`p-4 rounded-2xl border flex items-center justify-between text-xs font-medium ${
+                        isCancelled ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-slate-50 border-slate-200 text-slate-700'
+                      }`}>
+                        <div className="flex items-center gap-2.5">
+                          <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                          <span>
+                            {isCancelled
+                              ? (locale === 'ar'
+                                  ? 'تم إلغاء هذا الطلب. في حال تم خصم المبلغ سيتم استرداده إلى وسيلة الدفع الأصلية أو رصيد المحفظة.'
+                                  : 'This order was cancelled. Any charged amounts are refunded to your original payment method or wallet.')
+                              : (locale === 'ar'
+                                  ? 'تم إرجاع هذا الطلب. يرجى التواصل مع فريق الدعم للمساعدة أو إعادة التوصيل.'
+                                  : 'Delivery returned. Please contact customer support for re-delivery or assistance.')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Product Items List */}
+                      {ord.items && ord.items.length > 0 && (
+                        <div className="space-y-2 font-sans pt-1">
+                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                            {locale === 'ar' ? 'المنتجات في هذا الطلب' : 'Items in this order'} ({ord.items.length}):
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                            {ord.items.map((item, idx) => {
+                              const img = item.product?.images?.[0]?.image_url || item.product?.main_image || item.image || item.main_image;
+                              const name = item.product_name_en || item.product?.name_en || item.product_name_ar || item.name || 'Grocery Item';
+                              const qty = item.quantity || 1;
+                              const itemPrice = parseFloat(item.total_price || (item.unit_price ? item.unit_price * qty : 0));
+                              return (
+                                <div
+                                  key={item.id || idx}
+                                  className="bg-[#F8F9FA] rounded-2xl p-2.5 flex items-center justify-between gap-3 border border-slate-200/70 opacity-80"
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden relative shadow-2xs">
+                                      {img ? (
+                                        <img
+                                          src={getImageUrl(img)}
+                                          alt={name}
+                                          className="w-full h-full object-contain"
+                                          onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.style.display = 'none';
+                                            if (e.currentTarget.nextSibling) {
+                                              e.currentTarget.nextSibling.style.display = 'flex';
+                                            }
+                                          }}
+                                        />
+                                      ) : null}
+                                      <div
+                                        className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 rounded-lg"
+                                        style={{ display: img ? 'none' : 'flex' }}
+                                      >
+                                        <ShoppingBag className="w-4 h-4 stroke-[2]" />
+                                      </div>
+                                    </div>
+
+                                    <div className="min-w-0">
+                                      <h5 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                                        {name}
+                                      </h5>
+                                      <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="bg-slate-200 text-slate-700 text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
+                                          Qty: {qty}
+                                        </span>
+                                        {itemPrice > 0 && (
+                                          <span className="text-[11px] font-extrabold text-slate-600 font-sans">
+                                            SAR {itemPrice.toFixed(2)}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card Bottom Actions */}
+                    <div className="bg-slate-50/80 px-6 py-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href="/products"
+                          className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <RotateCcw className="w-4 h-4 text-[#05A764]" />
+                          <span>{locale === 'ar' ? 'إعادة الطلب' : 'Re-Order / Buy Again'}</span>
+                        </Link>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-slate-500 font-semibold">
+                        <Link href={`/orders/${ord.id}`} className="hover:text-slate-900 transition-colors flex items-center gap-1">
+                          <span>{locale === 'ar' ? 'عرض تفاصيل الطلب' : 'View Order Details'}</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
               )}
 
             </div>

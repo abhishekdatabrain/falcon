@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronRight,
   Bell,
+  Clock,
 } from 'lucide-react';
 
 export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPaymentsCount = 0 }) {
@@ -49,6 +50,7 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
       items: [
         { href: '/admin/homepage-cms', label: locale === 'ar' ? 'إدارة الصفحة الرئيسية' : 'Homepage Management', icon: LayoutDashboard },
         { href: '/admin/hero-banners', label: locale === 'ar' ? 'شريط البانر الرئيسي' : 'Hero Banners', icon: Sparkles },
+        { href: '/admin/category-banner', label: locale === 'ar' ? 'بانر صفحة المنتجات (Hero)' : 'Category Hero Banner', icon: Sparkles },
         { href: '/admin/promo-banners', label: locale === 'ar' ? 'البطاقات الترويجية' : 'Promotional Cards', icon: LayoutDashboard },
         { href: '/admin/category-sections', label: locale === 'ar' ? 'معرض الفئات' : 'Category Showcase', icon: FolderTree },
       ],
@@ -60,6 +62,7 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
       items: [
         { href: '/admin/products', label: locale === 'ar' ? 'إدارة المنتجات' : 'Product Management', icon: ShoppingBag },
         { href: '/admin/categories', label: locale === 'ar' ? 'إدارة الأقسام والتصنيفات' : 'Category Management', icon: FolderTree },
+        { href: '/admin/category-banner', label: locale === 'ar' ? 'بانر صفحة المنتجات (Hero)' : 'Category Hero Banner', icon: Sparkles },
       ],
     },
     {
@@ -68,6 +71,7 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
       isExpandable: true,
       items: [
         { href: '/admin/drivers', label: locale === 'ar' ? 'إدارة السائقين والأسطول' : 'Driver Management', icon: Truck },
+        { href: '/admin/delivery-slots', label: locale === 'ar' ? 'مواعيد وفترات التوصيل' : 'Delivery Slots & Schedule', icon: Clock },
         { href: '/admin/deliveries/tracking', label: locale === 'ar' ? 'إدارة التوصيل والتتبع المباشر' : 'Delivery Management', icon: MapPin },
       ],
     },

@@ -137,7 +137,7 @@ class ProductService {
     } else if (sortKey === 'price_desc' || (sortKey === 'price' && sortDir === 'DESC')) {
       orderClause = [['price', 'DESC']];
     } else if (sortKey === 'rating' || sortKey === 'highest_rated') {
-      orderClause = [['is_best_seller', 'DESC'], ['created_at', 'DESC']];
+      orderClause = [['rating', 'DESC'], ['created_at', 'DESC']];
     } else if (sortKey === 'featured') {
       orderClause = [['is_featured', 'DESC'], ['created_at', 'DESC']];
     } else if (sortKey === 'newest') {
@@ -319,6 +319,9 @@ class ProductService {
       has_variants,
       variants,
       images,
+      rating,
+      reviews_count,
+      reviews,
     } = data;
 
     const existingSku = await Product.findOne({ where: { sku } });
@@ -366,7 +369,7 @@ class ProductService {
         vat_percentage: vat_percentage !== undefined && vat_percentage !== '' ? parseFloat(vat_percentage) : 15.00,
         price_includes_vat: price_includes_vat !== undefined ? Boolean(price_includes_vat) : true,
         stock_quantity: baseStock,
-        is_available: is_available !== undefined ? Boolean(is_available) : baseStock > 0,
+        is_available: is_available !== undefined ? Boolean(is_available) : true,
         is_active: is_active !== undefined ? Boolean(is_active) : true,
         is_featured: is_featured !== undefined ? Boolean(is_featured) : false,
         is_new_arrival: is_new_arrival !== undefined ? Boolean(is_new_arrival) : true,
@@ -374,6 +377,8 @@ class ProductService {
         is_best_deal: is_best_deal !== undefined ? Boolean(is_best_deal) : false,
         is_popular_pick: is_popular_pick !== undefined ? Boolean(is_popular_pick) : false,
         has_variants: hasVariantsBool,
+        rating: rating !== undefined && rating !== '' ? parseFloat(rating) : 4.8,
+        reviews_count: (reviews_count !== undefined && reviews_count !== '') ? parseInt(reviews_count, 10) : ((reviews !== undefined && reviews !== '') ? parseInt(reviews, 10) : 120),
       }, { transaction: t });
 
       if (hasVariantsBool && Array.isArray(variants) && variants.length > 0) {
@@ -434,6 +439,15 @@ class ProductService {
       cleanData.unit = `${cleanData.unit_value} ${cleanData.unit_type}`;
     }
 
+    if (cleanData.rating !== undefined) {
+      cleanData.rating = cleanData.rating !== '' && cleanData.rating !== null ? parseFloat(cleanData.rating) : null;
+    }
+    if (cleanData.reviews_count !== undefined) {
+      cleanData.reviews_count = cleanData.reviews_count !== '' && cleanData.reviews_count !== null ? parseInt(cleanData.reviews_count, 10) : 0;
+    } else if (cleanData.reviews !== undefined) {
+      cleanData.reviews_count = cleanData.reviews !== '' && cleanData.reviews !== null ? parseInt(cleanData.reviews, 10) : 0;
+    }
+
     const hasVariantsBool = cleanData.has_variants !== undefined ? Boolean(cleanData.has_variants) : product.has_variants;
     if (hasVariantsBool && cleanData.variants) {
       await this.validateVariants(cleanData.variants, id);
@@ -476,7 +490,6 @@ class ProductService {
         // Sync product level stock and base price
         const totalStock = cleanData.variants.reduce((sum, v) => sum + parseInt(v.stock_quantity || 0, 10), 0);
         cleanData.stock_quantity = totalStock;
-        cleanData.is_available = totalStock > 0;
         const minVariantPrice = Math.min(...cleanData.variants.map(v => parseFloat(v.price)));
         if (!cleanData.price || cleanData.price === '') {
           cleanData.price = minVariantPrice;
@@ -486,8 +499,8 @@ class ProductService {
         await ProductVariant.destroy({ where: { product_id: id }, transaction: t });
       }
 
-      if (cleanData.stock_quantity !== undefined) {
-        cleanData.is_available = cleanData.stock_quantity > 0;
+      if (cleanData.is_available !== undefined) {
+        cleanData.is_available = Boolean(cleanData.is_available);
       }
 
       // Remove variants array from cleanData before calling product.update
@@ -556,7 +569,6 @@ class ProductService {
     return await sequelize.transaction(async (t) => {
       await product.update({
         stock_quantity: calculatedNewStock,
-        is_available: calculatedNewStock > 0,
       }, { transaction: t });
 
       const stockLog = await StockLog.create({

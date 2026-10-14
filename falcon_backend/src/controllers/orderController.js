@@ -5,12 +5,21 @@ class OrderController {
   async createOrder(req, res, next) {
     try {
       const customerId = req.user.customer.id;
-      const { addressId, notes } = req.body;
+      const { addressId, notes, paymentMethod, couponCode, deliveryDate, deliverySlot, deliverySpeed } = req.body;
       if (!addressId) {
         return sendError(res, 'Delivery addressId is required', [], 400);
       }
 
-      const order = await orderService.createOrderFromCart(customerId, addressId, notes);
+      const order = await orderService.createOrderFromCart(
+        customerId,
+        addressId,
+        notes,
+        paymentMethod,
+        couponCode,
+        deliveryDate,
+        deliverySlot,
+        deliverySpeed
+      );
       return sendSuccess(res, 'Order placed successfully. Please submit bank payment confirmation.', { order }, 201);
     } catch (error) {
       return sendError(res, error.message, [], 400);
@@ -32,6 +41,16 @@ class OrderController {
       const { id } = req.params;
       const order = await orderService.getOrderConfirmation(id);
       return sendSuccess(res, 'Order confirmation retrieved', { order });
+    } catch (error) {
+      return sendError(res, error.message, [], 404);
+    }
+  }
+
+  async trackOrder(req, res, next) {
+    try {
+      const { identifier } = req.params;
+      const order = await orderService.trackOrder(identifier);
+      return sendSuccess(res, 'Order tracking retrieved', { order });
     } catch (error) {
       return sendError(res, error.message, [], 404);
     }

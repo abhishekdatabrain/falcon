@@ -25,6 +25,26 @@ const Customer = sequelize.define('Customer', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  avatar_url: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  dob: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  gender: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  national_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  preferences: {
+    type: DataTypes.JSONB,
+    defaultValue: {},
+  },
 }, {
   tableName: 'customers',
   timestamps: true,

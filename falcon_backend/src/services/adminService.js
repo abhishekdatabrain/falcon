@@ -262,19 +262,27 @@ class AdminService {
     }
 
     const notificationService = require('./notificationService');
+    const { emitOrderAssigned, emitOrderStatusUpdate } = require('../sockets/socketManager');
 
-    return await sequelize.transaction(async (t) => {
+    const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+    const result = await sequelize.transaction(async (t) => {
       let delivery = await Delivery.findOne({ where: { order_id: orderId }, transaction: t });
       let previousDriverId = null;
 
       if (delivery) {
         previousDriverId = delivery.driver_id;
-        await delivery.update({ driver_id: driverId, status: ORDER_STATUS.DRIVER_ASSIGNED }, { transaction: t });
+        await delivery.update({
+          driver_id: driverId,
+          status: ORDER_STATUS.DRIVER_ASSIGNED,
+          otp: delivery.otp || generatedOtp,
+        }, { transaction: t });
       } else {
         delivery = await Delivery.create({
           order_id: orderId,
           driver_id: driverId,
           status: ORDER_STATUS.DRIVER_ASSIGNED,
+          otp: generatedOtp,
         }, { transaction: t });
       }
 
@@ -334,6 +342,29 @@ class AdminService {
 
       return delivery;
     });
+
+    // Emit real-time WebSocket events across Driver, Admin, and Customer rooms
+    emitOrderAssigned(driverId, {
+      orderId: order.id,
+      orderNumber: order.order_number,
+      deliveryId: result.id,
+      status: ORDER_STATUS.DRIVER_ASSIGNED,
+    });
+
+    emitOrderStatusUpdate({
+      orderId: order.id,
+      deliveryId: result.id,
+      driverId,
+      status: ORDER_STATUS.DRIVER_ASSIGNED,
+      orderStatus: ORDER_STATUS.DRIVER_ASSIGNED,
+      notes: reassignmentReason || 'Driver assigned by admin',
+      data: {
+        orderNumber: order.order_number,
+        driverId,
+      },
+    });
+
+    return result;
   }
 
   async getAllCustomers(options = {}) {

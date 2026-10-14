@@ -4,110 +4,116 @@ import Link from 'next/link';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import {
   Leaf,
-  Award,
-  Truck,
   ShieldCheck,
-  Heart,
-  Sparkles,
-  CheckCircle2,
-  ArrowRight,
-  Sun,
-  Droplets,
-  Recycle,
+  Truck,
   Users,
-  MapPin,
-  TrendingUp,
-  Clock,
-  Star,
-  Building2,
+  Recycle,
   Zap,
-  Globe,
-  Check
+  Star,
+  MapPin,
+  Clock,
+  ArrowRight,
+  ArrowUpRight,
+  Share2,
+  Droplets,
+  Sun,
+  CheckCircle2,
+  Sparkles
 } from 'lucide-react';
 
 export default function AboutPage() {
   const { locale } = useLanguage();
+  const isAr = locale === 'ar';
 
   return (
-    <div className="min-h-screen bg-[#F8FAF8] font-sans pb-24 text-slate-800 space-y-16 sm:space-y-20">
+    <div className="min-h-screen bg-[#FBFDFB] font-sans pb-24 text-slate-800 space-y-16 sm:space-y-24">
       
       {/* ================= SECTION 1: HERO BANNER ================= */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
           
           {/* Left Hero Text Content */}
           <div className="lg:col-span-6 space-y-6">
-            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200/80 px-3.5 py-1.5 rounded-full text-xs font-extrabold text-[#043927]">
-              <span>🌱</span>
-              <span>{locale === 'ar' ? 'قصتنا ومهمتنا' : 'Our Story & Mission'}</span>
+            
+            {/* Pill Badge */}
+            <div className="inline-flex items-center gap-2 bg-[#EAF5EF] border border-[#CDE5D7] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#064E3B]">
+              <span className="w-2 h-2 rounded-full bg-[#05A764] animate-pulse"></span>
+              <span>{isAr ? 'قصتنا ومهمتنا' : 'Our Story & Mission'}</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-[1.15] tracking-tight">
-              {locale === 'ar'
+            {/* Main Hero Heading */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#043927] leading-[1.14] tracking-tight">
+              {isAr
                 ? 'جذور ممتدة في الطزاجة، تصل إلى باب منزلك.'
-                : 'Rooted in Freshness, Delivered to Your Doorstep.'}
+                : 'Rooted in Freshness,\nDelivered to Your\nDoorstep.'}
             </h1>
 
-            <div className="space-y-4 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+            {/* Paragraph Descriptions */}
+            <div className="space-y-4 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
               <p>
-                {locale === 'ar'
-                  ? 'تمكين العائلات السعودية بمقاضي طازجة ومستدامة من المزرعة إلى المائدة مباشرة في غضون 20 دقيقة. انطلقت فالكون ماركت من قلب الرياض بناءً على سؤال جوهري: لماذا تقضي الأغذية الطازجة أسبوعين في مستودعات التبريد التقليدية قبل أن تصل لمائدة عائلتك؟'
-                  : 'Empowering Saudi households with fresh, sustainable, farm-to-table groceries delivered in as little as 20 minutes. Founded in the heart of Riyadh, Falcon Mart was born from a fundamental question: why should fresh food spend two weeks in static cold-storage depots before reaching your family\'s dinner table?'}
+                {isAr
+                  ? 'تمكين العائلات السعودية بمقاضي طازجة ومستدامة من المزرعة إلى المائدة مباشرة في غضون 30 دقيقة. انطلقت فالكون ماركت من قلب الرياض بناءً على سؤال جوهري: لماذا تقضي الأغذية الطازجة أسبوعين في مستودعات التبريد التقليدية قبل أن تصل لمائدة عائلتك؟'
+                  : 'Empowering Saudi households with fresh, sustainable, farm-to-table groceries delivered in as little as 30 minutes. Founded in the heart of Riyadh, FreshMart was born from a fundamental question: why should fresh food spend two weeks in static cold-storage depots before reaching your family\'s dinner table?'}
               </p>
               <p>
-                {locale === 'ar'
-                  ? 'لقد جسّرنا الفجوة بين أنشط مزارع المائية (الهيدروبونيك) في الرياض ومزارعي التمور التقليديين والتعاونيات الزراعية الحديثة مباشرة إلى باب بيتك — لنقدم لك طزاجة الحصاد المثالي التي ترتقي بالتغذية اليومية.'
-                  : 'We bridged the gap between Riyadh\'s most passionate local hydroponic cultivators, traditional date growers, and modern agricultural cooperatives directly to your door — delivering peak-harvest freshness that truly elevates everyday nutrition.'}
+                {isAr
+                  ? 'لقد جسّرنا الفجوة بالشراكة المباشرة مع مزارعي الهيدروبونيك المحليين في الرياض، ومزارعي التمور التقليديين، والتعاونيات الزراعية الحديثة من الخرج إلى الجوف — لنقدم لك منتجات حُصدت في ذات الصباح مباشرة إلى مطبخك.'
+                  : 'We bridged the gap by partnering directly with local Saudi hydroponic cultivators, traditional date growers, and modern agricultural cooperatives across Al-Kharj to Al-Jouf — delivering produce harvested that very morning straight to your kitchen.'}
               </p>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-3.5 pt-2">
               <Link
                 href="/products"
-                className="px-6 py-3.5 rounded-2xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                className="px-6 py-3.5 rounded-full bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
               >
-                <span>{locale === 'ar' ? 'استكشف شركاء المزارع' : 'Explore Farm Partners'}</span>
-                <ArrowRight className="w-4 h-4 text-[#05A764] rtl:rotate-180" />
+                <span>{isAr ? 'استكشف شركاء المزارع' : 'Explore Farm Partners'}</span>
+                <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180 text-emerald-300" />
               </Link>
               <a
                 href="#standards"
-                className="px-6 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 font-extrabold text-xs shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+                className="px-6 py-3.5 rounded-full bg-white border border-[#043927]/30 hover:border-[#043927] text-[#043927] font-bold text-xs shadow-2xs hover:bg-slate-50 transition-all flex items-center gap-2 cursor-pointer"
               >
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>{locale === 'ar' ? 'معايير الجودة لدينا' : 'Our Quality Standard'}</span>
+                <ShieldCheck className="w-4 h-4 text-[#05A764]" />
+                <span>{isAr ? 'معايير الجودة لدينا' : 'Our Quality Standard'}</span>
               </a>
             </div>
           </div>
 
           {/* Right Hero Image Card */}
           <div className="lg:col-span-6 relative">
-            <div className="relative rounded-3xl overflow-hidden border border-slate-200 shadow-xl aspect-[4/3] bg-emerald-950">
+            <div className="relative rounded-3xl overflow-hidden border border-slate-200/90 shadow-2xl aspect-[4/3] bg-emerald-950">
               <img
-                src="https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800"
-                alt="Saudi Hydroponic Farm Harvest"
+                src="/images/about/greenhouse.jpg"
+                alt="Saudi Hydroponic Vertical Farm Harvest"
                 className="w-full h-full object-cover"
               />
               
               {/* Overlay Badge Top Right */}
-              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-emerald-200 text-emerald-900 text-[11px] font-extrabold shadow-sm flex items-center gap-1.5">
+              <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-slate-200/90 text-slate-800 text-[11px] font-bold shadow-md flex items-center gap-2">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#05A764]" />
-                <span>Verified 100% Cold-Chain</span>
+                <span className="text-slate-500 font-medium">{isAr ? 'جودة موثقة' : 'Verified Quality'}</span>
+                <span className="font-extrabold text-[#043927]">{isAr ? 'سلسلة تبريد 100%' : '100% Cold-Chain'}</span>
               </div>
 
-              {/* Overlay Banner Bottom Left */}
-              <div className="absolute bottom-4 left-4 right-4 bg-[#043927]/90 backdrop-blur-md p-3.5 rounded-2xl border border-emerald-500/30 text-white flex items-center justify-between gap-3 shadow-lg">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#05A764] text-white flex items-center justify-center shrink-0 font-bold">
+              {/* Overlay Floating Card Bottom */}
+              <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 text-slate-900 flex items-center justify-between gap-3 shadow-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#EAF5EF] text-[#05A764] flex items-center justify-center shrink-0 text-base font-bold">
                     🌱
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-xs">Direct Harvest to Doorstep</h4>
-                    <p className="text-[10px] text-emerald-200 font-medium">Under 20-min express fulfillment across Riyadh</p>
+                    <h4 className="font-extrabold text-xs text-slate-900">
+                      {isAr ? 'من الحصاد الفوري إلى بابك' : 'Dawn Harvest to Doorstep'}
+                    </h4>
+                    <p className="text-[10px] text-slate-500 font-medium">
+                      {isAr ? 'أقل من 12 ساعة من المزرعة للمستهلك' : 'Under 12 hours guaranteed farm-to-hand time'}
+                    </p>
                   </div>
                 </div>
-                <span className="bg-emerald-800/80 text-emerald-100 font-mono font-bold text-[10px] px-2.5 py-1 rounded-lg border border-emerald-600">
-                  LIVE API
+                <span className="bg-emerald-50 text-[#043927] border border-emerald-300 font-black text-[9px] uppercase px-2.5 py-1 rounded-md tracking-wider">
+                  {isAr ? 'مضمون' : 'GUARANTEED'}
                 </span>
               </div>
             </div>
@@ -118,53 +124,61 @@ export default function AboutPage() {
 
       {/* ================= SECTION 2: KEY METRIC STATS BAR ================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-[#043927] text-white rounded-3xl p-8 sm:p-10 shadow-2xl border border-emerald-900 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative overflow-hidden">
+        <div className="bg-[#043927] text-white rounded-3xl p-7 sm:p-10 shadow-xl border border-emerald-900 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative overflow-hidden">
           
           {/* Stat 1 */}
-          <div className="space-y-2 border-b sm:border-b-0 sm:border-r border-emerald-800/80 pb-6 sm:pb-0 pr-0 sm:pr-6">
-            <div className="flex items-center gap-2 text-[#05A764]">
-              <Truck className="w-5 h-5" />
-              <span className="text-2xl sm:text-3xl font-black text-white">2M+</span>
+          <div className="space-y-2 border-b sm:border-b-0 sm:border-r border-emerald-800/70 pb-6 sm:pb-0 pr-0 sm:pr-6 rtl:border-r-0 rtl:border-l rtl:pr-0 rtl:pl-6">
+            <div className="w-8 h-8 rounded-lg bg-emerald-900/70 flex items-center justify-center text-[#34D399]">
+              <Truck className="w-4.5 h-4.5" />
             </div>
-            <h4 className="font-extrabold text-xs uppercase tracking-wider text-emerald-200">Fresh Orders Delivered</h4>
-            <p className="text-[11px] text-emerald-300/80 font-medium leading-relaxed">
-              Across Riyadh, Jeddah, Dammam & Al Khobar in Saudi Arabia
+            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">2M+</div>
+            <h4 className="font-bold text-xs text-[#34D399]">
+              {isAr ? 'طلبات طازجة تم توصيلها' : 'Fresh Orders Delivered'}
+            </h4>
+            <p className="text-[11px] text-emerald-100/70 font-medium leading-relaxed">
+              {isAr ? 'عبر الرياض، جدة، الخبر، الدمام و12 مدينة أخرى.' : 'Across Riyadh, Jeddah, Khobar, Dammam & 12 other urban hubs.'}
             </p>
           </div>
 
           {/* Stat 2 */}
-          <div className="space-y-2 border-b sm:border-b-0 lg:border-r border-emerald-800/80 pb-6 sm:pb-0 pr-0 lg:pr-6">
-            <div className="flex items-center gap-2 text-[#05A764]">
-              <Leaf className="w-5 h-5" />
-              <span className="text-2xl sm:text-3xl font-black text-white">250+</span>
+          <div className="space-y-2 border-b sm:border-b-0 lg:border-r border-emerald-800/70 pb-6 sm:pb-0 pr-0 lg:pr-6 rtl:lg:border-r-0 rtl:lg:border-l rtl:pr-0 rtl:pl-6">
+            <div className="w-8 h-8 rounded-lg bg-emerald-900/70 flex items-center justify-center text-[#34D399]">
+              <Leaf className="w-4.5 h-4.5" />
             </div>
-            <h4 className="font-extrabold text-xs uppercase tracking-wider text-emerald-200">Local Farm Partners</h4>
-            <p className="text-[11px] text-emerald-300/80 font-medium leading-relaxed">
-              Certified hyper-local cultivators of fresh greens, orchard fruits & dairy
+            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">250+</div>
+            <h4 className="font-bold text-xs text-[#34D399]">
+              {isAr ? 'مزرعة شريكة محلية' : 'Local Farm Partners'}
+            </h4>
+            <p className="text-[11px] text-emerald-100/70 font-medium leading-relaxed">
+              {isAr ? 'مزارع هيدروبونيك وعضوية سعودية معتمدة بعقود مباشرة.' : 'Certified organic and hydroponic Saudi growers under direct contract.'}
             </p>
           </div>
 
           {/* Stat 3 */}
-          <div className="space-y-2 border-b sm:border-b-0 sm:border-r border-emerald-800/80 pb-6 sm:pb-0 pr-0 sm:pr-6">
-            <div className="flex items-center gap-2 text-[#05A764]">
-              <Zap className="w-5 h-5" />
-              <span className="text-2xl sm:text-3xl font-black text-white">&lt; 12h</span>
+          <div className="space-y-2 border-b sm:border-b-0 sm:border-r border-emerald-800/70 pb-6 sm:pb-0 pr-0 sm:pr-6 rtl:border-r-0 rtl:border-l rtl:pr-0 rtl:pl-6">
+            <div className="w-8 h-8 rounded-lg bg-emerald-900/70 flex items-center justify-center text-[#34D399]">
+              <Clock className="w-4.5 h-4.5" />
             </div>
-            <h4 className="font-extrabold text-xs uppercase tracking-wider text-emerald-200">Harvest to Door Speed</h4>
-            <p className="text-[11px] text-emerald-300/80 font-medium leading-relaxed">
-              Far faster than 2-week traditional distribution, keeping nutrients fully intact
+            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">&lt; 12h</div>
+            <h4 className="font-bold text-xs text-[#34D399]">
+              {isAr ? 'سرعة التوصيل بعد الحصاد' : 'Harvest-to-Door Speed'}
+            </h4>
+            <p className="text-[11px] text-emerald-100/70 font-medium leading-relaxed">
+              {isAr ? 'من قطف الصباح إلى بابك بعد الظهر مع الحفاظ الكامل على المغذيات.' : 'Morning pick to afternoon delivery, keeping nutrients fully intact.'}
             </p>
           </div>
 
           {/* Stat 4 */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-[#05A764]">
-              <Star className="w-5 h-5 fill-[#05A764]" />
-              <span className="text-2xl sm:text-3xl font-black text-white">99.4%</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-900/70 flex items-center justify-center text-[#34D399]">
+              <Star className="w-4.5 h-4.5 fill-[#34D399]" />
             </div>
-            <h4 className="font-extrabold text-xs uppercase tracking-wider text-emerald-200">Freshness Satisfaction</h4>
-            <p className="text-[11px] text-emerald-300/80 font-medium leading-relaxed">
-              Measured by verified customer feedback & 0-hassle instant replacements
+            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">99.4%</div>
+            <h4 className="font-bold text-xs text-[#34D399]">
+              {isAr ? 'نسبة رضا الطزاجة' : 'Freshness Satisfaction'}
+            </h4>
+            <p className="text-[11px] text-emerald-100/70 font-medium leading-relaxed">
+              {isAr ? 'مقاسة بتقييمات العملاء الموثقة ومؤشر جودة المحصول اليومي.' : 'Measured by verified Saudi customer reviews and freshness index.'}
             </p>
           </div>
 
@@ -172,16 +186,19 @@ export default function AboutPage() {
       </section>
 
       {/* ================= SECTION 3: THE PRINCIPLES THAT GUIDE EVERY BASKET ================= */}
-      <section id="standards" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      <section id="standards" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-9">
         <div className="text-center space-y-2 max-w-2xl mx-auto">
-          <span className="text-[11px] font-black text-[#05A764] uppercase tracking-wider bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-block">
-            🌱 OUR CORE COMMITMENT
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            The Principles That Guide Every Basket
+          <div className="inline-flex items-center gap-1.5 bg-[#EAF5EF] border border-[#CDE5D7] px-3 py-1 rounded-full text-[10px] font-bold text-[#064E3B] tracking-wider uppercase">
+            <span>🌱</span>
+            <span>{isAr ? 'مبادئنا الأساسية' : 'GUIDING PRINCIPLES'}</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-[#043927] tracking-tight">
+            {isAr ? 'المبادئ التي تقود كل سلة مقاضي' : 'The Principles That Guide Every Basket'}
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 font-semibold">
-            Every apple, bottle of milk, and head of crisp romaine is treated according to five non-negotiable quality standards.
+          <p className="text-xs sm:text-sm text-slate-500 font-normal">
+            {isAr
+              ? 'كل تفاحة، علبة حليب، ورأس خس تخضع لأربعة معايير تشغيلية صارمة لا تقبل المساومة.'
+              : 'Every apple, bottle of milk, and head of crisp romaine is handled according to four non-negotiable operational standards.'}
           </p>
         </div>
 
@@ -189,90 +206,98 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           
           {/* Card 1 */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
             <div className="space-y-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#043927] flex items-center justify-center font-bold border border-emerald-100">
-                <ShieldCheck className="w-5 h-5 text-[#05A764]" />
+              <div className="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-700 flex items-center justify-center font-bold border border-cyan-100">
+                <ShieldCheck className="w-4.5 h-4.5 text-[#05A764]" />
               </div>
-              <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">
-                🌿 01. INTEGRITY FIRST
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                01. QUALITY PROTOCOL
               </span>
-              <h3 className="font-black text-slate-900 text-base leading-snug">
-                Uncompromised Freshness
+              <h3 className="font-extrabold text-slate-900 text-base leading-snug">
+                {isAr ? 'طزاجة لا تقبل المساومة' : 'Uncompromised Freshness'}
               </h3>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                Every product undergoes a strict 14-point physical inspection before loading. If a strawberry displays a minor blemish, it never makes your grocery bag.
+              <p className="text-xs text-slate-500 font-normal leading-relaxed">
+                {isAr
+                  ? 'تخضع كل شحنة لفحص جودة يدوي وإلكتروني إلزامي يشمل 17 نقطة قبل الانطلاق. إذا وُجد أي عيب، لا يدخل المنتج سلتك أبداً.'
+                  : 'Every shipment passes a mandatory 17-point physical freshness inspection prior to dispatch. If a leaf isn\'t crisp or a fruit shows blemishes, it never enters your grocery bag.'}
               </p>
             </div>
-            <a href="#" className="text-xs font-extrabold text-[#043927] hover:text-[#05A764] flex items-center gap-1 pt-2">
-              <span>Read Quality Protocol</span>
-              <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+            <a href="#standards" className="text-xs font-bold text-[#05A764] hover:text-[#043927] flex items-center gap-1 pt-2">
+              <span>{isAr ? 'بروتوكول فحص الـ 17 نقطة' : '17-Point Visual Check'}</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
           </div>
 
           {/* Card 2 */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
             <div className="space-y-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#043927] flex items-center justify-center font-bold border border-emerald-100">
-                <Users className="w-5 h-5 text-[#05A764]" />
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#043927] flex items-center justify-center font-bold border border-emerald-100">
+                <Users className="w-4.5 h-4.5 text-[#05A764]" />
               </div>
-              <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">
-                🤝 02. COMMUNITY IMPACT
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                02. ECONOMIC IMPACT
               </span>
-              <h3 className="font-black text-slate-900 text-base leading-snug">
-                Championing Local Growers
+              <h3 className="font-extrabold text-slate-900 text-base leading-snug">
+                {isAr ? 'دعم وتمكين المزارع المحلي' : 'Championing Local Growers'}
               </h3>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                We pay 100% fair prices and provide 48-hour cash settlement to small Saudi farmers. Our partner network protects agricultural traditions while creating sustainable rural jobs.
+              <p className="text-xs text-slate-500 font-normal leading-relaxed">
+                {isAr
+                  ? 'نوقع عقوداً مباشرة بأسعار عادلة تتجاوز وسطاء التجارة التقليديين. يحصل شركاؤنا على تسويات مالية فورية وطلب مستدام لإعادة الاستثمار في أراضيهم.'
+                  : 'We sign direct, fair-value contracts that eliminate predatory commodity brokers. Our partners receive prompt settlements and predictable demand to invest back into their soil.'}
               </p>
             </div>
-            <a href="#" className="text-xs font-extrabold text-[#043927] hover:text-[#05A764] flex items-center gap-1 pt-2">
-              <span>Meet Our Farmers</span>
-              <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+            <a href="#farmers" className="text-xs font-bold text-[#05A764] hover:text-[#043927] flex items-center gap-1 pt-2">
+              <span>{isAr ? 'التجارة العادلة المباشرة' : 'Direct Fair Trade'}</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
           </div>
 
           {/* Card 3 */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
             <div className="space-y-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#043927] flex items-center justify-center font-bold border border-emerald-100">
-                <Recycle className="w-5 h-5 text-[#05A764]" />
+              <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold border border-teal-100">
+                <Recycle className="w-4.5 h-4.5 text-[#05A764]" />
               </div>
-              <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">
-                ♻️ 03. SUSTAINABILITY
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                03. GREEN FLEET
               </span>
-              <h3 className="font-black text-slate-900 text-base leading-snug">
-                Eco-Conscious Packaging
+              <h3 className="font-extrabold text-slate-900 text-base leading-snug">
+                {isAr ? 'تغليف صديق للبيئة' : 'Eco-Conscious Packaging'}
               </h3>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                We use 100% recyclable, plant-based insulation boxes and biodegradable sugarcane totes. Zero single-use plastic bags in our delivery fleet.
+              <p className="text-xs text-slate-500 font-normal leading-relaxed">
+                {isAr
+                  ? 'نستخدم حاويات عازلة للحرارة قابلة لإعادة التدوير بنسبة 100% وألغينا أكياس البلاستيك أحادية الاستخدام تماماً لتقليل البصمة الكربونية.'
+                  : 'We use 100% recyclable cold-chain insulated totes and eliminated single-use polypropylene bags. Customer return program allows totes to be sanitized and reused.'}
               </p>
             </div>
-            <a href="#" className="text-xs font-extrabold text-[#043927] hover:text-[#05A764] flex items-center gap-1 pt-2">
-              <span>Zero Waste Standard</span>
-              <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+            <a href="#sustainability" className="text-xs font-bold text-[#05A764] hover:text-[#043927] flex items-center gap-1 pt-2">
+              <span>{isAr ? 'معيار صفر بلاستيك' : 'Zero Single-Use Plastic'}</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
           </div>
 
           {/* Card 4 */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
             <div className="space-y-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#043927] flex items-center justify-center font-bold border border-emerald-100">
-                <Zap className="w-5 h-5 text-[#05A764]" />
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#043927] flex items-center justify-center font-bold border border-emerald-100">
+                <Zap className="w-4.5 h-4.5 text-[#05A764]" />
               </div>
-              <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">
-                ⚡ 04. SPEED & CARE
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                04. MICRO-HUBS
               </span>
-              <h3 className="font-black text-slate-900 text-base leading-snug">
-                Speed with Precision
+              <h3 className="font-extrabold text-slate-900 text-base leading-snug">
+                {isAr ? 'سرعة مقرونة بالدقة' : 'Speed with Precision'}
               </h3>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                Our 20-minute delivery promise is driven by hyper-local micro-fulfillment hubs. Smart temperature logs guarantee zero heat exposure during transit.
+              <p className="text-xs text-slate-500 font-normal leading-relaxed">
+                {isAr
+                  ? 'شبكة من 32 مركز تبريد مصغر داخل أحياء المدن السعودية تضمن وصول طلبك مبرداً بأقل من 4 درجات مئوية حتى في أشد أيام الصيف حرارة.'
+                  : 'Our 32 proprietary cold-storage micro-fulfillment pods across major Saudi neighborhoods guarantee low-cold delivery temperatures even during the hottest summer afternoons.'}
               </p>
             </div>
-            <a href="#" className="text-xs font-extrabold text-[#043927] hover:text-[#05A764] flex items-center gap-1 pt-2">
-              <span>Hub API Ecosystem</span>
-              <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+            <a href="#micro-hubs" className="text-xs font-bold text-[#05A764] hover:text-[#043927] flex items-center gap-1 pt-2">
+              <span>{isAr ? 'ضمان التبريد تحت 4°م' : 'Sub-4°C Guarantee'}</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
           </div>
 
@@ -280,20 +305,20 @@ export default function AboutPage() {
       </section>
 
       {/* ================= SECTION 4: FEATURED SAUDI FARMER SPOTLIGHT ================= */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <section id="farmers" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
           {/* Left Farmer Portrait */}
           <div className="lg:col-span-5 relative">
-            <div className="relative rounded-3xl overflow-hidden aspect-[4/5] border border-slate-200 shadow-md">
+            <div className="relative rounded-2xl overflow-hidden aspect-[4/5] border border-slate-200 shadow-md bg-emerald-950">
               <img
-                src="https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=700"
+                src="/images/about/farmer.jpg"
                 alt="Saudi Master Farmer holding fresh harvest"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-slate-200 text-slate-900 text-[11px] font-extrabold shadow-sm flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-[#05A764]" />
-                <span>Verified Local Partner • Al-Kharj Farms</span>
+              <div className="absolute bottom-4 left-4 right-4 bg-slate-900/85 backdrop-blur-md px-3.5 py-2 rounded-full border border-white/20 text-white text-[11px] font-bold shadow-md flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#34D399] shrink-0" />
+                <span className="truncate">{isAr ? 'مزارع محلي معتمد • واحة الخرج' : 'Verified Local Grower • Al-Kharj Oasis'}</span>
               </div>
             </div>
           </div>
@@ -301,68 +326,82 @@ export default function AboutPage() {
           {/* Right Farm Details */}
           <div className="lg:col-span-7 space-y-6">
             <div className="space-y-2">
-              <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-block">
-                🇸🇦 KINGDOM FIRST • LOCAL AGRICULTURAL
+              <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider bg-[#EAF5EF] px-3 py-1 rounded-full border border-[#CDE5D7] inline-block">
+                🇸🇦 KINGDOM FIRST • LOCAL AGRICULTURAL VENTURE
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
-                Partnering Directly With Over 250+ Saudi Farms
+              <h2 className="text-2xl sm:text-3xl font-black text-[#043927] tracking-tight leading-tight">
+                {isAr
+                  ? 'شراكة مباشرة مع أكثر من 250 مزرعة سعودية'
+                  : 'Partnering Directly with Over 250+ Saudi Farms'}
               </h2>
-              <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                Saudi Arabia's domestic agriculture is undergoing a remarkable renaissance. Through hydroponic towers, solar greenhouses, and geothermal irrigation, local growers produce world-class vegetables, dates, cheese, and citrus.
+              <p className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
+                {isAr
+                  ? 'تشهد الزراعة الوطنية نهضة مستدامة غير مسبوقة. عبر البيوت المحمية الذكية وتقنيات الهيدروبونيك، ينتج مزارعونا أجود أنواع الخضار الورقية، التمور، الأجبان، والحمضيات بمقاييس عالمية.'
+                  : 'Saudi Arabia\'s domestic agriculture is going through an unprecedented sustainable renaissance. Through precision hydroponics, solar greenhouse arrays, and ancestral soil stewardship, local growers are yielding world-class vegetables, dates, cheeses, and citrus.'}
               </p>
             </div>
 
             {/* 4 Regions Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 flex items-center gap-2.5">
+              <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 flex items-center gap-2.5">
                 <MapPin className="w-4 h-4 text-emerald-700 shrink-0" />
                 <div>
-                  <span className="font-extrabold text-slate-900 block">Al-Kharj</span>
-                  <span className="text-[11px] text-slate-500 font-semibold">Hydroponic Tomatoes & Heirloom Herbs</span>
+                  <span className="font-bold text-slate-900 block">{isAr ? 'القصيم' : 'Al-Qassim'}</span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {isAr ? 'تمور السكري وأعشاب برية' : 'Sukkari Dates & Heirloom Herbs'}
+                  </span>
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 flex items-center gap-2.5">
+              <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 flex items-center gap-2.5">
                 <MapPin className="w-4 h-4 text-emerald-700 shrink-0" />
                 <div>
-                  <span className="font-extrabold text-slate-900 block">Al-Qassim</span>
-                  <span className="text-[11px] text-slate-500 font-semibold">Sukkari Dates & Premium Organic Grains</span>
+                  <span className="font-bold text-slate-900 block">{isAr ? 'الجوف' : 'Al-Jouf'}</span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {isAr ? 'زيت زيتون بكر معصور على البارد' : 'Cold-Pressed Virgin Olive Oils'}
+                  </span>
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 flex items-center gap-2.5">
+              <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 flex items-center gap-2.5">
                 <MapPin className="w-4 h-4 text-emerald-700 shrink-0" />
                 <div>
-                  <span className="font-extrabold text-slate-900 block">Al-Ahsa</span>
-                  <span className="text-[11px] text-slate-500 font-semibold">Organic Milk & Artisanal Cheeses</span>
+                  <span className="font-bold text-slate-900 block">{isAr ? 'الخرج' : 'Al-Kharj'}</span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {isAr ? 'ألبان طازجة وخضار مائية' : 'Farm-Fresh Dairy & Hydro Greens'}
+                  </span>
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 flex items-center gap-2.5">
+              <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 flex items-center gap-2.5">
                 <MapPin className="w-4 h-4 text-emerald-700 shrink-0" />
                 <div>
-                  <span className="font-extrabold text-slate-900 block">Tabuk & Taif</span>
-                  <span className="text-[11px] text-slate-500 font-semibold">Berries, Pomegranates & Figs</span>
+                  <span className="font-bold text-slate-900 block">{isAr ? 'تبوك والطائف' : 'Tabuk & Taif'}</span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {isAr ? 'تين، رمان، وفواكه جبلية' : 'Figs, Pomegranates & Apricots'}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Quote Box */}
-            <div className="bg-emerald-50/70 border-l-4 border-[#043927] p-4 rounded-r-2xl space-y-1">
-              <p className="text-xs text-slate-700 italic font-semibold leading-relaxed">
-                "Falcon Mart gave our family-greenhouse farm direct access to thousands of homes in Riyadh every single morning. We harvest at dawn, and our produce is on family dining tables before lunchtime."
+            <div className="bg-emerald-50/60 border-l-4 rtl:border-r-4 rtl:border-l-0 border-[#043927] p-4 rounded-r-xl rtl:rounded-l-xl rtl:rounded-r-none space-y-1.5">
+              <p className="text-xs text-slate-700 italic font-medium leading-relaxed">
+                {isAr
+                  ? '"منحتنا منصة فالكون وصولاً مباشراً لآلاف العائلات في الرياض كل صباح. نحصد مع شروق الشمس، ومحصولنا يكون على مائدة الغداء قبل الظهر."'
+                  : '"FreshMart gave our family greenhouse farm direct access to thousands of homes in Riyadh every single morning. We harvest at dawn, and our produce is on family dining tables before lunchtime."'}
               </p>
               <span className="text-[11px] font-black text-[#043927] block">
-                — Abu Fahad Al-Otaibi • Master Grower, Al-Kharj Farms
+                {isAr ? '— أبو فهد السبيعي • مزارع رئيسي، وادي الخرج' : 'Abu Fahad Al-Subaie • Master Grower, Al-Kharj Valley'}
               </span>
             </div>
 
             <a
-              href="#"
-              className="inline-flex items-center gap-2 text-xs font-extrabold text-[#043927] hover:text-[#05A764] transition-colors"
+              href="/products"
+              className="inline-flex items-center gap-2 text-xs font-bold text-[#05A764] hover:text-[#043927] transition-colors"
             >
-              <span>Read Stories from Our Kingdom Farming Partners</span>
-              <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+              <span>{isAr ? 'اقرأ المزيد عن شركائنا الزراعيين في المملكة' : 'Read more about our Kingdom Farming Partners'}</span>
+              <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
             </a>
           </div>
 
@@ -370,16 +409,18 @@ export default function AboutPage() {
       </section>
 
       {/* ================= SECTION 5: EXECUTIVE LEADERSHIP TEAM ================= */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-9">
         <div className="text-center space-y-2 max-w-2xl mx-auto">
-          <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-block">
-            AUTHENTIC LEADERSHIP
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Driven by Passion for Good Food & Technology
+          <div className="inline-flex items-center gap-1 bg-[#EAF5EF] border border-[#CDE5D7] px-3 py-1 rounded-full text-[10px] font-bold text-[#064E3B] tracking-wider uppercase">
+            <span>EXECUTIVE LEADERSHIP</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-[#043927] tracking-tight">
+            {isAr ? 'يقودنا شغف بالطعام الجيد والتكنولوجيا' : 'Driven by Passion for Good Food & Technology'}
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 font-semibold">
-            Veterans across agronomy, logistics, artificial intelligence supply chain networks, and customer delight.
+          <p className="text-xs sm:text-sm text-slate-500 font-normal">
+            {isAr
+              ? 'فريق تنفيذي يجمع بين الخبرة الزراعية، الذكاء الاصطناعي لسلاسل الإمداد، وتقنيات التبريد الذكية.'
+              : 'Meet the executive team bridging agronomy, artificial intelligence routing, cold-chain tech, and customer delight.'}
           </p>
         </div>
 
@@ -388,82 +429,115 @@ export default function AboutPage() {
           
           {/* Executive 1 */}
           <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col justify-between hover:shadow-md transition-all">
-            <div className="space-y-4">
+            <div>
               <div className="h-56 overflow-hidden bg-slate-100 relative">
                 <img
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500"
+                  src="/images/about/tariq.jpg"
                   alt="Tariq Al-Mansoor"
                   className="w-full h-full object-cover object-top"
                 />
               </div>
               <div className="p-6 space-y-2">
-                <span className="text-[10px] font-extrabold text-[#05A764] uppercase tracking-wider block">
-                  CO-FOUNDER & CEO
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-[#05A764] uppercase tracking-wider block">
+                    EXECUTIVE BOARD
+                  </span>
+                  <button className="text-slate-400 hover:text-slate-600 transition-colors p-1" title="Share profile">
+                    <Share2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <h3 className="text-lg font-black text-slate-900">Tariq Al-Mansoor</h3>
-                <p className="text-xs text-slate-[#043927] font-bold">Co-Founder & Chief Executive Officer</p>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed pt-1">
-                  Former Supply Chain Lead at Saudi Aramco. Tariq founded Falcon Mart with a single mission: to bring 100% farm-fresh nutrition to every Saudi home.
+                <p className="text-xs text-emerald-900 font-bold">
+                  {isAr ? 'شريك مؤسس والرئيس التنفيذي' : 'Co-Founder & Chief Executive Officer'}
+                </p>
+                <p className="text-xs text-slate-500 font-normal leading-relaxed pt-1">
+                  {isAr
+                    ? 'شريك لوجستي سابق في الشحن الجوي. قاد مشاريع استشارية لسلاسل التبريد تماشياً مع مستهدفات الاكتفاء الذاتي الزراعي لرؤية 2030.'
+                    : 'Former logistics partner at Riyadh Air Freight. Led accelerated cold-chain consulting on Saudi Vision 2030 agricultural self-sufficiency initiatives.'}
                 </p>
               </div>
             </div>
-            <div className="px-6 pb-6 text-[11px] text-slate-400 font-bold flex items-center justify-between border-t border-slate-100 pt-3">
-              <span>Riyadh, Saudi Arabia</span>
-              <a href="#" className="text-emerald-700 font-extrabold hover:underline">Read Bio ➔</a>
+            <div className="px-6 pb-5 text-[11px] text-slate-400 font-medium flex items-center justify-between border-t border-slate-100 pt-3">
+              <span>{isAr ? 'الرياض، المملكة العربية السعودية' : 'Riyadh, Saudi Arabia'}</span>
+              <a href="#" className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 flex items-center justify-center transition-colors">
+                <ArrowUpRight className="w-3 h-3" />
+              </a>
             </div>
           </div>
 
           {/* Executive 2 */}
           <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col justify-between hover:shadow-md transition-all">
-            <div className="space-y-4">
+            <div>
               <div className="h-56 overflow-hidden bg-slate-100 relative">
                 <img
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500"
+                  src="/images/about/layla.jpg"
                   alt="Layla Al-Ghamdi"
                   className="w-full h-full object-cover object-top"
                 />
               </div>
               <div className="p-6 space-y-2">
-                <span className="text-[10px] font-extrabold text-[#05A764] uppercase tracking-wider block">
-                  CO-FOUNDER & COO
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-[#05A764] uppercase tracking-wider block">
+                    OPERATIONS LEAD
+                  </span>
+                  <button className="text-slate-400 hover:text-slate-600 transition-colors p-1" title="Share profile">
+                    <Share2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <h3 className="text-lg font-black text-slate-900">Layla Al-Ghamdi</h3>
-                <p className="text-xs text-slate-[#043927] font-bold">Co-Founder & Chief Operating Officer</p>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed pt-1">
-                  Logistics innovator with 12+ years optimizing last-mile cold-chain delivery networks across GCC metropolitan areas.
+                <p className="text-xs text-emerald-900 font-bold">
+                  {isAr ? 'شريكة مؤسسة والرئيس التنفيذي للعمليات' : 'Co-Founder & Chief Operating Officer'}
+                </p>
+                <p className="text-xs text-slate-500 font-normal leading-relaxed pt-1">
+                  {isAr
+                    ? 'خبيرة لوجستية مع أكثر من 14 عاماً في تحسين شبكات التوزيع فائق السرعة بمراكز مدن الخليج وإدارة الأساطيل الخضراء المبردة.'
+                    : 'Logistics specialist with track innovation across 14+ years optimizing high-frequency distribution across GCC metropolitan hubs and temperature-monitored green fleets.'}
                 </p>
               </div>
             </div>
-            <div className="px-6 pb-6 text-[11px] text-slate-400 font-bold flex items-center justify-between border-t border-slate-100 pt-3">
-              <span>Jeddah, Saudi Arabia</span>
-              <a href="#" className="text-emerald-700 font-extrabold hover:underline">Read Bio ➔</a>
+            <div className="px-6 pb-5 text-[11px] text-slate-400 font-medium flex items-center justify-between border-t border-slate-100 pt-3">
+              <span>{isAr ? 'جدة، الرياض' : 'Jeddah, Riyadh'}</span>
+              <a href="#" className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 flex items-center justify-center transition-colors">
+                <ArrowUpRight className="w-3 h-3" />
+              </a>
             </div>
           </div>
 
           {/* Executive 3 */}
           <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col justify-between hover:shadow-md transition-all">
-            <div className="space-y-4">
+            <div>
               <div className="h-56 overflow-hidden bg-slate-100 relative">
                 <img
-                  src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=500"
+                  src="/images/about/sarah.jpg"
                   alt="Dr. Sarah Jenkins"
                   className="w-full h-full object-cover object-top"
                 />
               </div>
               <div className="p-6 space-y-2">
-                <span className="text-[10px] font-extrabold text-[#05A764] uppercase tracking-wider block">
-                  HEAD OF AGRONOMY
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-[#05A764] uppercase tracking-wider block">
+                    FOOD SCIENCE
+                  </span>
+                  <button className="text-slate-400 hover:text-slate-600 transition-colors p-1" title="Share profile">
+                    <Share2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <h3 className="text-lg font-black text-slate-900">Dr. Sarah Jenkins</h3>
-                <p className="text-xs text-slate-[#043927] font-bold">Head of Agricultural Sciences</p>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed pt-1">
-                  PhD in Plant Biotechnology and AgTech. Lead consultant on high-yield climate-resilient farming techniques across hot arid climates.
+                <p className="text-xs text-emerald-900 font-bold">
+                  {isAr ? 'رئيسة قسم الجودة وعلوم الأغذية' : 'Head of Quality & Food Science'}
+                </p>
+                <p className="text-xs text-slate-500 font-normal leading-relaxed pt-1">
+                  {isAr
+                    ? 'دكتوراه في فسيولوجيا ما بعد الحصاد والتقنيات الزراعية. تقود بروتوكول فحص الجودة المكون من 17 نقطة ومختبرات الفحص في المستودعات.'
+                    : 'Ph.D. in Post-Harvest Physiology and AgTech. Leads FreshMart\'s rigorous 17-point quality protocol and oversees USDA-equivalent testing across all micro-hubs.'}
                 </p>
               </div>
             </div>
-            <div className="px-6 pb-6 text-[11px] text-slate-400 font-bold flex items-center justify-between border-t border-slate-100 pt-3">
-              <span>Dammam, Saudi Arabia</span>
-              <a href="#" className="text-emerald-700 font-extrabold hover:underline">Read Bio ➔</a>
+            <div className="px-6 pb-5 text-[11px] text-slate-400 font-medium flex items-center justify-between border-t border-slate-100 pt-3">
+              <span>{isAr ? 'مقر الرياض المركزي' : 'Riyadh Hub HQ'}</span>
+              <a href="#" className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 flex items-center justify-center transition-colors">
+                <ArrowUpRight className="w-3 h-3" />
+              </a>
             </div>
           </div>
 
@@ -471,86 +545,94 @@ export default function AboutPage() {
       </section>
 
       {/* ================= SECTION 6: SUSTAINABILITY & ENVIRONMENTAL IMPACT BANNER ================= */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-[#043927] text-white rounded-3xl p-8 sm:p-12 shadow-2xl border border-emerald-900 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <section id="sustainability" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-[#043927] text-white rounded-3xl p-8 sm:p-12 shadow-xl border border-emerald-900 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           
           {/* Left Text & Key Highlights */}
           <div className="lg:col-span-7 space-y-6">
             <div className="space-y-2">
-              <span className="text-[11px] font-black text-emerald-300 uppercase tracking-wider bg-emerald-900/80 px-3 py-1 rounded-full border border-emerald-700 inline-block">
-                🌿 SUSTAINABLE VISION 2030
+              <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider bg-emerald-900/80 px-3 py-1 rounded-full border border-emerald-700 inline-block">
+                🌿 Eco-Fleet Green Initiative 2030
               </span>
               <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight">
-                Honoring Our Land, Nurturing Our Communities.
+                {isAr ? 'نحترم أرضنا، ونرعى مجتمعاتنا.' : 'Honoring Our Land, Nurturing Our Communities.'}
               </h2>
-              <p className="text-xs sm:text-sm text-emerald-100/90 font-medium leading-relaxed">
-                Fresh food should not come at the expense of our environment. We are building the Kingdom's most sustainable, responsible grocery ecosystem in the Middle East.
+              <p className="text-xs sm:text-sm text-emerald-100/90 font-normal leading-relaxed">
+                {isAr
+                  ? 'لا ينبغي أن يأتي الطعام الطازج على حساب بيئتنا. نحن نبني البنية التحتية الأكثر مسؤولية واستدامة لتوصيل البقالة في الشرق الأوسط.'
+                  : 'FreshMart foods not only serve the expanse of our environment. We are building the most environmentally responsible grocery infrastructure in the Middle East.'}
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2">
-              <div className="bg-emerald-900/50 p-3.5 rounded-2xl border border-emerald-800">
-                <Droplets className="w-5 h-5 text-[#05A764] mb-1.5" />
-                <span className="font-extrabold text-white block">Water Saved</span>
-                <span className="text-[10px] text-emerald-300">85% less water used via hydroponic farm partners.</span>
+              <div className="bg-emerald-900/40 p-3.5 rounded-2xl border border-emerald-800/80">
+                <Leaf className="w-4.5 h-4.5 text-[#34D399] mb-1.5" />
+                <span className="font-bold text-white block">{isAr ? 'انبعاثات صفرية' : 'Zero Emissions'}</span>
+                <span className="text-[10px] text-emerald-200/80">
+                  {isAr ? 'أسطول كهربائي 100% في المراكز الحضرية.' : '100% Electric delivery fleet in urban centers'}
+                </span>
               </div>
 
-              <div className="bg-emerald-900/50 p-3.5 rounded-2xl border border-emerald-800">
-                <Sun className="w-5 h-5 text-[#05A764] mb-1.5" />
-                <span className="font-extrabold text-white block">Solar Powered</span>
-                <span className="text-[10px] text-emerald-300">30% of cold hubs powered by solar arrays.</span>
+              <div className="bg-emerald-900/40 p-3.5 rounded-2xl border border-emerald-800/80">
+                <Sun className="w-4.5 h-4.5 text-[#34D399] mb-1.5" />
+                <span className="font-bold text-white block">{isAr ? 'مستودعات شمسية' : 'Solar Micro-Hubs'}</span>
+                <span className="text-[10px] text-emerald-200/80">
+                  {isAr ? '70% من غرف التبريد تعمل بالطاقة المتجددة.' : '70% renewable energy powering cold storage'}
+                </span>
               </div>
 
-              <div className="bg-emerald-900/50 p-3.5 rounded-2xl border border-emerald-800">
-                <Recycle className="w-5 h-5 text-[#05A764] mb-1.5" />
-                <span className="font-extrabold text-white block">Zero Single-Use</span>
-                <span className="text-[10px] text-emerald-300">100% compostable sugarcane packaging.</span>
+              <div className="bg-emerald-900/40 p-3.5 rounded-2xl border border-emerald-800/80">
+                <Recycle className="w-4.5 h-4.5 text-[#34D399] mb-1.5" />
+                <span className="font-bold text-white block">{isAr ? 'شجرة لكل 10 طلبات' : 'Tree Per 10-packs'}</span>
+                <span className="text-[10px] text-emerald-200/80">
+                  {isAr ? 'أشجار محلية مزروعة في عسير والعلا.' : 'Native trees planted across Asir & Al-Ula'}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Right Progress Impact Card */}
-          <div className="lg:col-span-5 bg-emerald-900/60 p-6 rounded-3xl border border-emerald-800/80 space-y-4">
-            <h4 className="text-xs font-black uppercase tracking-wider text-emerald-200">
-              Annual Environmental Impact
+          <div className="lg:col-span-5 bg-[#032a1c]/80 backdrop-blur-md p-6 rounded-2xl border border-emerald-800/80 space-y-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-200">
+              {isAr ? 'الوفر البيئي السنوي' : 'Annual Environmental Savings'}
             </h4>
 
             {/* Metric 1 */}
-            <div className="space-y-1 text-xs">
+            <div className="space-y-1.5 text-xs">
               <div className="flex justify-between font-bold">
-                <span className="text-emerald-100">Plastic Bags Saved</span>
-                <span className="text-[#05A764] font-black">1,420,000 bags</span>
+                <span className="text-emerald-100">{isAr ? 'أكياس بلاستيكية تم تفاديها' : 'Plastic Bags Prevented'}</span>
+                <span className="text-[#34D399] font-black">1,420,000 bags</span>
               </div>
               <div className="w-full h-2 bg-emerald-950 rounded-full overflow-hidden">
-                <div className="h-full bg-[#05A764] w-[95%]" />
+                <div className="h-full bg-[#34D399] w-[95%]" />
               </div>
             </div>
 
             {/* Metric 2 */}
-            <div className="space-y-1 text-xs">
+            <div className="space-y-1.5 text-xs">
               <div className="flex justify-between font-bold">
-                <span className="text-emerald-100">Food Waste Reduction</span>
-                <span className="text-[#05A764] font-black">94.8%</span>
+                <span className="text-emerald-100">{isAr ? 'تقليل هدر الأغذية' : 'Food Loss Under Delivery'}</span>
+                <span className="text-[#34D399] font-black">89,200 kg</span>
               </div>
               <div className="w-full h-2 bg-emerald-950 rounded-full overflow-hidden">
-                <div className="h-full bg-[#05A764] w-[94.8%]" />
+                <div className="h-full bg-[#34D399] w-[92%]" />
               </div>
             </div>
 
             {/* Metric 3 */}
-            <div className="space-y-1 text-xs">
+            <div className="space-y-1.5 text-xs">
               <div className="flex justify-between font-bold">
-                <span className="text-emerald-100">CO2 Emission Saved vs Auto-Trips</span>
-                <span className="text-[#05A764] font-black">385 Metric Tons</span>
+                <span className="text-emerald-100">{isAr ? 'انبعاثات كربونية موفرة' : 'CO2 Emissions Averted'}</span>
+                <span className="text-[#34D399] font-black">380 metric tons</span>
               </div>
               <div className="w-full h-2 bg-emerald-950 rounded-full overflow-hidden">
-                <div className="h-full bg-[#05A764] w-[88%]" />
+                <div className="h-full bg-[#34D399] w-[88%]" />
               </div>
             </div>
 
-            <div className="pt-2 border-t border-emerald-800 flex items-center justify-between text-[11px] text-emerald-300 font-bold">
-              <span>🌱 100% Tree Planted per 50 Orders</span>
-              <span className="text-white font-black">12,400 Trees</span>
+            <div className="pt-2 border-t border-emerald-800 flex items-center justify-between text-[11px] text-emerald-200 font-bold">
+              <span>🌱 {isAr ? 'زراعة أشجار وطنية' : 'Native Trees Planted'}</span>
+              <span className="text-white font-black">42,000+ Trees</span>
             </div>
           </div>
 
@@ -560,69 +642,85 @@ export default function AboutPage() {
       {/* ================= SECTION 7: COMPANY GROWTH TIMELINE ================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center space-y-2 max-w-2xl mx-auto">
-          <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-block">
-            OUR GROWTH STORY
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            From a Single Green Van to Kingdom-Wide Delivery
+          <div className="inline-flex items-center gap-1 bg-[#EAF5EF] border border-[#CDE5D7] px-3 py-1 rounded-full text-[10px] font-bold text-[#064E3B] tracking-wider uppercase">
+            <span>{isAr ? 'قصة مسيرتنا' : 'OUR GROWTH STORY'}</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-[#043927] tracking-tight">
+            {isAr ? 'من مركبة توزيع واحدة إلى تغطية كافة أرجاء المملكة' : 'From a Single Green Van to Kingdom-Wide Delivery'}
           </h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           
           {/* Step 1 */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-3 relative">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-3 relative">
             <div className="w-8 h-8 rounded-full bg-[#043927] text-white font-black text-xs flex items-center justify-center">
               1
             </div>
-            <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">
+            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
               2021 • FOUNDING
             </span>
-            <h4 className="font-extrabold text-slate-900 text-sm">Riyadh Pilot</h4>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              Launched with 1 micro-hub and 5 farms in Riyadh, pioneering 30-min local farm delivery.
+            <h4 className="font-extrabold text-slate-900 text-sm">
+              {isAr ? 'إطلاق تجريبي بالرياض' : 'Riyadh Pilot'}
+            </h4>
+            <p className="text-xs text-slate-500 font-normal leading-relaxed">
+              {isAr
+                ? 'الانطلاق بمركز تبريد واحد وشراكة مع 5 مزارع محلية بالرياض لتوصيل مباشر خلال 30 دقيقة.'
+                : 'Launched with 1 micro-hub and 5 farms in Riyadh, pioneering 30-min local farm delivery.'}
             </p>
           </div>
 
           {/* Step 2 */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-3 relative">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-3 relative">
             <div className="w-8 h-8 rounded-full bg-[#043927] text-white font-black text-xs flex items-center justify-center">
               2
             </div>
-            <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">
+            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
               2023 • EXPANSION
             </span>
-            <h4 className="font-extrabold text-slate-900 text-sm">Hyper-Local Cold Hubs</h4>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              Expanded to 12 cold-chain hubs across Riyadh & Jeddah with 100+ partner farms.
+            <h4 className="font-extrabold text-slate-900 text-sm">
+              {isAr ? 'مراكز تبريد مصغرة' : 'Hyper-Local Cold Hubs'}
+            </h4>
+            <p className="text-xs text-slate-500 font-normal leading-relaxed">
+              {isAr
+                ? 'التوسع إلى 12 مركز تبريد متقدم في الرياض وجدة مع أكثر من 100 مزرعة شريكة.'
+                : 'Expanded to 12 cold-chain hubs across Riyadh & Jeddah with 100+ partner farms.'}
             </p>
           </div>
 
           {/* Step 3 */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-3 relative">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-3 relative">
             <div className="w-8 h-8 rounded-full bg-[#043927] text-white font-black text-xs flex items-center justify-center">
               3
             </div>
-            <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">
+            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
               2025 • TECH STACK
             </span>
-            <h4 className="font-extrabold text-slate-900 text-sm">AI Demand Prediction</h4>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              Integrated machine learning demand models to eliminate farm food waste before harvest.
+            <h4 className="font-extrabold text-slate-900 text-sm">
+              {isAr ? 'تنبؤ الطلب بالذكاء الاصطناعي' : 'AI Demand Prediction'}
+            </h4>
+            <p className="text-xs text-slate-500 font-normal leading-relaxed">
+              {isAr
+                ? 'دمج نماذج تعلم الآلة للتنبؤ الدقيق بالطلب والحد من هدر المحاصيل قبل الحصاد.'
+                : 'Integrated machine learning demand models to eliminate farm food waste before harvest.'}
             </p>
           </div>
 
           {/* Step 4 */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-3 relative border-emerald-300 bg-emerald-50/20">
+          <div className="bg-white p-6 rounded-2xl border border-emerald-300 bg-emerald-50/20 shadow-xs space-y-3 relative">
             <div className="w-8 h-8 rounded-full bg-[#05A764] text-white font-black text-xs flex items-center justify-center">
               4
             </div>
-            <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">
+            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
               TODAY • MARKET LEADER
             </span>
-            <h4 className="font-extrabold text-slate-900 text-sm">250+ Farms & 2M+ Delivery</h4>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              Operating 20-min express fulfillment across Saudi Arabia with 99.4% freshness guarantee.
+            <h4 className="font-extrabold text-slate-900 text-sm">
+              {isAr ? 'أكثر من 250 مزرعة وتوصيل مليوني' : '250+ Farms & 2M+ Delivery'}
+            </h4>
+            <p className="text-xs text-slate-500 font-normal leading-relaxed">
+              {isAr
+                ? 'تشغيل خدمات التوصيل فائق السرعة عبر مدن المملكة مع ضمان جودة وطزاجة بنسبة 99.4%.'
+                : 'Operating express fulfillment across Saudi Arabia with 99.4% freshness guarantee.'}
             </p>
           </div>
 
@@ -631,34 +729,36 @@ export default function AboutPage() {
 
       {/* ================= SECTION 8: BOTTOM CALL TO ACTION BANNER ================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-[#043927] text-white rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-2xl border border-emerald-900 relative overflow-hidden">
-          <div className="w-14 h-14 rounded-3xl bg-[#05A764] text-white flex items-center justify-center mx-auto text-2xl font-bold shadow-lg">
+        <div className="bg-[#043927] text-white rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-xl border border-emerald-900 relative overflow-hidden">
+          <div className="w-12 h-12 rounded-2xl bg-[#05A764] text-white flex items-center justify-center mx-auto text-xl font-bold shadow-md">
             🌱
           </div>
 
           <div className="space-y-2 max-w-2xl mx-auto">
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
-              Taste the Difference That Real Freshness Makes
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+              {isAr ? 'تذوق الفرق الذي تصنعه الطزاجة الحقيقية' : 'Taste the Difference That Real Freshness Makes'}
             </h2>
-            <p className="text-xs sm:text-sm text-emerald-100/90 font-medium leading-relaxed">
-              Experience groceries harvested locally this morning and delivered to your doorstep in under 20 minutes.
+            <p className="text-xs sm:text-sm text-emerald-100/90 font-normal leading-relaxed">
+              {isAr
+                ? 'جرب خضاراً وفواكه حُصدت من المزارع المحلية صباح اليوم وتصل إلى باب منزلك في أقل من 30 دقيقة.'
+                : 'Experience groceries harvested locally this morning and delivered to your doorstep in under 30 minutes.'}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
             <Link
               href="/products"
-              className="px-8 py-3.5 rounded-2xl bg-[#05A764] hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+              className="px-8 py-3.5 rounded-full bg-[#05A764] hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
             >
-              <span>Shop Fresh Groceries Now</span>
-              <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+              <span>{isAr ? 'تسوق المقاضي الطازجة الآن' : 'Shop Fresh Groceries Now'}</span>
+              <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
             </Link>
 
             <Link
               href="/products"
-              className="px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs border border-white/20 transition-all cursor-pointer"
+              className="px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all cursor-pointer"
             >
-              View Farm Partners
+              {isAr ? 'تعرف على شركاء المزارع' : 'View Farm Partners'}
             </Link>
           </div>
         </div>

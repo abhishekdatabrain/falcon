@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
+import { useSocket } from '../../../src/contexts/SocketContext';
 import {
   Package,
   Truck,
@@ -46,6 +47,7 @@ export default function AdminOrdersPage() {
   const router = useRouter();
   const { locale } = useLanguage();
   const { showToast } = useToast();
+  const { socket } = useSocket();
 
   // Data States
   const [orders, setOrders] = useState([]);
@@ -159,6 +161,24 @@ export default function AdminOrdersPage() {
     sortBy,
     sortOrder,
   ]);
+
+  // Real-time synchronization across Admin Orders Panel
+  useEffect(() => {
+    if (!socket) return;
+    socket.emit('join_admin_room');
+
+    const handleSync = () => {
+      loadData(currentPage);
+    };
+
+    socket.on('order_status_update', handleSync);
+    socket.on('order_assigned', handleSync);
+
+    return () => {
+      socket.off('order_status_update', handleSync);
+      socket.off('order_assigned', handleSync);
+    };
+  }, [socket, currentPage]);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -1051,11 +1071,17 @@ export default function AdminOrdersPage() {
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase">Delivery Address</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Delivery Address & Schedule</div>
                       <div className="font-bold text-slate-800">
-                        {selectedOrder.address?.street || 'Delivery Address'}, {selectedOrder.address?.city || 'Riyadh'}
+                        {selectedOrder.address?.address_line || selectedOrder.address?.street || 'Delivery Address'}, {selectedOrder.address?.city || 'Riyadh'}
                       </div>
                       <div className="text-slate-500">Postal: {selectedOrder.address?.postal_code || '11564'}</div>
+                      {(selectedOrder.delivery_date || selectedOrder.delivery_slot) && (
+                        <div className="pt-2 border-t border-slate-200 text-xs text-indigo-700 font-bold flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{selectedOrder.delivery_date || 'Today'} • {selectedOrder.delivery_slot || 'Express'}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 

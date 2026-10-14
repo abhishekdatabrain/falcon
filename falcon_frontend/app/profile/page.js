@@ -1,9 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useLanguage } from '../../src/contexts/LanguageContext';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { useToast } from '../../src/contexts/ToastContext';
+import { useLanguage } from '@/src/contexts/LanguageContext';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { useToast } from '@/src/contexts/ToastContext';
+import { fetchApi, getImageUrl } from '@/src/services/api';
 import {
   User,
   ShieldCheck,
@@ -35,24 +36,45 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
-  Upload
+  Upload,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
+
+const DIETARY_OPTIONS = [
+  { key: 'halal', label: '100% Halal Certified', alert: false },
+  { key: 'organic', label: 'Organic & Pesticide-Free', alert: false },
+  { key: 'saudi_produce', label: 'Locally Sourced Saudi Produce', alert: false },
+  { key: 'nut_alert', label: 'Nut Allergy Alert', alert: true },
+  { key: 'gluten_free', label: 'Gluten-Free Friendly', alert: false },
+  { key: 'dairy_free', label: 'Dairy-Free / Lactose-Free', alert: false },
+  { key: 'keto', label: 'Keto & Low Carb', alert: false },
+  { key: 'diabetic', label: 'Sugar-Free / Diabetic Friendly', alert: false },
+];
+
+const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
 
 export default function ProfilePage() {
   const { locale } = useLanguage();
-  const { user, logout } = useAuth();
+  const { user, loading: authLoading, logout, checkUser } = useAuth();
   const { showToast } = useToast();
 
-  // Form State
-  const [firstName, setFirstName] = useState('Noura');
-  const [lastName, setLastName] = useState('Al-Mansoor');
-  const [email, setEmail] = useState('noura.almansoor@riyadh.sa');
-  const [mobile, setMobile] = useState('+966 55 987 6543');
-  const [dob, setDob] = useState('1992-09-14');
+  // Loading & Action states
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Profile data & Form State
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [dob, setDob] = useState('');
   const [gender, setGender] = useState('Female');
   const [interfaceLang, setInterfaceLang] = useState('English (US) - Primary');
-  const [nationalId, setNationalId] = useState('•••• •••• 4912');
-  const [avatar, setAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80');
+  const [nationalId, setNationalId] = useState('');
+  const [avatar, setAvatar] = useState(DEFAULT_AVATAR);
+  const [avatarRelative, setAvatarRelative] = useState('');
 
   // Security Toggles
   const [tfaEnabled, setTfaEnabled] = useState(true);
@@ -62,7 +84,7 @@ export default function ProfilePage() {
     'halal',
     'organic',
     'saudi_produce',
-    'nut_alert'
+    'nut_alert',
   ]);
   const [householdSize, setHouseholdSize] = useState('Family (3-4)');
 
@@ -70,27 +92,240 @@ export default function ProfilePage() {
   const [whatsappAlerts, setWhatsappAlerts] = useState(true);
   const [smsAlerts, setSmsAlerts] = useState(true);
 
+  // Dynamic Backend Stats
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    activeOrders: 0,
+    totalSpent: 0,
+    martPoints: '',
+    martPointsVal: '',
+    tier: '',
+    tierTitle: '',
+    wishlistCount: 0,
+    addressesCount: 0,
+    tierSavings: 45,
+  });
+
+  // Fetch Profile from Backend
+  const loadProfile = useCallback(async () => {
+    if (!user) {
+      setInitialLoading(false);
+      return;
+    }
+
+    try {
+      setInitialLoading(true);
+      const res = await fetchApi('/customer/profile');
+      if (res.success && res.data?.profile) {
+        const p = res.data.profile;
+        setFirstName(p.first_name || p.user?.first_name || '');
+        setLastName(p.last_name || p.user?.last_name || '');
+        setEmail(p.user?.email || '');
+        setMobile(p.user?.mobile || '');
+        setDob(p.dob || '');
+        setGender(p.gender || 'Female');
+        setNationalId(p.national_id || '');
+
+        if (p.avatar_url) {
+          setAvatarRelative(p.avatar_url);
+          setAvatar(getImageUrl(p.avatar_url));
+        } else {
+          setAvatar(DEFAULT_AVATAR);
+          setAvatarRelative('');
+        }
+
+        if (p.preferences && typeof p.preferences === 'object') {
+          if (Array.isArray(p.preferences.dietaryFilters)) {
+            setDietaryFilters(p.preferences.dietaryFilters);
+          }
+          if (p.preferences.householdSize) {
+            setHouseholdSize(p.preferences.householdSize);
+          }
+          if (p.preferences.interfaceLang) {
+            setInterfaceLang(p.preferences.interfaceLang);
+          }
+          if (p.preferences.tfaEnabled !== undefined) {
+            setTfaEnabled(Boolean(p.preferences.tfaEnabled));
+          }
+          if (p.preferences.whatsappAlerts !== undefined) {
+            setWhatsappAlerts(Boolean(p.preferences.whatsappAlerts));
+          }
+          if (p.preferences.smsAlerts !== undefined) {
+            setSmsAlerts(Boolean(p.preferences.smsAlerts));
+          }
+        }
+
+        if (p.stats) {
+          setStats(p.stats);
+        }
+      }
+    } catch (err) {
+      console.warn('Customer profile load notice:', err.message);
+      // Fallback with user info from auth
+     
+    } finally {
+      setInitialLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading) {
+      loadProfile();
+    }
+  }, [authLoading, loadProfile]);
+
+  // Dietary Toggle
   const toggleDietaryFilter = (key) => {
     setDietaryFilters((prev) =>
       prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
     );
   };
 
-  const handleSave = () => {
-    showToast(
-      locale === 'ar' ? 'تم حفظ ملف التعريف والتفضيلات بنجاح! 🎉' : 'Profile & preferences saved successfully! 🎉',
-      'success'
-    );
-  };
+  // Avatar Upload via POST /upload
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const handleAvatarUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setAvatar(url);
-      showToast(locale === 'ar' ? 'تم تحديث الصورة الشخصية!' : 'Profile avatar updated!', 'success');
+    if (file.size > 5 * 1024 * 1024) {
+      showToast(locale === 'ar' ? 'حجم الملف يجب ألا يتجاوز 5 ميجابايت' : 'File size must be under 5MB', 'error');
+      return;
+    }
+
+    // Local instant preview
+    const previewUrl = URL.createObjectURL(file);
+    setAvatar(previewUrl);
+
+    if (user) {
+      setUploadingAvatar(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetchApi('/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (res.success && res.data?.url) {
+          const relativePath = res.data.url;
+          setAvatarRelative(relativePath);
+          const resolvedUrl = getImageUrl(relativePath);
+          setAvatar(resolvedUrl);
+
+          // Auto-save to customer profile
+          await fetchApi('/customer/profile', {
+            method: 'PUT',
+            body: JSON.stringify({ avatar_url: relativePath }),
+          });
+
+          if (checkUser) checkUser();
+          showToast(locale === 'ar' ? 'تم تحديث وحفظ الصورة الشخصية! 📸' : 'Profile avatar updated and saved! 📸', 'success');
+        } else {
+          throw new Error(res.message || 'Upload failed');
+        }
+      } catch (err) {
+        console.error('Avatar upload error:', err);
+        showToast(err.message || 'Failed to upload photo', 'error');
+      } finally {
+        setUploadingAvatar(false);
+      }
+    } else {
+      showToast(locale === 'ar' ? 'تم تحديث الصورة محلياً (يرجى تسجيل الدخول للحفظ)' : 'Avatar updated locally (Sign in to save)', 'info');
     }
   };
+
+  // Remove Avatar
+  const handleAvatarRemove = async () => {
+    setAvatar(DEFAULT_AVATAR);
+    setAvatarRelative('');
+
+    if (user) {
+      try {
+        await fetchApi('/customer/profile', {
+          method: 'PUT',
+          body: JSON.stringify({ avatar_url: '' }),
+        });
+        if (checkUser) checkUser();
+        showToast(locale === 'ar' ? 'تمت إزالة الصورة الشخصية' : 'Profile avatar removed', 'success');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  // Save All Profile & Preferences via PUT /customer/profile
+  const handleSave = async () => {
+    if (!user) {
+      showToast(
+        locale === 'ar' ? 'يرجى تسجيل الدخول لحفظ التغييرات' : 'Please log in to save changes',
+        'error'
+      );
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const payload = {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        email: email.trim(),
+        mobile: mobile.trim(),
+        dob,
+        gender,
+        national_id: nationalId.trim(),
+        avatar_url: avatarRelative || (avatar.startsWith('http') && !avatar.includes('blob:') ? avatar : undefined),
+        preferences: {
+          dietaryFilters,
+          householdSize,
+          interfaceLang,
+          tfaEnabled,
+          whatsappAlerts,
+          smsAlerts,
+        },
+      };
+
+      const res = await fetchApi('/customer/profile', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+
+      if (res.success && res.data?.profile) {
+        const p = res.data.profile;
+        if (p.stats) setStats(p.stats);
+        if (checkUser) checkUser();
+        showToast(
+          locale === 'ar' ? 'تم حفظ ملف التعريف والتفضيلات بنجاح! 🎉' : 'Profile & preferences saved successfully! 🎉',
+          'success'
+        );
+      } else {
+        throw new Error(res.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      console.error('Update profile error:', err);
+      showToast(err.message || 'Failed to save profile changes', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Dynamic Profile Strength Badge Calculation
+  const badgeCriteria = [
+    { label: 'First Name', ok: Boolean(firstName?.trim()) },
+    { label: 'Last Name', ok: Boolean(lastName?.trim()) },
+    { label: 'Email Verified', ok: Boolean(email?.trim()) },
+    { label: 'Mobile Phone', ok: Boolean(mobile?.trim()) },
+    { label: 'Date of Birth', ok: Boolean(dob?.trim()) },
+    { label: 'Gender Selected', ok: Boolean(gender) },
+    { label: 'National ID / Nafath', ok: Boolean(nationalId?.trim()) },
+    { label: 'Profile Avatar Photo', ok: Boolean(avatar && avatar !== DEFAULT_AVATAR) },
+    { label: 'Dietary Preferences', ok: dietaryFilters.length > 0 },
+    { label: 'Household Size', ok: Boolean(householdSize) },
+  ];
+  const completedBadges = badgeCriteria.filter((b) => b.ok).length;
+  const strengthPercentage = Math.round((completedBadges / badgeCriteria.length) * 100);
+
+  // Full Name formatting
+  const fullName = [firstName, lastName].filter(Boolean).join(' ') || (user?.email ? user.email.split('@')[0] : 'Falcon Member');
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] font-sans text-slate-900 pb-28 select-none">
@@ -102,19 +337,56 @@ export default function ProfilePage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-1.5 font-semibold text-slate-500">
             <Link href="/" className="hover:text-slate-900 transition-colors flex items-center gap-1">
-              🏠 Home
+              🏠 {locale === 'ar' ? 'الرئيسية' : 'Home'}
             </Link>
             <span className="text-slate-300">›</span>
-            <span>My Account</span>
+            <span>{locale === 'ar' ? 'حسابي' : 'My Account'}</span>
             <span className="text-slate-300">›</span>
-            <span className="text-slate-900 font-extrabold">My Profile</span>
+            <span className="text-slate-900 font-extrabold">{locale === 'ar' ? 'ملفي الشخصي' : 'My Profile'}</span>
           </div>
 
           <div className="flex items-center gap-2 text-[#05A764] font-extrabold bg-emerald-50 border border-emerald-200/80 px-3.5 py-1.5 rounded-full shadow-2xs self-start sm:self-auto font-sans">
             <span className="w-2 h-2 rounded-full bg-[#05A764] animate-pulse" />
-            <span>Account Verified via Nafath • Riyadh Center</span>
+            <span>
+              {user
+                ? (locale === 'ar' ? 'الحساب موثق عبر نفاذ • مركز الرياض' : 'Account Verified via Nafath • Riyadh Center')
+                : (locale === 'ar' ? 'جلسة زائر نشطة' : 'Guest Session Active')}
+            </span>
           </div>
         </div>
+
+        {/* Unauthenticated / Guest Warning Banner */}
+        {!user && !authLoading && (
+          <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-amber-900 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+              <div>
+                <p className="text-xs font-black">
+                  {locale === 'ar' ? 'أنت تتصفح ملف التعريف حالياً كزائر' : 'You are currently browsing the Profile page as a Guest.'}
+                </p>
+                <p className="text-[11px] text-amber-700 font-medium mt-0.5">
+                  {locale === 'ar'
+                    ? 'سجل الدخول أو أنشئ حساباً لحفظ تفضيلاتك الغذائية ونقاط الولاء وخصومات التوصيل.'
+                    : 'Sign in or register to sync your preferences, save addresses, and earn Falcon MartPoints.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/login?redirect=/profile"
+                className="bg-[#043927] hover:bg-[#02281b] text-white text-xs font-black px-4 py-2 rounded-xl transition-all shadow-xs"
+              >
+                {locale === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
+              </Link>
+              <Link
+                href="/register?redirect=/profile"
+                className="bg-white hover:bg-slate-50 border border-amber-300 text-amber-900 text-xs font-extrabold px-3 py-2 rounded-xl transition-all"
+              >
+                {locale === 'ar' ? 'حساب جديد' : 'Register'}
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* MAIN 2-COLUMN DASHBOARD LAYOUT */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -127,7 +399,15 @@ export default function ProfilePage() {
               <div className="flex items-center gap-3.5">
                 {/* Avatar */}
                 <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[#05A764] shadow-xs shrink-0 bg-slate-100">
-                  <img src={avatar} alt="Noura Al-Mansoor" className="w-full h-full object-cover" />
+                  <img
+                    src={avatar || DEFAULT_AVATAR}
+                    alt={fullName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = DEFAULT_AVATAR;
+                    }}
+                  />
                   <span className="absolute bottom-0 right-0 w-4 h-4 bg-[#05A764] border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white">
                     ✓
                   </span>
@@ -136,33 +416,28 @@ export default function ProfilePage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="font-black text-base sm:text-lg text-slate-900 truncate font-sans">
-                      Noura Al-Mansoor
+                      {fullName}
                     </h2>
-                    <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 font-sans">
-                      👑 GOLD VIP
-                    </span>
+                    
                   </div>
                   <p className="text-xs text-slate-500 font-semibold truncate">
-                    +966 55 987 6543
+                    {mobile || user?.mobile || (locale === 'ar' ? 'لا يوجد رقم مسجل' : '+966 5x xxx xxxx')}
                   </p>
-                  <div className="flex items-center gap-1 text-[11px] font-extrabold text-[#05A764] pt-0.5 font-sans">
-                    <Zap className="w-3.5 h-3.5 fill-current" />
-                    <span>Free Priority Delivery Active</span>
-                  </div>
+                 
                 </div>
               </div>
 
               {/* Stats Split Box */}
-              <div className="bg-[#F5F6F8] rounded-2xl p-3.5 flex items-center justify-around border border-slate-200/60 text-center font-sans">
+              {/* <div className="bg-[#F5F6F8] rounded-2xl p-3.5 flex items-center justify-around border border-slate-200/60 text-center font-sans">
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
                     MartPoints
                   </span>
                   <span className="text-lg font-black text-slate-900 block">
-                    1,420
+                    {Number(stats?.martPoints || 0).toLocaleString()}
                   </span>
                   <span className="text-[10px] font-extrabold text-emerald-600 block">
-                    SAR 71.00 Value
+                    SAR {stats?.martPointsVal || '0.00'} Value
                   </span>
                 </div>
 
@@ -173,22 +448,22 @@ export default function ProfilePage() {
                     Tier Savings
                   </span>
                   <span className="text-lg font-black text-slate-900 block">
-                    SAR 384
+                    SAR {stats?.tierSavings || 0}
                   </span>
                   <span className="text-[10px] font-semibold text-slate-400 block">
                     Year to date
                   </span>
                 </div>
-              </div>
+              </div> */}
             </div>
 
-            {/* Gold Privilege FAST-TRACK Banner */}
+            {/* Privilege FAST-TRACK Banner */}
             <div className="bg-[#043927] text-white rounded-2xl p-4 space-y-1.5 relative overflow-hidden shadow-md">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <Award className="w-4 h-4 text-amber-300" />
                   <span className="font-extrabold text-xs tracking-wide font-sans">
-                    Gold Privilege
+                    {stats?.tierTitle || ''}
                   </span>
                 </div>
                 <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider font-sans">
@@ -196,7 +471,9 @@ export default function ProfilePage() {
                 </span>
               </div>
               <p className="text-xs text-emerald-100 font-medium leading-relaxed">
-                North Riyadh Express 20-Min Guarantee active on all your weekday morning grocery slots.
+                {locale === 'ar'
+                  ? 'ضمان توصيل سريع خلال 20 دقيقة في شمال الرياض مفعّل على جميع فترات تسوق الصباح.'
+                  : 'North Riyadh Express 20-Min Guarantee active on all your weekday morning grocery slots.'}
               </p>
             </div>
 
@@ -208,7 +485,7 @@ export default function ProfilePage() {
               >
                 <div className="flex items-center gap-3">
                   <LayoutDashboard className="w-4 h-4 text-slate-500" />
-                  <span>Dashboard Overview</span>
+                  <span>{locale === 'ar' ? 'لوحة المتابعة' : 'Dashboard Overview'}</span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400 rtl:rotate-180" />
               </Link>
@@ -219,20 +496,20 @@ export default function ProfilePage() {
               >
                 <div className="flex items-center gap-3">
                   <ShoppingBag className="w-4 h-4 text-slate-500" />
-                  <span>My Orders</span>
+                  <span>{locale === 'ar' ? 'طلباتي' : 'My Orders'}</span>
                 </div>
                 <span className="bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full">
-                  3 Active
+                  {stats?.activeOrders || 0} {locale === 'ar' ? 'نشط' : 'Active'}
                 </span>
               </Link>
 
               <Link
-                href="/orders/SA-849204"
+                href="/track-order"
                 className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <Truck className="w-4 h-4 text-slate-500" />
-                  <span>Track Live Order</span>
+                  <span>{locale === 'ar' ? 'تتبع الطلب المباشر' : 'Track Live Order'}</span>
                 </div>
                 <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
               </Link>
@@ -243,9 +520,9 @@ export default function ProfilePage() {
               >
                 <div className="flex items-center gap-3">
                   <Heart className="w-4 h-4 text-slate-500" />
-                  <span>Wishlist</span>
+                  <span>{locale === 'ar' ? 'المفضلة' : 'Wishlist'}</span>
                 </div>
-                <span className="text-slate-400 font-semibold">12</span>
+                <span className="text-slate-400 font-semibold">{stats?.wishlistCount || 0}</span>
               </Link>
 
               <Link
@@ -254,24 +531,24 @@ export default function ProfilePage() {
               >
                 <div className="flex items-center gap-3">
                   <MapPin className="w-4 h-4 text-slate-500" />
-                  <span>Saved Addresses</span>
+                  <span>{locale === 'ar' ? 'العناوين المحفوظة' : 'Saved Addresses'}</span>
                 </div>
-                <span className="text-slate-400 font-semibold">3</span>
+                <span className="text-slate-400 font-semibold">{stats?.addressesCount || 0}</span>
               </Link>
 
               <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">
                   <CreditCard className="w-4 h-4 text-slate-500" />
-                  <span>Payment Methods</span>
+                  <span>{locale === 'ar' ? 'طرق الدفع' : 'Payment Methods'}</span>
                 </div>
-                <span className="text-[11px] text-slate-400 font-medium">Mada / Visa</span>
+                <span className="text-[11px] text-slate-400 font-medium">Mada / Apple Pay</span>
               </div>
 
               {/* ACTIVE ITEM: My Profile */}
               <div className="flex items-center justify-between p-3 rounded-2xl bg-[#043927] text-white font-black shadow-xs">
                 <div className="flex items-center gap-3">
                   <User className="w-4 h-4 text-emerald-400" />
-                  <span>My Profile</span>
+                  <span>{locale === 'ar' ? 'ملفي الشخصي' : 'My Profile'}</span>
                 </div>
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
               </div>
@@ -279,7 +556,7 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">
                   <Bell className="w-4 h-4 text-slate-500" />
-                  <span>Notifications</span>
+                  <span>{locale === 'ar' ? 'الإشعارات' : 'Notifications'}</span>
                 </div>
                 <span className="bg-rose-50 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-full">
                   2
@@ -292,7 +569,7 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2.5">
                 <Headphones className="w-4 h-4 text-[#05A764]" />
                 <span className="font-extrabold text-xs text-slate-900 font-sans">
-                  24/7 Concierge Support
+                  {locale === 'ar' ? 'دعم كونسيرج 24/7' : '24/7 Concierge Support'}
                 </span>
               </div>
               <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-sans uppercase">
@@ -301,13 +578,16 @@ export default function ProfilePage() {
             </div>
 
             {/* Sign Out Button */}
-            <button
-              onClick={() => logout && logout()}
-              className="w-full text-rose-600 hover:text-rose-700 font-bold text-xs flex items-center gap-2 px-4 py-2.5 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer font-sans"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Sign Out</span>
-            </button>
+            {user && (
+              <button
+                type="button"
+                onClick={() => logout && logout()}
+                className="w-full text-rose-600 hover:text-rose-700 font-bold text-xs flex items-center gap-2 px-4 py-2.5 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer font-sans"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>{locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}</span>
+              </button>
+            )}
 
             {/* Need Grocery Help? WhatsApp Box */}
             <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 flex items-center justify-between">
@@ -315,20 +595,22 @@ export default function ProfilePage() {
                 <MessageSquare className="w-4 h-4 text-emerald-600" />
                 <div>
                   <h4 className="font-extrabold text-xs text-slate-900 font-sans">
-                    Need Grocery Help?
+                    {locale === 'ar' ? 'تحتاج مساعدة في المقاضي؟' : 'Need Grocery Help?'}
                   </h4>
                   <p className="text-[10px] text-slate-500 font-medium">
-                    WhatsApp VIP Representative
+                    {locale === 'ar' ? 'ممثل خدمة عملاء VIP عبر واتساب' : 'WhatsApp VIP Representative'}
                   </p>
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="bg-[#05A764] hover:bg-[#048b53] text-white font-extrabold text-xs px-3 py-1.5 rounded-xl shadow-xs cursor-pointer font-sans"
+              <a
+                href="https://wa.me/966559876543?text=Hello%20Falcon%20VIP%20Grocery%20Support"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#05A764] hover:bg-[#048b53] text-white font-extrabold text-xs px-3 py-1.5 rounded-xl shadow-xs cursor-pointer font-sans inline-block"
               >
-                Chat Now
-              </button>
+                {locale === 'ar' ? 'تواصل الآن' : 'Chat Now'}
+              </a>
             </div>
 
           </div>
@@ -340,40 +622,52 @@ export default function ProfilePage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-sans">
-                  My Profile & Preferences
+                  {locale === 'ar' ? 'ملفي الشخصي والتفضيلات' : 'My Profile & Preferences'}
                 </h1>
                 <p className="text-xs text-slate-500 font-medium mt-1">
-                  Manage personal details, Riyadh delivery coordinates, allergen safeguards, and security settings.
+                  {locale === 'ar'
+                    ? 'إدارة البيانات الشخصية، حماية الحساسية الغذائية، وإعدادات الأمان والإشعارات.'
+                    : 'Manage personal details, Riyadh delivery coordinates, allergen safeguards, and security settings.'}
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={handleSave}
-                className="bg-[#043927] hover:bg-[#02281b] text-white font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer font-sans shrink-0 self-start sm:self-auto"
+                disabled={saving}
+                className="bg-[#043927] hover:bg-[#02281b] disabled:opacity-70 text-white font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer font-sans shrink-0 self-start sm:self-auto"
               >
-                <Check className="w-4 h-4 text-emerald-400 stroke-[3]" />
-                <span>Save Changes</span>
+                {saving ? (
+                  <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4 text-emerald-400 stroke-[3]" />
+                )}
+                <span>{saving ? (locale === 'ar' ? 'جاري الحفظ...' : 'Saving...') : (locale === 'ar' ? 'حفظ التغييرات' : 'Save Changes')}</span>
               </button>
             </div>
 
-            {/* PROFILE STRENGTH 90% COMPLETE CARD */}
+            {/* DYNAMIC PROFILE STRENGTH CARD */}
             <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs space-y-2.5">
               <div className="flex items-center justify-between font-sans">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-[#05A764]" />
                   <span className="font-black text-xs sm:text-sm text-slate-900">
-                    Profile Strength: 90% Complete
+                    {locale === 'ar'
+                      ? `اكتمال الملف الشخصي: ${strengthPercentage}%`
+                      : `Profile Strength: ${strengthPercentage}% Complete`}
                   </span>
                 </div>
                 <span className="text-xs font-bold text-slate-500">
-                  9 / 10 Badges
+                  {completedBadges} / {badgeCriteria.length} {locale === 'ar' ? 'عناصر' : 'Badges'}
                 </span>
               </div>
 
               {/* Progress Track */}
               <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-[#05A764] rounded-full w-[90%] transition-all duration-500" />
+                <div
+                  className="h-full bg-[#05A764] rounded-full transition-all duration-500"
+                  style={{ width: `${strengthPercentage}%` }}
+                />
               </div>
             </div>
 
@@ -384,10 +678,10 @@ export default function ProfilePage() {
                   <User className="w-4 h-4 text-[#05A764]" />
                   <div>
                     <h2 className="font-extrabold text-sm sm:text-base text-slate-900 font-sans">
-                      Personal Details
+                      {locale === 'ar' ? 'البيانات الشخصية' : 'Personal Details'}
                     </h2>
                     <p className="text-[11px] text-slate-400 font-medium">
-                      Update your identity and verified contact channels.
+                      {locale === 'ar' ? 'تحديث هويتك وقنوات التواصل المعتمدة.' : 'Update your identity and verified contact channels.'}
                     </p>
                   </div>
                 </div>
@@ -400,34 +694,71 @@ export default function ProfilePage() {
               {/* Account Avatar Edit Box */}
               <div className="flex items-center gap-4 bg-[#F5F6F8] rounded-2xl p-4 border border-slate-200/60">
                 <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-xs shrink-0 bg-slate-200">
-                  <img src={avatar} alt="Account Avatar" className="w-full h-full object-cover" />
+                  <img
+                    src={avatar || DEFAULT_AVATAR}
+                    alt="Account Avatar"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = DEFAULT_AVATAR;
+                    }}
+                  />
                   <label className="absolute inset-0 bg-slate-950/40 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-                    <Camera className="w-5 h-5" />
-                    <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+                    {uploadingAvatar ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Camera className="w-5 h-5" />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      disabled={uploadingAvatar}
+                    />
                   </label>
                 </div>
 
                 <div className="space-y-1">
                   <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
-                    Account Avatar
+                    {locale === 'ar' ? 'صورة الحساب' : 'Account Avatar'}
                   </h4>
                   <p className="text-[11px] text-slate-500 font-medium leading-tight">
-                    Accepts JPG, WEBP or PNG. Maximum file size is 5MB. Visible to delivery personnel during doorstep delivery.
+                    {locale === 'ar'
+                      ? 'يقبل صيغ JPG أو WEBP أو PNG بحد أقصى 5 ميجابايت. تظهر لمندوب التوصيل أثناء تسليم الطلب.'
+                      : 'Accepts JPG, WEBP or PNG. Maximum file size is 5MB. Visible to delivery personnel during doorstep delivery.'}
                   </p>
 
                   <div className="flex items-center gap-3 pt-1 font-sans">
-                    <label className="bg-[#043927] hover:bg-[#02281b] text-white text-[11px] font-extrabold px-3 py-1.5 rounded-xl cursor-pointer transition-colors shadow-2xs inline-block">
-                      Upload New Photo
-                      <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+                    <label
+                      className={`bg-[#043927] hover:bg-[#02281b] text-white text-[11px] font-extrabold px-3 py-1.5 rounded-xl cursor-pointer transition-colors shadow-2xs inline-flex items-center gap-1.5 ${
+                        uploadingAvatar ? 'opacity-60 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {uploadingAvatar && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>
+                        {uploadingAvatar
+                          ? (locale === 'ar' ? 'جاري الرفع...' : 'Uploading...')
+                          : (locale === 'ar' ? 'رفع صورة جديدة' : 'Upload New Photo')}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                        disabled={uploadingAvatar}
+                      />
                     </label>
 
-                    <button
-                      type="button"
-                      onClick={() => setAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80')}
-                      className="text-xs text-rose-600 font-bold hover:underline cursor-pointer"
-                    >
-                      Remove
-                    </button>
+                    {avatar && avatar !== DEFAULT_AVATAR && (
+                      <button
+                        type="button"
+                        onClick={handleAvatarRemove}
+                        className="text-xs text-rose-600 font-bold hover:underline cursor-pointer"
+                      >
+                        {locale === 'ar' ? 'إزالة' : 'Remove'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -437,23 +768,27 @@ export default function ProfilePage() {
                 
                 {/* First Name */}
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-extrabold">First Name</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
-                    />
-                  </div>
+                  <label className="block text-slate-700 font-extrabold">
+                    {locale === 'ar' ? 'الاسم الأول' : 'First Name'}
+                  </label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    placeholder="e.g. Noura"
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
+                  />
                 </div>
 
                 {/* Last Name */}
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-extrabold">Last Name</label>
+                  <label className="block text-slate-700 font-extrabold">
+                    {locale === 'ar' ? 'اسم العائلة' : 'Last Name'}
+                  </label>
                   <input
                     type="text"
                     value={lastName}
+                    placeholder="e.g. Al-Mansoor"
                     onChange={(e) => setLastName(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
                   />
@@ -462,14 +797,17 @@ export default function ProfilePage() {
                 {/* Email Address */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="block text-slate-700 font-extrabold">Email Address</label>
+                    <label className="block text-slate-700 font-extrabold">
+                      {locale === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}
+                    </label>
                     <span className="text-[10px] font-black text-emerald-600 flex items-center gap-0.5">
-                      ✓ Verified
+                      ✓ {locale === 'ar' ? 'موثق' : 'Verified'}
                     </span>
                   </div>
                   <input
                     type="email"
                     value={email}
+                    placeholder="name@domain.com"
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
                   />
@@ -478,7 +816,9 @@ export default function ProfilePage() {
                 {/* Mobile Phone (KSA) */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="block text-slate-700 font-extrabold">Mobile Phone (KSA)</label>
+                    <label className="block text-slate-700 font-extrabold">
+                      {locale === 'ar' ? 'رقم الجوال (السعودية)' : 'Mobile Phone (KSA)'}
+                    </label>
                     <span className="text-[10px] font-black text-emerald-600 flex items-center gap-0.5">
                       📱 SMS Connected
                     </span>
@@ -486,6 +826,7 @@ export default function ProfilePage() {
                   <input
                     type="text"
                     value={mobile}
+                    placeholder="+966 5x xxx xxxx"
                     onChange={(e) => setMobile(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
                   />
@@ -493,7 +834,9 @@ export default function ProfilePage() {
 
                 {/* Date of Birth */}
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-extrabold">Date of Birth</label>
+                  <label className="block text-slate-700 font-extrabold">
+                    {locale === 'ar' ? 'تاريخ الميلاد' : 'Date of Birth'}
+                  </label>
                   <input
                     type="date"
                     value={dob}
@@ -501,13 +844,15 @@ export default function ProfilePage() {
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
                   />
                   <p className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
-                    🎂 Double MartPoints on your birthday harvest week.
+                    🎂 {locale === 'ar' ? 'نقاط مضاعفة في أسبوع يوم ميلادك!' : 'Double MartPoints on your birthday harvest week.'}
                   </p>
                 </div>
 
                 {/* Gender Toggle */}
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-extrabold">Gender</label>
+                  <label className="block text-slate-700 font-extrabold">
+                    {locale === 'ar' ? 'الجنس' : 'Gender'}
+                  </label>
                   <div className="flex items-center gap-2 pt-0.5">
                     <button
                       type="button"
@@ -518,7 +863,7 @@ export default function ProfilePage() {
                           : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                       }`}
                     >
-                      ♀ Female
+                      ♀ {locale === 'ar' ? 'أنثى' : 'Female'}
                     </button>
                     <button
                       type="button"
@@ -529,14 +874,16 @@ export default function ProfilePage() {
                           : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                       }`}
                     >
-                      ♂ Male
+                      ♂ {locale === 'ar' ? 'ذكر' : 'Male'}
                     </button>
                   </div>
                 </div>
 
                 {/* Preferred Interface & Invoices */}
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-extrabold">Preferred Interface & Invoices</label>
+                  <label className="block text-slate-700 font-extrabold">
+                    {locale === 'ar' ? 'لغة الواجهة والفواتير المفضلة' : 'Preferred Interface & Invoices'}
+                  </label>
                   <select
                     value={interfaceLang}
                     onChange={(e) => setInterfaceLang(e.target.value)}
@@ -550,7 +897,9 @@ export default function ProfilePage() {
                 {/* National ID / Iqama (ZATCA e-Invoice) */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="block text-slate-700 font-extrabold">National ID / Iqama (ZATCA e-Invoice)</label>
+                    <label className="block text-slate-700 font-extrabold">
+                      {locale === 'ar' ? 'رقم الهوية الوطنية / الإقامة' : 'National ID / Iqama (ZATCA e-Invoice)'}
+                    </label>
                     <span className="text-[10px] font-black text-emerald-600 flex items-center gap-0.5">
                       🛡️ Nafath Validated
                     </span>
@@ -559,15 +908,16 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       value={nationalId}
+                      placeholder="e.g. 10xxxxxxxx"
                       onChange={(e) => setNationalId(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
                     />
                     <button
                       type="button"
-                      onClick={() => showToast(locale === 'ar' ? 'جاري توجيهك لنظام نفاذ الوطني...' : 'Redirecting to Nafath Portal...', 'info')}
-                      className="text-xs text-[#05A764] font-extrabold hover:underline shrink-0"
+                      onClick={() => showToast(locale === 'ar' ? 'تم حفظ رقم الهوية بنجاح' : 'National ID updated for tax invoicing', 'success')}
+                      className="text-xs text-[#05A764] font-extrabold hover:underline shrink-0 cursor-pointer"
                     >
-                      Update
+                      {locale === 'ar' ? 'تحديث' : 'Update'}
                     </button>
                   </div>
                 </div>
@@ -583,10 +933,10 @@ export default function ProfilePage() {
                   <Lock className="w-4 h-4 text-[#05A764]" />
                   <div>
                     <h2 className="font-extrabold text-sm sm:text-base text-slate-900 font-sans">
-                      Password & Security
+                      {locale === 'ar' ? 'كلمة المرور والأمان' : 'Password & Security'}
                     </h2>
                     <p className="text-[11px] text-slate-400 font-medium">
-                      Multi-factor authorization and social account connections.
+                      {locale === 'ar' ? 'إعدادات المصادقة الثنائية وتأمين الحساب.' : 'Multi-factor authorization and social account connections.'}
                     </p>
                   </div>
                 </div>
@@ -604,24 +954,35 @@ export default function ProfilePage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold text-xs text-slate-900">
-                          Account Password
+                          {locale === 'ar' ? 'كلمة المرور' : 'Account Password'}
                         </span>
                         <span className="bg-emerald-100 text-[#043927] text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
                           STRONG
                         </span>
                       </div>
                       <p className="text-[10px] text-slate-400 font-medium">
-                        Last modified 3 months ago (May 2026)
+                        {locale === 'ar' ? 'محمية بتشفير 256-بت' : 'Encrypted with 256-bit hash'}
                       </p>
                     </div>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => showToast(locale === 'ar' ? 'تم إرسال رابط إعادة تعيين كلمة المرور على بريدك' : 'Password reset link sent to your email', 'info')}
+                    onClick={() => {
+                      if (email) {
+                        showToast(
+                          locale === 'ar'
+                            ? `تم إرسال رابط إعادة تعيين كلمة المرور إلى ${email}`
+                            : `Password reset link sent to ${email}`,
+                          'success'
+                        );
+                      } else {
+                        showToast('Please enter an email address first', 'error');
+                      }
+                    }}
                     className="bg-white hover:bg-slate-100 text-slate-800 font-extrabold text-xs px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs cursor-pointer"
                   >
-                    Change Password
+                    {locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
                   </button>
                 </div>
 
@@ -631,10 +992,12 @@ export default function ProfilePage() {
                     <Smartphone className="w-4 h-4 text-[#05A764] shrink-0" />
                     <div>
                       <h4 className="font-extrabold text-xs text-slate-900">
-                        Two-Factor Authentication (2FA)
+                        {locale === 'ar' ? 'المصادقة الثنائية (2FA)' : 'Two-Factor Authentication (2FA)'}
                       </h4>
                       <p className="text-[10px] text-slate-500 font-medium leading-tight">
-                        Instant 6-digit OTP verification prompted during orders over SAR 500 or new delivery addresses. Active on: +966 55 *** 6543
+                        {locale === 'ar'
+                          ? 'طلب رمز تحقق عبر الرسائل للطلبات التي تتجاوز 500 ريال أو العناوين الجديدة.'
+                          : 'Instant 6-digit OTP verification prompted during orders over SAR 500 or new delivery addresses.'}
                       </p>
                     </div>
                   </div>
@@ -680,15 +1043,21 @@ export default function ProfilePage() {
                     <div className="bg-[#F5F6F8] rounded-xl p-2.5 border border-slate-200/60 flex items-center justify-between text-xs">
                       <div>
                         <span className="font-extrabold text-slate-900 block">🌐 Google Account</span>
-                        <span className="text-[9px] text-slate-400 font-medium">Not connected</span>
+                        <span className="text-[9px] text-slate-400 font-medium">
+                          {user?.email?.includes('@gmail.com') ? 'Connected' : 'Not connected'}
+                        </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => showToast(locale === 'ar' ? 'جاري ربط حساب Google...' : 'Connecting Google account...', 'info')}
-                        className="text-xs text-[#05A764] font-extrabold hover:underline"
-                      >
-                        Link
-                      </button>
+                      {user?.email?.includes('@gmail.com') ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => showToast(locale === 'ar' ? 'جاري ربط حساب Google...' : 'Connecting Google account...', 'info')}
+                          className="text-xs text-[#05A764] font-extrabold hover:underline"
+                        >
+                          Link
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -704,10 +1073,12 @@ export default function ProfilePage() {
                   <Leaf className="w-4 h-4 text-[#05A764]" />
                   <div>
                     <h2 className="font-extrabold text-sm sm:text-base text-slate-900 font-sans">
-                      Dietary Preferences & Allergen Safeguards
+                      {locale === 'ar' ? 'التفضيلات الغذائية وتنبيهات الحساسية' : 'Dietary Preferences & Allergen Safeguards'}
                     </h2>
                     <p className="text-[11px] text-slate-400 font-medium">
-                      We'll automatically filter recommendations and highlight allergen warnings in your cart.
+                      {locale === 'ar'
+                        ? 'سنقوم تلقائياً بتصفية المنتجات وإبراز تحذيرات الحساسية في سلة التسوق الخاصة بك.'
+                        : "We'll automatically filter recommendations and highlight allergen warnings in your cart."}
                     </p>
                   </div>
                 </div>
@@ -724,69 +1095,31 @@ export default function ProfilePage() {
                 </span>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  {/* Active Halal */}
-                  <button
-                    type="button"
-                    onClick={() => toggleDietaryFilter('halal')}
-                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                      dietaryFilters.includes('halal')
-                        ? 'bg-[#043927] text-white shadow-2xs'
-                        : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <span>✓ 100% Halal Certified</span>
-                  </button>
+                  {DIETARY_OPTIONS.map((opt) => {
+                    const isSelected = dietaryFilters.includes(opt.key);
+                    let btnClass = 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold';
+                    if (isSelected) {
+                      if (opt.alert) {
+                        btnClass = 'bg-rose-50 text-rose-700 border border-rose-300 shadow-2xs font-extrabold';
+                      } else {
+                        btnClass = 'bg-[#043927] text-white shadow-2xs font-extrabold';
+                      }
+                    }
 
-                  {/* Active Organic */}
-                  <button
-                    type="button"
-                    onClick={() => toggleDietaryFilter('organic')}
-                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                      dietaryFilters.includes('organic')
-                        ? 'bg-[#043927] text-white shadow-2xs'
-                        : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <span>✓ Organic & Pesticide-Free</span>
-                  </button>
-
-                  {/* Active Saudi Produce */}
-                  <button
-                    type="button"
-                    onClick={() => toggleDietaryFilter('saudi_produce')}
-                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                      dietaryFilters.includes('saudi_produce')
-                        ? 'bg-[#043927] text-white shadow-2xs'
-                        : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <span>✓ Locally Sourced Saudi Produce</span>
-                  </button>
-
-                  {/* Nut Allergy Alert */}
-                  <button
-                    type="button"
-                    onClick={() => toggleDietaryFilter('nut_alert')}
-                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                      dietaryFilters.includes('nut_alert')
-                        ? 'bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs'
-                        : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <span>⚠️ Nut Allergy Alert</span>
-                  </button>
-
-                  {/* Other Available Pills */}
-                  {['+ Gluten-Free Friendly', '+ Dairy-Free / Lactose-Free', '+ Keto & Low Carb', '+ Sugar-Free / Diabetic Friendly'].map((opt) => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => showToast(`Toggled ${opt}`, 'info')}
-                      className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs px-3 py-1.5 rounded-full transition-colors cursor-pointer"
-                    >
-                      {opt}
-                    </button>
-                  ))}
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => toggleDietaryFilter(opt.key)}
+                        className={`px-3 py-1.5 rounded-full text-xs transition-all cursor-pointer flex items-center gap-1.5 ${btnClass}`}
+                      >
+                        <span>
+                          {opt.alert ? '⚠️ ' : (isSelected ? '✓ ' : '+ ')}
+                          {opt.label}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -794,10 +1127,12 @@ export default function ProfilePage() {
               <div className="bg-[#F5F6F8] rounded-2xl p-4 border border-slate-200/60 space-y-2 pt-3 font-sans">
                 <div>
                   <h4 className="font-extrabold text-xs sm:text-sm text-slate-900">
-                    Household Size for Recipe Bundling
+                    {locale === 'ar' ? 'حجم الأسرة لتوصيات المقادير والوصفات' : 'Household Size for Recipe Bundling'}
                   </h4>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    Calibrates family-size portion recommendations for fruits, proteins, and pantry essentials.
+                    {locale === 'ar'
+                      ? 'يساعد في ضبط كميات الفواكه واللحوم ومستلزمات المطبخ بما يناسب احتياج عائلتك.'
+                      : 'Calibrates family-size portion recommendations for fruits, proteins, and pantry essentials.'}
                   </p>
                 </div>
 
@@ -827,11 +1162,13 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2">
                   <MessageCircle className="w-4 h-4 text-[#05A764]" />
                   <h2 className="font-extrabold text-sm sm:text-base text-slate-900 font-sans">
-                    Communication Channels
+                    {locale === 'ar' ? 'قنوات التواصل والإشعارات' : 'Communication Channels'}
                   </h2>
                 </div>
                 <p className="text-[11px] text-slate-400 font-medium">
-                  Choose how you wish to receive live order updates, farm specials, and courier dispatch notifications.
+                  {locale === 'ar'
+                    ? 'اختر طريقة استلام تحديثات الطلب المباشرة وعروض المزارع ورمز التسليم.'
+                    : 'Choose how you wish to receive live order updates, farm specials, and courier dispatch notifications.'}
                 </p>
               </div>
 
@@ -842,10 +1179,14 @@ export default function ProfilePage() {
                     <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
                     <div>
                       <h4 className="font-extrabold text-xs text-slate-900">
-                        WhatsApp Order Tracking & Fresh Harvest Alerts
+                        {locale === 'ar'
+                          ? 'تتبع الطلبات وتنبيهات الحصاد الطازج عبر واتساب'
+                          : 'WhatsApp Order Tracking & Fresh Harvest Alerts'}
                       </h4>
                       <p className="text-[10px] text-slate-500 font-medium leading-tight">
-                        Receive automated live dispatch links, runner live map, and out-of-stock substitution queries via WhatsApp.
+                        {locale === 'ar'
+                          ? 'استلام رابط تتبع السائق المباشر وخريطة التوصيل واستفسارات استبدال المنتجات عبر واتساب.'
+                          : 'Receive automated live dispatch links, runner live map, and out-of-stock substitution queries via WhatsApp.'}
                       </p>
                     </div>
                   </div>
@@ -867,10 +1208,12 @@ export default function ProfilePage() {
                     <Smartphone className="w-4 h-4 text-[#05A764] shrink-0" />
                     <div>
                       <h4 className="font-extrabold text-xs text-slate-900">
-                        SMS Delivery PINs & Driver Arrival
+                        {locale === 'ar' ? 'رمز استلام الطلب ووصول السائق عبر SMS' : 'SMS Delivery PINs & Driver Arrival'}
                       </h4>
                       <p className="text-[10px] text-slate-500 font-medium leading-tight">
-                        Receive high-priority SMS containing the 4-digit doorstep delivery confirmation code.
+                        {locale === 'ar'
+                          ? 'استلام رسائل SMS ذات أولوية تحتوي على رمز التحقق المكون من 4 أرقام لتأكيد الاستلام عند الباب.'
+                          : 'Receive high-priority SMS containing the 4-digit doorstep delivery confirmation code.'}
                       </p>
                     </div>
                   </div>

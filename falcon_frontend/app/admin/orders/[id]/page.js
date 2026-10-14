@@ -760,6 +760,17 @@ export default function OrderDetailsPage({ params }) {
                 </div>
               </div>
 
+              {(order.delivery_date || order.delivery_slot) && (
+                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900">
+                  <span className="text-[10px] uppercase font-bold block text-emerald-800 flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Scheduled Delivery Window
+                  </span>
+                  <p className="mt-0.5 font-bold">
+                    {order.delivery_date || 'Today'} • {order.delivery_slot || 'Express'}
+                  </p>
+                </div>
+              )}
+
               {order.notes && (
                 <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900">
                   <span className="text-[10px] uppercase font-bold block text-amber-800">Order Delivery Notes</span>

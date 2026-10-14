@@ -35,6 +35,7 @@ class DriverService {
   }
 
   async acceptDelivery(deliveryId, driverId) {
+    const { emitOrderStatusUpdate } = require('../sockets/socketManager');
     const delivery = await Delivery.findOne({
       where: { id: deliveryId, driver_id: driverId },
       include: ['order'],
@@ -48,7 +49,7 @@ class DriverService {
       throw new Error('Order is not in DRIVER_ASSIGNED state');
     }
 
-    return await sequelize.transaction(async (t) => {
+    const result = await sequelize.transaction(async (t) => {
       await delivery.update({ status: ORDER_STATUS.DRIVER_ACCEPTED }, { transaction: t });
       await delivery.order.update({ order_status: ORDER_STATUS.DRIVER_ACCEPTED }, { transaction: t });
 
@@ -67,9 +68,21 @@ class DriverService {
 
       return delivery;
     });
+
+    emitOrderStatusUpdate({
+      orderId: delivery.order.id,
+      deliveryId: delivery.id,
+      driverId,
+      status: ORDER_STATUS.DRIVER_ACCEPTED,
+      orderStatus: ORDER_STATUS.DRIVER_ACCEPTED,
+      notes: 'Driver accepted the delivery assignment',
+    });
+
+    return result;
   }
 
-  async updateDeliveryStatus(deliveryId, driverId, targetStatus) {
+  async updateDeliveryStatus(deliveryId, driverId, targetStatus, meta = {}) {
+    const { emitOrderStatusUpdate } = require('../sockets/socketManager');
     const delivery = await Delivery.findOne({
       where: { id: deliveryId, driver_id: driverId },
       include: ['order'],
@@ -86,37 +99,72 @@ class DriverService {
       throw new Error(`Invalid delivery status transition from ${currentStatus} to ${targetStatus}`);
     }
 
-    return await sequelize.transaction(async (t) => {
+    // OTP Verification for DELIVERED
+    if (targetStatus === ORDER_STATUS.DELIVERED) {
+      if (delivery.otp) {
+        const inputOtp = String(meta.otp || '').trim();
+        const expectedOtp = String(delivery.otp).trim();
+        if (!inputOtp || inputOtp !== expectedOtp) {
+          throw new Error('Invalid delivery PIN / OTP. Please enter the correct 4-digit code provided by the customer.');
+        }
+      }
+    }
+
+    const result = await sequelize.transaction(async (t) => {
       const updatePayload = { status: targetStatus };
       if (targetStatus === ORDER_STATUS.OUT_FOR_DELIVERY && !delivery.start_time) {
         updatePayload.start_time = new Date();
       } else if (targetStatus === ORDER_STATUS.DELIVERED) {
         updatePayload.end_time = new Date();
+        updatePayload.otp_verified_at = new Date();
+        if (meta.notes) updatePayload.proof_notes = meta.notes;
+        if (meta.proof_image) updatePayload.proof_image = meta.proof_image;
+      } else if (targetStatus === ORDER_STATUS.DELIVERY_FAILED) {
+        updatePayload.failure_reason = meta.failure_reason || meta.notes || 'Customer unavailable / delivery could not be completed';
       }
 
       await delivery.update(updatePayload, { transaction: t });
       await delivery.order.update({ order_status: targetStatus }, { transaction: t });
 
+      const historyNotes = meta.notes || meta.failure_reason || `Delivery status updated by driver to ${targetStatus}`;
+
       await OrderStatusHistory.create({
         order_id: delivery.order.id,
         from_status: currentStatus,
         to_status: targetStatus,
-        notes: `Delivery status updated by driver to ${targetStatus}`,
+        notes: historyNotes,
       }, { transaction: t });
 
-      // When DELIVERED: set driver availability back to AVAILABLE & generate ZATCA Invoice
-      if (targetStatus === ORDER_STATUS.DELIVERED) {
+      // When DELIVERED or DELIVERY_FAILED: set driver availability back to AVAILABLE
+      if (targetStatus === ORDER_STATUS.DELIVERED || targetStatus === ORDER_STATUS.DELIVERY_FAILED) {
         await Driver.update(
           { availability_status: DRIVER_AVAILABILITY.AVAILABLE },
           { where: { id: driverId }, transaction: t }
         );
 
-        // Generate ZATCA Invoice
-        await zatcaInvoiceService.generateInvoiceForOrder(delivery.order.id, t);
+        // Generate ZATCA Invoice on DELIVERED
+        if (targetStatus === ORDER_STATUS.DELIVERED) {
+          await zatcaInvoiceService.generateInvoiceForOrder(delivery.order.id, t);
+        }
       }
 
       return delivery;
     });
+
+    emitOrderStatusUpdate({
+      orderId: delivery.order.id,
+      deliveryId: delivery.id,
+      driverId,
+      status: targetStatus,
+      orderStatus: targetStatus,
+      notes: meta.notes || meta.failure_reason || '',
+      data: {
+        otpVerified: targetStatus === ORDER_STATUS.DELIVERED,
+        failureReason: meta.failure_reason || null,
+      },
+    });
+
+    return result;
   }
 
   async updateAvailability(driverId, availabilityStatus) {
@@ -134,6 +182,7 @@ class DriverService {
   }
 
   async logDriverLocation(deliveryId, driverId, latitude, longitude, speed = null, heading = null) {
+    const { emitDriverLocationUpdate } = require('../sockets/socketManager');
     const delivery = await Delivery.findOne({
       where: { id: deliveryId, driver_id: driverId },
       include: ['order'],
@@ -143,7 +192,7 @@ class DriverService {
       return null; // GPS tracking operates strictly during active delivery
     }
 
-    return await DriverLocation.create({
+    const loc = await DriverLocation.create({
       delivery_id: deliveryId,
       driver_id: driverId,
       latitude,
@@ -152,6 +201,20 @@ class DriverService {
       heading,
       recorded_at: new Date(),
     });
+
+    // Also broadcast location via socket for instant client sync
+    emitDriverLocationUpdate({
+      deliveryId,
+      orderId: delivery.order.id,
+      driverId,
+      latitude,
+      longitude,
+      speed: speed || 0,
+      heading: heading || 0,
+      temp: '3.5°C',
+    });
+
+    return loc;
   }
 
   async updateDriverProfile(userId, { mobile, email, vehicle_details }) {

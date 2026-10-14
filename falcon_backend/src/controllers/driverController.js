@@ -36,7 +36,7 @@ class DriverController {
         return sendError(res, 'Status is required', [], 400);
       }
 
-      const delivery = await driverService.updateDeliveryStatus(deliveryId, driver.id, status);
+      const delivery = await driverService.updateDeliveryStatus(deliveryId, driver.id, status, req.body);
       return sendSuccess(res, `Delivery status updated to ${status}`, { delivery });
     } catch (error) {
       return sendError(res, error.message, [], 400);

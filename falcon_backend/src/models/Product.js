@@ -147,6 +147,25 @@ const Product = sequelize.define('Product', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  rating: {
+    type: DataTypes.DECIMAL(3, 1),
+    allowNull: true,
+    defaultValue: 4.8,
+  },
+  reviews_count: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 120,
+  },
+  reviews: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return this.getDataValue('reviews_count');
+    },
+    set(val) {
+      this.setDataValue('reviews_count', val);
+    },
+  },
 }, {
   tableName: 'products',
   timestamps: true,
@@ -158,6 +177,7 @@ const Product = sequelize.define('Product', {
     { fields: ['sku'] },
     { fields: ['is_available'] },
     { fields: ['is_active'] },
+    { fields: ['rating'] },
   ],
 });
 

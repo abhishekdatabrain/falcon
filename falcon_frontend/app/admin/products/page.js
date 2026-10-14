@@ -148,6 +148,8 @@ export default function AdminProductsPage() {
     is_best_deal: false,
     is_popular_pick: false,
     has_variants: false,
+    rating: '',
+    reviews_count: '',
     variants: [],
     images: [],
   });
@@ -231,6 +233,8 @@ export default function AdminProductsPage() {
       is_best_deal: false,
       is_popular_pick: false,
       has_variants: false,
+      rating: '4.8',
+      reviews_count: '120',
       variants: [],
       images: [],
     });
@@ -298,6 +302,8 @@ export default function AdminProductsPage() {
       is_best_deal: prod.is_best_deal !== undefined ? prod.is_best_deal : false,
       is_popular_pick: prod.is_popular_pick !== undefined ? prod.is_popular_pick : false,
       has_variants: Boolean(prod.has_variants),
+      rating: prod.rating !== undefined && prod.rating !== null ? String(prod.rating) : '4.8',
+      reviews_count: prod.reviews_count !== undefined && prod.reviews_count !== null ? String(prod.reviews_count) : (prod.reviews ? String(prod.reviews) : '120'),
       variants: loadedVariants,
       images: initialImgs,
     });
@@ -566,6 +572,8 @@ export default function AdminProductsPage() {
 
       const payload = {
         ...productForm,
+        rating: productForm.rating !== '' && productForm.rating !== null ? parseFloat(productForm.rating) : 4.8,
+        reviews_count: productForm.reviews_count !== '' && productForm.reviews_count !== null ? parseInt(productForm.reviews_count, 10) : 120,
         price: finalPrice,
         stock_quantity: finalStock,
         category_id: productForm.category_id || null,
@@ -832,6 +840,11 @@ export default function AdminProductsPage() {
                                       ⚡ {prod.variants?.length || 0} Variants
                                     </span>
                                   )}
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
+                                    <span className="text-amber-500 font-bold">★</span>
+                                    <span>{prod.rating ? Number(prod.rating).toFixed(1) : '4.8'}</span>
+                                    <span className="text-slate-400 font-normal">({Number(prod.reviews_count ?? prod.reviews ?? 0).toLocaleString()})</span>
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -2050,6 +2063,59 @@ export default function AdminProductsPage() {
                         />
                         <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
                       </label>
+                    </div>
+
+                    {/* Customer Rating & Reviews Settings */}
+                    <div className="pt-3 border-t border-slate-200 space-y-3">
+                      <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                        <span>Customer Rating & Reviews</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                            Rating (1.0 - 5.0)
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="1.0"
+                              max="5.0"
+                              placeholder="4.9"
+                              value={productForm.rating}
+                              onChange={(e) => setProductForm({ ...productForm, rating: e.target.value })}
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                            />
+                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-amber-500 text-xs">★</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                            Review Count
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="1420"
+                            value={productForm.reviews_count}
+                            onChange={(e) => setProductForm({ ...productForm, reviews_count: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Live Rating Preview Badge */}
+                      <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-amber-800">Badge Preview:</span>
+                        <div className="flex items-center gap-1 text-xs">
+                          <span className="text-amber-500 font-bold">★</span>
+                          <span className="text-slate-900 font-extrabold">{productForm.rating || '4.9'}</span>
+                          <span className="text-slate-400 font-normal">({Number(productForm.reviews_count || 1420).toLocaleString()})</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

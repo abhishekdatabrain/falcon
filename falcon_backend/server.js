@@ -531,6 +531,94 @@ const startServer = async () => {
         ]);
         logger.info('✓ Default Header & Footer CMS settings seeded successfully.');
       }
+
+      // Auto-seed Coupons if table is empty
+      const { Coupon } = require('./src/models');
+      const couponCount = await Coupon.count();
+      if (couponCount === 0) {
+        logger.info('No Coupons found in DB. Auto-seeding initial promotional coupons...');
+        await Coupon.bulkCreate([
+          {
+            code: 'FRESH15',
+            description_en: '15% off fresh groceries discount applied!',
+            description_ar: 'خصم 15% على البقالة الطازجة!',
+            discount_type: 'PERCENTAGE',
+            discount_value: 15.00,
+            min_order_amount: 0.00,
+            max_discount_amount: 50.00,
+            is_active: true,
+          },
+          {
+            code: 'FALCON15',
+            description_en: 'Extra 15% instant discount on orders over SAR 50',
+            description_ar: 'خصم إضافي 15% فوري للطلبات فوق 50 ريال',
+            discount_type: 'PERCENTAGE',
+            discount_value: 15.00,
+            min_order_amount: 50.00,
+            max_discount_amount: 50.00,
+            is_active: true,
+          },
+          {
+            code: 'WELCOME10',
+            description_en: 'Flat 10% off for first-time shoppers',
+            description_ar: 'خصم 10% ترحيبي للطلبات الجديدة',
+            discount_type: 'PERCENTAGE',
+            discount_value: 10.00,
+            min_order_amount: 0.00,
+            is_active: true,
+          },
+          {
+            code: 'SAVE20',
+            description_en: 'Flat SAR 20 off on orders over SAR 100',
+            description_ar: 'خصم مباشر 20 ريال للطلبات فوق 100 ريال',
+            discount_type: 'FIXED',
+            discount_value: 20.00,
+            min_order_amount: 100.00,
+            is_active: true,
+          },
+        ]);
+        logger.info('✓ Default Coupons seeded successfully (FRESH15, FALCON15, WELCOME10, SAVE20).');
+      }
+
+      // Auto-seed Delivery Slots if table is empty
+      const { DeliverySlot } = require('./src/models');
+      const slotCount = await DeliverySlot.count();
+      if (slotCount === 0) {
+        logger.info('No Delivery Slots found in DB. Auto-seeding initial slots...');
+        await DeliverySlot.bulkCreate([
+          {
+            slot_label_en: '1:00 PM - 3:00 PM',
+            slot_label_ar: '1:00 م - 3:00 م',
+            tag_en: 'Express Available',
+            tag_ar: 'سريع متوفر',
+            is_express: true,
+            is_active: true,
+            display_order: 1,
+            max_orders: 15,
+          },
+          {
+            slot_label_en: '4:00 PM - 6:00 PM',
+            slot_label_ar: '4:00 م - 6:00 م',
+            tag_en: 'Standard Slot',
+            tag_ar: 'فترة قياسية',
+            is_express: false,
+            is_active: true,
+            display_order: 2,
+            max_orders: 20,
+          },
+          {
+            slot_label_en: '7:00 PM - 9:00 PM',
+            slot_label_ar: '7:00 م - 9:00 م',
+            tag_en: 'Evening Chill Slot',
+            tag_ar: 'فترة المساء',
+            is_express: false,
+            is_active: true,
+            display_order: 3,
+            max_orders: 20,
+          },
+        ]);
+        logger.info('✓ Default Delivery Slots seeded successfully.');
+      }
     } catch (syncErr) {
       logger.warn('Sequelize sync/seed warning: %s', syncErr.message);
     }

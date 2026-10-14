@@ -220,14 +220,14 @@ export default function Navbar() {
       </div>
 
       {/* Sub-header Category Navigation Bar */}
-      <div className="bg-[#F8F3EA] text-black py-2 px-4 sm:px-6 lg:px-8 border-b border-black shadow-xs">
-        <div className="max-w-7xl mx-auto flex items-center gap-6 overflow-x-auto scrollbar-none font-semibold text-xs whitespace-nowrap">
+      <div className="bg-white text-slate-800 py-2.5 px-4 sm:px-6 lg:px-8 border-b border-slate-200 shadow-xs">
+        <div className="max-w-7xl mx-auto flex items-center gap-6 overflow-x-auto scrollbar-none font-medium text-xs whitespace-nowrap">
           {/* All Categories Button */}
           <Link
             href="/products"
-            className="flex items-center gap-1.5 hover:text-emerald-300 text-black font-extrabold pr-3 border-r border-black rtl:border-l rtl:border-r-0 rtl:pl-3 rtl:pr-0"
+            className="flex items-center gap-1.5 hover:text-emerald-700 text-slate-900 font-bold pr-3 border-r border-slate-200 rtl:border-l rtl:border-r-0 rtl:pl-3 rtl:pr-0"
           >
-            <Menu className="w-4 h-4 text-emerald-400" />
+            <Menu className="w-4 h-4 text-slate-700" />
             <span>{locale === 'ar' ? 'جميع الاقسام' : 'All'}</span>
           </Link>
 
@@ -236,7 +236,7 @@ export default function Navbar() {
             <Link
               key={idx}
               href={cat.href}
-              className="text-black hover:text-black hover:underline transition-colors py-0.5"
+              className="text-slate-700 hover:text-emerald-800 hover:font-semibold transition-colors py-0.5"
             >
               {locale === 'ar' ? cat.name_ar : cat.name_en}
             </Link>

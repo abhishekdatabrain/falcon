@@ -13,7 +13,19 @@ class CustomerController {
 
   async updateProfile(req, res, next) {
     try {
-      const customerId = req.user.customer.id;
+      let customerId = req.user?.customer?.id;
+      if (!customerId) {
+        const { Customer } = require('../models');
+        let customer = await Customer.findOne({ where: { user_id: req.user.id } });
+        if (!customer) {
+          customer = await Customer.create({
+            user_id: req.user.id,
+            first_name: req.body.first_name || 'Customer',
+            last_name: req.body.last_name || '',
+          });
+        }
+        customerId = customer.id;
+      }
       const profile = await customerService.updateProfile(customerId, req.body);
       return sendSuccess(res, 'Profile updated', { profile });
     } catch (error) {

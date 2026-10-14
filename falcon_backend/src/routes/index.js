@@ -19,6 +19,9 @@ const heroBannerRoutes = require('./heroBannerRoutes');
 const promoBannerRoutes = require('./promoBannerRoutes');
 const categorySectionRoutes = require('./categorySectionRoutes');
 const homepageCmsRoutes = require('./homepageCmsRoutes');
+const categoryBannerRoutes = require('./categoryBannerRoutes');
+const couponRoutes = require('./couponRoutes');
+const deliverySlotRoutes = require('./deliverySlotRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/customers', customerRoutes);
@@ -38,5 +41,8 @@ router.use('/hero-banners', heroBannerRoutes);
 router.use('/promo-banners', promoBannerRoutes);
 router.use('/category-sections', categorySectionRoutes);
 router.use('/homepage-cms', homepageCmsRoutes);
+router.use('/category-banner', categoryBannerRoutes);
+router.use('/coupons', couponRoutes);
+router.use('/delivery-slots', deliverySlotRoutes);
 
 module.exports = router;

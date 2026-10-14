@@ -50,6 +50,18 @@ const Order = sequelize.define('Order', {
     allowNull: false,
     defaultValue: 0.00,
   },
+  coupon_code: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+  },
+  delivery_date: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+  },
+  delivery_slot: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+  },
   grand_total: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,

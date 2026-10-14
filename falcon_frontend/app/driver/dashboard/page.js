@@ -42,7 +42,7 @@ import {
 export default function DriverDashboardPage() {
   const { user, logout } = useAuth();
   const { t, locale, toggleLanguage } = useLanguage();
-  const { emitDriverLocation, joinDeliveryRoom, leaveDeliveryRoom } = useSocket();
+  const { socket, emitDriverLocation, emitDriverGpsStatus, joinDeliveryRoom, leaveDeliveryRoom, joinDriverRoom } = useSocket();
   const { showToast } = useToast();
   const router = useRouter();
 
@@ -60,6 +60,10 @@ export default function DriverDashboardPage() {
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
   const [completionConfirmDelivery, setCompletionConfirmDelivery] = useState(null);
   const [completionNotes, setCompletionNotes] = useState('');
+  const [deliveryOtp, setDeliveryOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [failureModalDelivery, setFailureModalDelivery] = useState(null);
+  const [failureReason, setFailureReason] = useState('Customer unreachable at delivery address');
   const [submittingStatus, setSubmittingStatus] = useState(false);
 
   // Profile & Password Modal
@@ -124,6 +128,40 @@ export default function DriverDashboardPage() {
     loadDashboard();
   }, []);
 
+  // Real-time assignment listener: auto-refresh when Admin assigns an order
+  useEffect(() => {
+    if (!socket || !driver?.id) return;
+
+    joinDriverRoom(driver.id);
+
+    const handleOrderAssigned = (data) => {
+      showToast(
+        locale === 'ar'
+          ? `تم إسناد طلب جديد لك #${data.orderNumber || ''}`
+          : `New order assigned to you: #${data.orderNumber || ''}`,
+        'success'
+      );
+      loadDashboard(true);
+    };
+
+    const handleStatusUpdate = (data) => {
+      if (
+        data.driverId === driver.id ||
+        deliveries.some((d) => d.order_id === data.orderId || d.id === data.deliveryId)
+      ) {
+        loadDashboard(true);
+      }
+    };
+
+    socket.on('order_assigned', handleOrderAssigned);
+    socket.on('order_status_update', handleStatusUpdate);
+
+    return () => {
+      socket.off('order_assigned', handleOrderAssigned);
+      socket.off('order_status_update', handleStatusUpdate);
+    };
+  }, [socket, driver?.id]);
+
   // HTML5 Browser Geolocation API Watcher during active delivery
   useEffect(() => {
     if (!activeDeliveryId) {
@@ -133,6 +171,10 @@ export default function DriverDashboardPage() {
 
     joinDeliveryRoom(activeDeliveryId);
     setGpsStatus('Active & Sharing Location');
+    emitDriverGpsStatus({
+      deliveryId: activeDeliveryId,
+      status: 'CONNECTED',
+    });
 
     if (!navigator.geolocation) {
       setGpsStatus('Browser Geolocation Not Supported');
@@ -165,7 +207,12 @@ export default function DriverDashboardPage() {
         }).catch(() => {});
       },
       (err) => {
-        setGpsStatus(`GPS Error: ${err.message}`);
+        setGpsStatus(`GPS Disconnected: ${err.message}`);
+        emitDriverGpsStatus({
+          deliveryId: activeDeliveryId,
+          status: 'DISCONNECTED',
+          message: err.message,
+        });
       },
       {
         enableHighAccuracy: true,
@@ -177,6 +224,10 @@ export default function DriverDashboardPage() {
     return () => {
       navigator.geolocation.clearWatch(watchId);
       leaveDeliveryRoom(activeDeliveryId);
+      emitDriverGpsStatus({
+        deliveryId: activeDeliveryId,
+        status: 'DISCONNECTED',
+      });
     };
   }, [activeDeliveryId]);
 
@@ -215,12 +266,19 @@ export default function DriverDashboardPage() {
     }
   };
 
-  const handleStatusUpdate = async (deliveryId, nextStatus) => {
+  const handleStatusUpdate = async (deliveryId, nextStatus, extraPayload = {}) => {
     try {
       setSubmittingStatus(true);
+      setOtpError('');
+      const payload = {
+        status: nextStatus,
+        notes: completionNotes,
+        ...extraPayload,
+      };
+
       const res = await fetchApi(`/drivers/deliveries/${deliveryId}/status`, {
         method: 'POST',
-        body: JSON.stringify({ status: nextStatus, notes: completionNotes }),
+        body: JSON.stringify(payload),
       });
       if (res.success) {
         showToast(
@@ -228,10 +286,16 @@ export default function DriverDashboardPage() {
           'success'
         );
         setCompletionConfirmDelivery(null);
+        setFailureModalDelivery(null);
         setCompletionNotes('');
+        setDeliveryOtp('');
+        setOtpError('');
         await loadDashboard();
       }
     } catch (err) {
+      if (nextStatus === 'DELIVERED') {
+        setOtpError(err.message || 'Invalid delivery OTP');
+      }
       showToast(err.message, 'error');
     } finally {
       setSubmittingStatus(false);
@@ -827,6 +891,27 @@ export default function DriverDashboardPage() {
                           </button>
                         )}
 
+                        {['OUT_FOR_DELIVERY', 'ARRIVED'].includes(status) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFailureModalDelivery(del);
+                              setCompletionNotes('');
+                            }}
+                            className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            <span>{locale === 'ar' ? 'تعذر التوصيل' : 'Delivery Issue'}</span>
+                          </button>
+                        )}
+
+                        {status === 'DELIVERY_FAILED' && (
+                          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 text-xs font-bold">
+                            <AlertCircle className="w-4 h-4 text-rose-600" />
+                            <span>{locale === 'ar' ? 'تعذر التوصيل' : 'Delivery Failed / Issue Reported'}</span>
+                          </div>
+                        )}
+
                         {status === 'DELIVERED' && (
                           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
                             <CheckCircle2 className="w-4 h-4 text-[#05A764]" />
@@ -1054,15 +1139,53 @@ export default function DriverDashboardPage() {
                 </div>
               </div>
 
+              {/* Customer Handover PIN / OTP Verification */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-800 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{locale === 'ar' ? 'رمز تحقق التسليم (PIN من العميل)' : 'Customer Handover PIN / OTP'}</span>
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    4-Digit PIN Required
+                  </span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={deliveryOtp}
+                    onChange={(e) => {
+                      setDeliveryOtp(e.target.value);
+                      setOtpError('');
+                    }}
+                    placeholder="Enter 4-digit PIN (e.g. 4821)"
+                    className="w-full pl-9 pr-3.5 py-3 rounded-xl bg-slate-50 border border-slate-300 text-sm font-mono font-bold tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#05442e]"
+                  />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+                </div>
+                {otpError && (
+                  <p className="text-xs text-rose-600 font-semibold flex items-center gap-1 animate-shake">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{otpError}</span>
+                  </p>
+                )}
+                <p className="text-[11px] text-slate-400">
+                  {locale === 'ar'
+                    ? 'اطلب رمز PIN المكون من 4 أرقام المعروض على شاشة تتبع العميل لتأكيد التسليم.'
+                    : 'Ask the recipient for the 4-digit PIN shown on their order tracking screen.'}
+                </p>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-700">
-                  {locale === 'ar' ? 'ملاحظات السائق (اختياري)' : 'Delivery Confirmation Notes (Optional)'}
+                  {locale === 'ar' ? 'ملاحظات إثبات التسليم (اختياري)' : 'Proof of Delivery Notes (Optional)'}
                 </label>
                 <textarea
                   rows={2}
                   value={completionNotes}
                   onChange={(e) => setCompletionNotes(e.target.value)}
-                  placeholder="e.g. Delivered to customer at doorstep / Handed over to recipient"
+                  placeholder="e.g. Handed over to recipient in person at doorstep"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#05442e]"
                 />
               </div>
@@ -1071,7 +1194,11 @@ export default function DriverDashboardPage() {
             <div className="px-6 pb-6 pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
               <button
                 type="button"
-                onClick={() => setCompletionConfirmDelivery(null)}
+                onClick={() => {
+                  setCompletionConfirmDelivery(null);
+                  setOtpError('');
+                  setDeliveryOtp('');
+                }}
                 className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
               >
                 {locale === 'ar' ? 'إلغاء' : 'Cancel'}
@@ -1080,7 +1207,13 @@ export default function DriverDashboardPage() {
               <button
                 type="button"
                 disabled={submittingStatus}
-                onClick={() => handleStatusUpdate(completionConfirmDelivery.id, 'DELIVERED')}
+                onClick={() => {
+                  if (!deliveryOtp.trim()) {
+                    setOtpError(locale === 'ar' ? 'يرجى إدخال رمز PIN' : 'Please enter the 4-digit customer PIN');
+                    return;
+                  }
+                  handleStatusUpdate(completionConfirmDelivery.id, 'DELIVERED', { otp: deliveryOtp });
+                }}
                 className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-70"
               >
                 {submittingStatus ? (
@@ -1088,9 +1221,89 @@ export default function DriverDashboardPage() {
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{locale === 'ar' ? 'تأكيد التسليم' : 'Confirm & Complete'}</span>
+                    <span>{locale === 'ar' ? 'تأكيد التسليم' : 'Verify PIN & Complete'}</span>
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* MODAL 4: Failed Delivery Reporting Modal                      */}
+      {/* ------------------------------------------------------------- */}
+      {failureModalDelivery && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl relative overflow-hidden space-y-6">
+            <div className="h-1.5 bg-gradient-to-r from-rose-500 to-amber-500" />
+
+            <div className="px-6 pt-2 text-center space-y-3">
+              <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center mx-auto shadow-sm">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900">
+                {locale === 'ar' ? 'الإبلاغ عن تعذر التوصيل' : 'Report Delivery Issue'}
+              </h3>
+              <p className="text-xs text-slate-500">
+                {locale === 'ar'
+                  ? `أنت على وشك تسجيل عدم القدرة على إكمال توصيل الطلب #${failureModalDelivery.order?.order_number}.`
+                  : `Record operational reason for why Order #${failureModalDelivery.order?.order_number} could not be delivered.`}
+              </p>
+            </div>
+
+            <div className="px-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700">
+                  {locale === 'ar' ? 'سبب تعذر التوصيل' : 'Reason for Non-Delivery'}
+                </label>
+                <select
+                  value={failureReason}
+                  onChange={(e) => setFailureReason(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#05442e]"
+                >
+                  <option value="Customer unreachable / Phone not answered">Customer unreachable / Phone not answered</option>
+                  <option value="Incorrect or incomplete delivery address">Incorrect or incomplete delivery address</option>
+                  <option value="Customer refused package acceptance">Customer refused package acceptance</option>
+                  <option value="Customer requested reschedule">Customer requested reschedule</option>
+                  <option value="Location inaccessible / gate restricted">Location inaccessible / gate restricted</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700">
+                  {locale === 'ar' ? 'ملاحظات إضافية (اختياري)' : 'Additional Operational Notes (Optional)'}
+                </label>
+                <textarea
+                  rows={2}
+                  value={completionNotes}
+                  onChange={(e) => setCompletionNotes(e.target.value)}
+                  placeholder="Details of attempts to reach customer..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#05442e]"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 pb-6 pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setFailureModalDelivery(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+              >
+                {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+              </button>
+
+              <button
+                type="button"
+                disabled={submittingStatus}
+                onClick={() =>
+                  handleStatusUpdate(failureModalDelivery.id, 'DELIVERY_FAILED', {
+                    failure_reason: failureReason,
+                  })
+                }
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-70"
+              >
+                {submittingStatus ? 'Submitting...' : (locale === 'ar' ? 'تأكيد تعذر التوصيل' : 'Submit Delivery Issue')}
               </button>
             </div>
           </div>

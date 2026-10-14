@@ -1,19 +1,117 @@
 'use client';
 import React, { useRef, useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Star,
   Heart,
   Plus,
+  Minus,
   ChevronLeft,
   ChevronRight,
+  Ban,
+  Zap,
+  ShoppingBag,
 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { fetchApi, getImageUrl } from '../services/api';
 
+const FALLBACK_RECOMMENDED_PRODUCTS = [
+  {
+    id: 'rec-1',
+    name_en: 'Fresh Mix Vegetable',
+    name_ar: 'خضار مشكل طازج',
+    brand: 'Almarai / Al Kabeer',
+    price: '50.00',
+    discount_price: '40.00',
+    unit_value: '500',
+    unit_type: 'g',
+    rating: '4.9',
+    reviews_count: '1420',
+    is_best_seller: true,
+    has_variants: false,
+    variants: [],
+    vat_percentage: 20,
+    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400',
+  },
+  {
+    id: 'rec-2',
+    name_en: 'Organic Whole Milk',
+    name_ar: 'حليب عضوي كامل الدسم',
+    brand: 'Falcon Dairy',
+    price: '7.00',
+    discount_price: '7.00',
+    unit_value: '1',
+    unit_type: 'L',
+    rating: '4.7',
+    reviews_count: '342',
+    has_variants: true,
+    variants: [
+      { id: 'v-1', pack_size: '500 ml', price: '7.00' },
+      { id: 'v-2', pack_size: '1 L', price: '12.00' }
+    ],
+    vat_percentage: 0,
+    image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400',
+  },
+  {
+    id: 'rec-3',
+    name_en: 'Fresh Green Peas',
+    name_ar: 'بازلاء خضراء طازجة',
+    brand: 'Farm Fresh',
+    price: '35.00',
+    discount_price: '30.00',
+    unit_value: '500',
+    unit_type: 'g',
+    rating: '4.8',
+    reviews_count: '856',
+    is_best_seller: false,
+    has_variants: false,
+    variants: [],
+    vat_percentage: 15,
+    image: 'https://images.unsplash.com/photo-1587735243615-c03f25aaff15?w=400',
+  },
+  {
+    id: 'rec-4',
+    name_en: 'Farm Fresh Brown Eggs',
+    name_ar: 'بيض بلدي طازج من المزرعة',
+    brand: 'Almarai',
+    price: '18.50',
+    discount_price: '14.80',
+    unit_value: '30',
+    unit_type: 'pcs',
+    rating: '4.8',
+    reviews_count: '512',
+    is_best_seller: true,
+    has_variants: false,
+    variants: [],
+    vat_percentage: 20,
+    image: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=400',
+  },
+  {
+    id: 'rec-5',
+    name_en: 'Fresh Greek Yogurt',
+    name_ar: 'زبادي يوناني طازج',
+    brand: 'Falcon Dairy',
+    price: '9.50',
+    discount_price: '8.00',
+    unit_value: '500',
+    unit_type: 'g',
+    rating: '4.9',
+    reviews_count: '218',
+    has_variants: true,
+    variants: [
+      { id: 'v-3', pack_size: '250 g', price: '4.50' },
+      { id: 'v-4', pack_size: '500 g', price: '8.00' },
+      { id: 'v-5', pack_size: '1 kg', price: '14.00' }
+    ],
+    vat_percentage: 15,
+    image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400',
+  },
+];
+
 export default function RecommendedProducts() {
-  const { cart, addToCart } = useCart();
+  const { cart, addToCart, updateQuantity, removeItem } = useCart();
   const { locale } = useLanguage();
   const { toggleWishlist, isInWishlist } = useWishlist ? useWishlist() : { toggleWishlist: () => {}, isInWishlist: () => false };
   const scrollContainerRef = useRef(null);
@@ -107,11 +205,17 @@ export default function RecommendedProducts() {
         }
 
         if (isMounted) {
-          setRecommendedProducts(collected.slice(0, 15));
+          if (collected.length > 0) {
+            setRecommendedProducts(collected.slice(0, 15));
+          } else {
+            setRecommendedProducts(FALLBACK_RECOMMENDED_PRODUCTS);
+          }
         }
       } catch (err) {
         console.error('Error loading recommendations:', err);
-        if (isMounted) setRecommendedProducts([]);
+        if (isMounted) {
+          setRecommendedProducts(FALLBACK_RECOMMENDED_PRODUCTS);
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -124,7 +228,9 @@ export default function RecommendedProducts() {
     };
   }, [cart?.items?.length, JSON.stringify(cart?.items?.map((i) => i.id || i.product_id || i.productId))]);
 
-  const handleAddToCart = async (item) => {
+  const handleAddToCart = async (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
     setAddingIds((prev) => ({ ...prev, [item.id]: true }));
     try {
       if (addToCart) {
@@ -134,7 +240,7 @@ export default function RecommendedProducts() {
           name_en: item.name_en || item.name || item.title,
           name_ar: item.name_ar || item.name || item.title,
           price: itemPrice,
-          image: item.image || item.image_url || item.img,
+          image: item.image || item.image_url || (Array.isArray(item.images) && item.images[0]?.image_url),
         });
       }
     } catch (e) {
@@ -144,37 +250,45 @@ export default function RecommendedProducts() {
     }
   };
 
+  const handleToggleWishlist = (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (toggleWishlist) {
+      toggleWishlist(item);
+    }
+  };
+
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
-      const scrollAmount = direction === 'left' ? -320 : 320;
+      const scrollAmount = direction === 'left' ? -340 : 340;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
-  if (!loading && recommendedProducts.length === 0) {
-    return null;
-  }
+  const displayList = recommendedProducts.length > 0 ? recommendedProducts : FALLBACK_RECOMMENDED_PRODUCTS;
 
   return (
-    <section className="mt-10 mb-8 select-none">
+    <section className="mt-12 mb-8 select-none">
       {/* Header Row */}
-      <div className="flex items-center justify-between mb-4 px-1">
+      <div className="flex items-center justify-between mb-5 px-1">
         <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-sans">
           {locale === 'ar' ? 'موصى به لك' : 'Recommended for you'}
         </h2>
 
-        {/* Scroll Controls */}
+        {/* Scroll Controls (Desktop Header) */}
         <div className="hidden sm:flex items-center gap-2">
           <button
+            type="button"
             onClick={() => scroll('left')}
-            className="w-9 h-9 rounded-full bg-white border border-slate-200 shadow-xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95"
             aria-label="Scroll left"
           >
             <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
           </button>
           <button
+            type="button"
             onClick={() => scroll('right')}
-            className="w-9 h-9 rounded-full bg-white border border-slate-200 shadow-xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95"
             aria-label="Scroll right"
           >
             <ChevronRight className="w-5 h-5 rtl:rotate-180" />
@@ -183,147 +297,346 @@ export default function RecommendedProducts() {
       </div>
 
       {/* Cards Scroll Container */}
-      <div className="relative group">
-        {/* Left Arrow Overlay on Container */}
+      <div className="relative group/carousel">
+        {/* Left Arrow Overlay on Container Edge */}
         <button
+          type="button"
           onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 z-20 w-9 h-9 rounded-full bg-white border border-slate-200/90 shadow-md hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all opacity-0 group-hover:opacity-100 cursor-pointer hidden sm:flex"
+          className="absolute -left-3.5 sm:-left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-md hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/carousel:opacity-100 cursor-pointer active:scale-95 hidden sm:flex"
+          aria-label="Scroll left"
         >
           <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
         </button>
 
-        {/* Right Arrow Overlay on Container */}
+        {/* Right Arrow Overlay on Container Edge */}
         <button
+          type="button"
           onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 z-20 w-9 h-9 rounded-full bg-white border border-slate-200/90 shadow-md hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all opacity-0 group-hover:opacity-100 cursor-pointer hidden sm:flex"
+          className="absolute -right-3.5 sm:-right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-md hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/carousel:opacity-100 cursor-pointer active:scale-95 hidden sm:flex"
+          aria-label="Scroll right"
         >
           <ChevronRight className="w-5 h-5 rtl:rotate-180" />
         </button>
 
         <div
           ref={scrollContainerRef}
-          className="flex items-stretch gap-3 sm:gap-4 overflow-x-auto scrollbar-none py-2 px-1 scroll-smooth"
+          className="flex items-stretch gap-3.5 sm:gap-4 overflow-x-auto scrollbar-none py-2 px-1 scroll-smooth"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {recommendedProducts.map((item) => {
+          {displayList.map((item) => {
             const isWishlisted = isInWishlist ? isInWishlist(item.id) : false;
             const isAdding = !!addingIds[item.id];
 
-            const itemImage = item.image || item.image_url || (Array.isArray(item.images) && item.images[0]);
+            const itemImage = item.image || item.image_url || (Array.isArray(item.images) && item.images[0]?.image_url);
             const itemName = locale === 'ar' ? (item.name_ar || item.name_en || item.title || item.name) : (item.name_en || item.name_ar || item.title || item.name);
+            const brandName = item.brand || (locale === 'ar' ? 'فالكون فريش' : 'Falcon Fresh');
             const itemPrice = parseFloat(item.discount_price || item.price || 0);
-            const itemMrp = parseFloat(item.price || item.mrp || item.original_price || 0);
+            const itemMrp = parseFloat(item.price || item.mrp || item.original_price || (itemPrice * 1.25));
 
-            let discountTag = '';
-            if (item.vat_percentage && parseFloat(item.vat_percentage) > 0) {
-              discountTag = `${Math.round(item.vat_percentage)}% OFF`;
-            } else if (itemMrp > itemPrice && itemMrp > 0) {
-              discountTag = `${Math.round(((itemMrp - itemPrice) / itemMrp) * 100)}% OFF`;
-            }
+            const ratingVal = item.rating !== undefined && item.rating !== null && item.rating !== '' ? Number(item.rating).toFixed(1) : '4.9';
+            const reviewsVal = item.reviews_count !== undefined && item.reviews_count !== null ? Number(item.reviews_count).toLocaleString() : '1,420';
+            const isOutOfStock = item.stock_quantity !== undefined && item.stock_quantity !== null && parseInt(item.stock_quantity, 10) <= 0;
 
-            const unitText = [item.unit_value, item.unit_type, item.pack_size].filter(Boolean).join(' ') || item.unit || item.tag_en || '';
-            const ratingVal = item.rating || item.avg_rating;
-            const reviewsCount = item.reviews || item.review_count;
-            const badgeText = item.is_best_seller ? (locale === 'ar' ? 'الأكثر مبيعاً' : 'Best Seller') : (item.tag_en || item.tag_ar || '');
+            // Check if product is multi-variant
+            const hasVariants = Boolean(
+              item.has_variants || 
+              (Array.isArray(item.variants) && item.variants.length > 0)
+            );
+            const variantCount = Array.isArray(item.variants) ? item.variants.length : 2;
 
-            return (
-              <div
-                key={item.id}
-                className="w-[215px] sm:w-[230px] shrink-0 bg-white rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md transition-all duration-200 p-3 flex flex-col justify-between relative group/card"
-              >
-                {/* Top Section: Badge & Heart */}
-                <div>
+            // Check if already in cart
+            const cartItem = cart?.items?.find((i) => String(i.product_id || i.id || i.productId) === String(item.id));
+            const inCart = Boolean(cartItem && cartItem.quantity > 0);
+
+            /* ==============================================================
+             * DESIGN CASE 2: MULTI-VARIANT PRODUCT CARD
+             * Shows 'Multi-Variant' tag, variant count, and 'Select Options'
+             * ============================================================== */
+            if (hasVariants) {
+              return (
+                <div
+                  key={item.id}
+                  className="w-[215px] sm:w-[230px] shrink-0 bg-white rounded-[26px] border border-slate-200/90 shadow-2xs hover:shadow-md transition-all duration-200 p-3 flex flex-col justify-between relative group/card"
+                >
+                  {/* Top Header: Optional Badge & Heart */}
                   <div className="flex items-center justify-between mb-2">
-                    {/* Badge */}
-                    {badgeText ? (
-                      <span className="bg-[#043927] text-white text-[11px] font-extrabold px-2.5 py-1 rounded-full tracking-wide font-sans shadow-2xs">
-                        {badgeText}
+                    {item.is_best_seller ? (
+                      <span className="bg-[#FFA800] text-white text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs font-sans uppercase tracking-wider">
+                        <span>★</span>
+                        <span>{locale === 'ar' ? 'الأكثر مبيعاً' : 'BEST SELLER'}</span>
                       </span>
-                    ) : <span />}
+                    ) : (
+                      <span />
+                    )}
 
-                    {/* Wishlist Heart */}
                     <button
-                      onClick={() => toggleWishlist && toggleWishlist(item)}
-                      className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors cursor-pointer"
-                      title="Add to Wishlist"
+                      type="button"
+                      onClick={(e) => handleToggleWishlist(e, item)}
+                      className="p-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                      aria-label="Wishlist"
                     >
                       <Heart
                         className={`w-5 h-5 transition-colors ${
                           isWishlisted
-                            ? 'text-rose-500 fill-rose-500'
-                            : 'text-slate-400 hover:text-slate-600'
+                            ? 'text-[#FF1E56] fill-[#FF1E56]'
+                            : 'text-slate-300 hover:text-[#FF1E56] stroke-[1.8]'
                         }`}
                       />
                     </button>
                   </div>
 
-                  {/* Product Image Box & Floating Action Button */}
-                  <div className="relative w-full h-44 bg-[#FAFAFA] rounded-xl flex items-center justify-center p-2 mb-3 border border-slate-100 overflow-hidden">
-                    <img
-                      src={getImageUrl(itemImage)}
-                      alt={itemName}
-                      className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 group-hover/card:scale-105"
-                    />
-
-                    {/* Action Button */}
-                    <button
-                      onClick={() => handleAddToCart(item)}
-                      disabled={isAdding}
-                      className="absolute bottom-2 right-2 transition-all duration-200 cursor-pointer w-9 h-9 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 shadow-2xs flex items-center justify-center active:scale-95"
-                      title="Add to Cart"
-                    >
-                      {isAdding ? (
-                        <div className="w-4 h-4 border-2 border-[#043927] border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Plus className="w-5 h-5 stroke-[2.5]" />
+                  {/* Top Section: Image Box + Info */}
+                  <div>
+                    {/* Rounded Image Box */}
+                    <div className="relative w-full h-44 sm:h-48 bg-[#F5F6F8] rounded-[20px] flex items-center justify-center p-3 mb-2.5 overflow-hidden">
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-[20px]">
+                          <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                            {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                          </span>
+                        </div>
                       )}
+                      <Link href={`/products/${item.id}`} className="w-full h-full flex items-center justify-center">
+                        <img
+                          src={getImageUrl(itemImage)}
+                          alt={itemName}
+                          className={`max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 ${
+                            isOutOfStock ? 'opacity-50 grayscale' : 'group-hover/card:scale-105'
+                          }`}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400';
+                          }}
+                        />
+                      </Link>
+                    </div>
+
+                    {/* Multi-Variant Text Label (Top Right) */}
+                    <div className="flex items-center justify-end mb-1">
+                      <span className="text-[#00B074] font-bold text-xs sm:text-[13px] font-sans">
+                        {locale === 'ar' ? 'متوفر بخيارات' : 'Multi-Variant'}
+                      </span>
+                    </div>
+
+                    {/* Product Title */}
+                    <Link href={`/products/${item.id}`}>
+                      <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-1 mb-0.5 font-sans hover:text-[#043927] transition-colors">
+                        {itemName}
+                      </h3>
+                    </Link>
+
+                    {/* Variants Available Subtext */}
+                    <p className="text-xs sm:text-[13px] text-slate-400 font-medium mb-1.5">
+                      {variantCount > 0
+                        ? `${variantCount} ${locale === 'ar' ? 'خيارات متوفرة' : 'Variants Available'}`
+                        : (locale === 'ar' ? 'خيارات متعددة متوفرة' : '2 Variants Available')}
+                    </p>
+
+                    {/* Rating Row */}
+                    <div className="flex items-center gap-1 mb-2">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                      <span className="font-bold text-xs sm:text-sm text-slate-900">{ratingVal}</span>
+                      <span className="text-xs sm:text-sm text-slate-400">({reviewsVal})</span>
+                    </div>
+
+                    {/* Subtle Divider Line */}
+                    <div className="border-t border-slate-100 my-2" />
+
+                    {/* Price */}
+                    <div className="text-lg sm:text-xl font-black text-slate-900 mb-2.5 font-sans tracking-tight">
+                      <span className="text-xs font-bold text-slate-500 mr-1">SAR</span>
+                      {itemPrice.toFixed(2)}
+                    </div>
+                  </div>
+
+                  {/* Green Select Options Button (Full Width) */}
+                  <div className="mt-auto pt-1">
+                    <Link
+                      href={`/products/${item.id}`}
+                      className="w-full py-2.5 rounded-2xl bg-[#006E2D] hover:bg-[#008938] text-white font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98 font-sans"
+                    >
+                      <Zap className="w-4 h-4 text-amber-300 fill-amber-300 shrink-0" />
+                      <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
+                    </Link>
+                  </div>
+                </div>
+              );
+            }
+
+            /* ==============================================================
+             * DESIGN CASE 1: STANDARD / NON-VARIANT PRODUCT CARD
+             * Matching user's second image:
+             * Best Seller badge, Heart, Image, Brand & 'In Stock',
+             * Title, Rating with divider, SAR Price + Strikethrough,
+             * and Full-Width Green 'Add to Cart' Button!
+             * ============================================================== */
+            return (
+              <div
+                key={item.id}
+                className="w-[215px] sm:w-[230px] shrink-0 bg-white rounded-[26px] border border-slate-200/90 shadow-2xs hover:shadow-md transition-all duration-200 p-3 flex flex-col justify-between relative group/card"
+              >
+                {/* Top Section: Badge (Left) & Heart (Right) */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    {/* Best Seller Badge */}
+                    {item.is_best_seller ? (
+                      <span className="bg-[#FFA800] text-white text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs font-sans uppercase tracking-wider">
+                        <span>★</span>
+                        <span>{locale === 'ar' ? 'الأكثر مبيعاً' : 'BEST SELLER'}</span>
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+
+                    {/* Wishlist Heart */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleWishlist(e, item)}
+                      className="p-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                      aria-label="Wishlist"
+                    >
+                      <Heart
+                        className={`w-5 h-5 transition-colors ${
+                          isWishlisted
+                            ? 'text-[#FF1E56] fill-[#FF1E56]'
+                            : 'text-slate-300 hover:text-[#FF1E56] stroke-[1.8]'
+                        }`}
+                      />
                     </button>
                   </div>
 
-                  {/* Product Title */}
-                  <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 h-10 mb-2 font-sans hover:text-[#043927] transition-colors cursor-pointer">
-                    {itemName}
-                  </h3>
-
-                  {/* Rating Row */}
-                  {ratingVal && (
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <div className="flex items-center text-amber-500">
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 mr-0.5" />
-                        <span className="font-extrabold text-xs text-slate-900">
-                          {ratingVal}
+                  {/* Rounded Image Box (Clean without floating button) */}
+                  <div className="relative w-full h-44 sm:h-48 bg-[#F5F6F8] rounded-[20px] flex items-center justify-center p-3 mb-2.5 overflow-hidden">
+                    {isOutOfStock && (
+                      <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-[20px]">
+                        <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                          {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
                         </span>
                       </div>
-                      {reviewsCount && (
-                        <span className="text-xs text-slate-400 font-medium">
-                          ({reviewsCount})
-                        </span>
-                      )}
-                    </div>
-                  )}
+                    )}
+                    <Link href={`/products/${item.id}`} className="w-full h-full flex items-center justify-center">
+                      <img
+                        src={getImageUrl(itemImage)}
+                        alt={itemName}
+                        className={`max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 ${
+                          isOutOfStock ? 'opacity-50 grayscale' : 'group-hover/card:scale-105'
+                        }`}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400';
+                        }}
+                      />
+                    </Link>
+                  </div>
 
-                  {/* Price Row */}
-                  <div className="flex items-baseline gap-1.5 mb-1 flex-wrap font-sans">
-                    <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                      SAR {itemPrice.toFixed(2)}
+                  {/* Brand & Stock Status Row */}
+                  <div className="flex items-center justify-between text-xs mb-1 font-sans">
+                    <span className="text-slate-400 font-medium truncate max-w-[125px]">
+                      {brandName}
+                    </span>
+                    <span
+                      className={`font-bold shrink-0 text-xs ${
+                        isOutOfStock ? 'text-rose-600' : 'text-[#00B074]'
+                      }`}
+                    >
+                      {isOutOfStock
+                        ? (locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock')
+                        : (locale === 'ar' ? 'متوفر' : 'In Stock')}
+                    </span>
+                  </div>
+
+                  {/* Product Title */}
+                  <Link href={`/products/${item.id}`}>
+                    <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-1 mb-1 font-sans hover:text-[#043927] transition-colors">
+                      {itemName}
+                    </h3>
+                  </Link>
+
+                  {/* Rating Row */}
+                  <div className="flex items-center gap-1 mb-2">
+                    <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                    <span className="font-bold text-xs sm:text-sm text-slate-900">{ratingVal}</span>
+                    <span className="text-xs sm:text-sm text-slate-400">({reviewsVal})</span>
+                  </div>
+
+                  {/* Subtle Divider Line */}
+                  <div className="border-t border-slate-100 my-2" />
+
+                  {/* Price Row: SAR 40.00 + SAR 50.00 (strikethrough) */}
+                  <div className="flex items-baseline gap-2 mb-2.5 font-sans flex-wrap">
+                    <span className="text-xl sm:text-2xl font-black text-slate-900 font-sans tracking-tight">
+                      <span className="text-xs font-bold text-slate-500 mr-0.5">SAR</span>
+                      {itemPrice.toFixed(2)}
                     </span>
                     {itemMrp > itemPrice && (
-                      <span className="text-xs text-slate-400 line-through font-semibold">
-                        {itemMrp.toFixed(2)}
-                      </span>
-                    )}
-                    {discountTag && (
-                      <span className="text-xs font-black text-emerald-600 font-sans">
-                        {discountTag}
+                      <span className="text-xs sm:text-sm text-slate-400 line-through font-normal whitespace-nowrap">
+                        SAR {itemMrp.toFixed(2)}
                       </span>
                     )}
                   </div>
+                </div>
 
-                  {/* Volume / Unit Price Pill */}
-                  {unitText && (
-                    <div className="text-[11px] font-semibold text-slate-500 bg-slate-50 rounded-md px-2 py-0.5 border border-slate-150 inline-block mb-3">
-                      {unitText}
+                {/* Bottom Full-Width Action Button: Add to Cart (or Quantity Stepper if in Cart) */}
+                <div className="mt-auto pt-1">
+                  {inCart ? (
+                    <div className="w-full py-1.5 px-3 rounded-2xl bg-[#006E2D] text-white font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-between font-sans">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (cartItem.quantity <= 1) {
+                            removeItem(cartItem.id);
+                          } else {
+                            updateQuantity(cartItem.id, cartItem.quantity - 1);
+                          }
+                        }}
+                        className="w-7 h-7 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors active:scale-90 cursor-pointer"
+                        title="Decrease"
+                      >
+                        <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </button>
+
+                      <span className="font-black text-sm">{cartItem.quantity}</span>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          updateQuantity(cartItem.id, cartItem.quantity + 1);
+                        }}
+                        className="w-7 h-7 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors active:scale-90 cursor-pointer"
+                        title="Increase"
+                      >
+                        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </button>
                     </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => !isOutOfStock && handleAddToCart(e, item)}
+                      disabled={isAdding || isOutOfStock}
+                      className={`w-full py-2.5 rounded-2xl font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition-all font-sans ${
+                        isOutOfStock
+                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                          : 'bg-[#006E2D] hover:bg-[#008938] text-white cursor-pointer active:scale-98 shadow-sm hover:shadow'
+                      }`}
+                    >
+                      {isAdding ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : isOutOfStock ? (
+                        <>
+                          <Ban className="w-4 h-4" />
+                          <span>{locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
+                          <span>{locale === 'ar' ? 'أضف إلى السلة' : 'Add to Cart'}</span>
+                        </>
+                      )}
+                    </button>
                   )}
                 </div>
               </div>

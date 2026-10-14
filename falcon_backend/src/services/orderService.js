@@ -16,16 +16,21 @@ const {
   DriverAssignment,
   Admin,
   Feedback,
+  Invoice,
   sequelize,
 } = require('../models');
 const { Op } = require('sequelize');
 const cartService = require('./cartService');
+const couponService = require('./couponService');
+const emailService = require('./emailService');
+const notificationService = require('./notificationService');
+const logger = require('../utils/logger');
 const { ORDER_STATUS, VALID_STATUS_TRANSITIONS } = require('../constants/orderStatus');
 const PAYMENT_STATUS = require('../constants/paymentStatus');
 const ROLES = require('../constants/roles');
 
 class OrderService {
-  async createOrderFromCart(customerId, addressId, notes = '', paymentMethod = 'COD') {
+  async createOrderFromCart(customerId, addressId, notes = '', paymentMethod = 'COD', couponCode = null, deliveryDate = null, deliverySlot = null, deliverySpeed = 'express') {
     const address = await Address.findOne({
       where: { id: addressId, customer_id: customerId },
     });
@@ -39,8 +44,22 @@ class OrderService {
       throw new Error('Your shopping cart is empty');
     }
 
+    let discountTotal = 0.00;
+    let appliedCoupon = null;
+    if (couponCode) {
+      const couponRes = await couponService.validateCoupon(couponCode, cartTotals.subtotal);
+      if (couponRes.valid) {
+        discountTotal = couponRes.discountAmount;
+        appliedCoupon = couponRes.coupon;
+      }
+    }
+
+    const deliveryFee = deliverySpeed === 'standard' ? 0.00 : 12.00;
+    const taxTotal = Math.round(cartTotals.subtotal * 0.15 * 100) / 100;
+    const calculatedGrandTotal = Math.max(0, Math.round((cartTotals.subtotal + taxTotal + deliveryFee - discountTotal) * 100) / 100);
+
     // Atomic Database Transaction
-    return await sequelize.transaction(async (t) => {
+    const createdOrder = await sequelize.transaction(async (t) => {
       // 1. Validate Stock & Lock Products
       for (const item of cartTotals.items) {
         if (item.variantId) {
@@ -73,14 +92,22 @@ class OrderService {
         customer_id: customerId,
         address_id: addressId,
         subtotal: cartTotals.subtotal,
-        tax_total: cartTotals.taxTotal,
-        delivery_fee: cartTotals.deliveryFee,
-        discount_total: cartTotals.discountTotal,
-        grand_total: cartTotals.grandTotal,
+        tax_total: taxTotal,
+        delivery_fee: deliveryFee,
+        discount_total: discountTotal,
+        coupon_code: appliedCoupon ? appliedCoupon.code : null,
+        delivery_date: deliveryDate || null,
+        delivery_slot: deliverySlot || null,
+        grand_total: calculatedGrandTotal,
         order_status: ORDER_STATUS.PENDING_PAYMENT,
         payment_method: paymentMethod || 'COD',
         notes,
       }, { transaction: t });
+
+      if (appliedCoupon && appliedCoupon.id) {
+        const { Coupon } = require('../models');
+        await Coupon.increment('used_count', { by: 1, where: { id: appliedCoupon.id }, transaction: t });
+      }
 
       // 4. Create OrderItems & Reserve Stock
       for (const item of cartTotals.items) {
@@ -113,7 +140,6 @@ class OrderService {
             const newStock = Math.max(0, product.stock_quantity - item.quantity);
             await product.update({
               stock_quantity: newStock,
-              is_available: newStock > 0,
             }, { transaction: t });
           }
         } else {
@@ -122,7 +148,6 @@ class OrderService {
             const newStock = Math.max(0, product.stock_quantity - item.quantity);
             await product.update({
               stock_quantity: newStock,
-              is_available: newStock > 0,
             }, { transaction: t });
           }
         }
@@ -131,7 +156,7 @@ class OrderService {
       // 5. Create Payment Record
       await Payment.create({
         order_id: order.id,
-        amount: cartTotals.grandTotal,
+        amount: calculatedGrandTotal,
         status: PAYMENT_STATUS.PENDING,
         payment_method: paymentMethod || 'COD',
         payment_gateway: paymentMethod || 'COD',
@@ -150,6 +175,26 @@ class OrderService {
 
       return await this.getOrderById(order.id, customerId, ROLES.CUSTOMER, t);
     });
+
+    // Send order confirmation email with estimated delivery slot & date
+    emailService.sendOrderConfirmationEmail(createdOrder).catch((err) => {
+      logger.error('Background order confirmation email failed:', err);
+    });
+
+    // Also trigger in-app notification if customer has user_id
+    if (createdOrder?.customer?.user_id) {
+      const slotText = createdOrder.delivery_slot ? ` (${createdOrder.delivery_slot})` : '';
+      notificationService.createNotification(
+        createdOrder.customer.user_id,
+        'ORDER_CONFIRMED',
+        `Order Confirmed #${createdOrder.order_number}`,
+        `تم تأكيد طلبك #${createdOrder.order_number}`,
+        `Your order is confirmed! Estimated delivery: ${createdOrder.delivery_date || 'Today'}${slotText}.`,
+        `تم تأكيد طلبك بنجاح! موعد التوصيل المتوقع: ${createdOrder.delivery_date || 'اليوم'}${slotText}.`
+      ).catch(() => { });
+    }
+
+    return createdOrder;
   }
 
   async getOrderConfirmation(orderId) {
@@ -172,6 +217,50 @@ class OrderService {
     if (!order) {
       throw new Error('Order not found');
     }
+    return order;
+  }
+
+  async trackOrder(identifier) {
+    if (!identifier) {
+      throw new Error('Order identifier is required');
+    }
+
+    const cleanIdentifier = String(identifier).trim().replace(/^#/, '');
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanIdentifier);
+
+    const where = isUuid
+      ? { id: cleanIdentifier }
+      : { order_number: cleanIdentifier };
+
+    const options = {
+      where,
+      include: [
+        { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] },
+        { model: Address, as: 'address' },
+        { model: OrderItem, as: 'items', include: [{ model: Product, as: 'product', include: [{ model: ProductImage, as: 'images' }] }] },
+        { model: OrderStatusHistory, as: 'status_history', include: [{ model: User, as: 'changed_by', attributes: ['id', 'email', 'role'] }] },
+        { model: Payment, as: 'payment', include: ['confirmation'] },
+        {
+          model: Delivery,
+          as: 'delivery',
+          include: [
+            { model: Driver, as: 'driver', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] },
+            { model: DriverLocation, as: 'locations' },
+          ],
+        },
+        { model: Feedback, as: 'feedback' },
+        { model: Invoice, as: 'invoice' },
+      ],
+      order: [
+        [{ model: OrderStatusHistory, as: 'status_history' }, 'createdAt', 'ASC'],
+      ],
+    };
+
+    const order = await Order.findOne(options);
+    if (!order) {
+      throw new Error(`Order "${cleanIdentifier}" not found`);
+    }
+
     return order;
   }
 
@@ -304,6 +393,7 @@ class OrderService {
             }
           ]
         },
+        { model: OrderStatusHistory, as: 'status_history' },
         { model: Feedback, as: 'feedback' },
       ],
       order: [['createdAt', 'DESC']],
@@ -524,7 +614,7 @@ class OrderService {
       throw new Error(`Invalid status transition from "${currentStatus}" to "${newStatus}"`);
     }
 
-    return await sequelize.transaction(async (t) => {
+    const updatedOrder = await sequelize.transaction(async (t) => {
       await order.update({ order_status: newStatus }, { transaction: t });
 
       // Update delivery lifecycle and driver status if linked
@@ -582,6 +672,18 @@ class OrderService {
 
       return order;
     });
+
+    const { emitOrderStatusUpdate } = require('../sockets/socketManager');
+    emitOrderStatusUpdate({
+      orderId: order.id,
+      deliveryId: order.delivery?.id,
+      driverId: order.delivery?.driver_id,
+      status: newStatus,
+      orderStatus: newStatus,
+      notes: notes || `Order status updated to ${newStatus}`,
+    });
+
+    return updatedOrder;
   }
 
   async cancelOrder(orderId, userId, role, reason = '') {

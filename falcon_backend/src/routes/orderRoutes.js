@@ -8,6 +8,9 @@ const ROLES = require('../constants/roles');
 // Public Order Confirmation Route (by UUID)
 router.get('/confirmation/:id', (req, res, next) => orderController.getOrderConfirmation(req, res, next));
 
+// Public Order Tracking Route (by UUID or Order Number like ORD-20261014-XXXX)
+router.get('/track/:identifier', (req, res, next) => orderController.trackOrder(req, res, next));
+
 router.use(authenticate);
 
 // Customer Routes

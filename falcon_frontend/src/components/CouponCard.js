@@ -39,10 +39,22 @@ export default function CouponCard({ onApplyCoupon, onRemoveCoupon, appliedCoupo
 
     // Check against available or custom
     setErrorMsg('');
+    try {
+      sessionStorage.setItem('appliedCouponCode', code);
+    } catch (_) {}
     if (onApplyCoupon) {
       onApplyCoupon(code);
     }
     setCouponCode('');
+  };
+
+  const handleRemove = () => {
+    try {
+      sessionStorage.removeItem('appliedCouponCode');
+    } catch (_) {}
+    if (onRemoveCoupon) {
+      onRemoveCoupon();
+    }
   };
 
   return (
@@ -73,7 +85,7 @@ export default function CouponCard({ onApplyCoupon, onRemoveCoupon, appliedCoupo
           </div>
 
           <button
-            onClick={onRemoveCoupon}
+            onClick={handleRemove}
             className="text-xs text-rose-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
           >
             <X className="w-4 h-4" />

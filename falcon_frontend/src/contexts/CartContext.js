@@ -150,6 +150,19 @@ export const CartProvider = ({ children }) => {
     const finalImg = typeof img === 'string' ? img : img?.image_url;
     const variantId = pData?.variant_id || pData?.variantId || null;
 
+    // Check if product or selected variant is out of stock
+    const maxStock = variantId && Array.isArray(pData?.variants)
+      ? (pData.variants.find(v => String(v.id) === String(variantId))?.stock_quantity ?? 0)
+      : (pData?.stock_quantity !== undefined && pData?.stock_quantity !== null ? parseInt(pData.stock_quantity, 10) : null);
+
+    if (maxStock !== null && maxStock <= 0) {
+      showToast(
+        locale === 'ar' ? 'عذراً، هذا المنتج غير متوفر في المخزون حالياً' : 'Sorry, this product is currently out of stock',
+        'error'
+      );
+      return { success: false, message: 'Product is out of stock' };
+    }
+
     // GUEST USER (Not logged in)
     if (!user || user.role !== 'CUSTOMER') {
       const guestItems = getGuestItems();
@@ -161,6 +174,13 @@ export const CartProvider = ({ children }) => {
       const parsedDiscountPrice = pData?.discount_price ? parseFloat(pData.discount_price) : null;
 
       if (existingIdx > -1) {
+        if (maxStock !== null && guestItems[existingIdx].quantity + quantity > maxStock) {
+          showToast(
+            locale === 'ar' ? `الكمية المتوفرة في المخزون هي ${maxStock} فقط` : `Only ${maxStock} items available in stock`,
+            'error'
+          );
+          return { success: false, message: 'Exceeds stock limit' };
+        }
         guestItems[existingIdx].quantity += quantity;
       } else {
         const itemKey = variantId ? `${productId}-${variantId}` : productId;
@@ -177,6 +197,8 @@ export const CartProvider = ({ children }) => {
           discount_price: parsedDiscountPrice,
           image: finalImg,
           quantity: quantity,
+          max_stock: maxStock,
+          stock_quantity: maxStock,
           unit_value: pData?.unit_value || '',
           unit_type: pData?.unit_type || '',
           pack_size: pData?.pack_size || '',
@@ -231,6 +253,15 @@ export const CartProvider = ({ children }) => {
           (it) => it.id === itemId || it.productId === itemId || it.product_id === itemId
         );
         if (itemIdx > -1) {
+          const item = guestItems[itemIdx];
+          const stockLimit = item.max_stock ?? item.stock_quantity;
+          if (stockLimit !== null && stockLimit !== undefined && quantity > stockLimit) {
+            showToast(
+              locale === 'ar' ? `الكمية المتوفرة في المخزون هي ${stockLimit} فقط` : `Only ${stockLimit} items available in stock`,
+              'error'
+            );
+            return { success: false, message: 'Exceeds stock limit' };
+          }
           guestItems[itemIdx].quantity = quantity;
         }
       }

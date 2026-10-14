@@ -6,7 +6,7 @@ import { useCart } from '../src/contexts/CartContext';
 import { useWishlist } from '../src/contexts/WishlistContext';
 import { useToast } from '../src/contexts/ToastContext';
 import { fetchApi, getImageUrl } from '../src/services/api';
-import { ShoppingBag, Truck, ShieldCheck, FileCheck, ArrowRight, Star, Sparkles, CheckCircle2, Leaf, Tag, ChevronRight, ChevronLeft, Gift, Headphones, Shield, Smartphone, Heart, Flame, TrendingUp, Plus, Minus, Trash2, Loader2, Zap } from 'lucide-react';
+import { ShoppingBag, Truck, ShieldCheck, FileCheck, ArrowRight, Star, Sparkles, CheckCircle2, Leaf, Tag, ChevronRight, ChevronLeft, Gift, Headphones, Shield, Smartphone, Heart, Flame, TrendingUp, Plus, Minus, Trash2, Loader2, Zap, Ban } from 'lucide-react';
 import WaveDivider from '../src/components/WaveDivider';
 
 const SAFE_DEFAULT_CATEGORIES = [
@@ -67,58 +67,6 @@ const getCategoryImageUrl = (cat) => {
   }
   const name = (cat?.name_en || '').toLowerCase();
 };
-
-
-
-const FEATURED_BANNERS = [
-  {
-    title_en: 'From ocean to your kitchen',
-    title_ar: 'من المحيط مباشرة إلى مطبخك',
-    subtitle_en: 'Fresh seafood, lobsters & ocean catches',
-    subtitle_ar: 'أسماك ومأكولات بحرية طازجة يومياً',
-    btnBg: 'bg-emerald-700 hover:bg-emerald-800 text-white',
-    cardBg: 'bg-[#e8f5e9]',
-    img: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=600',
-  },
-  {
-    title_en: 'Fresh & Organic Drinks',
-    title_ar: 'مشروبات وعصائر عضوية',
-    subtitle_en: 'Cold pressed juices & organic dairy',
-    subtitle_ar: 'عصائر طازجة وألبان نقية',
-    btnBg: 'bg-amber-700 hover:bg-amber-800 text-white',
-    cardBg: 'bg-[#fef9c3]',
-    img: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=600',
-  },
-  {
-    title_en: 'Perfect Picks for Meat Lovers',
-    title_ar: 'لحوم طازجة وقطعيات فاخرة',
-    subtitle_en: 'Farm-fresh beef, steaks & tender poultry',
-    subtitle_ar: 'لحوم طازجة مبردة من المزارع',
-    btnBg: 'bg-sky-700 hover:bg-sky-800 text-white',
-    cardBg: 'bg-[#e0f2fe]',
-    img: 'https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=600',
-  },
-];
-
-const PROMO_DEALS = [
-  { discount: '-15%', title_en: 'Organic Veggies - 100% Farm Fresh', title_ar: 'خضار عضوية طازجة من المزرعة', img: 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=600', bg: 'bg-[#f0fdf4]' },
-  { discount: '-20%', title_en: 'Seafood Deals - Fresh & Tasty', title_ar: 'عروض المأكولات البحرية الطازجة', img: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600', bg: 'bg-[#ecfeff]' },
-  { discount: '-10%', title_en: 'Bakery Specials - Soft & Fresh', title_ar: 'مخبوزات طازجة يومياً', img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600', bg: 'bg-[#fffbeb]' },
-  { discount: '-25%', title_en: 'Burger Bites - Loaded & Delicious', title_ar: 'برجر ولحوم جاهزة للطهي', img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600', bg: 'bg-[#fdf2f8]' },
-];
-
-const STATIC_GREEN_FRESH = [
-  { id: 'st-1', name_en: 'Lady Finger (500 g)', name_ar: 'بامية طازجة (500 جرام)', price: '20.00', img: 'https://images.unsplash.com/photo-1425543103986-22abb7d7e8d2?w=400' },
-  { id: 'st-2', name_en: 'Fresh Potatoes (1 kg)', name_ar: 'بطاطس طازجة (1 كجم)', price: '4.00', img: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400' },
-  { id: 'st-3', name_en: 'Watermelon Fresh', name_ar: 'بطيخ أحمر طازج', price: '4.00', img: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400' },
-  { id: 'st-4', name_en: 'Fresh Bananas (1 kg)', name_ar: 'موز طازج (1 كجم)', price: '2.50', img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400' },
-  { id: 'st-5', name_en: 'Organic Kiwi (500 g)', name_ar: 'كيوي عضوي (500 جرام)', price: '3.50', img: 'https://images.unsplash.com/photo-1585059819970-311904b48f61?w=400' },
-  { id: 'st-6', name_en: 'Pure Olive & Cooking Oil', name_ar: 'زيت طهي نقي (1 لتر)', price: '7.00', img: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400' },
-  { id: 'st-7', name_en: 'Farm Fresh Meat Cuts', name_ar: 'لحم طازج مبرد (1 كجم)', price: '35.00', img: 'https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=400' },
-  { id: 'st-8', name_en: 'Fresh Red Tomatoes (1 kg)', name_ar: 'طماطم حمراء طازجة (1 كجم)', price: '3.00', img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400' },
-  { id: 'st-9', name_en: 'Green Broccoli (500 g)', name_ar: 'بروكلي أخضر (500 جرام)', price: '5.00', img: 'https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400' },
-  { id: 'st-10', name_en: 'Organic Strawberries', name_ar: 'فراولة عضوية (250 جرام)', price: '4.50', img: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400' },
-];
 
 const STATIC_MOST_BUY = [
   { id: 'mb-1', name_en: 'Watermelon Fresh', name_ar: 'بطيخ أحمر طازج', price: '4.00', img: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400' },
@@ -681,8 +629,15 @@ export default function HomePage() {
                     : locale === 'ar'
                       ? prod.specs_ar
                       : prod.specs_en);
-                const ratingVal = prod.rating || '4.9';
-                const reviewsVal = prod.reviews || '1,420';
+                const ratingVal = prod.rating !== undefined && prod.rating !== null && prod.rating !== '' ? Number(prod.rating).toFixed(1) : '4.8';
+                const reviewsVal = (prod.reviews_count !== undefined && prod.reviews_count !== null ? Number(prod.reviews_count) : (prod.reviews ? Number(prod.reviews) : 120)).toLocaleString();
+
+                const totalVariantStock = hasVariants && Array.isArray(prod.variants)
+                  ? prod.variants.reduce((acc, v) => acc + parseInt(v.stock_quantity || '0', 10), 0)
+                  : 0;
+                const isOutOfStock = hasVariants
+                  ? (prod.variants.length > 0 && totalVariantStock <= 0)
+                  : (prod.stock_quantity !== undefined && prod.stock_quantity !== null && parseInt(prod.stock_quantity, 10) <= 0);
 
                 return (
                   <Link
@@ -692,12 +647,17 @@ export default function HomePage() {
                   >
                     {/* Top Badges */}
                     <div className="flex items-center justify-between z-10 mb-1">
-                      {prod.is_best_seller === true && (
+                      {isOutOfStock ? (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                          <Ban className="w-2.5 h-2.5 text-white" />
+                          <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
+                        </span>
+                      ) : prod.is_best_seller === true ? (
                         <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
                           <Star className="w-2.5 h-2.5 fill-current text-white" />
                           <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>
                         </span>
-                      )}
+                      ) : null}
 
                       <button
                         onClick={(e) => {
@@ -714,10 +674,17 @@ export default function HomePage() {
 
                     {/* Product Image Container */}
                     <div className="w-full aspect-[4/3] rounded-xl bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl">
+                          <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                            {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                          </span>
+                        </div>
+                      )}
                       <img
                         src={finalImg}
                         alt={title}
-                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        className={`w-full h-full object-contain transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
@@ -731,13 +698,19 @@ export default function HomePage() {
                         {/* Brand & In Stock Tag */}
                         <div className="flex items-center justify-between text-[11px] font-medium leading-none mb-1">
                           <span className="text-slate-400 truncate">{brandName}</span>
-                          <span className="text-[#00B074] font-bold shrink-0">
-                            {hasVariants
-                              ? (locale === 'ar' ? 'متوفر بخيارات' : 'Multi-Variant')
-                              : (prod.stock_quantity !== undefined && prod.stock_quantity <= 0
-                                ? (locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock')
-                                : (locale === 'ar' ? 'متوفر' : 'In Stock'))}
-                          </span>
+                          {isOutOfStock ? (
+                            <span className="text-rose-600 font-bold shrink-0">
+                              {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                            </span>
+                          ) : hasVariants ? (
+                            <span className="text-[#00B074] font-bold shrink-0">
+                              {locale === 'ar' ? 'متوفر بخيارات' : 'Multi-Variant'}
+                            </span>
+                          ) : (
+                            <span className="text-[#00B074] font-bold shrink-0">
+                              {locale === 'ar' ? 'متوفر' : 'In Stock'}
+                            </span>
+                          )}
                         </div>
 
                         {/* Product Title */}
@@ -777,6 +750,23 @@ export default function HomePage() {
 
                         {/* Quantity Counter, Select Options, or Add to Cart Button */}
                         {(() => {
+                          if (isOutOfStock) {
+                            return (
+                              <button
+                                type="button"
+                                disabled
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                className="h-8 w-full rounded-xl bg-slate-100 border border-slate-200 text-slate-400 font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 cursor-not-allowed select-none"
+                              >
+                                <Ban className="w-3.5 h-3.5 text-slate-400" />
+                                <span>{locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>
+                              </button>
+                            );
+                          }
+
                           if (hasVariants) {
                             return (
                               <div className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#00B074] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5">
@@ -832,9 +822,9 @@ export default function HomePage() {
                                     e.stopPropagation();
                                     handleIncrement(prod.id, prod);
                                   }}
-                                  disabled={isBusy}
+                                  disabled={isBusy || (prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity)}
                                   className="w-6.5 h-6.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                                  title={locale === 'ar' ? 'زيادة' : 'Increase'}
+                                  title={prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity ? (locale === 'ar' ? 'تم الوصول للحد الأقصى للمخزون' : 'Max stock reached') : (locale === 'ar' ? 'زيادة' : 'Increase')}
                                 >
                                   <Plus className="w-3 h-3 stroke-[2.5]" />
                                 </button>
@@ -1254,8 +1244,15 @@ export default function HomePage() {
                   originalPrice = isDiscounted ? currentPrice : (prod.purchase_price ? parseFloat(prod.purchase_price) : null);
                 }
 
-                const ratingVal = prod.rating || '4.9';
-                const reviewsVal = prod.reviews || '1,420';
+                const ratingVal = prod.rating !== undefined && prod.rating !== null && prod.rating !== '' ? Number(prod.rating).toFixed(1) : '4.8';
+                const reviewsVal = (prod.reviews_count !== undefined && prod.reviews_count !== null ? Number(prod.reviews_count) : (prod.reviews ? Number(prod.reviews) : 120)).toLocaleString();
+
+                const totalVariantStock = hasVariants && Array.isArray(prod.variants)
+                  ? prod.variants.reduce((acc, v) => acc + parseInt(v.stock_quantity || '0', 10), 0)
+                  : 0;
+                const isOutOfStock = hasVariants
+                  ? (prod.variants.length > 0 && totalVariantStock <= 0)
+                  : (prod.stock_quantity !== undefined && prod.stock_quantity !== null && parseInt(prod.stock_quantity, 10) <= 0);
 
                 return (
                   <Link
@@ -1265,10 +1262,15 @@ export default function HomePage() {
                   >
                     {/* Top Row: Best Seller Badge & Heart */}
                     <div className="flex items-center justify-between z-10 mb-1 min-h-[28px]">
-                      {prod.is_best_seller ? (
+                      {isOutOfStock ? (
+                        <span className="px-3 py-1 rounded-full bg-rose-600 text-white font-black text-[11px] tracking-wider uppercase flex items-center gap-1.5 shadow-2xs">
+                          <Ban className="w-3.5 h-3.5 text-white" />
+                          <span>{locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>
+                        </span>
+                      ) : prod.is_best_seller ? (
                         <span className="px-3 py-1 rounded-full bg-[#FFA500] text-white font-black text-[11px] tracking-wider uppercase flex items-center gap-1.5 shadow-2xs">
                           <Star className="w-3.5 h-3.5 fill-white text-white" />
-                          <span>{locale === 'ar' ? 'الأكثر مبيعاً' : 'BEST SELLER'}</span>
+                          <span>{locale === 'ar' ? 'الأكثر طلباً' : 'Best Seller'}</span>
                         </span>
                       ) : (
                         <div />
@@ -1290,10 +1292,17 @@ export default function HomePage() {
 
                     {/* Product Image Container */}
                     <div className="w-full aspect-square rounded-2xl bg-[#F8F9FA] p-3 sm:p-4 overflow-hidden flex items-center justify-center my-2 relative group-hover:bg-[#F2F4F7] transition-colors">
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-2xl">
+                          <span className="bg-rose-600 text-white text-[11px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                            {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                          </span>
+                        </div>
+                      )}
                       <img
                         src={finalImg}
                         alt={title}
-                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        className={`w-full h-full object-contain transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
                       />
                     </div>
 
@@ -1302,11 +1311,17 @@ export default function HomePage() {
                       <div>
                         {/* In Stock Badge */}
                         <div className="flex justify-end mb-1">
-                          <span className="text-[#00B074] font-bold text-xs">
-                            {hasVariants
-                              ? (locale === 'ar' ? 'متوفر بخيارات' : 'Multi-Variant')
-                              : (locale === 'ar' ? 'متوفر' : 'In Stock')}
-                          </span>
+                          {isOutOfStock ? (
+                            <span className="text-rose-600 font-bold text-xs">
+                              {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                            </span>
+                          ) : (
+                            <span className="text-[#00B074] font-bold text-xs">
+                              {hasVariants
+                                ? (locale === 'ar' ? 'متوفر بخيارات' : 'Multi-Variant')
+                                : (locale === 'ar' ? 'متوفر' : 'In Stock')}
+                            </span>
+                          )}
                         </div>
 
                         {/* Product Title */}
@@ -1341,6 +1356,23 @@ export default function HomePage() {
 
                         {/* Quantity Counter, Select Options, or Full Width Button */}
                         {(() => {
+                          if (isOutOfStock) {
+                            return (
+                              <button
+                                type="button"
+                                disabled
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                className="w-full h-8 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed select-none"
+                              >
+                                <Ban className="w-3.5 h-3.5 text-slate-400" />
+                                <span>{locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>
+                              </button>
+                            );
+                          }
+
                           if (hasVariants) {
                             return (
                               <div className="w-full h-8 rounded-xl bg-slate-900 hover:bg-[#00B074] text-white font-extrabold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer">
@@ -1391,9 +1423,9 @@ export default function HomePage() {
                                     e.stopPropagation();
                                     handleIncrement(prod.id, prod);
                                   }}
-                                  disabled={isBusy}
+                                  disabled={isBusy || (prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity)}
                                   className="w-7 h-7 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                                  title={locale === 'ar' ? 'زيادة' : 'Increase'}
+                                  title={prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity ? (locale === 'ar' ? 'تم الوصول للحد الأقصى للمخزون' : 'Max stock reached') : (locale === 'ar' ? 'زيادة' : 'Increase')}
                                 >
                                   <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                                 </button>

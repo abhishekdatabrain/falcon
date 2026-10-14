@@ -33,7 +33,8 @@ import {
   CreditCard,
   CheckSquare,
   Clock,
-  BadgePercent
+  BadgePercent,
+  Loader2,
 } from 'lucide-react';
 
 export default function CheckoutPage() {
@@ -52,8 +53,11 @@ export default function CheckoutPage() {
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [deliverySpeed, setDeliverySpeed] = useState('express'); // 'express' | 'standard'
-  const [selectedDate, setSelectedDate] = useState('Today, 24 Oct');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('1:00 PM - 3:00 PM');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [scheduleDates, setScheduleDates] = useState([]);
+  const [scheduleSlots, setScheduleSlots] = useState([]);
+  const [scheduleLoading, setScheduleLoading] = useState(true);
   const [driverInstructions, setDriverInstructions] = useState('');
   const [outOfStockPref, setOutOfStockPref] = useState('call'); // 'call' | 'best_match' | 'no_replace'
   const [paymentMethod, setPaymentMethod] = useState('mada'); // 'mada' | 'apple_pay' | 'card' | 'stc_pay' | 'cod'
@@ -71,7 +75,12 @@ export default function CheckoutPage() {
   const [gatewayErrorMsg, setGatewayErrorMsg] = useState('');
   const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
 
-  const [promoApplied, setPromoApplied] = useState(true);
+  // Dynamic Promo Code / Coupon State
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
+  const [availableCoupons, setAvailableCoupons] = useState([]);
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
@@ -227,7 +236,10 @@ export default function CheckoutPage() {
           notes: driverInstructions,
           deliverySpeed,
           outOfStockPref,
-          paymentMethod
+          paymentMethod,
+          couponCode: appliedCoupon ? appliedCoupon.code : null,
+          deliveryDate: selectedDate || (scheduleDates[0] ? (locale === 'ar' ? scheduleDates[0].label_ar : scheduleDates[0].label_en) : 'Today'),
+          deliverySlot: selectedTimeSlot || (scheduleSlots[0] ? (locale === 'ar' ? (scheduleSlots[0].slot_label_ar || scheduleSlots[0].slot_label_en) : (scheduleSlots[0].slot_label_en || scheduleSlots[0].slot_label_ar)) : '1:00 PM - 3:00 PM'),
         }),
       });
 
@@ -274,10 +286,144 @@ export default function CheckoutPage() {
   const itemsSubtotal = (cart && typeof cart.subtotal === 'number' && cart.subtotal > 0)
     ? cart.subtotal
     : bagItems.reduce((sum, item) => sum + parseFloat(item.discount_price || item.price || 0) * item.quantity, 0);
-  
+
+  // Fetch active promotional coupons from server
+  useEffect(() => {
+    const fetchActiveCoupons = async () => {
+      try {
+        const res = await fetchApi('/coupons/active');
+        if (res.success && res.data?.coupons) {
+          setAvailableCoupons(res.data.coupons);
+        }
+      } catch (e) {
+        // Fallback
+      }
+    };
+    fetchActiveCoupons();
+  }, []);
+
+  // Fetch dynamic delivery slots & schedule from server (configured in Admin Panel)
+  useEffect(() => {
+    const fetchDeliverySchedule = async () => {
+      try {
+        setScheduleLoading(true);
+        const res = await fetchApi('/delivery-slots');
+        if (res.success && res.data) {
+          const dates = res.data.dates || [];
+          const slots = res.data.slots || [];
+          setScheduleDates(dates);
+          setScheduleSlots(slots);
+
+          setSelectedDate((curr) => {
+            if (!curr && dates.length > 0) {
+              return locale === 'ar' ? dates[0].label_ar : dates[0].label_en;
+            }
+            return curr;
+          });
+          setSelectedTimeSlot((curr) => {
+            if (!curr && slots.length > 0) {
+              return locale === 'ar'
+                ? (slots[0].slot_label_ar || slots[0].slot_label_en)
+                : (slots[0].slot_label_en || slots[0].slot_label_ar);
+            }
+            return curr;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load delivery slots:', err);
+      } finally {
+        setScheduleLoading(false);
+      }
+    };
+    fetchDeliverySchedule();
+  }, [locale]);
+
+  // Server-side validate & apply coupon
+  const handleApplyCoupon = async (codeToApply) => {
+    const code = (codeToApply || couponInput).trim().toUpperCase();
+    if (!code) {
+      setCouponError(locale === 'ar' ? 'يرجى إدخال رمز الكوبون' : 'Please enter a promo code');
+      return;
+    }
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const res = await fetchApi('/coupons/validate', {
+        method: 'POST',
+        body: JSON.stringify({ code, subtotal: itemsSubtotal }),
+      });
+      if (res.success && res.data?.valid) {
+        const c = res.data.coupon;
+        const couponData = {
+          code: c.code,
+          discount_type: c.discount_type,
+          discount_value: c.discount_value,
+          description_en: c.description_en,
+          description_ar: c.description_ar,
+          discountAmount: res.data.discountAmount,
+          max_discount_amount: c.max_discount_amount,
+        };
+        setAppliedCoupon(couponData);
+        setCouponInput('');
+        try {
+          sessionStorage.setItem('appliedCouponCode', c.code);
+        } catch (_) {}
+        showToast(
+          locale === 'ar'
+            ? `تم تطبيق الكوبون (${c.code}) بنجاح!`
+            : `Promo code (${c.code}) applied successfully!`,
+          'success'
+        );
+      } else {
+        setCouponError(res.message || (locale === 'ar' ? 'رمز الكوبون غير صالح' : 'Invalid promo code'));
+      }
+    } catch (err) {
+      setCouponError(err.message || (locale === 'ar' ? 'فشل تطبيق الكوبون' : 'Failed to apply promo code'));
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError('');
+    try {
+      sessionStorage.removeItem('appliedCouponCode');
+    } catch (_) {}
+    showToast(locale === 'ar' ? 'تمت إزالة الكوبون' : 'Promo code removed', 'info');
+  };
+
+  // Check if coupon code was saved in sessionStorage or pre-applied
+  useEffect(() => {
+    try {
+      const savedCode = sessionStorage.getItem('appliedCouponCode');
+      if (savedCode && !appliedCoupon && itemsSubtotal > 0) {
+        handleApplyCoupon(savedCode);
+      }
+    } catch (_) {}
+  }, [itemsSubtotal]);
+
   const deliveryFee = deliverySpeed === 'express' ? 12.00 : 0.00;
-  const promoDiscount = promoApplied ? (itemsSubtotal > 0 ? Math.min(itemsSubtotal * 0.15, 15) : 0.00) : 0.00;
-  const finalTotal = Math.max(0, itemsSubtotal + deliveryFee - promoDiscount);
+
+  // Calculate dynamic coupon discount based on applied coupon & subtotal
+  const promoDiscount = appliedCoupon
+    ? appliedCoupon.discount_type === 'FIXED'
+      ? Math.min(itemsSubtotal, parseFloat(appliedCoupon.discount_value))
+      : appliedCoupon.max_discount_amount
+        ? Math.min(
+            parseFloat(appliedCoupon.max_discount_amount),
+            Math.round(((itemsSubtotal * parseFloat(appliedCoupon.discount_value)) / 100) * 100) / 100
+          )
+        : Math.round(((itemsSubtotal * parseFloat(appliedCoupon.discount_value)) / 100) * 100) / 100
+    : 0.00;
+
+  // Saudi Arabia 15% VAT (Value Added Tax)
+  const vatTotal = itemsSubtotal > 0
+    ? Math.round(itemsSubtotal * 0.15 * 100) / 100
+    : 0.00;
+
+  // Correct calculation: items subtotal + 15% VAT + delivery fee - promo discount
+  const finalTotal = Math.max(0, Math.round((itemsSubtotal + vatTotal + deliveryFee - promoDiscount) * 100) / 100);
 
   if (cartLoading) {
     return (
@@ -499,60 +645,125 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Scheduled Windows Available */}
+              {/* Scheduled Windows Available (Dynamic from Admin Panel) */}
               <div className="space-y-3 pt-2">
                 <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block font-sans">
-                  SCHEDULED WINDOWS AVAILABLE:
+                  {locale === 'ar' ? 'فترات التوصيل المتاحة:' : 'SCHEDULED WINDOWS AVAILABLE:'}
                 </span>
 
                 {/* Date Pills Row */}
                 <div className="flex flex-wrap items-center gap-2">
-                  {['Today, 24 Oct', 'Tomorrow, 25 Oct', 'Sat, 26 Oct', 'Sun, 27 Oct'].map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setSelectedDate(d)}
-                      className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer font-sans ${
-                        selectedDate === d
-                          ? 'bg-slate-900 text-white shadow-2xs'
-                          : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  ))}
+                  {scheduleLoading && scheduleDates.length === 0 ? (
+                    <div className="flex items-center gap-2 text-xs text-slate-400 py-1 font-medium">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                      <span>{locale === 'ar' ? 'جاري تحميل التواريخ...' : 'Loading dates...'}</span>
+                    </div>
+                  ) : scheduleDates.length > 0 ? (
+                    scheduleDates.map((d) => {
+                      const label = locale === 'ar' ? d.label_ar : d.label_en;
+                      const isSelected = selectedDate === label || selectedDate === d.label_en || selectedDate === d.label_ar;
+                      return (
+                        <button
+                          key={d.key || d.date}
+                          type="button"
+                          onClick={() => setSelectedDate(label)}
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer font-sans ${
+                            isSelected
+                              ? 'bg-slate-900 text-white shadow-2xs'
+                              : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    ['Today, 24 Oct', 'Tomorrow, 25 Oct', 'Sat, 26 Oct', 'Sun, 27 Oct'].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setSelectedDate(d)}
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer font-sans ${
+                          selectedDate === d
+                            ? 'bg-slate-900 text-white shadow-2xs'
+                            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))
+                  )}
                 </div>
 
                 {/* Time Slots Container */}
                 <div className="bg-[#F5F6F8] rounded-2xl p-3.5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { slot: '1:00 PM - 3:00 PM', tag: 'Express Available', isExpress: true },
-                    { slot: '4:00 PM - 6:00 PM', tag: 'Standard Slot', isExpress: false },
-                    { slot: '7:00 PM - 9:00 PM', tag: 'Evening Chill Slot', isExpress: false }
-                  ].map((s) => (
-                    <div
-                      key={s.slot}
-                      onClick={() => setSelectedTimeSlot(s.slot)}
-                      className={`p-3 rounded-xl cursor-pointer text-center transition-all bg-white border ${
-                        selectedTimeSlot === s.slot
-                          ? 'border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs'
-                          : 'border-slate-200/80 hover:border-slate-300'
-                      }`}
-                    >
-                      <span className="font-extrabold text-xs text-slate-900 block font-sans">
-                        {s.slot}
-                      </span>
-                      <span
-                        className={`text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full font-sans ${
-                          s.isExpress
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-slate-100 text-slate-600'
+                  {scheduleLoading && scheduleSlots.length === 0 ? (
+                    <div className="col-span-full py-4 flex items-center justify-center gap-2 text-xs text-slate-400 font-medium">
+                      <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+                      <span>{locale === 'ar' ? 'جاري تحميل فترات التوصيل...' : 'Loading time slots...'}</span>
+                    </div>
+                  ) : scheduleSlots.length > 0 ? (
+                    scheduleSlots.map((s) => {
+                      const slotLabel = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+                      const tagLabel = locale === 'ar' ? (s.tag_ar || s.tag_en) : (s.tag_en || s.tag_ar);
+                      const isSelected = selectedTimeSlot === slotLabel || selectedTimeSlot === s.slot_label_en || selectedTimeSlot === s.slot_label_ar;
+                      return (
+                        <div
+                          key={s.id || slotLabel}
+                          onClick={() => setSelectedTimeSlot(slotLabel)}
+                          className={`p-3 rounded-xl cursor-pointer text-center transition-all bg-white border ${
+                            isSelected
+                              ? 'border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs'
+                              : 'border-slate-200/80 hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="font-extrabold text-xs text-slate-900 block font-sans">
+                            {slotLabel}
+                          </span>
+                          {tagLabel && (
+                            <span
+                              className={`text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full font-sans ${
+                                s.is_express
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              {tagLabel}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    [
+                      { slot: '1:00 PM - 3:00 PM', tag: 'Express Available', isExpress: true },
+                      { slot: '4:00 PM - 6:00 PM', tag: 'Standard Slot', isExpress: false },
+                      { slot: '7:00 PM - 9:00 PM', tag: 'Evening Chill Slot', isExpress: false }
+                    ].map((s) => (
+                      <div
+                        key={s.slot}
+                        onClick={() => setSelectedTimeSlot(s.slot)}
+                        className={`p-3 rounded-xl cursor-pointer text-center transition-all bg-white border ${
+                          selectedTimeSlot === s.slot
+                            ? 'border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs'
+                            : 'border-slate-200/80 hover:border-slate-300'
                         }`}
                       >
-                        {s.tag}
-                      </span>
-                    </div>
-                  ))}
+                        <span className="font-extrabold text-xs text-slate-900 block font-sans">
+                          {s.slot}
+                        </span>
+                        <span
+                          className={`text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full font-sans ${
+                            s.isExpress
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {s.tag}
+                        </span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -705,35 +916,129 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* Promo Code or Voucher Applied Card */}
-              <div className="space-y-1.5 pt-2">
+              {/* Promo Code or Voucher Dynamic Section */}
+              <div className="space-y-2 pt-2">
                 <span className="text-xs font-extrabold text-slate-700 block font-sans">
-                  Promo Code or Voucher
+                  {locale === 'ar' ? 'رمز الكوبون أو القسيمة' : 'Promo Code or Voucher'}
                 </span>
 
-                <div className="bg-[#FFF9E6] border border-[#FFE8A3] rounded-xl p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-xs text-slate-900 uppercase font-sans tracking-wide">
-                      FRESH15
-                    </span>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#05A764]" />
+                {appliedCoupon ? (
+                  <div className="bg-[#FFF9E6] border border-[#FFE8A3] rounded-2xl p-3.5 flex items-center justify-between shadow-2xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800 shrink-0">
+                        <Tag className="w-4 h-4 text-[#043927]" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-xs text-slate-900 uppercase font-sans tracking-wider">
+                            {appliedCoupon.code}
+                          </span>
+                          <span className="bg-[#05A764] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase font-sans">
+                            {locale === 'ar' ? 'مطبق' : 'Applied'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-emerald-800 font-semibold mt-0.5">
+                          {locale === 'ar'
+                            ? (appliedCoupon.description_ar || appliedCoupon.description_en || 'تم تطبيق الخصم بنجاح!')
+                            : (appliedCoupon.description_en || appliedCoupon.description_ar || 'Discount applied successfully!')}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-xs text-rose-600 hover:text-rose-700 font-extrabold hover:underline flex items-center gap-1 cursor-pointer px-2 py-1 shrink-0"
+                      title={locale === 'ar' ? 'إزالة الكوبون' : 'Remove coupon'}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>{locale === 'ar' ? 'إزالة' : 'Remove'}</span>
+                    </button>
                   </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          placeholder={locale === 'ar' ? 'أدخل رمز الكوبون (مثال: FRESH15)' : 'Enter promo code (e.g. FRESH15)'}
+                          value={couponInput}
+                          onChange={(e) => {
+                            setCouponInput(e.target.value.toUpperCase());
+                            if (couponError) setCouponError('');
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleApplyCoupon();
+                            }
+                          }}
+                          className="w-full bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-200 focus:border-[#05A764] rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 uppercase tracking-wider outline-none transition-all shadow-2xs"
+                        />
+                        {couponInput && (
+                          <button
+                            type="button"
+                            onClick={() => setCouponInput('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
 
-                  <span className="bg-[#05A764] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase font-sans">
-                    Applied
-                  </span>
-                </div>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyCoupon()}
+                        disabled={couponLoading || !couponInput.trim()}
+                        className="bg-[#043927] hover:bg-[#02281b] disabled:bg-slate-200 text-white disabled:text-slate-400 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-2xs transition-all cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 shrink-0"
+                      >
+                        {couponLoading ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <span>{locale === 'ar' ? 'تطبيق' : 'Apply'}</span>
+                        )}
+                      </button>
+                    </div>
 
-                <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-bold pt-0.5">
-                  <Tag className="w-3.5 h-3.5 text-[#05A764]" />
-                  <span>15% off fresh groceries discount applied!</span>
-                </div>
+                    {couponError && (
+                      <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{couponError}</span>
+                      </p>
+                    )}
+
+                    {/* Quick Apply Available Coupons */}
+                    {availableCoupons && availableCoupons.length > 0 && (
+                      <div className="space-y-1 pt-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                          {locale === 'ar' ? 'الكوبونات المتاحة:' : 'Available Offers:'}
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {availableCoupons.map((c) => (
+                            <button
+                              key={c.code}
+                              type="button"
+                              onClick={() => handleApplyCoupon(c.code)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#006E2D] text-[10px] font-extrabold transition-all cursor-pointer hover:scale-102"
+                            >
+                              <Tag className="w-2.5 h-2.5" />
+                              <span>{c.code}</span>
+                              <span className="text-slate-500 font-medium">
+                                ({c.discount_type === 'PERCENTAGE' ? `${parseFloat(c.discount_value)}% OFF` : `SAR ${parseFloat(c.discount_value)} OFF`})
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Price Breakdown */}
               <div className="space-y-2.5 text-xs font-semibold text-slate-600 pt-2 border-t border-slate-100 font-sans">
                 <div className="flex justify-between">
-                  <span>Items Subtotal</span>
+                  <span>{locale === 'ar' ? 'المجموع الفرعي للمنتجات' : 'Items Subtotal'}</span>
                   <span className="font-extrabold text-slate-900">
                     SAR {itemsSubtotal.toFixed(2)}
                   </span>
@@ -741,34 +1046,42 @@ export default function CheckoutPage() {
 
                 <div className="flex justify-between">
                   <span className="flex items-center gap-1">
-                    Delivery Fee <Zap className="w-3 h-3 text-[#05A764] fill-current" />
+                    {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'} <Zap className="w-3 h-3 text-[#05A764] fill-current" />
                   </span>
                   <span className="font-extrabold text-slate-900">
                     SAR {deliveryFee.toFixed(2)}
                   </span>
                 </div>
 
-                {promoApplied && (
+                {appliedCoupon && promoDiscount > 0 && (
                   <div className="flex justify-between text-[#05A764] font-extrabold">
-                    <span>Promo Discount (FRESH15)</span>
+                    <span>
+                      {locale === 'ar'
+                        ? `خصم الكوبون (${appliedCoupon.code})`
+                        : `Promo Discount (${appliedCoupon.code})`}
+                    </span>
                     <span>- SAR {promoDiscount.toFixed(2)}</span>
                   </div>
                 )}
 
-                <div className="flex justify-between text-slate-400">
-                  <span>Estimated VAT (15% included)</span>
-                  <span>SAR 0.00</span>
+                <div className="flex justify-between">
+                  <span className="flex items-center gap-1">
+                    {locale === 'ar' ? 'ضريبة القيمة المضافة (15% VAT)' : 'Estimated VAT (15%)'}
+                  </span>
+                  <span className="font-extrabold text-slate-900">
+                    SAR {vatTotal.toFixed(2)}
+                  </span>
                 </div>
 
                 <div className="border-t border-dashed border-slate-200 pt-3 my-2" />
 
                 <div className="flex items-baseline justify-between pt-1">
                   <div>
-                    <span className="text-sm font-extrabold text-slate-900 block">
-                      Total to Pay
+                    <span className="text-sm font-extrabold text-slate-900 block font-sans">
+                      {locale === 'ar' ? 'المجموع الكلي للدفع' : 'Total to Pay'}
                     </span>
                     <span className="text-[10px] text-slate-400 font-medium">
-                      All taxes included
+                      {locale === 'ar' ? 'شامل الضريبة 15% ورسوم التوصيل' : 'Includes 15% VAT & delivery'}
                     </span>
                   </div>
 
