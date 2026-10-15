@@ -1,17 +1,38 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { fetchApi } from '../../src/services/api';
 import AdminNavbar from '../../src/components/AdminNavbar';
 import AdminSidebar from '../../src/components/AdminSidebar';
+import { ShieldAlert, ArrowLeft } from 'lucide-react';
+
+const ROUTE_PERMISSIONS = {
+  '/admin/dashboard': 'dashboard.view',
+  '/admin/roles': 'admin_management.view',
+  '/admin/customers': 'customers.view',
+  '/admin/products': 'products.view',
+  '/admin/categories': 'categories.view',
+  '/admin/payments': 'payments.view',
+  '/admin/orders': 'orders.view',
+  '/admin/invoices': 'invoices.view',
+  '/admin/homepage-cms': 'cms.view',
+  '/admin/hero-banners': 'banners.view',
+  '/admin/category-banner': 'banners.view',
+  '/admin/promo-banners': 'banners.view',
+  '/admin/category-sections': 'cms.view',
+  '/admin/drivers': 'drivers.view',
+  '/admin/delivery-slots': 'delivery.view',
+  '/admin/deliveries': 'delivery.view',
+};
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { locale } = useLanguage();
-  const { user, loading } = useAuth();
+  const { user, loading, hasPermission, isSuperAdmin } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
 
@@ -50,7 +71,7 @@ export default function AdminLayout({ children }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -58,6 +79,13 @@ export default function AdminLayout({ children }) {
   if (!user || user.role !== 'ADMIN') {
     return null;
   }
+
+  // Check URL authorization for current path
+  const matchedRouteKey = Object.keys(ROUTE_PERMISSIONS).find(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+  const requiredPermission = matchedRouteKey ? ROUTE_PERMISSIONS[matchedRouteKey] : null;
+  const isAuthorized = !requiredPermission || isSuperAdmin || hasPermission(requiredPermission);
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
@@ -78,7 +106,32 @@ export default function AdminLayout({ children }) {
 
         {/* Scrollable Sub-Page Content Panel */}
         <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6 overflow-y-auto min-w-0">
-          {children}
+          {!isAuthorized ? (
+            <div className="p-8 max-w-xl mx-auto my-12 bg-white rounded-3xl border border-red-200 shadow-sm text-center space-y-4">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+                <ShieldAlert className="w-8 h-8" />
+              </div>
+              <h2 className="text-xl font-black text-slate-900">
+                {locale === 'ar' ? 'غير مصرح لك بالدخول' : 'Access Restricted'}
+              </h2>
+              <p className="text-sm text-slate-500 font-medium">
+                {locale === 'ar'
+                  ? `عفواً، حسابك لا يملك صلاحية [${requiredPermission}] للوصول إلى هذه الصفحة. يرجى مراجعة المسؤول المباشر (Super Admin).`
+                  : `Your assigned sub-admin role does not have the required permission [${requiredPermission}] to view this section. Please contact your Super Administrator.`}
+              </p>
+              <div className="pt-2">
+                <Link
+                  href="/admin/dashboard"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                >
+                  <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
+                  <span>{locale === 'ar' ? 'العودة للوحة التحكم' : 'Return to Dashboard'}</span>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </main>
       </div>
     </div>

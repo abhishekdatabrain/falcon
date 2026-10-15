@@ -17,98 +17,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { fetchApi, getImageUrl } from '../services/api';
 
-const FALLBACK_RECOMMENDED_PRODUCTS = [
-  {
-    id: 'rec-1',
-    name_en: 'Fresh Mix Vegetable',
-    name_ar: 'خضار مشكل طازج',
-    brand: 'Almarai / Al Kabeer',
-    price: '50.00',
-    discount_price: '40.00',
-    unit_value: '500',
-    unit_type: 'g',
-    rating: '4.9',
-    reviews_count: '1420',
-    is_best_seller: true,
-    has_variants: false,
-    variants: [],
-    vat_percentage: 20,
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400',
-  },
-  {
-    id: 'rec-2',
-    name_en: 'Organic Whole Milk',
-    name_ar: 'حليب عضوي كامل الدسم',
-    brand: 'Falcon Dairy',
-    price: '7.00',
-    discount_price: '7.00',
-    unit_value: '1',
-    unit_type: 'L',
-    rating: '4.7',
-    reviews_count: '342',
-    has_variants: true,
-    variants: [
-      { id: 'v-1', pack_size: '500 ml', price: '7.00' },
-      { id: 'v-2', pack_size: '1 L', price: '12.00' }
-    ],
-    vat_percentage: 0,
-    image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400',
-  },
-  {
-    id: 'rec-3',
-    name_en: 'Fresh Green Peas',
-    name_ar: 'بازلاء خضراء طازجة',
-    brand: 'Farm Fresh',
-    price: '35.00',
-    discount_price: '30.00',
-    unit_value: '500',
-    unit_type: 'g',
-    rating: '4.8',
-    reviews_count: '856',
-    is_best_seller: false,
-    has_variants: false,
-    variants: [],
-    vat_percentage: 15,
-    image: 'https://images.unsplash.com/photo-1587735243615-c03f25aaff15?w=400',
-  },
-  {
-    id: 'rec-4',
-    name_en: 'Farm Fresh Brown Eggs',
-    name_ar: 'بيض بلدي طازج من المزرعة',
-    brand: 'Almarai',
-    price: '18.50',
-    discount_price: '14.80',
-    unit_value: '30',
-    unit_type: 'pcs',
-    rating: '4.8',
-    reviews_count: '512',
-    is_best_seller: true,
-    has_variants: false,
-    variants: [],
-    vat_percentage: 20,
-    image: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=400',
-  },
-  {
-    id: 'rec-5',
-    name_en: 'Fresh Greek Yogurt',
-    name_ar: 'زبادي يوناني طازج',
-    brand: 'Falcon Dairy',
-    price: '9.50',
-    discount_price: '8.00',
-    unit_value: '500',
-    unit_type: 'g',
-    rating: '4.9',
-    reviews_count: '218',
-    has_variants: true,
-    variants: [
-      { id: 'v-3', pack_size: '250 g', price: '4.50' },
-      { id: 'v-4', pack_size: '500 g', price: '8.00' },
-      { id: 'v-5', pack_size: '1 kg', price: '14.00' }
-    ],
-    vat_percentage: 15,
-    image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400',
-  },
-];
+const FALLBACK_RECOMMENDED_PRODUCTS = [];
 
 export default function RecommendedProducts() {
   const { cart, addToCart, updateQuantity, removeItem } = useCart();
@@ -268,7 +177,7 @@ export default function RecommendedProducts() {
   const displayList = recommendedProducts.length > 0 ? recommendedProducts : FALLBACK_RECOMMENDED_PRODUCTS;
 
   return (
-    <section className="mt-12 mb-8 select-none">
+    <section className="mt-12 mb-5 select-none">
       {/* Header Row */}
       <div className="flex items-center justify-between mb-5 px-1">
         <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-sans">
@@ -506,7 +415,7 @@ export default function RecommendedProducts() {
                   </div>
 
                   {/* Rounded Image Box (Clean without floating button) */}
-                  <div className="relative w-full h-44 sm:h-48 bg-[#F5F6F8] rounded-[20px] flex items-center justify-center p-3 mb-2.5 overflow-hidden">
+                  <div className="relative w-full h-25 sm:h-48 bg-[#F5F6F8] rounded-[20px] flex items-center justify-center p-2 mb-2.5 overflow-hidden">
                     {isOutOfStock && (
                       <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-[20px]">
                         <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
@@ -550,12 +459,13 @@ export default function RecommendedProducts() {
                     <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-1 mb-1 font-sans hover:text-[#043927] transition-colors">
                       {itemName}
                     </h3>
+                      <span className="text-xs font-medium text-slate-500">{item.unit_value} {item.unit_type}</span>
                   </Link>
 
                   {/* Rating Row */}
                   <div className="flex items-center gap-1 mb-2">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
-                    <span className="font-bold text-xs sm:text-sm text-slate-900">{ratingVal}</span>
+                    <span className="font-bold text-xs sm:text-sm text-slate-700">{ratingVal}</span>
                     <span className="text-xs sm:text-sm text-slate-400">({reviewsVal})</span>
                   </div>
 
@@ -563,13 +473,13 @@ export default function RecommendedProducts() {
                   <div className="border-t border-slate-100 my-2" />
 
                   {/* Price Row: SAR 40.00 + SAR 50.00 (strikethrough) */}
-                  <div className="flex items-baseline gap-2 mb-2.5 font-sans flex-wrap">
-                    <span className="text-xl sm:text-2xl font-black text-slate-900 font-sans tracking-tight">
+                  <div className="flex items-baseline gap-2 font-inter flex-wrap">
+                    <span className="text-sm sm:text-xl font-black text-slate-800 font-sans tracking-tight">
                       <span className="text-xs font-bold text-slate-500 mr-0.5">SAR</span>
                       {itemPrice.toFixed(2)}
                     </span>
                     {itemMrp > itemPrice && (
-                      <span className="text-xs sm:text-sm text-slate-400 line-through font-normal whitespace-nowrap">
+                      <span className="text-xs sm:text-sm text-slate-600 line-through font-normal whitespace-nowrap">
                         SAR {itemMrp.toFixed(2)}
                       </span>
                     )}
@@ -617,7 +527,7 @@ export default function RecommendedProducts() {
                       type="button"
                       onClick={(e) => !isOutOfStock && handleAddToCart(e, item)}
                       disabled={isAdding || isOutOfStock}
-                      className={`w-full py-2.5 rounded-2xl font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition-all font-sans ${
+                      className={`w-full py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition-all font-sans ${
                         isOutOfStock
                           ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                           : 'bg-[#006E2D] hover:bg-[#008938] text-white cursor-pointer active:scale-98 shadow-sm hover:shadow'

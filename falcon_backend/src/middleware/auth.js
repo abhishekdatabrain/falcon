@@ -1,6 +1,6 @@
 const { verifyAccessToken, verifyRefreshToken, generateAccessToken, setAuthCookies } = require('../utils/jwt');
 const { sendError } = require('../utils/response');
-const { User, Customer, Driver, Admin } = require('../models');
+const { User, Customer, Driver, Admin, Role, Permission } = require('../models');
 
 const getTokensFromReq = (req) => {
   const reqRole = (req.headers['x-auth-role'] || '').toUpperCase();
@@ -83,11 +83,40 @@ const authenticate = async (req, res, next) => {
         { model: Customer, as: 'customer' },
         { model: Driver, as: 'driver' },
         { model: Admin, as: 'admin' },
+        {
+          model: Role,
+          as: 'assigned_roles',
+          required: false,
+          include: [{ model: Permission, as: 'permissions' }],
+        },
       ],
     });
 
     if (!user || user.status !== 'ACTIVE') {
       return sendError(res, 'User account is inactive or no longer exists.', [], 401);
+    }
+
+    if (user.role === 'ADMIN') {
+      const isSuperAdmin =
+        user.email === 'admin@gmail.com' ||
+        (user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin' && r.is_active));
+
+      let permissions = [];
+      if (isSuperAdmin) {
+        const allPerms = await Permission.findAll({ attributes: ['code'] });
+        permissions = allPerms.map((p) => p.code);
+      } else if (user.assigned_roles && user.assigned_roles.length > 0) {
+        const permSet = new Set();
+        user.assigned_roles.forEach((r) => {
+          if (r.is_active) {
+            (r.permissions || []).forEach((p) => permSet.add(p.code));
+          }
+        });
+        permissions = Array.from(permSet);
+      }
+
+      user.isSuperAdmin = !!isSuperAdmin;
+      user.permissions = permissions;
     }
 
     req.user = user;
@@ -129,10 +158,38 @@ const optionalAuthenticate = async (req, res, next) => {
           { model: Customer, as: 'customer' },
           { model: Driver, as: 'driver' },
           { model: Admin, as: 'admin' },
+          {
+            model: Role,
+            as: 'assigned_roles',
+            required: false,
+            include: [{ model: Permission, as: 'permissions' }],
+          },
         ],
       });
 
       if (user && user.status === 'ACTIVE') {
+        if (user.role === 'ADMIN') {
+          const isSuperAdmin =
+            user.email === 'admin@gmail.com' ||
+            (user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin' && r.is_active));
+
+          let permissions = [];
+          if (isSuperAdmin) {
+            const allPerms = await Permission.findAll({ attributes: ['code'] });
+            permissions = allPerms.map((p) => p.code);
+          } else if (user.assigned_roles && user.assigned_roles.length > 0) {
+            const permSet = new Set();
+            user.assigned_roles.forEach((r) => {
+              if (r.is_active) {
+                (r.permissions || []).forEach((p) => permSet.add(p.code));
+              }
+            });
+            permissions = Array.from(permSet);
+          }
+
+          user.isSuperAdmin = !!isSuperAdmin;
+          user.permissions = permissions;
+        }
         req.user = user;
       }
     }

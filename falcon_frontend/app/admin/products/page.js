@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
+import { useAuth } from '../../../src/contexts/AuthContext';
 import {
   ShoppingBag,
   Plus,
@@ -29,17 +30,33 @@ import {
   TrendingDown,
   RefreshCw,
   Sliders,
-  AlertCircle
+  AlertCircle,
+  Star,
+  ArrowUp,
+  ArrowDown,
+  FileText,
+  Activity,
+  Check,
+  Calendar,
 } from 'lucide-react';
 
 export default function AdminProductsPage() {
   const { locale } = useLanguage();
   const { showToast } = useToast();
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission('products.create');
+  const canEdit = hasPermission('products.edit');
+  const canDelete = hasPermission('products.delete');
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
+
+  // Server-Side Filters (Active/Inactive Status & Date Range)
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'INACTIVE'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Page View Mode: 'list' | 'form'
   const [viewMode, setViewMode] = useState('list');
@@ -126,12 +143,28 @@ export default function AdminProductsPage() {
     sku: '',
     name_en: '',
     name_ar: '',
+    description_title_en: '',
+    description_title_ar: '',
     description_en: '',
     description_ar: '',
+    long_description_en: '',
+    long_description_ar: '',
+    highlights: [],
+    nutrition_facts: {
+      serving_size: '',
+      calories: '',
+      protein: '',
+      carbohydrates: '',
+      fat: '',
+      fiber: '',
+      sugar: '',
+      vitamins: '',
+      minerals: '',
+    },
     brand: '',
-    unit: '200 g',
-    unit_type: 'g',
-    unit_value: '200',
+    unit: '',
+    unit_type: 'kg',
+    unit_value: '',
     pack_size: '',
     sold_by: 'Piece',
     price: '',
@@ -154,17 +187,36 @@ export default function AdminProductsPage() {
     images: [],
   });
 
-  const loadData = async () => {
+  const loadData = async (overrideParams = {}) => {
     try {
       setLoading(true);
+      const activeStatus = overrideParams.statusFilter !== undefined ? overrideParams.statusFilter : statusFilter;
+      const activeStart = overrideParams.startDate !== undefined ? overrideParams.startDate : startDate;
+      const activeEnd = overrideParams.endDate !== undefined ? overrideParams.endDate : endDate;
+
+      const params = new URLSearchParams();
+      params.append('onlyActive', 'false');
+      params.append('all', 'true');
+      params.append('limit', '1000');
+
+      if (activeStatus && activeStatus !== 'ALL') {
+        params.append('status', activeStatus.toLowerCase());
+      }
+      if (activeStart) {
+        params.append('startDate', activeStart);
+      }
+      if (activeEnd) {
+        params.append('endDate', activeEnd);
+      }
+
       const [prodRes, catRes] = await Promise.all([
-        fetchApi('/products?onlyActive=false'),
-        fetchApi('/categories?all=true'),
+        fetchApi(`/products?${params.toString()}`),
+        categories.length === 0 ? fetchApi('/categories?all=true') : Promise.resolve({ success: true, data: { categories } }),
       ]);
       if (prodRes.success) {
         setProducts(prodRes.data?.products?.products || prodRes.data?.products || (Array.isArray(prodRes.data) ? prodRes.data : []));
       }
-      if (catRes.success) {
+      if (catRes.success && categories.length === 0) {
         const fetchedCats = catRes.data?.categories || (Array.isArray(catRes.data) ? catRes.data : []);
         setCategories(fetchedCats);
       }
@@ -177,7 +229,7 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [statusFilter, startDate, endDate]);
 
   // Compute 4 Levels of Category Hierarchy
   const mainCategories = categories.filter((c) => !c.parent_id);
@@ -211,12 +263,28 @@ export default function AdminProductsPage() {
       sku: '',
       name_en: '',
       name_ar: '',
+      description_title_en: '',
+      description_title_ar: '',
       description_en: '',
       description_ar: '',
+      long_description_en: '',
+      long_description_ar: '',
+      highlights: [],
+      nutrition_facts: {
+        serving_size: '',
+        calories: '',
+        protein: '',
+        carbohydrates: '',
+        fat: '',
+        fiber: '',
+        sugar: '',
+        vitamins: '',
+        minerals: '',
+      },
       brand: '',
-      unit: '200 g',
-      unit_type: 'g',
-      unit_value: '200',
+      unit: '',
+      unit_type: 'kg',
+      unit_value: '',
       pack_size: '',
       sold_by: 'Piece',
       price: '',
@@ -228,13 +296,13 @@ export default function AdminProductsPage() {
       is_available: true,
       is_active: true,
       is_featured: false,
-      is_new_arrival: true,
+      is_new_arrival: false,
       is_best_seller: false,
       is_best_deal: false,
       is_popular_pick: false,
       has_variants: false,
-      rating: '4.8',
-      reviews_count: '120',
+      rating: '',
+      reviews_count: '',
       variants: [],
       images: [],
     });
@@ -272,6 +340,57 @@ export default function AdminProductsPage() {
         }))
       : [];
 
+    let loadedHighlights = [];
+    if (Array.isArray(prod.highlights)) {
+      loadedHighlights = prod.highlights.map((h, i) => {
+        if (typeof h === 'string') return { id: `hl-${i}`, text_en: h, text_ar: '' };
+        return {
+          id: h.id || `hl-${i}`,
+          text_en: h.text_en || h.en || (typeof h === 'string' ? h : ''),
+          text_ar: h.text_ar || h.ar || '',
+        };
+      });
+    } else if (typeof prod.highlights === 'string') {
+      try {
+        const parsed = JSON.parse(prod.highlights);
+        if (Array.isArray(parsed)) {
+          loadedHighlights = parsed.map((h, i) => {
+            if (typeof h === 'string') return { id: `hl-${i}`, text_en: h, text_ar: '' };
+            return {
+              id: h.id || `hl-${i}`,
+              text_en: h.text_en || h.en || '',
+              text_ar: h.text_ar || h.ar || '',
+            };
+          });
+        }
+      } catch (e) {}
+    }
+
+    let loadedNutrition = {
+      serving_size: '',
+      calories: '',
+      protein: '',
+      carbohydrates: '',
+      fat: '',
+      fiber: '',
+      sugar: '',
+      vitamins: '',
+      minerals: '',
+    };
+    if (prod.nutrition_facts && typeof prod.nutrition_facts === 'object') {
+      loadedNutrition = {
+        ...loadedNutrition,
+        ...prod.nutrition_facts,
+      };
+    } else if (typeof prod.nutrition_facts === 'string') {
+      try {
+        const parsed = JSON.parse(prod.nutrition_facts);
+        if (typeof parsed === 'object' && parsed !== null) {
+          loadedNutrition = { ...loadedNutrition, ...parsed };
+        }
+      } catch (e) {}
+    }
+
     setProductForm({
       category_id: prod.category_id || '',
       subcategory_id: prod.subcategory_id || '',
@@ -280,8 +399,14 @@ export default function AdminProductsPage() {
       sku: prod.sku || '',
       name_en: prod.name_en || '',
       name_ar: prod.name_ar || '',
+      description_title_en: prod.description_title_en || '',
+      description_title_ar: prod.description_title_ar || '',
       description_en: prod.description_en || '',
       description_ar: prod.description_ar || '',
+      long_description_en: prod.long_description_en || '',
+      long_description_ar: prod.long_description_ar || '',
+      highlights: loadedHighlights,
+      nutrition_facts: loadedNutrition,
       brand: prod.brand || '',
       unit: prod.unit || '200 g',
       unit_type: prod.unit_type || 'g',
@@ -312,21 +437,22 @@ export default function AdminProductsPage() {
 
   const handleAddVariant = () => {
     const nextIdx = (productForm.variants?.length || 0) + 1;
-    const baseSku = productForm.sku ? productForm.sku.trim() : 'VAR';
+    const baseSku = productForm.sku ? productForm.sku.trim() : '';
     const newVariant = {
       id: null,
-      sku: `${baseSku}-V${nextIdx}`.toUpperCase(),
+      sku: baseSku ? `${baseSku}-V${nextIdx}`.toUpperCase() : '',
       unit_value: '',
       unit_type: productForm.unit_type || 'kg',
       pack_size: '',
-      price: productForm.price || '',
+      price: '',
       discount_price: '',
-      stock_quantity: '10',
-      image_url: productForm.images?.[0] || '',
+      stock_quantity: '',
+      image_url: '',
       is_active: true,
     };
     setProductForm((prev) => ({
       ...prev,
+      has_variants: true,
       variants: [...(prev.variants || []), newVariant],
     }));
   };
@@ -335,6 +461,58 @@ export default function AdminProductsPage() {
     setProductForm((prev) => ({
       ...prev,
       variants: prev.variants.filter((_, i) => i !== index),
+    }));
+  };
+
+  // Highlights Management Handlers
+  const handleAddHighlight = () => {
+    setProductForm((prev) => ({
+      ...prev,
+      highlights: [
+        ...(prev.highlights || []),
+        { id: `hl-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, text_en: '', text_ar: '' },
+      ],
+    }));
+  };
+
+  const handleUpdateHighlight = (index, field, value) => {
+    setProductForm((prev) => {
+      const updated = [...(prev.highlights || [])];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], [field]: value };
+      }
+      return { ...prev, highlights: updated };
+    });
+  };
+
+  const handleDeleteHighlight = (index) => {
+    setProductForm((prev) => {
+      const updated = [...(prev.highlights || [])];
+      updated.splice(index, 1);
+      return { ...prev, highlights: updated };
+    });
+  };
+
+  const handleMoveHighlight = (index, direction) => {
+    setProductForm((prev) => {
+      const updated = [...(prev.highlights || [])];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= updated.length) return prev;
+      const temp = updated[index];
+      updated[index] = updated[targetIndex];
+      updated[targetIndex] = temp;
+      return { ...prev, highlights: updated };
+    });
+  };
+
+  // Nutrition Facts Management Handler
+  const handleNutritionChange = (field, value) => {
+    setProductForm((prev) => ({
+      ...prev,
+      nutrition_facts: {
+        ...(prev.nutrition_facts || {}),
+        [field]: value,
+      },
     }));
   };
 
@@ -580,6 +758,14 @@ export default function AdminProductsPage() {
         subcategory_id: productForm.subcategory_id || null,
         sub_subcategory_id: productForm.sub_subcategory_id || null,
         sub_sub_subcategory_id: productForm.sub_sub_subcategory_id || null,
+        description_title_en: productForm.description_title_en || null,
+        description_title_ar: productForm.description_title_ar || null,
+        long_description_en: productForm.long_description_en || null,
+        long_description_ar: productForm.long_description_ar || null,
+        highlights: Array.isArray(productForm.highlights)
+          ? productForm.highlights.filter((h) => (h.text_en && h.text_en.trim()) || (h.text_ar && h.text_ar.trim()))
+          : [],
+        nutrition_facts: productForm.nutrition_facts || {},
         brand: productForm.brand || null,
         unit_type: productForm.unit_type || null,
         unit_value: productForm.unit_value || null,
@@ -696,8 +882,23 @@ export default function AdminProductsPage() {
                       {locale === 'ar' ? 'إدارة كتالوج المواد الغذائية وطازج' : 'Fresh Product Catalog'}
                     </h1>
                     <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                      {products.length} {locale === 'ar' ? 'منتج' : 'Items'}
+                      {filteredProducts.length} {locale === 'ar' ? 'منتج' : 'Items'}
                     </span>
+                    {statusFilter === 'ACTIVE' && (
+                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300">
+                        {locale === 'ar' ? 'النشطة فقط' : 'Active Only'}
+                      </span>
+                    )}
+                    {statusFilter === 'INACTIVE' && (
+                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-300">
+                        {locale === 'ar' ? 'المعطلة فقط' : 'Inactive Only'}
+                      </span>
+                    )}
+                    {(startDate || endDate) && (
+                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300">
+                        {locale === 'ar' ? 'تاريخ مخصص' : 'Date Range'}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5 font-medium">
                     {locale === 'ar' ? 'إدارة المنتجات وتحديد الأقسام والأقسام الفرعية الدقيقة للمخزون' : 'Manage products across 4 category levels, prices, stock, and image gallery'}
@@ -706,41 +907,110 @@ export default function AdminProductsPage() {
               </div>
 
               {/* Add Grocery Item Button (Top Right) */}
-              <button
-                onClick={openAdd}
-                className="h-11 px-5 rounded-xl flex items-center justify-center gap-2 bg-[#043927] hover:bg-[#02281b] text-white text-xs font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer whitespace-nowrap shrink-0"
-              >
-                <Plus className="w-4 h-4 text-emerald-400" />
-                <span>{locale === 'ar' ? 'إضافة صنف طازج' : 'Add Item'}</span>
-              </button>
+              {canCreate && (
+                <button
+                  onClick={openAdd}
+                  className="h-11 px-5 rounded-xl flex items-center justify-center gap-2 bg-[#043927] hover:bg-[#02281b] text-white text-xs font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Plus className="w-4 h-4 text-emerald-400" />
+                  <span>{locale === 'ar' ? 'إضافة صنف طازج' : 'Add Item'}</span>
+                </button>
+              )}
             </div>
 
-            {/* Bottom Row: Filter Dropdown & Search Box aligned on the Right */}
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
-              {/* Category Filter Dropdown */}
-              <div className="relative w-full sm:w-auto">
-                <select
-                  value={selectedCategoryFilter}
-                  onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                  className="w-full sm:w-auto h-10 px-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer transition-all shadow-2xs"
-                >
-                  <option value="">{locale === 'ar' ? 'جميع الأقسام الرئيسية' : 'All Main Categories'}</option>
-                  {mainCategories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name_en}</option>
-                  ))}
-                </select>
+            {/* Bottom Row: Comprehensive Server & Client Filters Bar */}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pt-1">
+              {/* Left group: Status Filter & Date Range Filter (Server-side) */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {/* Status Dropdown Filter (Server-side) */}
+                <div className="relative">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="h-10 px-3.5 pr-8 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer transition-all shadow-2xs"
+                  >
+                    <option value="ALL">{locale === 'ar' ? 'جميع الحالات (الكل)' : 'All Products (All)'}</option>
+                    <option value="ACTIVE">{locale === 'ar' ? 'المنتجات النشطة فقط' : 'Active Products Only'}</option>
+                    <option value="INACTIVE">{locale === 'ar' ? 'المنتجات المعطلة فقط' : 'Inactive Products Only'}</option>
+                  </select>
+                </div>
+
+                {/* Date Range: From Date */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 h-10 shadow-2xs focus-within:bg-white focus-within:border-[#043927] transition-all">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+                    {locale === 'ar' ? 'من' : 'From'}
+                  </span>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-transparent text-slate-800 text-xs font-semibold focus:outline-none cursor-pointer"
+                    title={locale === 'ar' ? 'من تاريخ الإضافة' : 'Created From Date'}
+                  />
+                </div>
+
+                {/* Date Range: To Date */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 h-10 shadow-2xs focus-within:bg-white focus-within:border-[#043927] transition-all">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+                    {locale === 'ar' ? 'إلى' : 'To'}
+                  </span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="bg-transparent text-slate-800 text-xs font-semibold focus:outline-none cursor-pointer"
+                    title={locale === 'ar' ? 'إلى تاريخ الإضافة' : 'Created To Date'}
+                  />
+                </div>
+
+                {/* Reset Filters button if any filter is active */}
+                {(statusFilter !== 'ALL' || startDate || endDate || selectedCategoryFilter || searchQuery) && (
+                  <button
+                    onClick={() => {
+                      setStatusFilter('ALL');
+                      setStartDate('');
+                      setEndDate('');
+                      setSelectedCategoryFilter('');
+                      setSearchQuery('');
+                    }}
+                    className="h-10 px-3.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-rose-200 shadow-2xs shrink-0"
+                    title={locale === 'ar' ? 'إعادة تعيين الفلاتر' : 'Reset All Filters'}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>{locale === 'ar' ? 'مسح الفلاتر' : 'Reset'}</span>
+                  </button>
+                )}
               </div>
 
-              {/* Search Box */}
-              <div className="relative w-full sm:w-60">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder={locale === 'ar' ? 'بحث بالمنتج أو SKU...' : 'Search item or SKU...'}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-10 pl-10 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927] transition-all shadow-2xs"
-                />
+              {/* Right group: Category Filter Dropdown & Search Box */}
+              <div className="flex flex-col sm:flex-row items-center gap-2.5">
+                {/* Category Filter Dropdown */}
+                {/* <div className="relative w-full sm:w-auto">
+                  <select
+                    value={selectedCategoryFilter}
+                    onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                    className="w-full sm:w-auto h-10 px-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer transition-all shadow-2xs"
+                  >
+                    <option value="">{locale === 'ar' ? 'جميع الأقسام الرئيسية' : 'All Main Categories'}</option>
+                    {mainCategories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name_en}</option>
+                    ))}
+                  </select>
+                </div> */}
+
+                {/* Search Box */}
+                <div className="relative w-full sm:w-60">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder={locale === 'ar' ? 'بحث بالمنتج أو SKU...' : 'Search item or SKU...'}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-10 pl-10 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927] transition-all shadow-2xs"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -943,30 +1213,36 @@ export default function AdminProductsPage() {
 
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => handleToggleStatus(prod.id, prod.is_active)}
-                                className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap shadow-2xs ${
-                                  prod.is_active !== false
-                                    ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                }`}
-                              >
-                                {prod.is_active !== false ? (locale === 'ar' ? 'تعطيل' : 'Disable') : (locale === 'ar' ? 'تفعيل' : 'Enable')}
-                              </button>
-                              <button
-                                onClick={() => openEdit(prod)}
-                                className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-200 transition-all cursor-pointer"
-                                title="Edit Product"
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(prod.id)}
-                                className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
-                                title="Delete Product"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleToggleStatus(prod.id, prod.is_active)}
+                                  className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap shadow-2xs ${
+                                    prod.is_active !== false
+                                      ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  }`}
+                                >
+                                  {prod.is_active !== false ? (locale === 'ar' ? 'تعطيل' : 'Disable') : (locale === 'ar' ? 'تفعيل' : 'Enable')}
+                                </button>
+                              )}
+                              {canEdit && (
+                                <button
+                                  onClick={() => openEdit(prod)}
+                                  className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-200 transition-all cursor-pointer"
+                                  title="Edit Product"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDelete(prod.id)}
+                                  className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
+                                  title="Delete Product"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1739,13 +2015,7 @@ export default function AdminProductsPage() {
                         >
                           🌻 Oil (1L / 2L / 5L)
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleApplyPresetVariants('eggs')}
-                          className="px-3 py-1 bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[#043927]"
-                        >
-                          🥚 Eggs (6pcs / 12pcs / 30pcs)
-                        </button>
+                        
                       </div>
 
                       {/* VARIANTS ROWS */}
@@ -1760,16 +2030,22 @@ export default function AdminProductsPage() {
                           {productForm.variants.map((v, vIdx) => (
                             <div
                               key={vIdx}
-                              className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white hover:border-[#05A764]/70 shadow-2xs transition-all space-y-3 relative group"
+                              className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-[#043927]/60 shadow-xs transition-all space-y-4 relative group"
                             >
-                              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-6 h-6 rounded-lg bg-[#043927] text-white text-xs font-black flex items-center justify-center">
+                              {/* Header: Variant Title, Badge & Actions */}
+                              <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
+                                <div className="flex items-center gap-2.5">
+                                  <span className="w-7 h-7 rounded-xl bg-[#043927] text-white text-xs font-black flex items-center justify-center shadow-xs">
                                     {vIdx + 1}
                                   </span>
-                                  <span className="text-xs font-extrabold text-slate-900">
-                                    Variant {vIdx + 1}: {v.unit_value ? `${v.unit_value} ${v.unit_type}` : 'Untitled'}
+                                  <span className="text-xs font-black text-slate-900">
+                                    Variant {vIdx + 1}
                                   </span>
+                                  {v.unit_value && (
+                                    <span className="text-[11px] font-bold bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                                      {v.unit_value} {v.unit_type}
+                                    </span>
+                                  )}
                                   {v.sku && (
                                     <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
                                       {v.sku}
@@ -1778,12 +2054,12 @@ export default function AdminProductsPage() {
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer">
+                                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors">
                                     <input
                                       type="checkbox"
                                       checked={v.is_active !== false}
                                       onChange={(e) => handleUpdateVariant(vIdx, 'is_active', e.target.checked)}
-                                      className="rounded text-[#043927] focus:ring-[#043927]"
+                                      className="rounded text-[#043927] focus:ring-[#043927] w-4 h-4 cursor-pointer"
                                     />
                                     <span>Active</span>
                                   </label>
@@ -1791,7 +2067,7 @@ export default function AdminProductsPage() {
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveVariant(vIdx)}
-                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer border border-transparent hover:border-rose-200"
                                     title="Delete Variant"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -1799,31 +2075,32 @@ export default function AdminProductsPage() {
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                              {/* Form Fields: Grid Layout with proper heights and SAR suffixes */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3.5">
                                 {/* Unit Value */}
-                                <div className="col-span-1 sm:col-span-2 lg:col-span-1">
-                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                <div className="lg:col-span-2">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
                                     Value *
                                   </label>
                                   <input
                                     type="text"
                                     required
-                                    placeholder="e.g. 1, 5, 500"
-                                    value={v.unit_value}
+                                    placeholder="e.g. 500, 1, 5"
+                                    value={v.unit_value || ''}
                                     onChange={(e) => handleUpdateVariant(vIdx, 'unit_value', e.target.value)}
-                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927]"
+                                    className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-[#043927]/10 transition-all shadow-2xs"
                                   />
                                 </div>
 
                                 {/* Unit Type */}
-                                <div className="col-span-1 sm:col-span-2 lg:col-span-1">
-                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                <div className="lg:col-span-2">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
                                     Type *
                                   </label>
                                   <select
-                                    value={v.unit_type}
+                                    value={v.unit_type || 'kg'}
                                     onChange={(e) => handleUpdateVariant(vIdx, 'unit_type', e.target.value)}
-                                    className="w-full px-2 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927] cursor-pointer"
+                                    className="w-full h-11 px-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-[#043927]/10 transition-all shadow-2xs cursor-pointer"
                                   >
                                     <option value="kg">kg</option>
                                     <option value="g">g</option>
@@ -1837,101 +2114,95 @@ export default function AdminProductsPage() {
                                 </div>
 
                                 {/* Pack Size */}
-                                <div className="col-span-2 sm:col-span-2 lg:col-span-1">
-                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                <div className="lg:col-span-4">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
                                     Pack Size
                                   </label>
                                   <input
                                     type="text"
-                                    placeholder="e.g. 5kg Sack"
-                                    value={v.pack_size}
+                                    placeholder="e.g. 5kg Sack, 1L Bottle"
+                                    value={v.pack_size || ''}
                                     onChange={(e) => handleUpdateVariant(vIdx, 'pack_size', e.target.value)}
-                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927]"
+                                    className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-[#043927]/10 transition-all shadow-2xs"
                                   />
                                 </div>
 
                                 {/* SKU */}
-                                <div className="col-span-2 sm:col-span-2 lg:col-span-2">
-                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                <div className="lg:col-span-4">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
                                     Variant SKU *
                                   </label>
                                   <input
                                     type="text"
                                     required
-                                    placeholder="RICE-5KG"
-                                    value={v.sku}
+                                    placeholder="e.g. RICE-5KG"
+                                    value={v.sku || ''}
                                     onChange={(e) => handleUpdateVariant(vIdx, 'sku', e.target.value)}
-                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927]"
+                                    className="w-full h-11 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-[#043927]/10 transition-all shadow-2xs"
                                   />
                                 </div>
 
                                 {/* Price */}
-                                <div className="col-span-1 sm:col-span-2 lg:col-span-1">
-                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                <div className="lg:col-span-4">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
                                     Price (SAR) *
                                   </label>
-                                  <input
-                                    type="number"
-                                    step="0.01"
-                                    required
-                                    placeholder="45.00"
-                                    value={v.price}
-                                    onChange={(e) => handleUpdateVariant(vIdx, 'price', e.target.value)}
-                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-black text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927]"
-                                  />
+                                  <div className="relative">
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      required
+                                      placeholder="0.00"
+                                      value={v.price ?? ''}
+                                      onChange={(e) => handleUpdateVariant(vIdx, 'price', e.target.value)}
+                                      className="w-full h-11 pl-3.5 pr-12 rounded-xl bg-slate-50 border border-slate-200 text-xs font-black text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-[#043927]/10 transition-all shadow-2xs"
+                                    />
+                                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                                      SAR
+                                    </span>
+                                  </div>
                                 </div>
 
                                 {/* Discount Price */}
-                                <div className="col-span-1 sm:col-span-2 lg:col-span-1">
-                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                                    Discount
+                                <div className="lg:col-span-4">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
+                                    Discount (SAR)
                                   </label>
-                                  <input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="39.99"
-                                    value={v.discount_price}
-                                    onChange={(e) => handleUpdateVariant(vIdx, 'discount_price', e.target.value)}
-                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-[#043927]"
-                                  />
+                                  <div className="relative">
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      placeholder="Optional"
+                                      value={v.discount_price ?? ''}
+                                      onChange={(e) => handleUpdateVariant(vIdx, 'discount_price', e.target.value)}
+                                      className="w-full h-11 pl-3.5 pr-12 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-[#043927]/10 transition-all shadow-2xs"
+                                    />
+                                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                                      SAR
+                                    </span>
+                                  </div>
                                 </div>
 
                                 {/* Stock */}
-                                <div className="col-span-2 sm:col-span-2 lg:col-span-1">
-                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                <div className="lg:col-span-4">
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
                                     Stock *
                                   </label>
-                                  <input
-                                    type="number"
-                                    required
-                                    min="0"
-                                    placeholder="25"
-                                    value={v.stock_quantity}
-                                    onChange={(e) => handleUpdateVariant(vIdx, 'stock_quantity', e.target.value)}
-                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927]"
-                                  />
+                                  <div className="relative">
+                                    <input
+                                      type="number"
+                                      required
+                                      min="0"
+                                      placeholder="0"
+                                      value={v.stock_quantity ?? ''}
+                                      onChange={(e) => handleUpdateVariant(vIdx, 'stock_quantity', e.target.value)}
+                                      className="w-full h-11 pl-3.5 pr-14 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-[#043927]/10 transition-all shadow-2xs"
+                                    />
+                                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 pointer-events-none">
+                                      Units
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-
-                              {/* Variant Image URL row */}
-                              <div className="pt-2 flex items-center gap-3">
-                                <label className="text-[11px] font-bold text-slate-500 whitespace-nowrap">
-                                  Variant Image (optional):
-                                </label>
-                                <input
-                                  type="text"
-                                  placeholder="Paste image URL (or leave blank to inherit main product image)"
-                                  value={v.image_url}
-                                  onChange={(e) => handleUpdateVariant(vIdx, 'image_url', e.target.value)}
-                                  className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:bg-white focus:border-[#043927]"
-                                />
-                                {v.image_url && (
-                                  <img
-                                    src={getImageUrl(v.image_url)}
-                                    alt="Variant preview"
-                                    className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-200 shrink-0"
-                                  />
-                                )}
                               </div>
                             </div>
                           ))}
@@ -1950,6 +2221,365 @@ export default function AdminProductsPage() {
                     </div>
                   </>
                 )}
+
+                {/* CARD: PRODUCT DESCRIPTION & DYNAMIC HIGHLIGHTS */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5 font-sans">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-[#05A764]" />
+                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                        Product Description & Highlights
+                      </h3>
+                    </div>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      Storefront Details
+                    </span>
+                  </div>
+
+                  {/* Description Section Titles */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Description Catchy Title (Optional)
+                    </label>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Main headline displayed above the product story on the details page (e.g. &quot;Naturally Fresh. Always Good.&quot;).
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">Title (English)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Naturally Fresh. Always Good."
+                          value={productForm.description_title_en || ''}
+                          onChange={(e) => setProductForm({ ...productForm, description_title_en: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">Title (Arabic) / العنوان</label>
+                        <input
+                          type="text"
+                          dir="rtl"
+                          placeholder="مثال: طازج طبيعياً. رائع دائماً."
+                          value={productForm.description_title_ar || ''}
+                          onChange={(e) => setProductForm({ ...productForm, description_title_ar: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rich / Long Description */}
+                  <div className="space-y-1 pt-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Detailed Product Description
+                    </label>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Detailed background story, sourcing notes, or culinary usage for your customers.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">Detailed Description (English)</label>
+                        <textarea
+                          rows={4}
+                          placeholder="High quality fresh product sourced directly from local certified farms..."
+                          value={productForm.long_description_en || ''}
+                          onChange={(e) => setProductForm({ ...productForm, long_description_en: e.target.value })}
+                          className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:bg-white focus:border-[#043927] leading-relaxed resize-y"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">Detailed Description (Arabic) / الوصف التفصيلي</label>
+                        <textarea
+                          rows={4}
+                          dir="rtl"
+                          placeholder="منتج طازج ومغذي عالي الجودة يتم توريده مباشرة من مزارع محلية موثوقة..."
+                          value={productForm.long_description_ar || ''}
+                          onChange={(e) => setProductForm({ ...productForm, long_description_ar: e.target.value })}
+                          className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:bg-white focus:border-[#043927] leading-relaxed resize-y"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dynamic Highlights Manager */}
+                  <div className="space-y-3 pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                          Product Highlights & Key Features ({productForm.highlights?.length || 0})
+                        </label>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          Manage dynamic bullet points with checkmarks. Add, edit, remove and sort up/down.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddHighlight}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#043927] border border-emerald-200 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Highlight
+                      </button>
+                    </div>
+
+                    {Array.isArray(productForm.highlights) && productForm.highlights.length > 0 ? (
+                      <div className="space-y-2.5">
+                        {productForm.highlights.map((hl, idx) => (
+                          <div
+                            key={hl.id || idx}
+                            className="flex items-center gap-2 p-2.5 bg-slate-50/80 rounded-2xl border border-slate-200 hover:border-emerald-300 transition-colors"
+                          >
+                            {/* Sorting Arrows */}
+                            <div className="flex flex-col gap-0.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleMoveHighlight(idx, 'up')}
+                                disabled={idx === 0}
+                                className="w-5 h-5 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-emerald-700 hover:border-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                title="Move Up"
+                              >
+                                <ArrowUp className="w-3 h-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveHighlight(idx, 'down')}
+                                disabled={idx === productForm.highlights.length - 1}
+                                className="w-5 h-5 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-emerald-700 hover:border-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                title="Move Down"
+                              >
+                                <ArrowDown className="w-3 h-3" />
+                              </button>
+                            </div>
+
+                            {/* Checkmark Indicator */}
+                            <div className="w-6 h-6 rounded-full bg-[#05A764] text-white flex items-center justify-center shrink-0">
+                              <Check className="w-3.5 h-3.5" />
+                            </div>
+
+                            {/* Inputs */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+                              <input
+                                type="text"
+                                placeholder={`Highlight #${idx + 1} (English) - e.g. 100% natural`}
+                                value={hl.text_en || ''}
+                                onChange={(e) => handleUpdateHighlight(idx, 'text_en', e.target.value)}
+                                className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#043927]"
+                              />
+                              <input
+                                type="text"
+                                dir="rtl"
+                                placeholder={`الميزة #${idx + 1} (عربي) - مثال: طبيعي ١٠٠٪`}
+                                value={hl.text_ar || ''}
+                                onChange={(e) => handleUpdateHighlight(idx, 'text_ar', e.target.value)}
+                                className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#043927]"
+                              />
+                            </div>
+
+                            {/* Delete Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteHighlight(idx)}
+                              className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                              title="Delete Highlight"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center text-slate-400 space-y-1">
+                        <p className="text-xs font-semibold">No dynamic highlights added yet.</p>
+                        <p className="text-[11px] text-slate-500">Click &quot;Add Highlight&quot; to highlight key features like &quot;100% Organic&quot;, &quot;Rich in Protein&quot;, etc.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* CARD: NUTRITION FACTS */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5 font-sans">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-[#05A764]" />
+                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                        Nutrition Facts Management
+                      </h3>
+                    </div>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      Nutritional Values
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-600 font-medium">
+                    Specify serving size and key nutrient quantities. These are rendered dynamically on the storefront product detail page under the Nutrition Facts tab.
+                  </p>
+
+                  {/* Nutrition Inputs Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    {/* Serving Size */}
+                    <div className="sm:col-span-2 lg:col-span-3">
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Serving Size (حجم الحصة)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 100g, 1 Pack (250g), 1 Cup (240ml)"
+                        value={productForm.nutrition_facts?.serving_size || ''}
+                        onChange={(e) => handleNutritionChange('serving_size', e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    {/* Calories */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Calories (السعرات الحرارية)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 72 kcal"
+                        value={productForm.nutrition_facts?.calories || ''}
+                        onChange={(e) => handleNutritionChange('calories', e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    {/* Protein */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Protein (البروتين)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 6.3 g"
+                        value={productForm.nutrition_facts?.protein || ''}
+                        onChange={(e) => handleNutritionChange('protein', e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    {/* Carbohydrates */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Carbohydrates (الكربوهيدرات)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 0.4 g"
+                        value={productForm.nutrition_facts?.carbohydrates || ''}
+                        onChange={(e) => handleNutritionChange('carbohydrates', e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    {/* Total Fat */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Total Fat (الدهون الكلية)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 4.8 g"
+                        value={productForm.nutrition_facts?.fat || ''}
+                        onChange={(e) => handleNutritionChange('fat', e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    {/* Dietary Fiber */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Dietary Fiber (الألياف الغذائية)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 0 g"
+                        value={productForm.nutrition_facts?.fiber || ''}
+                        onChange={(e) => handleNutritionChange('fiber', e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    {/* Sugars */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Sugars (السكريات)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 0.2 g"
+                        value={productForm.nutrition_facts?.sugar || ''}
+                        onChange={(e) => handleNutritionChange('sugar', e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    {/* Vitamins */}
+                    <div className="sm:col-span-2 lg:col-span-3">
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Vitamins (الفيتامينات)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Vitamin D: 1 mcg, Vitamin A: 140 mcg, Vitamin C: 5 mg"
+                        value={productForm.nutrition_facts?.vitamins || ''}
+                        onChange={(e) => handleNutritionChange('vitamins', e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+
+                    {/* Minerals */}
+                    <div className="sm:col-span-2 lg:col-span-3">
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Minerals (المعادن)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Calcium: 28 mg, Iron: 0.9 mg, Potassium: 138 mg"
+                        value={productForm.nutrition_facts?.minerals || ''}
+                        onChange={(e) => handleNutritionChange('minerals', e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#043927]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Live Nutrition Card Preview */}
+                  {Object.values(productForm.nutrition_facts || {}).some((v) => v && String(v).trim()) && (
+                    <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200/80 space-y-2">
+                      <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                        Live Storefront Preview
+                      </span>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {productForm.nutrition_facts?.serving_size && (
+                          <span className="bg-emerald-600 text-white px-2.5 py-1 rounded-lg font-bold text-[11px]">
+                            Serving: {productForm.nutrition_facts.serving_size}
+                          </span>
+                        )}
+                        {productForm.nutrition_facts?.calories && (
+                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-extrabold text-[11px]">
+                            🔥 {productForm.nutrition_facts.calories}
+                          </span>
+                        )}
+                        {productForm.nutrition_facts?.protein && (
+                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-extrabold text-[11px]">
+                            Protein: {productForm.nutrition_facts.protein}
+                          </span>
+                        )}
+                        {productForm.nutrition_facts?.carbohydrates && (
+                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-extrabold text-[11px]">
+                            Carbs: {productForm.nutrition_facts.carbohydrates}
+                          </span>
+                        )}
+                        {productForm.nutrition_facts?.fat && (
+                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-extrabold text-[11px]">
+                            Fat: {productForm.nutrition_facts.fat}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
               </div>
 
@@ -2066,57 +2696,7 @@ export default function AdminProductsPage() {
                     </div>
 
                     {/* Customer Rating & Reviews Settings */}
-                    <div className="pt-3 border-t border-slate-200 space-y-3">
-                      <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
-                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                        <span>Customer Rating & Reviews</span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                            Rating (1.0 - 5.0)
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="number"
-                              step="0.1"
-                              min="1.0"
-                              max="5.0"
-                              placeholder="4.9"
-                              value={productForm.rating}
-                              onChange={(e) => setProductForm({ ...productForm, rating: e.target.value })}
-                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
-                            />
-                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-amber-500 text-xs">★</span>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                            Review Count
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder="1420"
-                            value={productForm.reviews_count}
-                            onChange={(e) => setProductForm({ ...productForm, reviews_count: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Live Rating Preview Badge */}
-                      <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-amber-800">Badge Preview:</span>
-                        <div className="flex items-center gap-1 text-xs">
-                          <span className="text-amber-500 font-bold">★</span>
-                          <span className="text-slate-900 font-extrabold">{productForm.rating || '4.9'}</span>
-                          <span className="text-slate-400 font-normal">({Number(productForm.reviews_count || 1420).toLocaleString()})</span>
-                        </div>
-                      </div>
-                    </div>
+                  
                   </div>
                 </div>
 

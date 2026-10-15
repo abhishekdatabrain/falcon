@@ -28,9 +28,45 @@ class ProductService {
     } = query;
 
     const where = {};
-    if (onlyActive) {
+
+    // 1. Status Filter: active / inactive / all
+    const rawStatus = (query.status || '').toLowerCase();
+    const rawIsActive = query.is_active;
+
+    if (rawStatus === 'active' || rawIsActive === 'true' || rawIsActive === true) {
+      where.is_active = true;
+    } else if (rawStatus === 'inactive' || rawIsActive === 'false' || rawIsActive === false) {
+      where.is_active = false;
+    } else if (rawStatus === 'all' || query.onlyActive === false || query.onlyActive === 'false') {
+      // Return both active and inactive
+    } else if (onlyActive) {
       where.is_active = true;
       where.is_available = true;
+    }
+
+    // 2. Date Range Filter on created_at
+    const rawStartDate = query.startDate || query.start_date || query.fromDate || query.from_date;
+    const rawEndDate = query.endDate || query.end_date || query.toDate || query.to_date;
+
+    if (rawStartDate || rawEndDate) {
+      const dateFilter = {};
+      if (rawStartDate) {
+        const start = new Date(rawStartDate);
+        if (!isNaN(start.getTime())) {
+          start.setHours(0, 0, 0, 0);
+          dateFilter[Op.gte] = start;
+        }
+      }
+      if (rawEndDate) {
+        const end = new Date(rawEndDate);
+        if (!isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999);
+          dateFilter[Op.lte] = end;
+        }
+      }
+      if (Object.keys(dateFilter).length > 0 || Object.getOwnPropertySymbols(dateFilter).length > 0) {
+        where.created_at = dateFilter;
+      }
     }
 
     if (is_best_deal !== undefined || isBestDeal !== undefined) {
@@ -124,7 +160,7 @@ class ProductService {
     }
 
     const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
+    const limitNum = query.all === 'true' || query.all === true ? 10000 : parseInt(limit, 10);
     const offset = (pageNum - 1) * limitNum;
 
     // Build robust server-side order clause based on sort / sortBy / sortOrder
@@ -295,8 +331,14 @@ class ProductService {
       sku,
       name_en,
       name_ar,
+      description_title_en,
+      description_title_ar,
       description_en,
       description_ar,
+      long_description_en,
+      long_description_ar,
+      highlights,
+      nutrition_facts,
       brand,
       unit,
       unit_type,
@@ -323,6 +365,15 @@ class ProductService {
       reviews_count,
       reviews,
     } = data;
+
+    let parsedHighlights = highlights;
+    if (typeof parsedHighlights === 'string') {
+      try { parsedHighlights = JSON.parse(parsedHighlights); } catch (e) { parsedHighlights = []; }
+    }
+    let parsedNutrition = nutrition_facts;
+    if (typeof parsedNutrition === 'string') {
+      try { parsedNutrition = JSON.parse(parsedNutrition); } catch (e) { parsedNutrition = {}; }
+    }
 
     const existingSku = await Product.findOne({ where: { sku } });
     if (existingSku) {
@@ -355,8 +406,14 @@ class ProductService {
         sku,
         name_en,
         name_ar,
-        description_en,
-        description_ar,
+        description_title_en: description_title_en || null,
+        description_title_ar: description_title_ar || null,
+        description_en: description_en || null,
+        description_ar: description_ar || null,
+        long_description_en: long_description_en || null,
+        long_description_ar: long_description_ar || null,
+        highlights: Array.isArray(parsedHighlights) ? parsedHighlights : [],
+        nutrition_facts: (typeof parsedNutrition === 'object' && parsedNutrition !== null) ? parsedNutrition : {},
         brand: brand || '',
         unit: computedUnit,
         unit_type: unit_type || null,
@@ -446,6 +503,13 @@ class ProductService {
       cleanData.reviews_count = cleanData.reviews_count !== '' && cleanData.reviews_count !== null ? parseInt(cleanData.reviews_count, 10) : 0;
     } else if (cleanData.reviews !== undefined) {
       cleanData.reviews_count = cleanData.reviews !== '' && cleanData.reviews !== null ? parseInt(cleanData.reviews, 10) : 0;
+    }
+
+    if (cleanData.highlights !== undefined && typeof cleanData.highlights === 'string') {
+      try { cleanData.highlights = JSON.parse(cleanData.highlights); } catch (e) { cleanData.highlights = []; }
+    }
+    if (cleanData.nutrition_facts !== undefined && typeof cleanData.nutrition_facts === 'string') {
+      try { cleanData.nutrition_facts = JSON.parse(cleanData.nutrition_facts); } catch (e) { cleanData.nutrition_facts = {}; }
     }
 
     const hasVariantsBool = cleanData.has_variants !== undefined ? Boolean(cleanData.has_variants) : product.has_variants;

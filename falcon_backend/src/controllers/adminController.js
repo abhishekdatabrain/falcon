@@ -444,6 +444,58 @@ class AdminController {
       return sendError(res, error.message, [], 400);
     }
   }
+
+  // --- Role-Based Access Control (RBAC) & Identity Management ---
+  async getRbacUsers(req, res, next) {
+    try {
+      const { search, role, status } = req.query;
+      const data = await adminService.getRbacOverview({ search, role, status });
+      return sendSuccess(res, 'RBAC users and role statistics retrieved', data);
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async updateUserRole(req, res, next) {
+    try {
+      const { userId } = req.params;
+      const { role } = req.body;
+      if (!role) {
+        return sendError(res, 'Role is required', [], 400);
+      }
+      const user = await adminService.updateUserRole(userId, role);
+      return sendSuccess(res, `User role successfully updated to ${role}`, { user });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async toggleUserStatus(req, res, next) {
+    try {
+      const { userId } = req.params;
+      const { status } = req.body;
+      if (!status) {
+        return sendError(res, 'Status is required (ACTIVE or INACTIVE)', [], 400);
+      }
+      const user = await adminService.toggleUserStatus(userId, status);
+      return sendSuccess(res, `User status updated to ${status}`, { user });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async createRbacUser(req, res, next) {
+    try {
+      const { email, mobile, password, role, name, department } = req.body;
+      if (!email || !mobile) {
+        return sendError(res, 'Email and mobile are required', [], 400);
+      }
+      const user = await adminService.createRbacUser({ email, mobile, password, role, name, department });
+      return sendSuccess(res, 'User created with assigned role successfully', { user }, 201);
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
 }
 
 module.exports = new AdminController();

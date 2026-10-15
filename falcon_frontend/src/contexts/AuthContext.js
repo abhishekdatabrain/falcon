@@ -55,8 +55,49 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const isSuperAdmin = Boolean(
+    user?.isSuperAdmin || (user?.role === 'ADMIN' && user?.email === 'admin@gmail.com')
+  );
+
+  const hasPermission = (permissionCode) => {
+    if (!user || user.role !== 'ADMIN') return false;
+    if (isSuperAdmin) return true;
+    const permissions = user.permissions || [];
+    if (permissions.includes('*')) return true;
+    if (!permissionCode) return true;
+    return permissions.includes(permissionCode);
+  };
+
+  const hasAnyPermission = (...codes) => {
+    if (!user || user.role !== 'ADMIN') return false;
+    if (isSuperAdmin) return true;
+    return codes.some((c) => hasPermission(c));
+  };
+
+  const hasModuleAccess = (moduleName) => {
+    if (!user || user.role !== 'ADMIN') return false;
+    if (isSuperAdmin) return true;
+    const permissions = user.permissions || [];
+    if (permissions.includes('*')) return true;
+    return permissions.some((p) => p.startsWith(`${moduleName}.`));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, checkUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        loading,
+        isSuperAdmin,
+        hasPermission,
+        hasAnyPermission,
+        hasModuleAccess,
+        login,
+        register,
+        logout,
+        checkUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -27,7 +27,7 @@ export function ToastProvider({ children }) {
 
       {/* Global Floating Toast Overlay */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-[100] max-w-sm w-full px-4 animate-in fade-in slide-in-from-bottom-5 duration-300 pointer-events-auto">
+        <div className="fixed top-6 right-6 z-[9999] max-w-sm w-full px-4 sm:px-0 animate-in fade-in slide-in-from-top-5 duration-300 pointer-events-auto">
           <div className={`p-4 rounded-2xl shadow-2xl border backdrop-blur-md flex items-center justify-between gap-3 text-white ${
             toast.type === 'error' || toast.type === 'auth'
               ? 'bg-slate-900/95 border-rose-500/40'

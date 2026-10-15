@@ -600,10 +600,10 @@ function ProductsCatalogContent() {
         </div>
 
         {/* Filter Chips Row & Sort Control */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-4 bg-white p-2 rounded-2xl border border-slate-200/80 shadow-2xs">
           
           {/* Left Chips */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* <div className="flex flex-wrap items-center gap-2">
             {[
               { id: 'ALL', label_en: 'ALL (148)', label_ar: 'الكل (١٤٨)' },
               { id: 'ORGANIC', label_en: 'Organic Section 1', label_ar: 'قسم العضوي ١' },
@@ -626,7 +626,7 @@ function ProductsCatalogContent() {
                 {locale === 'ar' ? chip.label_ar : chip.label_en}
               </button>
             ))}
-          </div>
+          </div> */}
 
           {/* Right Items Count & Sort Selector */}
           <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 shrink-0 self-end sm:self-auto">

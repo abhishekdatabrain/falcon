@@ -56,6 +56,14 @@ const Product = sequelize.define('Product', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  description_title_en: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  description_title_ar: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   description_en: {
     type: DataTypes.TEXT,
     allowNull: true,
@@ -63,6 +71,24 @@ const Product = sequelize.define('Product', {
   description_ar: {
     type: DataTypes.TEXT,
     allowNull: true,
+  },
+  long_description_en: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  long_description_ar: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  highlights: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    defaultValue: [],
+  },
+  nutrition_facts: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    defaultValue: {},
   },
   brand: {
     type: DataTypes.STRING,

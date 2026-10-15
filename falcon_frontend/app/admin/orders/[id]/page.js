@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { fetchApi, getImageUrl } from '../../../../src/services/api';
 import { useLanguage } from '../../../../src/contexts/LanguageContext';
 import { useToast } from '../../../../src/contexts/ToastContext';
+import { useAuth } from '../../../../src/contexts/AuthContext';
 import {
   Package,
   Truck,
@@ -46,6 +47,9 @@ export default function OrderDetailsPage({ params }) {
   const router = useRouter();
   const { locale } = useLanguage();
   const { showToast } = useToast();
+  const { hasPermission } = useAuth();
+  const canAssign = hasPermission('orders.assign');
+  const canEdit = hasPermission('orders.edit');
 
   const [order, setOrder] = useState(null);
   const [drivers, setDrivers] = useState([]);
@@ -384,21 +388,25 @@ export default function OrderDetailsPage({ params }) {
             <span>Refresh</span>
           </button>
 
-          <button
-            onClick={() => setShowAssignModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
-          >
-            <UserCheck className="w-4 h-4" />
-            <span>{drv ? 'Reassign Driver' : 'Assign Driver'}</span>
-          </button>
+          {canAssign && (
+            <button
+              onClick={() => setShowAssignModal(true)}
+              className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>{drv ? 'Reassign Driver' : 'Assign Driver'}</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => setShowStatusModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span>Update Status</span>
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => setShowStatusModal(true)}
+              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              <span>Update Status</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -880,12 +888,14 @@ export default function OrderDetailsPage({ params }) {
                 <Truck className="w-4 h-4 text-cyan-600" />
                 <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Assigned Driver</h3>
               </div>
-              <button
-                onClick={() => setShowAssignModal(true)}
-                className="text-xs font-bold text-cyan-600 hover:underline cursor-pointer"
-              >
-                {drv ? 'Change' : 'Assign'}
-              </button>
+              {canAssign && (
+                <button
+                  onClick={() => setShowAssignModal(true)}
+                  className="text-xs font-bold text-cyan-600 hover:underline cursor-pointer"
+                >
+                  {drv ? 'Change' : 'Assign'}
+                </button>
+              )}
             </div>
 
             {drv ? (

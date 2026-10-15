@@ -171,7 +171,7 @@ export default function OrdersPage() {
           const parsedMap = JSON.parse(mapCached);
           if (parsedMap[ord.id]?.rating) return Number(parsedMap[ord.id].rating);
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return null;
   };
@@ -488,8 +488,8 @@ export default function OrdersPage() {
                 type="button"
                 onClick={() => setActiveTab('ALL')}
                 className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'ALL'
-                    ? 'bg-[#054529] text-white border-[#054529] shadow-xs'
-                    : 'bg-white text-slate-600 border-[#054529] hover:bg-slate-50'
+                  ? 'bg-[#054529] text-white border-[#054529] shadow-xs'
+                  : 'bg-white text-slate-600 border-[#054529] hover:bg-slate-50'
                   }`}
               >
                 <span>All Orders</span>
@@ -500,8 +500,8 @@ export default function OrdersPage() {
                 type="button"
                 onClick={() => setActiveTab('ACTIVE')}
                 className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'ACTIVE'
-                    ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
-                    : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50/50'
+                  ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
+                  : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50/50'
                   }`}
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -513,8 +513,8 @@ export default function OrdersPage() {
                 type="button"
                 onClick={() => setActiveTab('DELIVERED')}
                 className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'DELIVERED'
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
               >
                 <span>Delivered</span>
@@ -525,8 +525,8 @@ export default function OrdersPage() {
                 type="button"
                 onClick={() => setActiveTab('CANCELLED')}
                 className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'CANCELLED'
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
               >
                 <span>Cancelled</span>
@@ -576,14 +576,14 @@ export default function OrdersPage() {
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="font-black text-slate-900 text-sm">Order #{ord.order_number}</span>
                             <span className="bg-emerald-100 text-emerald-900 font-black px-2.5 py-0.5 rounded-md text-[10px] uppercase border border-emerald-200">
-                              {ord.type || 'Express Cold-Chain'}
+                              {ord.type || ''}
                             </span>
                             <span className="text-slate-300">|</span>
                             <span className="text-slate-500 font-semibold">
                               {locale === 'ar' ? 'تاريخ الطلب:' : 'Placed:'} {formatPlacedTime(ord.createdAt)}
                             </span>
                             <span className="text-slate-300">•</span>
-                            <span className="text-slate-500 font-semibold">{ord.payment_method || 'Mada / Apple Pay'}</span>
+                            <span className="text-slate-500 font-semibold">{ord.payment_method || ''}</span>
                           </div>
 
                           <div className="text-right">
@@ -769,7 +769,7 @@ export default function OrdersPage() {
                             className="px-5 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
                           >
                             <MapPin className="w-4 h-4 text-[#05A764]" />
-                            <span>{locale === 'ar' ? 'تتبع مباشر على Google Map' : 'Track Live on Google Map'}</span>
+                            <span>{locale === 'ar' ? 'تتبع مباشر على Google Map' : 'Track Order'}</span>
                           </Link>
                         </div>
                       </div>
@@ -820,9 +820,8 @@ export default function OrdersPage() {
                         <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="font-black text-slate-900 text-sm">Order #{ord.order_number}</span>
-                            <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase border ${
-                              isConfirmed ? 'bg-blue-50 text-blue-800 border-blue-200' : isPacked ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'
-                            }`}>
+                            <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase border ${isConfirmed ? 'bg-blue-50 text-blue-800 border-blue-200' : isPacked ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'
+                              }`}>
                               {statusBadgeText}
                             </span>
                             <span className="text-slate-300">|</span>
@@ -934,7 +933,7 @@ export default function OrdersPage() {
                               className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                             >
                               <MapPin className="w-4 h-4 text-[#05A764]" />
-                              <span>{locale === 'ar' ? 'تتبع على الخريطة' : 'Track on Google Map'}</span>
+                              <span>{locale === 'ar' ? 'تتبع على الخريطة' : 'Track Order'}</span>
                             </Link>
 
                             <button
@@ -1053,38 +1052,239 @@ export default function OrdersPage() {
                           </div>
                         </div>
 
-                      <div className="px-6 space-y-3">
-                        {/* Delivery Handover Proof Banner */}
-                        {ord.delivery_proof && (
-                          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 text-xs text-slate-600 font-medium flex items-center gap-2">
-                            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                            <span>{ord.delivery_proof}</span>
-                          </div>
-                        )}
-
-                        {/* Bundle Summary Banner if no individual items list */}
-                        {ord.bundle_name && (
-                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <h4 className="font-black text-slate-900 text-sm">{ord.bundle_name}</h4>
-                              <p className="text-xs text-slate-500 font-semibold">{ord.bundle_summary}</p>
+                        <div className="px-6 space-y-3">
+                          {/* Delivery Handover Proof Banner */}
+                          {ord.delivery_proof && (
+                            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 text-xs text-slate-600 font-medium flex items-center gap-2">
+                              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span>{ord.delivery_proof}</span>
                             </div>
+                          )}
+
+                          {/* Bundle Summary Banner if no individual items list */}
+                          {ord.bundle_name && (
+                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <h4 className="font-black text-slate-900 text-sm">{ord.bundle_name}</h4>
+                                <p className="text-xs text-slate-500 font-semibold">{ord.bundle_summary}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button type="button" className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-extrabold text-xs hover:bg-slate-100 flex items-center gap-1 cursor-pointer">
+                                  <RotateCcw className="w-3.5 h-3.5 text-emerald-700" /> Buy Again
+                                </button>
+                                <Link href={`/orders/${ord.id}`} className="px-3.5 py-2 rounded-xl bg-slate-200/80 text-slate-800 font-extrabold text-xs hover:bg-slate-300 cursor-pointer">
+                                  View Details
+                                </Link>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Product Items List */}
+                          {ord.items && ord.items.length > 0 && (
+                            <div className="space-y-2 font-sans pt-1">
+                              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                                Items Delivered ({ord.items.length}):
+                              </span>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                {ord.items.map((item, idx) => {
+                                  const img = item.product?.images?.[0]?.image_url || item.product?.main_image || item.image || item.main_image;
+                                  const name = item.product_name_en || item.product?.name_en || item.product_name_ar || item.name || 'Grocery Item';
+                                  const qty = item.quantity || 1;
+                                  const itemPrice = parseFloat(item.total_price || (item.unit_price ? item.unit_price * qty : 0));
+                                  return (
+                                    <div
+                                      key={item.id || idx}
+                                      className="bg-[#F8F9FA] rounded-2xl p-2.5 flex items-center justify-between gap-3 border border-slate-200/70"
+                                    >
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden relative shadow-2xs">
+                                          {img ? (
+                                            <img
+                                              src={getImageUrl(img)}
+                                              alt={name}
+                                              className="w-full h-full object-contain"
+                                              onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.style.display = 'none';
+                                                if (e.currentTarget.nextSibling) {
+                                                  e.currentTarget.nextSibling.style.display = 'flex';
+                                                }
+                                              }}
+                                            />
+                                          ) : null}
+                                          <div
+                                            className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#05A764] rounded-lg"
+                                            style={{ display: img ? 'none' : 'flex' }}
+                                          >
+                                            <ShoppingBag className="w-4 h-4 stroke-[2]" />
+                                          </div>
+                                        </div>
+
+                                        <div className="min-w-0">
+                                          <h5 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                                            {name}
+                                          </h5>
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="bg-[#05A764]/10 text-[#05A764] text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
+                                              Qty: {qty}
+                                            </span>
+                                            {itemPrice > 0 && (
+                                              <span className="text-[11px] font-extrabold text-slate-700 font-sans">
+                                                SAR {itemPrice.toFixed(2)}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Card Bottom Actions */}
+                        {!ord.bundle_name && (
+                          <div className="bg-slate-50/80 px-6 py-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
                             <div className="flex items-center gap-2">
-                              <button type="button" className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-extrabold text-xs hover:bg-slate-100 flex items-center gap-1 cursor-pointer">
-                                <RotateCcw className="w-3.5 h-3.5 text-emerald-700" /> Buy Again
+                              <button type="button" className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
+                                <RotateCcw className="w-4 h-4 text-[#05A764]" />
+                                <span>Order Again</span>
                               </button>
-                              <Link href={`/orders/${ord.id}`} className="px-3.5 py-2 rounded-xl bg-slate-200/80 text-slate-800 font-extrabold text-xs hover:bg-slate-300 cursor-pointer">
-                                View Details
+                              {/* Dynamic Product Rating Display */}
+                              {(() => {
+                                const ratingVal = getOrderRating(ord);
+                                if (ratingVal) {
+                                  return (
+                                    <Link
+                                      href={`/orders/${ord.id}`}
+                                      className="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-extrabold hover:bg-amber-100 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                                      title={locale === 'ar' ? 'عرض تقييم المنتج' : 'View Product Rating'}
+                                    >
+                                      <div className="flex items-center gap-0.5 text-amber-500">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                          <Star
+                                            key={star}
+                                            className={`w-3.5 h-3.5 ${star <= ratingVal
+                                                ? 'text-amber-500 fill-amber-400'
+                                                : 'text-slate-300 fill-slate-100'
+                                              }`}
+                                          />
+                                        ))}
+                                      </div>
+                                      <span className="text-xs font-black text-amber-900 ml-0.5">
+                                        {ratingVal}.0 ★ {locale === 'ar' ? 'تم التقييم' : 'Rated'}
+                                      </span>
+                                    </Link>
+                                  );
+                                }
+
+                                return (
+                                  <Link
+                                    href={`/orders/${ord.id}`}
+                                    className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors flex items-center gap-1.5 cursor-pointer"
+                                    title={locale === 'ar' ? 'تقييم المنتج' : 'Rate Product'}
+                                  >
+                                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                                    <span>{locale === 'ar' ? 'تقييم المنتج' : 'Rate Product'}</span>
+                                  </Link>
+                                );
+                              })()}
+                            </div>
+
+                            <div className="flex items-center gap-2 text-slate-500 font-semibold">
+                              <button
+                                type="button"
+                                disabled={downloadingInvoiceId === ord.id}
+                                onClick={() => handleDownloadInvoice(ord)}
+                                className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 hover:border-slate-300 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 shadow-2xs active:scale-98"
+                                title={locale === 'ar' ? 'تحميل الفاتورة الضريبية ZATCA (PDF)' : 'Download ZATCA Tax Invoice (PDF)'}
+                              >
+                                {downloadingInvoiceId === ord.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                                ) : (
+                                  <FileText className="w-3.5 h-3.5 text-slate-500" />
+                                )}
+                                <span>
+                                  {downloadingInvoiceId === ord.id
+                                    ? (locale === 'ar' ? 'جاري التحميل...' : 'Downloading...')
+                                    : (locale === 'ar' ? 'فاتورة ضريبية ZATCA (PDF)' : 'ZATCA Tax Invoice (PDF)')}
+                                </span>
+                              </button>
+                              <Link href={`/orders/${ord.id}`} className="hover:text-slate-900 transition-colors flex items-center gap-1">
+                                <span>View Order Details</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
                               </Link>
                             </div>
                           </div>
                         )}
+                      </div>
+                    );
+                  }
+
+                  // ---------------- CARD TYPE 5: CANCELLED, RETURNED OR OTHER STATUS ----------------
+                  const isCancelled = ['CANCELLED', 'PAYMENT_REJECTED'].includes(ord.order_status);
+                  const isReturned = ['RETURNED', 'DELIVERY_FAILED'].includes(ord.order_status);
+
+                  return (
+                    <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 font-sans opacity-95">
+                      {/* Top Bar */}
+                      <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="font-black text-slate-900 text-sm">Order #{ord.order_number}</span>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-500 font-semibold">
+                            {locale === 'ar' ? 'تاريخ التحديث:' : 'Updated:'} {formatPlacedTime(ord.updatedAt || ord.createdAt)}
+                          </span>
+                          <span className="text-slate-300">•</span>
+                          {isCancelled ? (
+                            <span className="text-rose-600 font-extrabold flex items-center gap-1">
+                              <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+                              <span>{locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled'}</span>
+                            </span>
+                          ) : isReturned ? (
+                            <span className="text-purple-700 font-extrabold flex items-center gap-1">
+                              <RotateCcw className="w-3.5 h-3.5 text-purple-600" />
+                              <span>{locale === 'ar' ? 'تم إرجاع الطلب' : 'Delivery Returned'}</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-700 font-extrabold flex items-center gap-1">
+                              <Package className="w-3.5 h-3.5 text-slate-500" />
+                              <span>Status: {ord.order_status}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-base font-black text-slate-500 block line-through">SAR {parseFloat(ord.grand_total || 0).toFixed(2)}</span>
+                          <span className="text-[11px] font-bold text-slate-400 block">{ord.items?.length || 0} {locale === 'ar' ? 'منتجات' : 'items'}</span>
+                        </div>
+                      </div>
+
+                      <div className="px-6 space-y-3">
+                        {/* Notice Banner */}
+                        <div className={`p-4 rounded-2xl border flex items-center justify-between text-xs font-medium ${isCancelled ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-slate-50 border-slate-200 text-slate-700'
+                          }`}>
+                          <div className="flex items-center gap-2.5">
+                            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                            <span>
+                              {isCancelled
+                                ? (locale === 'ar'
+                                  ? 'تم إلغاء هذا الطلب. في حال تم خصم المبلغ سيتم استرداده إلى وسيلة الدفع الأصلية أو رصيد المحفظة.'
+                                  : 'This order was cancelled. Any charged amounts are refunded to your original payment method or wallet.')
+                                : (locale === 'ar'
+                                  ? 'تم إرجاع هذا الطلب. يرجى التواصل مع فريق الدعم للمساعدة أو إعادة التوصيل.'
+                                  : 'Delivery returned. Please contact customer support for re-delivery or assistance.')}
+                            </span>
+                          </div>
+                        </div>
 
                         {/* Product Items List */}
                         {ord.items && ord.items.length > 0 && (
                           <div className="space-y-2 font-sans pt-1">
                             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                              Items Delivered ({ord.items.length}):
+                              {locale === 'ar' ? 'المنتجات في هذا الطلب' : 'Items in this order'} ({ord.items.length}):
                             </span>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                               {ord.items.map((item, idx) => {
@@ -1095,7 +1295,7 @@ export default function OrdersPage() {
                                 return (
                                   <div
                                     key={item.id || idx}
-                                    className="bg-[#F8F9FA] rounded-2xl p-2.5 flex items-center justify-between gap-3 border border-slate-200/70"
+                                    className="bg-[#F8F9FA] rounded-2xl p-2.5 flex items-center justify-between gap-3 border border-slate-200/70 opacity-80"
                                   >
                                     <div className="flex items-center gap-2.5 min-w-0">
                                       <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden relative shadow-2xs">
@@ -1114,7 +1314,7 @@ export default function OrdersPage() {
                                           />
                                         ) : null}
                                         <div
-                                          className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#05A764] rounded-lg"
+                                          className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 rounded-lg"
                                           style={{ display: img ? 'none' : 'flex' }}
                                         >
                                           <ShoppingBag className="w-4 h-4 stroke-[2]" />
@@ -1126,11 +1326,11 @@ export default function OrdersPage() {
                                           {name}
                                         </h5>
                                         <div className="flex items-center gap-2 mt-0.5">
-                                          <span className="bg-[#05A764]/10 text-[#05A764] text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
+                                          <span className="bg-slate-200 text-slate-700 text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
                                             Qty: {qty}
                                           </span>
                                           {itemPrice > 0 && (
-                                            <span className="text-[11px] font-extrabold text-slate-700 font-sans">
+                                            <span className="text-[11px] font-extrabold text-slate-600 font-sans">
                                               SAR {itemPrice.toFixed(2)}
                                             </span>
                                           )}
@@ -1146,230 +1346,27 @@ export default function OrdersPage() {
                       </div>
 
                       {/* Card Bottom Actions */}
-                      {!ord.bundle_name && (
-                        <div className="bg-slate-50/80 px-6 py-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-                          <div className="flex items-center gap-2">
-                            <button type="button" className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
-                              <RotateCcw className="w-4 h-4 text-[#05A764]" />
-                              <span>Order Again</span>
-                            </button>
-                            {/* Dynamic Product Rating Display */}
-                            {(() => {
-                              const ratingVal = getOrderRating(ord);
-                              if (ratingVal) {
-                                return (
-                                  <Link
-                                    href={`/orders/${ord.id}`}
-                                    className="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-extrabold hover:bg-amber-100 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                                    title={locale === 'ar' ? 'عرض تقييم المنتج' : 'View Product Rating'}
-                                  >
-                                    <div className="flex items-center gap-0.5 text-amber-500">
-                                      {[1, 2, 3, 4, 5].map((star) => (
-                                        <Star
-                                          key={star}
-                                          className={`w-3.5 h-3.5 ${
-                                            star <= ratingVal
-                                              ? 'text-amber-500 fill-amber-400'
-                                              : 'text-slate-300 fill-slate-100'
-                                          }`}
-                                        />
-                                      ))}
-                                    </div>
-                                    <span className="text-xs font-black text-amber-900 ml-0.5">
-                                      {ratingVal}.0 ★ {locale === 'ar' ? 'تم التقييم' : 'Rated'}
-                                    </span>
-                                  </Link>
-                                );
-                              }
-
-                              return (
-                                <Link
-                                  href={`/orders/${ord.id}`}
-                                  className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-colors flex items-center gap-1.5 cursor-pointer"
-                                  title={locale === 'ar' ? 'تقييم المنتج' : 'Rate Product'}
-                                >
-                                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                                  <span>{locale === 'ar' ? 'تقييم المنتج' : 'Rate Product'}</span>
-                                </Link>
-                              );
-                            })()}
-                          </div>
-
-                          <div className="flex items-center gap-2 text-slate-500 font-semibold">
-                            <button
-                              type="button"
-                              disabled={downloadingInvoiceId === ord.id}
-                              onClick={() => handleDownloadInvoice(ord)}
-                              className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 hover:border-slate-300 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 shadow-2xs active:scale-98"
-                              title={locale === 'ar' ? 'تحميل الفاتورة الضريبية ZATCA (PDF)' : 'Download ZATCA Tax Invoice (PDF)'}
-                            >
-                              {downloadingInvoiceId === ord.id ? (
-                                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
-                              ) : (
-                                <FileText className="w-3.5 h-3.5 text-slate-500" />
-                              )}
-                              <span>
-                                {downloadingInvoiceId === ord.id
-                                  ? (locale === 'ar' ? 'جاري التحميل...' : 'Downloading...')
-                                  : (locale === 'ar' ? 'فاتورة ضريبية ZATCA (PDF)' : 'ZATCA Tax Invoice (PDF)')}
-                              </span>
-                            </button>
-                            <Link href={`/orders/${ord.id}`} className="hover:text-slate-900 transition-colors flex items-center gap-1">
-                              <span>View Order Details</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </Link>
-                          </div>
+                      <div className="bg-slate-50/80 px-6 py-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href="/products"
+                            className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <RotateCcw className="w-4 h-4 text-[#05A764]" />
+                            <span>{locale === 'ar' ? 'إعادة الطلب' : 'Re-Order / Buy Again'}</span>
+                          </Link>
                         </div>
-                      )}
+
+                        <div className="flex items-center gap-2 text-slate-500 font-semibold">
+                          <Link href={`/orders/${ord.id}`} className="hover:text-slate-900 transition-colors flex items-center gap-1">
+                            <span>{locale === 'ar' ? 'عرض تفاصيل الطلب' : 'View Order Details'}</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
+                      </div>
                     </div>
                   );
-                }
-
-                // ---------------- CARD TYPE 5: CANCELLED, RETURNED OR OTHER STATUS ----------------
-                const isCancelled = ['CANCELLED', 'PAYMENT_REJECTED'].includes(ord.order_status);
-                const isReturned = ['RETURNED', 'DELIVERY_FAILED'].includes(ord.order_status);
-
-                return (
-                  <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 font-sans opacity-95">
-                    {/* Top Bar */}
-                    <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className="font-black text-slate-900 text-sm">Order #{ord.order_number}</span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-slate-500 font-semibold">
-                          {locale === 'ar' ? 'تاريخ التحديث:' : 'Updated:'} {formatPlacedTime(ord.updatedAt || ord.createdAt)}
-                        </span>
-                        <span className="text-slate-300">•</span>
-                        {isCancelled ? (
-                          <span className="text-rose-600 font-extrabold flex items-center gap-1">
-                            <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
-                            <span>{locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled'}</span>
-                          </span>
-                        ) : isReturned ? (
-                          <span className="text-purple-700 font-extrabold flex items-center gap-1">
-                            <RotateCcw className="w-3.5 h-3.5 text-purple-600" />
-                            <span>{locale === 'ar' ? 'تم إرجاع الطلب' : 'Delivery Returned'}</span>
-                          </span>
-                        ) : (
-                          <span className="text-slate-700 font-extrabold flex items-center gap-1">
-                            <Package className="w-3.5 h-3.5 text-slate-500" />
-                            <span>Status: {ord.order_status}</span>
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="text-right">
-                        <span className="text-base font-black text-slate-500 block line-through">SAR {parseFloat(ord.grand_total || 0).toFixed(2)}</span>
-                        <span className="text-[11px] font-bold text-slate-400 block">{ord.items?.length || 0} {locale === 'ar' ? 'منتجات' : 'items'}</span>
-                      </div>
-                    </div>
-
-                    <div className="px-6 space-y-3">
-                      {/* Notice Banner */}
-                      <div className={`p-4 rounded-2xl border flex items-center justify-between text-xs font-medium ${
-                        isCancelled ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-slate-50 border-slate-200 text-slate-700'
-                      }`}>
-                        <div className="flex items-center gap-2.5">
-                          <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
-                          <span>
-                            {isCancelled
-                              ? (locale === 'ar'
-                                  ? 'تم إلغاء هذا الطلب. في حال تم خصم المبلغ سيتم استرداده إلى وسيلة الدفع الأصلية أو رصيد المحفظة.'
-                                  : 'This order was cancelled. Any charged amounts are refunded to your original payment method or wallet.')
-                              : (locale === 'ar'
-                                  ? 'تم إرجاع هذا الطلب. يرجى التواصل مع فريق الدعم للمساعدة أو إعادة التوصيل.'
-                                  : 'Delivery returned. Please contact customer support for re-delivery or assistance.')}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Product Items List */}
-                      {ord.items && ord.items.length > 0 && (
-                        <div className="space-y-2 font-sans pt-1">
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                            {locale === 'ar' ? 'المنتجات في هذا الطلب' : 'Items in this order'} ({ord.items.length}):
-                          </span>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                            {ord.items.map((item, idx) => {
-                              const img = item.product?.images?.[0]?.image_url || item.product?.main_image || item.image || item.main_image;
-                              const name = item.product_name_en || item.product?.name_en || item.product_name_ar || item.name || 'Grocery Item';
-                              const qty = item.quantity || 1;
-                              const itemPrice = parseFloat(item.total_price || (item.unit_price ? item.unit_price * qty : 0));
-                              return (
-                                <div
-                                  key={item.id || idx}
-                                  className="bg-[#F8F9FA] rounded-2xl p-2.5 flex items-center justify-between gap-3 border border-slate-200/70 opacity-80"
-                                >
-                                  <div className="flex items-center gap-2.5 min-w-0">
-                                    <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden relative shadow-2xs">
-                                      {img ? (
-                                        <img
-                                          src={getImageUrl(img)}
-                                          alt={name}
-                                          className="w-full h-full object-contain"
-                                          onError={(e) => {
-                                            e.currentTarget.onerror = null;
-                                            e.currentTarget.style.display = 'none';
-                                            if (e.currentTarget.nextSibling) {
-                                              e.currentTarget.nextSibling.style.display = 'flex';
-                                            }
-                                          }}
-                                        />
-                                      ) : null}
-                                      <div
-                                        className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 rounded-lg"
-                                        style={{ display: img ? 'none' : 'flex' }}
-                                      >
-                                        <ShoppingBag className="w-4 h-4 stroke-[2]" />
-                                      </div>
-                                    </div>
-
-                                    <div className="min-w-0">
-                                      <h5 className="font-extrabold text-xs text-slate-900 truncate font-sans">
-                                        {name}
-                                      </h5>
-                                      <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="bg-slate-200 text-slate-700 text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
-                                          Qty: {qty}
-                                        </span>
-                                        {itemPrice > 0 && (
-                                          <span className="text-[11px] font-extrabold text-slate-600 font-sans">
-                                            SAR {itemPrice.toFixed(2)}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Card Bottom Actions */}
-                    <div className="bg-slate-50/80 px-6 py-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href="/products"
-                          className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <RotateCcw className="w-4 h-4 text-[#05A764]" />
-                          <span>{locale === 'ar' ? 'إعادة الطلب' : 'Re-Order / Buy Again'}</span>
-                        </Link>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-slate-500 font-semibold">
-                        <Link href={`/orders/${ord.id}`} className="hover:text-slate-900 transition-colors flex items-center gap-1">
-                          <span>{locale === 'ar' ? 'عرض تفاصيل الطلب' : 'View Order Details'}</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
+                })
               )}
 
             </div>

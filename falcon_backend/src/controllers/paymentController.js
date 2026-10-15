@@ -30,6 +30,77 @@ class PaymentController {
     }
   }
 
+  async getAllPaymentsAdmin(req, res, next) {
+    try {
+      const {
+        page = 1,
+        limit = 20,
+        status,
+        method,
+        search,
+        dateFrom,
+        dateTo,
+        date,
+        sortBy,
+        sortOrder,
+      } = req.query;
+
+      const data = await paymentService.getAllPaymentsAdmin({
+        page,
+        limit,
+        status,
+        method,
+        search,
+        dateFrom: dateFrom || date,
+        dateTo,
+        date,
+        sortBy,
+        sortOrder,
+      });
+
+      return sendSuccess(res, 'Payments retrieved successfully', data);
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async getPaymentByIdAdmin(req, res, next) {
+    try {
+      const { paymentId } = req.params;
+      const payment = await paymentService.getPaymentByIdAdmin(paymentId);
+      return sendSuccess(res, 'Payment details retrieved', { payment });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async submitBankConfirmationAdmin(req, res, next) {
+    try {
+      const adminId = req.user.admin ? req.user.admin.id : null;
+      const { orderId, bankName, paymentReference, autoVerify, proofFileUrl: bodyProofUrl } = req.body;
+
+      if (!orderId || !bankName || !paymentReference) {
+        return sendError(res, 'Order ID, Bank Name, and Payment Reference are required', [], 400);
+      }
+
+      const proofFileUrl = req.file ? `/uploads/${req.file.filename}` : (bodyProofUrl || '');
+      const payment = await paymentService.submitPaymentConfirmationAdmin(
+        orderId,
+        adminId,
+        {
+          bankName,
+          paymentReference,
+          proofFileUrl,
+          autoVerify: autoVerify === 'true' || autoVerify === true,
+        }
+      );
+
+      return sendSuccess(res, 'Bank payment confirmation saved successfully', { payment });
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
   async getPendingPaymentsAdmin(req, res, next) {
     try {
       const payments = await paymentService.getPendingPaymentsAdmin();

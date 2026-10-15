@@ -86,7 +86,7 @@ export default function OrderDetailsPage() {
       setLoading(true);
       // 1. Try customer/admin protected endpoint first
       let res = await fetchApi(`/orders/${id}`).catch(() => null);
-      
+
       // 2. Fallback to public confirmation endpoint if 401/403 or not found
       if (!res || !res.success || !res.data?.order) {
         res = await fetchApi(`/orders/confirmation/${id}`).catch(() => null);
@@ -156,7 +156,7 @@ export default function OrderDetailsPage() {
             [id]: { rating: fb.rating, comment: fb.comment }
           }));
         }
-      } catch (e) {}
+      } catch (e) { }
 
       // Check localStorage for persisted review state
       if (typeof window !== 'undefined') {
@@ -165,7 +165,7 @@ export default function OrderDetailsPage() {
           if (cached) {
             setReviewsMap(prev => ({ ...prev, ...JSON.parse(cached) }));
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     } catch (err) {
       console.error('Failed to load order details:', err);
@@ -255,7 +255,7 @@ export default function OrderDetailsPage() {
         if (typeof window !== 'undefined') {
           try {
             localStorage.setItem(`falcon_reviews_${targetOrderId}`, JSON.stringify(next));
-          } catch (e) {}
+          } catch (e) { }
         }
         return next;
       });
@@ -352,7 +352,7 @@ export default function OrderDetailsPage() {
 
   return (
     <div className="min-h-screen bg-[#F4F6F4] font-sans text-slate-800 pb-24">
-      
+
       {/* ================= BREADCRUMBS BAR ================= */}
       <div className="bg-white border-b border-slate-200/80 py-3 px-4 sm:px-6 lg:px-8 text-xs font-semibold text-slate-500">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -386,7 +386,7 @@ export default function OrderDetailsPage() {
         {/* ================= TOP ORDER SUMMARY HEADER ================= */}
         <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/90 shadow-2xs">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            
+
             {/* Left Order Info */}
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -426,7 +426,7 @@ export default function OrderDetailsPage() {
           {/* ================= 4-STEP LIFECYCLE PROGRESS BAR ================= */}
           <div className="mt-8 pt-6 border-t border-slate-100">
             <div className="flex items-center justify-between mb-4">
-              
+
               <span className="text-xs font-bold text-slate-600 font-sans">
                 {currentStatus === 'DELIVERED'
                   ? (locale === 'ar' ? 'اكتملت جميع المراحل' : 'All steps completed')
@@ -435,15 +435,13 @@ export default function OrderDetailsPage() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative">
-              
+
               {/* Step 1: Placed */}
-              <div className={`p-3 rounded-2xl border transition-all ${
-                badge.step >= 1 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}>
+              <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 1 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
+                }`}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                    badge.step >= 1 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                  }`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 1 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
+                    }`}>
                     {badge.step > 1 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '1'}
                   </div>
                   <span className="text-xs font-extrabold truncate">
@@ -456,13 +454,11 @@ export default function OrderDetailsPage() {
               </div>
 
               {/* Step 2: Order Prepared */}
-              <div className={`p-3 rounded-2xl border transition-all ${
-                badge.step >= 2 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}>
+              <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 2 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
+                }`}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                    badge.step >= 2 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                  }`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 2 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
+                    }`}>
                     {badge.step > 2 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '2'}
                   </div>
                   <span className="text-xs font-extrabold truncate">
@@ -475,13 +471,11 @@ export default function OrderDetailsPage() {
               </div>
 
               {/* Step 3: Out for Delivery */}
-              <div className={`p-3 rounded-2xl border transition-all ${
-                badge.step >= 3 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}>
+              <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 3 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
+                }`}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                    badge.step >= 3 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                  }`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 3 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
+                    }`}>
                     {badge.step > 3 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '3'}
                   </div>
                   <span className="text-xs font-extrabold truncate">
@@ -494,13 +488,11 @@ export default function OrderDetailsPage() {
               </div>
 
               {/* Step 4: Delivered */}
-              <div className={`p-3 rounded-2xl border transition-all ${
-                badge.step >= 4 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}>
+              <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 4 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
+                }`}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                    badge.step >= 4 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                  }`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 4 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
+                    }`}>
                     <Check className="w-3.5 h-3.5 stroke-[3]" />
                   </div>
                   <span className="text-xs font-extrabold truncate">
@@ -519,13 +511,13 @@ export default function OrderDetailsPage() {
 
         {/* ================= MAIN 2-COLUMN ORDER DETAILS GRID ================= */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
+
           {/* ================= LEFT COLUMN: ITEMS & SHIPPING INFO (8 COLS) ================= */}
           <div className="lg:col-span-8 space-y-6">
 
             {/* CARD 1: ORDERED ITEMS LIST */}
             <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/90 shadow-2xs space-y-5">
-              
+
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#043927] flex items-center justify-center border border-emerald-100">
@@ -637,7 +629,7 @@ export default function OrderDetailsPage() {
                             {(() => {
                               const itemKey = it?.id || it?.product_id || order?.id || id;
                               const reviewData = reviewsMap[itemKey] || reviewsMap[order?.id] || reviewsMap[id];
-                              
+
                               if (reviewData) {
                                 return (
                                   <button
@@ -694,7 +686,7 @@ export default function OrderDetailsPage() {
 
             {/* CARD 2: DELIVERY & SHIPPING DESTINATION */}
             <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/90 shadow-2xs space-y-5">
-              
+
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#043927] flex items-center justify-center border border-emerald-100">
@@ -716,13 +708,13 @@ export default function OrderDetailsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
+
                 {/* Left: Address Box */}
                 <div className="bg-[#F8F9FA] rounded-2xl p-4 border border-slate-200/70 space-y-2">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block font-sans">
                     {locale === 'ar' ? 'المستلم والعنوان' : 'RECIPIENT & ADDRESS'}
                   </span>
-                  
+
                   <h4 className="font-black text-sm text-slate-900 font-sans">
                     {customerName}
                   </h4>
@@ -776,7 +768,7 @@ export default function OrderDetailsPage() {
 
             {/* CARD 4: FINANCIAL SUMMARY & BREAKDOWN */}
             <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-2xs space-y-5">
-              
+
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h3 className="font-black text-base text-slate-900 font-sans">
                   {locale === 'ar' ? 'ملخص الدفع والفاتورة' : 'Payment & Invoice Summary'}
@@ -790,7 +782,7 @@ export default function OrderDetailsPage() {
 
               {/* Price Breakdown */}
               <div className="space-y-3 text-xs font-semibold text-slate-600 font-sans">
-                
+
                 <div className="flex justify-between">
                   <span>{locale === 'ar' ? 'المجموع الفرعي للمنتجات' : 'Items Subtotal'}</span>
                   <span className="font-black text-slate-900">SAR {subtotalVal.toFixed(2)}</span>
@@ -867,7 +859,7 @@ export default function OrderDetailsPage() {
                     KSA
                   </span>
                 </div>
-                
+
                 <p className="text-[10px] text-slate-600 font-mono leading-tight">
                   VAT: 300192837400003 • UUID: {id ? id.substring(0, 13) + '...' : 'b6c1...91ea'}
                 </p>
@@ -933,7 +925,7 @@ export default function OrderDetailsPage() {
       {showReviewModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-slate-200 shadow-xl space-y-4 font-sans animate-in fade-in zoom-in-95 duration-150">
-            
+
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Star className="w-5 h-5 text-amber-500 fill-amber-400" />
@@ -999,11 +991,10 @@ export default function OrderDetailsPage() {
                       className="p-1 hover:scale-115 active:scale-95 transition-all cursor-pointer"
                     >
                       <Star
-                        className={`w-8 h-8 transition-colors ${
-                          isFilled
+                        className={`w-8 h-8 transition-colors ${isFilled
                             ? 'text-amber-500 fill-amber-400 drop-shadow-xs'
                             : 'text-slate-300 fill-slate-50'
-                        }`}
+                          }`}
                       />
                     </button>
                   );

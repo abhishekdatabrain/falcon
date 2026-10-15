@@ -1,4 +1,4 @@
-const { User, Customer, Driver, Admin, RefreshToken, sequelize } = require('../models');
+const { User, Customer, Driver, Admin, RefreshToken, Role, Permission, sequelize } = require('../models');
 const { hashPassword, comparePassword } = require('../utils/password');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/jwt');
 const ROLES = require('../constants/roles');
@@ -85,6 +85,12 @@ class AuthService {
         { model: Customer, as: 'customer' },
         { model: Driver, as: 'driver' },
         { model: Admin, as: 'admin' },
+        {
+          model: Role,
+          as: 'assigned_roles',
+          required: false,
+          include: [{ model: Permission, as: 'permissions' }],
+        },
       ],
     });
 
@@ -120,14 +126,42 @@ class AuthService {
       user_agent: reqInfo.userAgent,
     });
 
+    const userObj = {
+      id: user.id,
+      email: user.email,
+      mobile: user.mobile,
+      role: user.role,
+      profile: user.customer || user.driver || user.admin,
+    };
+
+    if (user.role === 'ADMIN') {
+      const isSuperAdmin =
+        user.email === 'admin@gmail.com' ||
+        (user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin' && r.is_active));
+
+      let permissions = [];
+      if (isSuperAdmin) {
+        const allPerms = await Permission.findAll({ attributes: ['code'] });
+        permissions = allPerms.map((p) => p.code);
+      } else if (user.assigned_roles && user.assigned_roles.length > 0) {
+        const permSet = new Set();
+        user.assigned_roles.forEach((r) => {
+          if (r.is_active) {
+            (r.permissions || []).forEach((p) => permSet.add(p.code));
+          }
+        });
+        permissions = Array.from(permSet);
+      }
+
+      userObj.isSuperAdmin = !!isSuperAdmin;
+      userObj.roles = user.assigned_roles
+        ? user.assigned_roles.map((r) => ({ id: r.id, name: r.name, slug: r.slug }))
+        : [];
+      userObj.permissions = permissions;
+    }
+
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        mobile: user.mobile,
-        role: user.role,
-        profile: user.customer || user.driver || user.admin,
-      },
+      user: userObj,
       accessToken,
       refreshToken,
     };

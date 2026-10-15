@@ -6,6 +6,7 @@ import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import { useSocket } from '../../../src/contexts/SocketContext';
+import { useAuth } from '../../../src/contexts/AuthContext';
 import {
   Package,
   Truck,
@@ -48,6 +49,9 @@ export default function AdminOrdersPage() {
   const { locale } = useLanguage();
   const { showToast } = useToast();
   const { socket } = useSocket();
+  const { hasPermission } = useAuth();
+  const canAssign = hasPermission('orders.assign');
+  const canEdit = hasPermission('orders.edit');
 
   // Data States
   const [orders, setOrders] = useState([]);
@@ -928,28 +932,32 @@ export default function AdminOrdersPage() {
                           </button>
 
                           {/* Assign Driver */}
-                          <button
-                            onClick={() => {
-                              setAssignModalOrder(ord);
-                              setAssignDriverId(ord.delivery?.driver_id || '');
-                            }}
-                            className="p-1.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 transition-all cursor-pointer"
-                            title="Assign or Reassign Driver"
-                          >
-                            <UserCheck className="w-3.5 h-3.5" />
-                          </button>
+                          {canAssign && (
+                            <button
+                              onClick={() => {
+                                setAssignModalOrder(ord);
+                                setAssignDriverId(ord.delivery?.driver_id || '');
+                              }}
+                              className="p-1.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 transition-all cursor-pointer"
+                              title="Assign or Reassign Driver"
+                            >
+                              <UserCheck className="w-3.5 h-3.5" />
+                            </button>
+                          )}
 
                           {/* Update Status */}
-                          <button
-                            onClick={() => {
-                              setStatusModalOrder(ord);
-                              setTargetStatus(ord.order_status);
-                            }}
-                            className="p-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-all cursor-pointer"
-                            title="Update Order Status"
-                          >
-                            <SlidersHorizontal className="w-3.5 h-3.5" />
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => {
+                                setStatusModalOrder(ord);
+                                setTargetStatus(ord.order_status);
+                              }}
+                              className="p-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-all cursor-pointer"
+                              title="Update Order Status"
+                            >
+                              <SlidersHorizontal className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

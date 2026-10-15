@@ -196,15 +196,15 @@ function TrackOrderContent() {
         setOrder((prev) =>
           prev
             ? {
-                ...prev,
-                order_status: data.status,
-                delivery: {
-                  ...prev.delivery,
-                  status: data.status,
-                  failure_reason: data.data?.failureReason || prev.delivery?.failure_reason,
-                  otp_verified_at: data.data?.otpVerified ? new Date().toISOString() : prev.delivery?.otp_verified_at,
-                },
-              }
+              ...prev,
+              order_status: data.status,
+              delivery: {
+                ...prev.delivery,
+                status: data.status,
+                failure_reason: data.data?.failureReason || prev.delivery?.failure_reason,
+                otp_verified_at: data.data?.otpVerified ? new Date().toISOString() : prev.delivery?.otp_verified_at,
+              },
+            }
             : prev
         );
         showToast(
@@ -418,12 +418,12 @@ function TrackOrderContent() {
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] font-sans text-slate-900 pb-28 select-none">
-      
+
       {/* ================= TOP SEARCH & QUICK TRACK HEADER ================= */}
       <div className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            
+
             {/* Title & Badge */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-[#043927] text-white flex items-center justify-center font-black shadow-sm">
@@ -502,7 +502,7 @@ function TrackOrderContent() {
 
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        
+
         {loading && !order ? (
           <div className="bg-white rounded-3xl p-16 text-center space-y-4 border border-slate-200/80 shadow-xs">
             <div className="w-12 h-12 border-4 border-[#05A764] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -534,10 +534,10 @@ function TrackOrderContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            
+
             {/* ================= LEFT SIDEBAR PANEL (4 Cols) ================= */}
             <div className="lg:col-span-4 space-y-5">
-              
+
               {/* Order Status Summary Card */}
               <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between">
@@ -545,13 +545,12 @@ function TrackOrderContent() {
                     {locale === 'ar' ? 'حالة الطلب' : 'Current Status'}
                   </span>
                   <span
-                    className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                      status === 'DELIVERED'
+                    className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${status === 'DELIVERED'
                         ? 'bg-emerald-100 text-emerald-800'
                         : status === 'OUT_FOR_DELIVERY'
-                        ? 'bg-cyan-100 text-cyan-800 animate-pulse'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
+                          ? 'bg-cyan-100 text-cyan-800 animate-pulse'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
                   >
                     {status === 'OUT_FOR_DELIVERY' ? '🚚 OUT FOR DELIVERY' : status}
                   </span>
@@ -722,7 +721,7 @@ function TrackOrderContent() {
                     const pName = locale === 'ar'
                       ? (it.product_name_ar || it.product_name_en || it.product?.name_ar || it.product?.name_en || 'منتج طازج')
                       : (it.product_name_en || it.product_name_ar || it.product?.name_en || 'Fresh Grocery Item');
-                    
+
                     const unitPrice = parseFloat(it.unit_price || it.price || 0);
                     const qty = it.quantity || 1;
                     const lineTotal = parseFloat(it.total_price || unitPrice * qty || 0);
@@ -799,7 +798,7 @@ function TrackOrderContent() {
 
             {/* ================= RIGHT MAIN LIVE TRACKING PANEL (8 Cols) ================= */}
             <div className="lg:col-span-8 space-y-6">
-              
+
               {/* ================= 1. INTERACTIVE GOOGLE MAPS ENGINE ================= */}
               <div className="bg-white rounded-3xl border border-slate-200/90 shadow-md overflow-hidden space-y-0">
                 {/* Top Live GPS Status Header Bar */}
@@ -852,7 +851,7 @@ function TrackOrderContent() {
                 {/* Courier Profile Bar Beneath Google Map */}
                 <div className="p-5 sm:p-6 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                    
+
                     <div className="flex items-center gap-3.5">
                       <div className="relative">
                         <img
@@ -914,8 +913,8 @@ function TrackOrderContent() {
                         {status === 'DELIVERED'
                           ? 'Order delivered successfully to your doorstep. Thank you for choosing Falcon Fresh!'
                           : status === 'OUT_FOR_DELIVERY'
-                          ? `Courier is en route to ${destinationAddress.split(',')[0] || 'your address'} with chilled storage active.`
-                          : 'Your order is confirmed and undergoing cold-chain preparation.'}
+                            ? `Courier is en route to ${destinationAddress.split(',')[0] || 'your address'} with chilled storage active.`
+                            : 'Your order is confirmed and undergoing cold-chain preparation.'}
                       </p>
                     </div>
 
@@ -945,13 +944,12 @@ function TrackOrderContent() {
                     <div key={step.step} className="flex items-start gap-4 relative">
                       {/* Step Circle Marker */}
                       <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 shadow-xs z-10 ${
-                          step.completed
+                        className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 shadow-xs z-10 ${step.completed
                             ? 'bg-[#05A764] text-white ring-4 ring-emerald-50'
                             : step.active
-                            ? 'bg-slate-900 text-white ring-4 ring-slate-100 animate-pulse'
-                            : 'bg-white border-2 border-slate-300 text-slate-400'
-                        }`}
+                              ? 'bg-slate-900 text-white ring-4 ring-slate-100 animate-pulse'
+                              : 'bg-white border-2 border-slate-300 text-slate-400'
+                          }`}
                       >
                         {step.completed ? <Check className="w-4 h-4 stroke-[3]" /> : step.step}
                       </div>
@@ -985,7 +983,7 @@ function TrackOrderContent() {
       {/* ================= COURIER CHAT SLIDE-OVER MODAL ================= */}
       {chatOpen && (
         <div className="fixed bottom-6 right-6 z-50 w-96 max-w-[90vw] bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col font-sans animate-in slide-in-from-bottom duration-200">
-          
+
           {/* Chat Header */}
           <div className="bg-[#043927] p-4 text-white flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -1020,11 +1018,10 @@ function TrackOrderContent() {
                 className={`flex flex-col ${msg.sender === 'customer' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`p-3 rounded-2xl max-w-[85%] font-medium ${
-                    msg.sender === 'customer'
+                  className={`p-3 rounded-2xl max-w-[85%] font-medium ${msg.sender === 'customer'
                       ? 'bg-[#006E2D] text-white rounded-br-xs'
                       : 'bg-white text-slate-900 border border-slate-200 rounded-bl-xs shadow-2xs'
-                  }`}
+                    }`}
                 >
                   {msg.text}
                 </div>

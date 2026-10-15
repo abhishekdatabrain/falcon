@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard,
   Landmark,
@@ -19,18 +20,63 @@ import {
   ChevronRight,
   Bell,
   Clock,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPaymentsCount = 0 }) {
   const pathname = usePathname();
   const { locale } = useLanguage();
+  const { hasPermission, isSuperAdmin, user } = useAuth();
 
   const navCategories = [
     {
       key: 'overview',
       title: locale === 'ar' ? 'الرئيسية والإحصائيات' : 'Overview',
       items: [
-        { href: '/admin/dashboard', label: locale === 'ar' ? 'لوحة التحكم' : 'Dashboard Overview', icon: LayoutDashboard },
+        {
+          href: '/admin/dashboard',
+          label: locale === 'ar' ? 'لوحة التحكم' : 'Dashboard Overview',
+          icon: LayoutDashboard,
+          permission: 'dashboard.view',
+        },
+      ],
+    },
+    {
+      key: 'identity_access',
+      title: locale === 'ar' ? 'الهوية وإدارة الصلاحيات' : 'Identity & Access',
+      isExpandable: true,
+      items: [
+        {
+          href: '/admin/roles',
+          label: locale === 'ar' ? 'إدارة الصلاحيات والأدوار' : 'Role & Permission RBAC',
+          icon: ShieldCheck,
+          permission: 'admin_management.view',
+        },
+        {
+          href: '/admin/customers',
+          label: locale === 'ar' ? 'إدارة العملاء' : 'Customer Management',
+          icon: Users,
+          permission: 'customers.view',
+        },
+      ],
+    },
+    {
+      key: 'catalog',
+      title: locale === 'ar' ? 'إدارة الكتالوج والمخزون' : 'Inventory',
+      isExpandable: true,
+      items: [
+        {
+          href: '/admin/products',
+          label: locale === 'ar' ? 'إدارة المنتجات' : 'Product Management',
+          icon: ShoppingBag,
+          permission: 'products.view',
+        },
+        {
+          href: '/admin/categories',
+          label: locale === 'ar' ? 'إدارة الأقسام والتصنيفات' : 'Category Management',
+          icon: FolderTree,
+          permission: 'categories.view',
+        },
       ],
     },
     {
@@ -38,9 +84,25 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
       title: locale === 'ar' ? 'إدارة العمليات والمالية' : 'Operations & Finance',
       isExpandable: true,
       items: [
-        { href: '/admin/payments', label: locale === 'ar' ? 'إدارة مدفوعات التحويل' : 'Payment Management', icon: Landmark, badge: pendingPaymentsCount },
-        { href: '/admin/orders', label: locale === 'ar' ? 'إدارة وتوجيه الطلبات' : 'Order Management', icon: Package },
-        { href: '/admin/invoices', label: locale === 'ar' ? 'إدارة فواتير ZATCA' : 'ZATCA Invoice Management', icon: FileText },
+        {
+          href: '/admin/payments',
+          label: locale === 'ar' ? 'إدارة مدفوعات التحويل' : 'Payment Management',
+          icon: Landmark,
+          badge: pendingPaymentsCount,
+          permission: 'payments.view',
+        },
+        {
+          href: '/admin/orders',
+          label: locale === 'ar' ? 'إدارة وتوجيه الطلبات' : 'Order Management',
+          icon: Package,
+          permission: 'orders.view',
+        },
+        {
+          href: '/admin/invoices',
+          label: locale === 'ar' ? 'إدارة فواتير ZATCA' : 'ZATCA Invoice Management',
+          icon: FileText,
+          permission: 'invoices.view',
+        },
       ],
     },
     {
@@ -48,21 +110,36 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
       title: locale === 'ar' ? 'إدارة الصفحة الرئيسية (CMS)' : 'Homepage CMS',
       isExpandable: true,
       items: [
-        { href: '/admin/homepage-cms', label: locale === 'ar' ? 'إدارة الصفحة الرئيسية' : 'Homepage Management', icon: LayoutDashboard },
-        { href: '/admin/hero-banners', label: locale === 'ar' ? 'شريط البانر الرئيسي' : 'Hero Banners', icon: Sparkles },
-        { href: '/admin/category-banner', label: locale === 'ar' ? 'بانر صفحة المنتجات (Hero)' : 'Category Hero Banner', icon: Sparkles },
-        { href: '/admin/promo-banners', label: locale === 'ar' ? 'البطاقات الترويجية' : 'Promotional Cards', icon: LayoutDashboard },
-        { href: '/admin/category-sections', label: locale === 'ar' ? 'معرض الفئات' : 'Category Showcase', icon: FolderTree },
-      ],
-    },
-    {
-      key: 'catalog',
-      title: locale === 'ar' ? 'إدارة الكتالوج والمخزون' : 'Catalog & Inventory',
-      isExpandable: true,
-      items: [
-        { href: '/admin/products', label: locale === 'ar' ? 'إدارة المنتجات' : 'Product Management', icon: ShoppingBag },
-        { href: '/admin/categories', label: locale === 'ar' ? 'إدارة الأقسام والتصنيفات' : 'Category Management', icon: FolderTree },
-        { href: '/admin/category-banner', label: locale === 'ar' ? 'بانر صفحة المنتجات (Hero)' : 'Category Hero Banner', icon: Sparkles },
+        {
+          href: '/admin/homepage-cms',
+          label: locale === 'ar' ? 'إدارة الصفحة الرئيسية' : 'Homepage Management',
+          icon: LayoutDashboard,
+          permission: 'cms.view',
+        },
+        {
+          href: '/admin/hero-banners',
+          label: locale === 'ar' ? 'شريط البانر الرئيسي' : 'Hero Banners',
+          icon: Sparkles,
+          permission: 'banners.view',
+        },
+        {
+          href: '/admin/category-banner',
+          label: locale === 'ar' ? 'بانر صفحة المنتجات (Hero)' : 'Category Hero Banner',
+          icon: Sparkles,
+          permission: 'banners.view',
+        },
+        {
+          href: '/admin/promo-banners',
+          label: locale === 'ar' ? 'البطاقات الترويجية' : 'Promotional Cards',
+          icon: LayoutDashboard,
+          permission: 'banners.view',
+        },
+        {
+          href: '/admin/category-sections',
+          label: locale === 'ar' ? 'معرض الفئات' : 'Category Showcase',
+          icon: FolderTree,
+          permission: 'cms.view',
+        },
       ],
     },
     {
@@ -70,29 +147,59 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
       title: locale === 'ar' ? 'إدارة التوصيل والأسطول' : 'Fleet & Delivery',
       isExpandable: true,
       items: [
-        { href: '/admin/drivers', label: locale === 'ar' ? 'إدارة السائقين والأسطول' : 'Driver Management', icon: Truck },
-        { href: '/admin/delivery-slots', label: locale === 'ar' ? 'مواعيد وفترات التوصيل' : 'Delivery Slots & Schedule', icon: Clock },
-        { href: '/admin/deliveries/tracking', label: locale === 'ar' ? 'إدارة التوصيل والتتبع المباشر' : 'Delivery Management', icon: MapPin },
+        {
+          href: '/admin/drivers',
+          label: locale === 'ar' ? 'إدارة السائقين والأسطول' : 'Driver Management',
+          icon: Truck,
+          permission: 'drivers.view',
+        },
+        {
+          href: '/admin/delivery-slots',
+          label: locale === 'ar' ? 'مواعيد وفترات التوصيل' : 'Delivery Slots & Schedule',
+          icon: Clock,
+          permission: 'delivery.view',
+        },
+        {
+          href: '/admin/deliveries/tracking',
+          label: locale === 'ar' ? 'إدارة التوصيل والتتبع المباشر' : 'Delivery Management',
+          icon: MapPin,
+          permission: 'delivery.view',
+        },
       ],
     },
     {
-      key: 'users',
-      title: locale === 'ar' ? 'المستخدمون والإشراف' : 'Users & Moderation',
+      key: 'communication',
+      title: locale === 'ar' ? 'التواصل والملاحظات' : 'Communications & Feedback',
       isExpandable: true,
       items: [
-        { href: '/admin/customers', label: locale === 'ar' ? 'إدارة العملاء' : 'Customer Management', icon: Users },
-        { href: '/admin/notifications', label: locale === 'ar' ? 'إدارة الإشعارات' : 'Notification Management', icon: Bell },
-        { href: '/admin/feedback', label: locale === 'ar' ? 'إدارة الملاحظات' : 'Feedback Management', icon: MessageSquare },
+        {
+          href: '/admin/notifications',
+          label: locale === 'ar' ? 'إدارة الإشعارات' : 'Notification Management',
+          icon: Bell,
+        },
+        {
+          href: '/admin/feedback',
+          label: locale === 'ar' ? 'إدارة الملاحظات' : 'Feedback Management',
+          icon: MessageSquare,
+        },
       ],
     },
   ];
 
+  // Filter categories and menu items dynamically based on assigned RBAC permissions
+  const visibleCategories = navCategories
+    .map((cat) => ({
+      ...cat,
+      items: cat.items.filter((item) => !item.permission || hasPermission(item.permission)),
+    }))
+    .filter((cat) => cat.items.length > 0);
+
   // Single Accordion State: Only 1 category expanded at a time
-  const [activeCategoryKey, setActiveCategoryKey] = useState('finance');
+  const [activeCategoryKey, setActiveCategoryKey] = useState('identity_access');
 
   // Auto-expand category containing current active route
   useEffect(() => {
-    const matched = navCategories.find((cat) =>
+    const matched = visibleCategories.find((cat) =>
       cat.items.some((item) => item.href === pathname)
     );
     if (matched && matched.isExpandable) {
@@ -122,9 +229,29 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
       >
         {/* Navigation Items */}
         <div className="p-5 space-y-5 overflow-y-auto custom-scrollbar flex-1">
-          
+          {/* Admin User Role Tag */}
+          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-black text-slate-700 truncate max-w-[140px]">
+                {user?.profile?.name || user?.name || user?.email?.split('@')[0] || 'Admin'}
+              </span>
+            </div>
+            <span
+              className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                isSuperAdmin
+                  ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+              }`}
+            >
+              {isSuperAdmin
+                ? 'Super Admin'
+                : user?.roles?.[0]?.name || 'Sub-Admin'}
+            </span>
+          </div>
+
           <nav className="space-y-4">
-            {navCategories.map((cat) => {
+            {visibleCategories.map((cat) => {
               const isExpanded = !cat.isExpandable || activeCategoryKey === cat.key;
               const hasActiveChild = cat.items.some((item) => pathname === item.href);
 

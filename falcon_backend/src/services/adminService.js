@@ -1,4 +1,4 @@
-const { User, Driver, Customer, Order, Payment, Product, Delivery, DriverAssignment, OrderStatusHistory, DriverLocation, Feedback, sequelize } = require('../models');
+const { User, Driver, Customer, Admin, Order, Payment, Product, Delivery, DriverAssignment, OrderStatusHistory, DriverLocation, Feedback, sequelize } = require('../models');
 const { hashPassword } = require('../utils/password');
 const ROLES = require('../constants/roles');
 const { ORDER_STATUS } = require('../constants/orderStatus');
@@ -735,6 +735,166 @@ class AdminService {
     if (!notif) throw new Error('Notification not found');
     await notif.destroy();
     return { success: true };
+  }
+
+  // --- Role-Based Access Control (RBAC) & Identity Management ---
+  async getRbacOverview(options = {}) {
+    const { search, role, status } = options;
+    const { Op } = require('sequelize');
+
+    const where = {};
+    if (role && role !== 'ALL') {
+      where.role = role;
+    }
+    if (status && status !== 'ALL') {
+      where.status = status;
+    }
+    if (search && search.trim()) {
+      const q = `%${search.trim()}%`;
+      where[Op.or] = [
+        { email: { [Op.iLike]: q } },
+        { mobile: { [Op.iLike]: q } },
+      ];
+    }
+
+    const users = await User.findAll({
+      where,
+      include: [
+        { model: Admin, as: 'admin', attributes: ['id', 'name', 'department'] },
+        { model: Driver, as: 'driver', attributes: ['id', 'license_number', 'vehicle_details', 'driver_status', 'availability_status'] },
+        { model: Customer, as: 'customer', attributes: ['id', 'first_name', 'last_name'] },
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+
+    const adminCount = await User.count({ where: { role: ROLES.ADMIN } });
+    const driverCount = await User.count({ where: { role: ROLES.DRIVER } });
+    const customerCount = await User.count({ where: { role: ROLES.CUSTOMER } });
+    const activeCount = await User.count({ where: { status: 'ACTIVE' } });
+    const inactiveCount = await User.count({ where: { status: 'INACTIVE' } });
+
+    return {
+      users,
+      stats: {
+        adminCount,
+        driverCount,
+        customerCount,
+        activeCount,
+        inactiveCount,
+        totalCount: adminCount + driverCount + customerCount,
+      },
+    };
+  }
+
+  async updateUserRole(userId, newRole) {
+    if (![ROLES.ADMIN, ROLES.DRIVER, ROLES.CUSTOMER].includes(newRole)) {
+      throw new Error(`Invalid role: ${newRole}`);
+    }
+
+    const user = await User.findByPk(userId, {
+      include: ['admin', 'driver', 'customer'],
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    await user.update({ role: newRole });
+
+    // If upgraded/assigned to ADMIN and no Admin profile exists, create one
+    if (newRole === ROLES.ADMIN && !user.admin) {
+      const name = user.customer
+        ? `${user.customer.first_name || ''} ${user.customer.last_name || ''}`.trim()
+        : user.email.split('@')[0];
+      await Admin.create({
+        user_id: user.id,
+        name: name || 'Admin Officer',
+        department: 'Operations',
+      });
+    }
+
+    return await User.findByPk(userId, {
+      include: [
+        { model: Admin, as: 'admin' },
+        { model: Driver, as: 'driver' },
+        { model: Customer, as: 'customer' },
+      ],
+    });
+  }
+
+  async toggleUserStatus(userId, status) {
+    if (!['ACTIVE', 'INACTIVE'].includes(status)) {
+      throw new Error('Status must be ACTIVE or INACTIVE');
+    }
+    const user = await User.findByPk(userId);
+    if (!user) throw new Error('User not found');
+    await user.update({ status });
+    return await User.findByPk(userId, {
+      include: [
+        { model: Admin, as: 'admin' },
+        { model: Driver, as: 'driver' },
+        { model: Customer, as: 'customer' },
+      ],
+    });
+  }
+
+  async createRbacUser(data) {
+    const { email, mobile, password, role, name, department } = data;
+    const { Op } = require('sequelize');
+
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [{ email }, { mobile }],
+      },
+    });
+
+    if (existingUser) {
+      throw new Error('Email or mobile number is already registered');
+    }
+
+    const assignedRole = role || ROLES.ADMIN;
+    const hashedPassword = await hashPassword(password || 'Admin@123456');
+
+    return await sequelize.transaction(async (t) => {
+      const user = await User.create({
+        email,
+        mobile,
+        password_hash: hashedPassword,
+        role: assignedRole,
+        status: 'ACTIVE',
+      }, { transaction: t });
+
+      if (assignedRole === ROLES.ADMIN) {
+        await Admin.create({
+          user_id: user.id,
+          name: name || email.split('@')[0],
+          department: department || 'General Administration',
+        }, { transaction: t });
+      } else if (assignedRole === ROLES.CUSTOMER) {
+        const parts = (name || 'Customer User').trim().split(' ');
+        await Customer.create({
+          user_id: user.id,
+          first_name: parts[0] || 'Customer',
+          last_name: parts.slice(1).join(' ') || 'User',
+        }, { transaction: t });
+      } else if (assignedRole === ROLES.DRIVER) {
+        await Driver.create({
+          user_id: user.id,
+          license_number: 'LIC-' + Date.now().toString().slice(-6),
+          vehicle_details: 'Falcon Fleet Vehicle',
+          driver_status: 'ACTIVE',
+          availability_status: 'OFFLINE',
+        }, { transaction: t });
+      }
+
+      return await User.findByPk(user.id, {
+        include: [
+          { model: Admin, as: 'admin' },
+          { model: Driver, as: 'driver' },
+          { model: Customer, as: 'customer' },
+        ],
+        transaction: t,
+      });
+    });
   }
 }
 

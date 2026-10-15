@@ -107,6 +107,20 @@ class AuthController {
         role: req.user.role,
         profile: req.user.customer || req.user.driver || req.user.admin,
       };
+
+      if (req.user.role === 'ADMIN') {
+        user.isSuperAdmin = !!req.user.isSuperAdmin;
+        user.roles = req.user.assigned_roles
+          ? req.user.assigned_roles.map((r) => ({
+              id: r.id,
+              name: r.name,
+              slug: r.slug,
+              description: r.description,
+            }))
+          : [];
+        user.permissions = req.user.permissions || [];
+      }
+
       return sendSuccess(res, 'User profile retrieved', { user });
     } catch (error) {
       return sendError(res, error.message, [], 500);

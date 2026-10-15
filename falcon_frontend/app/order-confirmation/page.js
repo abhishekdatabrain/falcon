@@ -322,106 +322,7 @@ function OrderConfirmationContent() {
                     </div>
                 </div>
 
-                {/* STEPPER TIMELINE CARD */}
-                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#05A764] animate-pulse" />
-                            <h2 className="text-xs sm:text-sm font-black text-[#05A764] tracking-wider uppercase font-sans">
-                                LIVE DISPATCH TRACKER
-                            </h2>
-                        </div>
-
-                        <span className="text-xs font-semibold text-slate-500 font-sans">
-                            Step 3 of 4: <strong className="text-slate-900">Courier En Route</strong>
-                        </span>
-                    </div>
-
-                    {/* 4 Step Timeline Progress Bar */}
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2 relative">
-
-                        {/* Step 1: Order Placed */}
-                        <div className="flex flex-col space-y-1.5 relative">
-                            <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-[#05A764] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs z-10">
-                                    <Check className="w-4 h-4 stroke-[3]" />
-                                </div>
-                                <div className="h-1 bg-[#05A764] flex-1 rounded-full hidden sm:block" />
-                            </div>
-                            <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
-                                Order Placed
-                            </h3>
-                            <p className="text-[11px] text-slate-500 font-medium">
-                                {formatPlacedTime(order?.createdAt || order?.created_at || order?.placed_at)} • Verified
-                            </p>
-                            <p className="text-[11px] font-black text-emerald-700 font-sans">
-                                Payment Approved
-                            </p>
-                        </div>
-
-                        {/* Step 2: Packed with Care */}
-                        <div className="flex flex-col space-y-1.5 relative">
-                            <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-[#05A764] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs z-10">
-                                    <Box className="w-3.5 h-3.5 stroke-[2.5]" />
-                                </div>
-                                <div className="h-1 bg-[#05A764] flex-1 rounded-full hidden sm:block" />
-                            </div>
-                            <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
-                                Packed with Care
-                            </h3>
-                            <p className="text-[11px] text-slate-500 font-medium">
-                                Inspected • Central Hub
-                            </p>
-                            <p className="text-[11px] font-black text-emerald-700 font-sans">
-                                Cold-chain insulated
-                            </p>
-                        </div>
-
-                        {/* Step 3: Out for Delivery (ACTIVE) */}
-                        <div className="flex flex-col space-y-1.5 relative">
-                            <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-[#05A764] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-md ring-4 ring-emerald-100 z-10">
-                                    <Truck className="w-3.5 h-3.5 stroke-[2.5]" />
-                                </div>
-                                <div className="h-1 bg-slate-200 flex-1 rounded-full hidden sm:block" />
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
-                                    Out for Delivery
-                                </h3>
-                                <span className="bg-[#05A764] text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase font-sans">
-                                    Active
-                                </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 font-medium">
-                                Live Courier Delivery
-                            </p>
-                            <p className="text-[11px] font-black text-amber-600 font-sans">
-                                Estimated in 18 mins
-                            </p>
-                        </div>
-
-                        {/* Step 4: Delivered to Door */}
-                        <div className="flex flex-col space-y-1.5 relative">
-                            <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 border border-slate-200 flex items-center justify-center font-bold text-xs shrink-0 z-10">
-                                    <Home className="w-3.5 h-3.5" />
-                                </div>
-                            </div>
-                            <h3 className="font-bold text-xs sm:text-sm text-slate-400 font-sans">
-                                Delivered to Door
-                            </h3>
-                            <p className="text-[11px] text-slate-400 font-medium">
-                                Estimated 3:25 PM
-                            </p>
-                            <p className="text-[11px] font-semibold text-slate-400 font-sans">
-                                Contactless handoff
-                            </p>
-                        </div>
-
-                    </div>
-                </div>
+               
 
                 {/* MAIN 2-COLUMN SECTION */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -429,104 +330,7 @@ function OrderConfirmationContent() {
                     {/* LEFT COLUMN: Map Telemetry & Driver Details (8 Columns) */}
                     <div className="lg:col-span-8 space-y-6">
 
-                        {/* LIVE GPS MAP CARD */}
-                        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
-
-                            {/* Header */}
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <Navigation className="w-4 h-4 text-[#05A764]" />
-                                        <h2 className="font-extrabold text-sm sm:text-base text-slate-900 font-sans">
-                                            Real-Time Route Telemetry
-                                        </h2>
-                                    </div>
-                                    <p className="text-xs text-slate-500 font-medium mt-0.5">
-                                        Express Van is 2.4 km from your pin
-                                    </p>
-                                </div>
-
-                                <span className="bg-slate-900 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 font-sans">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                    Live GPS
-                                </span>
-                            </div>
-
-                            {/* Map View Box */}
-                            <div className="relative w-full h-80 rounded-2xl overflow-hidden border border-slate-200/80 shadow-inner">
-                                <LiveTrackingMap
-                                    destLat={order?.address?.latitude ? parseFloat(order.address.latitude) : 24.7136}
-                                    destLng={order?.address?.longitude ? parseFloat(order.address.longitude) : 46.6753}
-                                    title={`${driverInfo.name} (${driverInfo.van || 'Toyota HiAce'})`}
-                                />
-
-                                {/* Top-Left Traffic Status Tag */}
-                                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-2 text-xs font-extrabold text-slate-800 z-10">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                                    <span>Traffic Speed: <strong className="text-slate-900">Normal Flow • King Fahd Rd</strong></span>
-                                </div>
-
-                                {/* Bottom-Right Temperature Sensor Tag */}
-                                <div className="absolute bottom-3 right-3 bg-[#043927] text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-500/30 shadow-md flex items-center gap-1.5 text-xs font-black font-sans z-10">
-                                    <Thermometer className="w-4 h-4 text-emerald-400" />
-                                    <span>Refrigerated Cargo Temp: 3.8°C</span>
-                                </div>
-                            </div>
-
-                            {/* Courier Info Bar below Map */}
-                            <div className="bg-[#F5F6F8] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-slate-200/60">
-                                <div className="flex items-center gap-3">
-                                    {/* Courier Avatar */}
-                                    <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-xs shrink-0 bg-slate-200">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
-                                            alt={driverInfo.name}
-                                            className="w-full h-full object-cover"
-                                        />
-                                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
-                                    </div>
-
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="font-extrabold text-sm text-slate-900 font-sans">
-                                                {driverInfo.name}
-                                            </h3>
-                                            <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                                                ★ {driverInfo.rating || '4.98'}
-                                            </span>
-                                        </div>
-
-                                        <p className="text-[11px] text-slate-500 font-semibold">
-                                            Top Express Delivery Specialist • {driverInfo.drops || '1,420+ drops'}
-                                        </p>
-                                        <p className="text-[11px] text-slate-400 font-medium">
-                                            Van: {driverInfo.van || 'Toyota HiAce • KSA 4812 ABC'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Driver Buttons */}
-                                <div className="flex items-center gap-2">
-                                    <a
-                                        href={`tel:${driverInfo.phone || '+966501234567'}`}
-                                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer font-sans"
-                                    >
-                                        <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                                        <span>Call {driverInfo.name.split(' ')[0]}</span>
-                                    </a>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => showToast(locale === 'ar' ? 'جاري فتح محادثة السائق...' : 'Opening driver chat...', 'info')}
-                                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-200/80 hover:bg-slate-300 text-slate-800 text-xs font-black transition-colors flex items-center justify-center gap-1.5 cursor-pointer font-sans"
-                                    >
-                                        <MessageSquare className="w-3.5 h-3.5 text-slate-700" />
-                                        <span>Message</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                        </div>
+                       
 
                         {/* DELIVERY DESTINATION CARD */}
                         <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
@@ -695,22 +499,13 @@ function OrderConfirmationContent() {
                                     <span className="font-extrabold text-slate-900">SAR {subtotalVal.toFixed(2)}</span>
                                 </div>
 
-                                <div className="flex justify-between">
-                                    <span>Express Refrigerated Delivery</span>
-                                    <span className="font-black text-[#05A764]">
-                                        {deliveryFeeVal > 0 ? `SAR ${deliveryFeeVal.toFixed(2)}` : 'FREE (VIP Member)'}
-                                    </span>
-                                </div>
-
+                               
                                 <div className="flex justify-between text-slate-500">
                                     <span>Standard VAT (15% included)</span>
                                     <span>SAR {vatVal.toFixed(2)}</span>
                                 </div>
 
-                                <div className="flex justify-between text-emerald-700 font-extrabold">
-                                    <span>Loyalty Points Earned</span>
-                                    <span>+{Math.round(grandTotalVal)} FreshPoints</span>
-                                </div>
+                                
 
                                 <div className="border-t border-dashed border-slate-200 pt-3 my-2" />
 

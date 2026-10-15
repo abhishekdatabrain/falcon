@@ -99,7 +99,7 @@ class OrderService {
         delivery_date: deliveryDate || null,
         delivery_slot: deliverySlot || null,
         grand_total: calculatedGrandTotal,
-        order_status: ORDER_STATUS.PENDING_PAYMENT,
+        order_status: ORDER_STATUS.CONFIRMED,
         payment_method: paymentMethod || 'COD',
         notes,
       }, { transaction: t });
@@ -157,7 +157,7 @@ class OrderService {
       await Payment.create({
         order_id: order.id,
         amount: calculatedGrandTotal,
-        status: PAYMENT_STATUS.PENDING,
+        status: PAYMENT_STATUS.PAID,
         payment_method: paymentMethod || 'COD',
         payment_gateway: paymentMethod || 'COD',
       }, { transaction: t });
@@ -198,7 +198,16 @@ class OrderService {
   }
 
   async getOrderConfirmation(orderId) {
+    if (!orderId) {
+      throw new Error('Order identifier is required');
+    }
+
+    const cleanIdentifier = String(orderId).trim().replace(/^#/, '');
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanIdentifier);
+    const where = isUuid ? { id: cleanIdentifier } : { order_number: cleanIdentifier };
+
     const options = {
+      where,
       include: [
         { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] },
         { model: Address, as: 'address' },
@@ -207,13 +216,14 @@ class OrderService {
         { model: Payment, as: 'payment', include: ['confirmation'] },
         { model: Delivery, as: 'delivery', include: [{ model: Driver, as: 'driver', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] }] },
         { model: Feedback, as: 'feedback' },
+        { model: Invoice, as: 'invoice' },
       ],
       order: [
         [{ model: OrderStatusHistory, as: 'status_history' }, 'createdAt', 'ASC'],
       ],
     };
 
-    const order = await Order.findByPk(orderId, options);
+    const order = await Order.findOne(options);
     if (!order) {
       throw new Error('Order not found');
     }
@@ -672,6 +682,23 @@ class OrderService {
 
       return order;
     });
+
+    if (newStatus === ORDER_STATUS.CANCELLED) {
+      const auditService = require('./auditService');
+      await auditService.log({
+        userId: changedByUserId,
+        action: 'CANCEL_ORDER',
+        module: 'orders',
+        entityType: 'Order',
+        entityId: order.id,
+        details: {
+          orderNumber: order.order_number,
+          prevStatus: currentStatus,
+          newStatus,
+          reason: notes,
+        },
+      });
+    }
 
     const { emitOrderStatusUpdate } = require('../sockets/socketManager');
     emitOrderStatusUpdate({

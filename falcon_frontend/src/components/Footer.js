@@ -16,7 +16,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="relative bg-[#043927] text-slate-200 font-sans mt-16 overflow-hidden">
+    <footer className="relative bg-[#043927] text-slate-200 font-sans overflow-hidden">
       
       {/* Top Decorative Wave Divider */}
       <div className="w-full bg-white leading-none relative z-10 pointer-events-none -mb-1">

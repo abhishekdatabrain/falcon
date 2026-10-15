@@ -33,6 +33,11 @@ const HomepageSection = require('./HomepageSection');
 const HomepageSetting = require('./HomepageSetting');
 const Coupon = require('./Coupon');
 const DeliverySlot = require('./DeliverySlot');
+const Role = require('./Role');
+const Permission = require('./Permission');
+const RolePermission = require('./RolePermission');
+const AdminUserRole = require('./AdminUserRole');
+const AuditLog = require('./AuditLog');
 
 // --- User Associations ---
 User.hasOne(Customer, { foreignKey: 'user_id', as: 'customer', onDelete: 'CASCADE' });
@@ -124,6 +129,9 @@ Payment.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
 Payment.hasOne(PaymentConfirmation, { foreignKey: 'payment_id', as: 'confirmation', onDelete: 'CASCADE' });
 PaymentConfirmation.belongsTo(Payment, { foreignKey: 'payment_id', as: 'payment' });
 
+Payment.belongsTo(Admin, { foreignKey: 'verified_by_admin_id', as: 'verified_by_admin' });
+Admin.hasMany(Payment, { foreignKey: 'verified_by_admin_id', as: 'verified_payments' });
+
 // --- Driver & Assignment Associations ---
 Order.hasMany(DriverAssignment, { foreignKey: 'order_id', as: 'assignments', onDelete: 'CASCADE' });
 DriverAssignment.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
@@ -164,6 +172,41 @@ HomepageCategorySection.hasMany(HomepageCategoryItem, { foreignKey: 'section_id'
 HomepageCategoryItem.belongsTo(HomepageCategorySection, { foreignKey: 'section_id', as: 'section' });
 HomepageCategoryItem.belongsTo(Category, { foreignKey: 'category_id', as: 'category' });
 
+// --- Role-Based Access Control (RBAC) Associations ---
+Role.belongsToMany(Permission, {
+  through: RolePermission,
+  foreignKey: 'role_id',
+  otherKey: 'permission_id',
+  as: 'permissions',
+});
+Permission.belongsToMany(Role, {
+  through: RolePermission,
+  foreignKey: 'permission_id',
+  otherKey: 'role_id',
+  as: 'roles',
+});
+
+User.belongsToMany(Role, {
+  through: AdminUserRole,
+  foreignKey: 'user_id',
+  otherKey: 'role_id',
+  as: 'assigned_roles',
+});
+Role.belongsToMany(User, {
+  through: AdminUserRole,
+  foreignKey: 'role_id',
+  otherKey: 'user_id',
+  as: 'users',
+});
+
+AdminUserRole.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+AdminUserRole.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
+RolePermission.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
+RolePermission.belongsTo(Permission, { foreignKey: 'permission_id', as: 'permission' });
+
+User.hasMany(AuditLog, { foreignKey: 'user_id', as: 'audit_logs' });
+AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 module.exports = {
   sequelize,
   User,
@@ -200,4 +243,9 @@ module.exports = {
   HomepageSetting,
   Coupon,
   DeliverySlot,
+  Role,
+  Permission,
+  RolePermission,
+  AdminUserRole,
+  AuditLog,
 };

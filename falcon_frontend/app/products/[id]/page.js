@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
@@ -21,8 +21,10 @@ import {
   Calendar,
   Sparkles,
   ArrowRight,
+  ChevronLeft,
   ChevronRight,
   Ban,
+  Activity,
 } from 'lucide-react';
 
 // const DEMO_EGG_PRODUCT = {
@@ -73,6 +75,41 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState('description');
   const [addingRelId, setAddingRelId] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const relatedScrollRef = useRef(null);
+  const [canScrollRelLeft, setCanScrollRelLeft] = useState(false);
+  const [canScrollRelRight, setCanScrollRelRight] = useState(true);
+
+  const checkRelatedScroll = () => {
+    if (relatedScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = relatedScrollRef.current;
+      const maxScroll = scrollWidth - clientWidth;
+      const current = Math.abs(scrollLeft);
+      setCanScrollRelLeft(current > 8);
+      setCanScrollRelRight(current < maxScroll - 8);
+    }
+  };
+
+  const scrollRelated = (direction) => {
+    if (relatedScrollRef.current) {
+      const container = relatedScrollRef.current;
+      const scrollAmount = Math.max(container.clientWidth * 0.75, 260);
+      const isRtl = locale === 'ar';
+      let offset = direction === 'right' ? scrollAmount : -scrollAmount;
+      if (isRtl) offset = -offset;
+      container.scrollBy({ left: offset, behavior: 'smooth' });
+      setTimeout(checkRelatedScroll, 350);
+    }
+  };
+
+  useEffect(() => {
+    checkRelatedScroll();
+    const timer = setTimeout(checkRelatedScroll, 400);
+    window.addEventListener('resize', checkRelatedScroll);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', checkRelatedScroll);
+    };
+  }, [relatedProducts, locale]);
 
   const fetchRelatedProducts = async (currentProd) => {
     if (!currentProd) return;
@@ -99,41 +136,41 @@ export default function ProductDetailPage() {
           if (isProductValid(item)) {
             seenIds.add(String(item.id));
             collected.push(item);
-            if (collected.length >= 5) break;
+            if (collected.length >= 20) break;
           }
         }
       };
 
       // 1. Fetch by Sub-Subcategory first
-      if (subSubCatId && collected.length < 5) {
-        const res = await fetchApi(`/products?subSubcategoryId=${subSubCatId}&limit=10`);
+      if (subSubCatId && collected.length < 20) {
+        const res = await fetchApi(`/products?subSubcategoryId=${subSubCatId}&limit=20`);
         const items = res?.data?.products || res?.products || res?.data || [];
         appendProducts(items);
       }
 
       // 2. Fetch by Subcategory next if not enough
-      if (subCatId && collected.length < 5) {
-        const res = await fetchApi(`/products?subcategoryId=${subCatId}&limit=10`);
+      if (subCatId && collected.length < 20) {
+        const res = await fetchApi(`/products?subcategoryId=${subCatId}&limit=20`);
         const items = res?.data?.products || res?.products || res?.data || [];
         appendProducts(items);
       }
 
       // 3. Fetch by Category next if not enough
-      if (catId && collected.length < 5) {
-        const res = await fetchApi(`/products?categoryId=${catId}&limit=10`);
+      if (catId && collected.length < 20) {
+        const res = await fetchApi(`/products?categoryId=${catId}&limit=20`);
         const items = res?.data?.products || res?.products || res?.data || [];
         appendProducts(items);
       }
 
-      // 4. Fetch general active products fallback if still under 5
-      if (collected.length < 5) {
-        const res = await fetchApi(`/products?limit=10`);
+      // 4. Fetch general active products fallback if still under 20
+      if (collected.length < 20) {
+        const res = await fetchApi(`/products?limit=20`);
         const items = res?.data?.products || res?.products || res?.data || [];
         appendProducts(items);
       }
 
       if (collected.length > 0) {
-        setRelatedProducts(collected.slice(0, 5));
+        setRelatedProducts(collected.slice(0, 20));
       } else {
         setRelatedProducts([]);
       }
@@ -464,12 +501,7 @@ export default function ProductDetailPage() {
               </span>
             )}
 
-            {/* Discount Percentage */}
-            {vatPercent > 0 && (
-              <span className="text-[#05A764] font-extrabold text-lg sm:text-xl">
-                {locale === 'ar' ? `خصم ${vatPercent}٪` : `${vatPercent}% Off`}
-              </span>
-            )}
+          
           </div>
 
           {/* Dynamic Variant Selector (Has Variants) */}
@@ -693,52 +725,56 @@ export default function ProductDetailPage() {
             <div className="lg:col-span-7 space-y-4">
               <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 font-sans tracking-tight">
                 {locale === 'ar'
-                  ? (product?.tag_ar || product?.name_ar || 'طازج طبيعياً. رائع دائماً.')
-                  : (product?.tag_en || product?.name_en || 'Naturally Fresh. Always Good.')}
+                  ? (product?.description_title_ar || product?.tag_ar || product?.name_ar || 'طازج طبيعياً')
+                  : (product?.description_title_en || product?.tag_en || product?.name_en || 'Naturally Fresh')}
               </h3>
-              <p className="text-slate-600 font-medium text-xs sm:text-sm leading-relaxed whitespace-pre-line">
-                {locale === 'ar'
-                  ? (product?.long_description_ar || product?.description_ar || product?.description || 'منتج طازج ومغذي عالي الجودة.')
-                  : (product?.long_description_en || product?.description_en || product?.description || 'High quality fresh and nutritious product sourced from trusted local producers.')}
-              </p>
 
-              {/* Dynamic Feature Bullets */}
-              <div className="space-y-2.5 pt-2 text-xs sm:text-sm font-semibold text-slate-800">
-                {(() => {
-                  let list = product?.features || product?.highlights || product?.bullets || product?.key_features;
-                  if (typeof list === 'string') {
-                    try { list = JSON.parse(list); } catch (e) { list = list.split('\n').filter(Boolean); }
-                  }
-                  if (Array.isArray(list) && list.length > 0) {
-                    return list.map((item) => {
-                      if (typeof item === 'object' && item !== null) {
-                        return locale === 'ar' ? (item.ar || item.en || '') : (item.en || item.ar || '');
-                      }
-                      return String(item);
-                    });
-                  }
-                  return locale === 'ar'
-                    ? [
-                      '١٠٠٪ طبيعي وطازج',
-                      'غني بالبروتين والفيتامينات والمعادن',
-                      'بدون ألوان صناعية أو مواد حافظة',
-                      'إنتاج محلي عالي الجودة',
-                    ]
-                    : [
-                      '100% natural and farm fresh',
-                      'Rich in essential nutrients, protein and vitamins',
-                      'No artificial colors or preservatives',
-                      'Locally sourced premium quality product',
-                    ];
-                })().map((featureText, idx) => (
-                  <div key={idx} className="flex items-center gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-[#05A764] text-white flex items-center justify-center shrink-0">
-                      <Check className="w-3 h-3" />
+              {/* Product Detailed Description */}
+              {((locale === 'ar' ? (product?.long_description_ar || product?.description_ar) : (product?.long_description_en || product?.description_en)) || product?.description) ? (
+                <p className="text-slate-600 font-medium text-xs sm:text-sm leading-relaxed whitespace-pre-line">
+                  {locale === 'ar'
+                    ? (product?.long_description_ar || product?.description_ar || product?.description)
+                    : (product?.long_description_en || product?.description_en || product?.description)}
+                </p>
+              ) : (
+                <p className="text-slate-400 font-medium text-xs sm:text-sm italic">
+                  {locale === 'ar' ? 'لا يوجد وصف متاح لهذا المنتج حالياً.' : 'No description available for this product yet.'}
+                </p>
+              )}
+
+              {/* Dynamic Feature Bullets / Highlights */}
+              {(() => {
+                let list = product?.highlights || product?.features || product?.bullets || product?.key_features;
+                if (typeof list === 'string') {
+                  try { list = JSON.parse(list); } catch (e) { list = list.split('\n').filter(Boolean); }
+                }
+                if (Array.isArray(list) && list.length > 0) {
+                  const validItems = list.map((item) => {
+                    if (typeof item === 'object' && item !== null) {
+                      return locale === 'ar'
+                        ? (item.text_ar || item.ar || item.text_en || item.en || '')
+                        : (item.text_en || item.en || item.text_ar || item.ar || '');
+                    }
+                    return String(item);
+                  }).filter(Boolean);
+
+                  if (validItems.length === 0) return null;
+
+                  return (
+                    <div className="space-y-2.5 pt-2 text-xs sm:text-sm font-semibold text-slate-800">
+                      {validItems.map((featureText, idx) => (
+                        <div key={idx} className="flex items-center gap-2.5">
+                          <div className="w-4 h-4 rounded-full bg-[#05A764] text-white flex items-center justify-center shrink-0">
+                            <Check className="w-3 h-3" />
+                          </div>
+                          <span>{featureText}</span>
+                        </div>
+                      ))}
                     </div>
-                    <span>{featureText}</span>
-                  </div>
-                ))}
-              </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
 
             {/* Right Banner Image (Dynamic Product Image) */}
@@ -761,56 +797,118 @@ export default function ProductDetailPage() {
         )}
 
         {activeTab === 'nutrition' && (
-          <div className="pt-2 max-w-xl space-y-3 text-xs sm:text-sm">
-            <h4 className="font-bold text-slate-900">
-              {locale === 'ar'
-                ? `القيم الغذائية (${product?.name_ar || product?.name_en || ''}):`
-                : `Nutrition Facts (${product?.name_en || product?.name_ar || ''}):`}
+          <div className="pt-2 max-w-xl space-y-3 text-xs sm:text-sm font-sans">
+            <h4 className="font-bold text-slate-900 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-600" />
+              <span>
+                {locale === 'ar'
+                  ? `القيم الغذائية (${product?.name_ar || product?.name_en || ''}):`
+                  : `Nutrition Facts (${product?.name_en || product?.name_ar || ''}):`}
+              </span>
             </h4>
-            <div className="grid grid-cols-2 gap-3 text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-              {(() => {
-                let nut = product?.nutrition_facts || product?.nutrition || product?.nutritional_info;
-                if (typeof nut === 'string') {
-                  try { nut = JSON.parse(nut); } catch (e) { nut = nut.split('\n').filter(Boolean); }
+
+            {(() => {
+              let nut = product?.nutrition_facts || product?.nutrition || product?.nutritional_info;
+              if (typeof nut === 'string') {
+                try { nut = JSON.parse(nut); } catch (e) { nut = {}; }
+              }
+
+              const labels = {
+                serving_size: locale === 'ar' ? 'حجم الحصة' : 'Serving Size',
+                calories: locale === 'ar' ? 'السعرات الحرارية' : 'Calories',
+                protein: locale === 'ar' ? 'البروتين' : 'Protein',
+                carbohydrates: locale === 'ar' ? 'الكربوهيدرات' : 'Carbohydrates',
+                fat: locale === 'ar' ? 'الدهون الكلية' : 'Total Fat',
+                fiber: locale === 'ar' ? 'الألياف الغذائية' : 'Dietary Fiber',
+                sugar: locale === 'ar' ? 'السكريات' : 'Sugars',
+                vitamins: locale === 'ar' ? 'الفيتامينات' : 'Vitamins',
+                minerals: locale === 'ar' ? 'المعادن' : 'Minerals',
+              };
+
+              let entries = [];
+              if (Array.isArray(nut) && nut.length > 0) {
+                entries = nut.map((item) => {
+                  if (typeof item === 'object' && item !== null) {
+                    return [item.label || item.name || 'Nutrient', item.value || ''];
+                  }
+                  const parts = String(item).split(':');
+                  return [parts[0], parts.slice(1).join(':').trim()];
+                }).filter(([_, v]) => Boolean(v));
+              } else if (typeof nut === 'object' && nut !== null) {
+                const knownKeys = ['serving_size', 'calories', 'protein', 'carbohydrates', 'fat', 'fiber', 'sugar', 'vitamins', 'minerals'];
+                for (const k of knownKeys) {
+                  if (nut[k] && String(nut[k]).trim() !== '') {
+                    entries.push([labels[k] || k, String(nut[k]).trim()]);
+                  }
                 }
-                if (Array.isArray(nut) && nut.length > 0) {
-                  return nut.map((item) => typeof item === 'object' ? `${item.name || item.label}: ${item.value}` : String(item));
+                for (const [k, v] of Object.entries(nut)) {
+                  if (!knownKeys.includes(k) && v && String(v).trim() !== '') {
+                    entries.push([k.replace(/_/g, ' '), String(v).trim()]);
+                  }
                 }
-                if (typeof nut === 'object' && nut !== null) {
-                  return Object.entries(nut).map(([k, v]) => `${k}: ${v}`);
-                }
-                return [
-                  'Calories: 72 kcal',
-                  'Protein: 6.3 g',
-                  'Total Fat: 4.8 g',
-                  'Cholesterol: 186 mg',
-                  'Vitamin D: 1 mcg',
-                  'Calcium: 28 mg',
-                ];
-              })().map((factStr, idx) => (
-                <div key={idx}>• {factStr}</div>
-              ))}
-            </div>
+              }
+
+              if (entries.length === 0) {
+                return (
+                  <div className="bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-200 text-center text-slate-400 text-xs sm:text-sm">
+                    {locale === 'ar' ? 'معلومات القيمة الغذائية غير متوفرة لهذا المنتج حالياً.' : 'Nutrition information is not available for this product yet.'}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5">
+                  {nut?.serving_size && (
+                    <div className="pb-2 mb-2 border-b border-slate-200/80 flex items-center justify-between text-xs font-bold text-emerald-800 bg-emerald-50/60 px-3 py-1.5 rounded-xl">
+                      <span>{locale === 'ar' ? 'حجم الحصة' : 'Serving Size'}</span>
+                      <span className="font-extrabold">{nut.serving_size}</span>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-2.5 text-slate-700">
+                    {entries
+                      .filter(([label]) => label !== labels.serving_size && label !== 'serving_size')
+                      .map(([label, val], idx) => (
+                        <div key={idx} className="bg-white p-2.5 rounded-xl border border-slate-200/70 flex flex-col justify-between shadow-2xs">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{label}</span>
+                          <span className="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5">{val}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 
         {activeTab === 'reviews' && (
           <div className="pt-2 space-y-4 max-w-xl text-xs sm:text-sm">
-            <div className="flex items-center gap-3 bg-amber-50 p-4 rounded-2xl border border-amber-200">
-              <span className="text-3xl font-black text-amber-600">
-                {product?.rating !== undefined && product?.rating !== null && product?.rating !== ''
-                  ? Number(product.rating).toFixed(1)
-                  : (product?.avg_rating ? Number(product.avg_rating).toFixed(1) : '4.8')}
-              </span>
-              <div>
-                <div className="text-amber-500 font-extrabold text-sm">★ ★ ★ ★ ★</div>
-                <span className="text-slate-600 font-medium">
-                  {locale === 'ar'
-                    ? `بناءً على ${(product?.reviews_count !== undefined && product?.reviews_count !== null ? Number(product.reviews_count) : (product?.reviews ? Number(product.reviews) : (product?.review_count ? Number(product.review_count) : 120))).toLocaleString()} تقييم موثق`
-                    : `Based on ${(product?.reviews_count !== undefined && product?.reviews_count !== null ? Number(product.reviews_count) : (product?.reviews ? Number(product.reviews) : (product?.review_count ? Number(product.review_count) : 120))).toLocaleString()} verified reviews`}
+            {Number(product?.reviews_count || product?.reviews || product?.review_count || 0) > 0 ? (
+              <div className="flex items-center gap-3 bg-amber-50 p-4 rounded-2xl border border-amber-200">
+                <span className="text-3xl font-black text-amber-600">
+                  {product?.rating !== undefined && product?.rating !== null && product?.rating !== ''
+                    ? Number(product.rating).toFixed(1)
+                    : (product?.avg_rating ? Number(product.avg_rating).toFixed(1) : '4.8')}
                 </span>
+                <div>
+                  <div className="text-amber-500 font-extrabold text-sm">★ ★ ★ ★ ★</div>
+                  <span className="text-slate-600 font-medium">
+                    {locale === 'ar'
+                      ? `بناءً على ${Number(product?.reviews_count || product?.reviews || product?.review_count).toLocaleString()} تقييم موثق`
+                      : `Based on ${Number(product?.reviews_count || product?.reviews || product?.review_count).toLocaleString()} verified reviews`}
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-200 text-center text-slate-400 space-y-1">
+                <div className="text-amber-400 text-lg">★ ★ ★ ★ ★</div>
+                <p className="font-semibold text-slate-700">
+                  {locale === 'ar' ? 'لا توجد تقييمات لهذا المنتج بعد' : 'No customer reviews yet'}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {locale === 'ar' ? 'كن أول من يقيم هذا المنتج بعد تجربته!' : 'Be the first to review this product after purchase!'}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -826,140 +924,194 @@ export default function ProductDetailPage() {
               {locale === 'ar' ? 'قد يعجبك أيضاً' : 'You May Also Like'}
             </h2>
 
-            <Link
-              href={getSeeAllLink()}
-              className="text-xs sm:text-sm font-bold text-slate-600 hover:text-[#043927] flex items-center gap-1 group transition-colors"
-            >
-              <span>{locale === 'ar' ? 'عرض الكل' : 'See All'}</span>
-              <ArrowRight className="w-4 h-4 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
-            </Link>
+            {/* Slider Navigation Controls replacing See All */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => scrollRelated('left')}
+                disabled={!canScrollRelLeft}
+                aria-label="Previous products"
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
+                  canScrollRelLeft
+                    ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
+                    : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50'
+                }`}
+              >
+                <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollRelated('right')}
+                disabled={!canScrollRelRight}
+                aria-label="Next products"
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
+                  canScrollRelRight
+                    ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
+                    : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50'
+                }`}
+              >
+                <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+              </button>
+            </div>
           </div>
 
-          {/* 5 Product Cards Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
-            {relatedProducts.slice(0, 5).map((item) => {
-              const itemImage =
-                (Array.isArray(item.images) && item.images.length > 0
-                  ? (typeof item.images[0] === 'string' ? item.images[0] : (item.images[0]?.image_url || item.images[0]?.url))
-                  : null) ||
-                item.image_url ||
-                item.image ||
-                item.img ||
-                '';
-              const itemName = locale === 'ar' ? (item.name_ar || item.name_en || item.name || item.title) : (item.name_en || item.name_ar || item.name || item.title);
-              const itemUnit = item.unit || item.tag_en || item.unit_type || (locale === 'ar' ? 'عبوة 1' : '1 Pack');
-              const itemRating = item.rating !== undefined && item.rating !== null && item.rating !== '' ? Number(item.rating).toFixed(1) : (item.avg_rating ? Number(item.avg_rating).toFixed(1) : '4.8');
-              const itemReviews = (item.reviews_count !== undefined && item.reviews_count !== null ? Number(item.reviews_count) : (item.reviews ? Number(item.reviews) : (item.review_count ? Number(item.review_count) : 120))).toLocaleString();
+          {/* Cards Carousel Container */}
+          <div className="relative group/relatedCarousel">
+            {/* Left Edge Floating Arrow */}
+            {canScrollRelLeft && (
+              <button
+                type="button"
+                onClick={() => scrollRelated('left')}
+                className="absolute -left-3.5 sm:-left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/relatedCarousel:opacity-100 cursor-pointer active:scale-95 hidden sm:flex"
+                aria-label="Scroll left"
+              >
+                <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
+              </button>
+            )}
 
-              const hasVariants = Boolean(item.has_variants && Array.isArray(item.variants) && item.variants.length > 0);
-              let finalPrice = parseFloat(item.price || 0);
-              let originalPrice = null;
+            {/* Slider Track */}
+            <div
+              ref={relatedScrollRef}
+              onScroll={checkRelatedScroll}
+              className="flex items-stretch gap-4 sm:gap-5 overflow-x-auto scrollbar-none py-2 px-1 scroll-smooth snap-x snap-mandatory"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {relatedProducts.map((item) => {
+                const itemImage =
+                  (Array.isArray(item.images) && item.images.length > 0
+                    ? (typeof item.images[0] === 'string' ? item.images[0] : (item.images[0]?.image_url || item.images[0]?.url))
+                    : null) ||
+                  item.image_url ||
+                  item.image ||
+                  item.img ||
+                  '';
+                const itemName = locale === 'ar' ? (item.name_ar || item.name_en || item.name || item.title) : (item.name_en || item.name_ar || item.name || item.title);
+                const itemUnit = item.unit || item.tag_en || item.unit_type || (locale === 'ar' ? 'عبوة 1' : '1 Pack');
+                const itemRating = item.rating !== undefined && item.rating !== null && item.rating !== '' ? Number(item.rating).toFixed(1) : (item.avg_rating ? Number(item.avg_rating).toFixed(1) : '4.8');
+                const itemReviews = (item.reviews_count !== undefined && item.reviews_count !== null ? Number(item.reviews_count) : (item.reviews ? Number(item.reviews) : (item.review_count ? Number(item.review_count) : 120))).toLocaleString();
 
-              if (hasVariants) {
-                const activeVars = item.variants.filter((v) => v.is_active !== false);
-                const varsToUse = activeVars.length > 0 ? activeVars : item.variants;
-                const prices = varsToUse
-                  .map((v) => parseFloat(v.discount_price || v.price))
-                  .filter((p) => !isNaN(p) && p > 0);
-                if (prices.length > 0) {
-                  finalPrice = Math.min(...prices);
+                const hasVariants = Boolean(item.has_variants && Array.isArray(item.variants) && item.variants.length > 0);
+                let finalPrice = parseFloat(item.price || 0);
+                let originalPrice = null;
+
+                if (hasVariants) {
+                  const activeVars = item.variants.filter((v) => v.is_active !== false);
+                  const varsToUse = activeVars.length > 0 ? activeVars : item.variants;
+                  const prices = varsToUse
+                    .map((v) => parseFloat(v.discount_price || v.price))
+                    .filter((p) => !isNaN(p) && p > 0);
+                  if (prices.length > 0) {
+                    finalPrice = Math.min(...prices);
+                  }
+                } else {
+                  const currentPrice = parseFloat(item.price || 0);
+                  const isDiscounted = item.discount_price && parseFloat(item.discount_price) < currentPrice;
+                  finalPrice = isDiscounted ? parseFloat(item.discount_price) : currentPrice;
+                  originalPrice = isDiscounted ? currentPrice : null;
                 }
-              } else {
-                const currentPrice = parseFloat(item.price || 0);
-                const isDiscounted = item.discount_price && parseFloat(item.discount_price) < currentPrice;
-                finalPrice = isDiscounted ? parseFloat(item.discount_price) : currentPrice;
-                originalPrice = isDiscounted ? currentPrice : null;
-              }
 
-              const displayPrice = isNaN(finalPrice) || finalPrice <= 0 ? (item.price || item.discount_price || '') : finalPrice.toFixed(2);
+                const displayPrice = isNaN(finalPrice) || finalPrice <= 0 ? (item.price || item.discount_price || '') : finalPrice.toFixed(2);
 
-              return (
-                <div
-                  key={item.id}
-                  className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between font-sans cursor-pointer min-h-[290px]"
-                >
-                  <Link href={`/products/${item.id}`} className="space-y-2 block">
-                    {/* Image */}
-                    <div className="w-full aspect-[4/3] rounded-xl bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center">
-                      <img
-                        src={getImageUrl(itemImage) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400'}
-                        alt={itemName}
-                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
-                        }}
-                      />
-                    </div>
-
-                    {/* Info */}
-                    <div className="space-y-1">
-                      <h3 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1 group-hover:text-[#043927] transition-colors">
-                        {itemName}
-                      </h3>
-
-                      {hasVariants ? (
-                        <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
-                          <Zap className="w-2.5 h-2.5 text-amber-500 fill-amber-400" />
-                          <span>{item.variants.length} {locale === 'ar' ? 'خيارات' : 'Options'}</span>
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-slate-400 font-semibold block">
-                          {item.unit || (item.unit_value && item.unit_type ? `${item.unit_value} ${item.unit_type}` : itemUnit)}
-                        </span>
-                      )}
-
-                      <div className="flex items-center gap-1 text-[10px] text-amber-500 font-extrabold">
-                        <span>★ {itemRating || '4.8'}</span>
-                        <span className="text-slate-400 font-normal">({itemReviews})</span>
+                return (
+                  <div
+                    key={item.id}
+                    className="w-[190px] sm:w-[215px] md:w-[230px] shrink-0 snap-start group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between font-sans cursor-pointer min-h-[290px]"
+                  >
+                    <Link href={`/products/${item.id}`} className="space-y-2 block">
+                      {/* Image */}
+                      <div className="w-full aspect-[4/3] rounded-xl bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center">
+                        <img
+                          src={getImageUrl(itemImage) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400'}
+                          alt={itemName}
+                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+                          }}
+                        />
                       </div>
 
-                      <div className="flex items-baseline gap-1.5 pt-1">
-                        <span className="font-extrabold text-slate-900 text-sm font-sans whitespace-nowrap">
-                          <span className="text-[10px] text-slate-500 font-bold mr-0.5">SAR</span>
-                          {displayPrice}
-                        </span>
-                        {!hasVariants && originalPrice && (
-                          <span className="text-[10px] text-slate-400 line-through font-normal whitespace-nowrap">
-                            SAR {originalPrice.toFixed(2)}
+                      {/* Info */}
+                      <div className="space-y-1">
+                        <h3 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1 group-hover:text-[#043927] transition-colors">
+                          {itemName}
+                        </h3>
+
+                        {hasVariants ? (
+                          <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                            <Zap className="w-2.5 h-2.5 text-amber-500 fill-amber-400" />
+                            <span>{item.variants.length} {locale === 'ar' ? 'خيارات' : 'Options'}</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-semibold block">
+                            {item.unit || (item.unit_value && item.unit_type ? `${item.unit_value} ${item.unit_type}` : itemUnit)}
                           </span>
                         )}
-                      </div>
-                    </div>
-                  </Link>
 
-                  {/* Add Button or Select Options */}
-                  {hasVariants ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        router.push(`/products/${item.id}`);
-                      }}
-                      className="w-full mt-2 py-2 rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-extrabold text-xs shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-                      <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleAddRelated(item);
-                      }}
-                      disabled={addingRelId === item.id}
-                      className="w-full mt-2 py-2 rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-extrabold text-xs shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
-                    >
-                      <ShoppingBag className="w-3.5 h-3.5" />
-                      <span>{addingRelId === item.id ? '...' : (locale === 'ar' ? 'أضف' : 'Add to Cart')}</span>
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                        <div className="flex items-center gap-1 text-[10px] text-amber-500 font-extrabold">
+                          <span>★ {itemRating || '4.8'}</span>
+                          <span className="text-slate-400 font-normal">({itemReviews})</span>
+                        </div>
+
+                        <div className="flex items-baseline gap-1.5 pt-1">
+                          <span className="font-extrabold text-slate-900 text-sm font-sans whitespace-nowrap">
+                            <span className="text-[10px] text-slate-500 font-bold mr-0.5">SAR</span>
+                            {displayPrice}
+                          </span>
+                          {!hasVariants && originalPrice && (
+                            <span className="text-[10px] text-slate-400 line-through font-normal whitespace-nowrap">
+                              SAR {originalPrice.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+
+                    {/* Add Button or Select Options */}
+                    {hasVariants ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          router.push(`/products/${item.id}`);
+                        }}
+                        className="w-full mt-2 py-2 rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-extrabold text-xs shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                        <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleAddRelated(item);
+                        }}
+                        disabled={addingRelId === item.id}
+                        className="w-full mt-2 py-2 rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-extrabold text-xs shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>{addingRelId === item.id ? '...' : (locale === 'ar' ? 'أضف' : 'Add to Cart')}</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Right Edge Floating Arrow */}
+            {canScrollRelRight && (
+              <button
+                type="button"
+                onClick={() => scrollRelated('right')}
+                className="absolute -right-3.5 sm:-right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/relatedCarousel:opacity-100 cursor-pointer active:scale-95 hidden sm:flex"
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+              </button>
+            )}
           </div>
 
         </div>

@@ -2,17 +2,17 @@ const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
 const { authenticate } = require('../middleware/auth');
-const { authorize } = require('../middleware/rbac');
+const { authorize, checkPermission } = require('../middleware/rbac');
 const ROLES = require('../constants/roles');
 
 router.get('/', (req, res, next) => productController.getProducts(req, res, next));
 router.get('/:id', (req, res, next) => productController.getProductById(req, res, next));
 
 // Admin Product Management Routes
-router.post('/', authenticate, authorize(ROLES.ADMIN), (req, res, next) => productController.createProduct(req, res, next));
-router.put('/:id', authenticate, authorize(ROLES.ADMIN), (req, res, next) => productController.updateProduct(req, res, next));
-router.delete('/:id', authenticate, authorize(ROLES.ADMIN), (req, res, next) => productController.deleteProduct(req, res, next));
-router.post('/:id/stock-adjustment', authenticate, authorize(ROLES.ADMIN), (req, res, next) => productController.adjustStock(req, res, next));
-router.get('/:id/stock-logs', authenticate, authorize(ROLES.ADMIN), (req, res, next) => productController.getStockLogs(req, res, next));
+router.post('/', authenticate, authorize(ROLES.ADMIN), checkPermission('products.create'), (req, res, next) => productController.createProduct(req, res, next));
+router.put('/:id', authenticate, authorize(ROLES.ADMIN), checkPermission('products.edit'), (req, res, next) => productController.updateProduct(req, res, next));
+router.delete('/:id', authenticate, authorize(ROLES.ADMIN), checkPermission('products.delete'), (req, res, next) => productController.deleteProduct(req, res, next));
+router.post('/:id/stock-adjustment', authenticate, authorize(ROLES.ADMIN), checkPermission('inventory.edit'), (req, res, next) => productController.adjustStock(req, res, next));
+router.get('/:id/stock-logs', authenticate, authorize(ROLES.ADMIN), checkPermission('inventory.view'), (req, res, next) => productController.getStockLogs(req, res, next));
 
 module.exports = router;
