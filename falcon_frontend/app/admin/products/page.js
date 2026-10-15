@@ -166,7 +166,7 @@ export default function AdminProductsPage() {
     unit_type: 'kg',
     unit_value: '',
     pack_size: '',
-    sold_by: 'Piece',
+    sold_by: '',
     price: '',
     purchase_price: '',
     discount_price: '',
