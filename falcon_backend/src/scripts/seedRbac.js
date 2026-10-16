@@ -261,20 +261,41 @@ async function seedRbac() {
     console.log(`✅ Role "${roleDef.name}" configured with ${rolePerms.length} permissions.`);
   }
 
-  // Find any existing ADMIN users and attach Super Admin role if they don't have a role assigned yet
-  const adminUsers = await User.findAll({ where: { role: 'ADMIN' } });
-  console.log(`Found ${adminUsers.length} admin user(s) in system.`);
+  // Target intended Super Admin accounts safely without granting Super Admin to every admin
+  const targetSuperAdminEmails = (
+    process.env.SUPER_ADMIN_EMAILS
+      ? process.env.SUPER_ADMIN_EMAILS.split(',').map((e) => e.trim().toLowerCase())
+      : ['admin@platform.com', 'admin@gmail.com']
+  );
 
-  for (const adminUser of adminUsers) {
-    const hasRole = await AdminUserRole.findOne({ where: { user_id: adminUser.id } });
-    if (!hasRole) {
-      await AdminUserRole.create({
-        user_id: adminUser.id,
-        role_id: superAdminRole.id,
+  if (process.argv[2] && process.argv[2].includes('@')) {
+    targetSuperAdminEmails.push(process.argv[2].trim().toLowerCase());
+  }
+
+  console.log(`🎯 Ensuring Super Admin role for designated administrators: ${targetSuperAdminEmails.join(', ')}`);
+
+  for (const email of targetSuperAdminEmails) {
+    const adminUser = await User.findOne({ where: { email, role: 'ADMIN' } });
+    if (adminUser) {
+      const existingAssignment = await AdminUserRole.findOne({
+        where: { user_id: adminUser.id },
       });
-      console.log(`👑 Assigned Super Admin role to user ${adminUser.email} (${adminUser.id}).`);
+
+      if (!existingAssignment) {
+        await AdminUserRole.create({
+          user_id: adminUser.id,
+          role_id: superAdminRole.id,
+        });
+        console.log(`👑 Assigned Super Admin role to designated administrator: ${adminUser.email} (${adminUser.id}).`);
+      } else if (existingAssignment.role_id !== superAdminRole.id) {
+        // Upgrade designated super admin account to super_admin role
+        await existingAssignment.update({ role_id: superAdminRole.id });
+        console.log(`👑 Upgraded administrator ${adminUser.email} to Super Admin role.`);
+      } else {
+        console.log(`✓ Administrator ${adminUser.email} already correctly configured with Super Admin role.`);
+      }
     } else {
-      console.log(`ℹ️ Admin user ${adminUser.email} already has an assigned role.`);
+      console.log(`ℹ️ Account ${email} not found in this database; skipped.`);
     }
   }
 

@@ -51,6 +51,15 @@ const startServer = async () => {
         logger.info('✓ Default Admin created: admin@platform.com / Admin@123456');
       }
 
+      // Ensure RBAC permissions and roles are initialized if roles table is empty
+      const { Role } = require('./src/models');
+      const roleCount = await Role.count().catch(() => 0);
+      if (roleCount === 0) {
+        logger.info('No RBAC roles found in DB. Auto-seeding RBAC permissions and default roles...');
+        const { seedRbac } = require('./src/scripts/seedRbac');
+        await seedRbac();
+      }
+
       const driverCount = await Driver.count();
       if (driverCount === 0) {
         logger.info('No Driver accounts found in DB. Auto-seeding default drivers...');

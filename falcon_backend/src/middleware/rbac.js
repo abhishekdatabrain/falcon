@@ -33,7 +33,7 @@ const checkPermission = (permissionCode) => {
     }
 
     // Super Admin has full unrestricted access
-    if (req.user.isSuperAdmin || (req.user.role === 'ADMIN' && req.user.email === 'admin@gmail.com')) {
+    if (req.user.isSuperAdmin) {
       return next();
     }
 
@@ -59,7 +59,7 @@ const requireSuperAdmin = (req, res, next) => {
     return sendError(res, 'Unauthenticated user.', [], 401);
   }
 
-  if (req.user.isSuperAdmin || (req.user.role === 'ADMIN' && req.user.email === 'admin@gmail.com')) {
+  if (req.user.isSuperAdmin) {
     return next();
   }
 

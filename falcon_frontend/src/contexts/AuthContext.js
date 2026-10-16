@@ -56,7 +56,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isSuperAdmin = Boolean(
-    user?.isSuperAdmin || (user?.role === 'ADMIN' && user?.email === 'admin@gmail.com')
+    user?.isSuperAdmin ||
+    (user?.role === 'ADMIN' && user?.roles?.some((r) => r.slug === 'super_admin'))
   );
 
   const hasPermission = (permissionCode) => {

@@ -97,9 +97,10 @@ const authenticate = async (req, res, next) => {
     }
 
     if (user.role === 'ADMIN') {
-      const isSuperAdmin =
-        user.email === 'admin@gmail.com' ||
-        (user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin' && r.is_active));
+      const isSuperAdmin = Boolean(
+        user.assigned_roles &&
+        user.assigned_roles.some((r) => r.slug === 'super_admin' && r.is_active)
+      );
 
       let permissions = [];
       if (isSuperAdmin) {
@@ -169,9 +170,10 @@ const optionalAuthenticate = async (req, res, next) => {
 
       if (user && user.status === 'ACTIVE') {
         if (user.role === 'ADMIN') {
-          const isSuperAdmin =
-            user.email === 'admin@gmail.com' ||
-            (user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin' && r.is_active));
+          const isSuperAdmin = Boolean(
+            user.assigned_roles &&
+            user.assigned_roles.some((r) => r.slug === 'super_admin' && r.is_active)
+          );
 
           let permissions = [];
           if (isSuperAdmin) {

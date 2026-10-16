@@ -135,9 +135,10 @@ class AuthService {
     };
 
     if (user.role === 'ADMIN') {
-      const isSuperAdmin =
-        user.email === 'admin@gmail.com' ||
-        (user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin' && r.is_active));
+      const isSuperAdmin = Boolean(
+        user.assigned_roles &&
+        user.assigned_roles.some((r) => r.slug === 'super_admin' && r.is_active)
+      );
 
       let permissions = [];
       if (isSuperAdmin) {

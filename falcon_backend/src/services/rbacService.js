@@ -113,7 +113,7 @@ class RbacService {
     }
 
     // Requirement 11: Sub Admins cannot grant permissions they do not have
-    if (!adminUser.isSuperAdmin && adminUser.email !== 'admin@gmail.com') {
+    if (!adminUser.isSuperAdmin) {
       const allowedCodes = new Set(adminUser.permissions || []);
       const unauthorizedPerms = permissionsToAssign.filter((p) => !allowedCodes.has(p.code));
       if (unauthorizedPerms.length > 0) {
@@ -176,7 +176,7 @@ class RbacService {
     }
 
     // Prevent non-super admin from modifying super_admin role
-    if (role.slug === 'super_admin' && !adminUser.isSuperAdmin && adminUser.email !== 'admin@gmail.com') {
+    if (role.slug === 'super_admin' && !adminUser.isSuperAdmin) {
       throw new Error('Only Super Admin can edit the Super Admin role');
     }
 
@@ -205,7 +205,7 @@ class RbacService {
     }
 
     // Requirement 11: Sub Admins cannot grant permissions they do not have
-    if (permissionsToAssign && !adminUser.isSuperAdmin && adminUser.email !== 'admin@gmail.com') {
+    if (permissionsToAssign && !adminUser.isSuperAdmin) {
       const allowedCodes = new Set(adminUser.permissions || []);
       const unauthorizedPerms = permissionsToAssign.filter((p) => !allowedCodes.has(p.code));
       if (unauthorizedPerms.length > 0) {
@@ -331,9 +331,9 @@ class RbacService {
 
     return users.map((u) => {
       const json = u.toJSON();
-      const isSuper =
-        json.email === 'admin@gmail.com' ||
-        (json.assigned_roles && json.assigned_roles.some((r) => r.slug === 'super_admin'));
+      const isSuper = Boolean(
+        json.assigned_roles && json.assigned_roles.some((r) => r.slug === 'super_admin')
+      );
 
       return {
         id: json.id,
@@ -379,7 +379,7 @@ class RbacService {
       }
 
       // Requirement 11: Non-super admins cannot grant Super Admin role
-      if (targetRole.slug === 'super_admin' && !adminUser.isSuperAdmin && adminUser.email !== 'admin@gmail.com') {
+      if (targetRole.slug === 'super_admin' && !adminUser.isSuperAdmin) {
         throw new Error('Only Super Admin can assign the Super Admin role');
       }
     }
@@ -459,9 +459,9 @@ class RbacService {
     if (!user) throw new Error('Sub-Admin user not found');
 
     const json = user.toJSON();
-    const isSuper =
-      json.email === 'admin@gmail.com' ||
-      (json.assigned_roles && json.assigned_roles.some((r) => r.slug === 'super_admin'));
+    const isSuper = Boolean(
+      json.assigned_roles && json.assigned_roles.some((r) => r.slug === 'super_admin')
+    );
 
     return {
       id: json.id,
@@ -491,12 +491,12 @@ class RbacService {
 
     if (!user) throw new Error('Sub-Admin user not found');
 
-    const isTargetSuperAdmin =
-      user.email === 'admin@gmail.com' ||
-      (user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin'));
+    const isTargetSuperAdmin = Boolean(
+      user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin')
+    );
 
     // Requirement 11: Sub Admins cannot modify Super Admin accounts
-    if (isTargetSuperAdmin && !adminUser.isSuperAdmin && adminUser.email !== 'admin@gmail.com') {
+    if (isTargetSuperAdmin && !adminUser.isSuperAdmin) {
       throw new Error('Only Super Admin is authorized to modify Super Admin accounts');
     }
 
@@ -516,7 +516,7 @@ class RbacService {
       if (!targetRole) throw new Error('Selected role not found');
 
       // Requirement 11: Non-super admin cannot grant Super Admin role
-      if (targetRole.slug === 'super_admin' && !adminUser.isSuperAdmin && adminUser.email !== 'admin@gmail.com') {
+      if (targetRole.slug === 'super_admin' && !adminUser.isSuperAdmin) {
         throw new Error('Only Super Admin can assign the Super Admin role');
       }
     }
@@ -545,9 +545,16 @@ class RbacService {
 
       // Update role assignment if roleId provided
       if (roleId) {
-        // Prevent removing super_admin from root system admin
-        if (user.email === 'admin@gmail.com' && targetRole.slug !== 'super_admin') {
-          throw new Error('Primary root system admin must retain the Super Admin role');
+        // Prevent removing super_admin if this would leave zero super admins
+        const isCurrentSuper = user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin');
+        if (isCurrentSuper && targetRole.slug !== 'super_admin') {
+          const superRole = await Role.findOne({ where: { slug: 'super_admin' } });
+          if (superRole) {
+            const superAdminCount = await AdminUserRole.count({ where: { role_id: superRole.id } });
+            if (superAdminCount <= 1) {
+              throw new Error('Cannot remove Super Admin role: at least one Super Admin must remain in the system');
+            }
+          }
         }
 
         // Remove old role assignments
@@ -595,9 +602,9 @@ class RbacService {
     });
     if (!user) throw new Error('Sub-Admin user not found');
 
-    const isTargetSuper =
-      user.email === 'admin@gmail.com' ||
-      (user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin'));
+    const isTargetSuper = Boolean(
+      user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin')
+    );
 
     // Prevent deactivating root or super admin
     if (isTargetSuper && status === 'INACTIVE') {
@@ -605,7 +612,7 @@ class RbacService {
     }
 
     // Requirement 11: Sub Admins cannot modify Super Admin accounts
-    if (isTargetSuper && !adminUser.isSuperAdmin && adminUser.email !== 'admin@gmail.com') {
+    if (isTargetSuper && !adminUser.isSuperAdmin) {
       throw new Error('Only Super Admin is authorized to modify Super Admin accounts');
     }
 
@@ -635,15 +642,15 @@ class RbacService {
     });
     if (!user) throw new Error('Sub-Admin user not found');
 
-    const isTargetSuper =
-      user.email === 'admin@gmail.com' ||
-      (user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin'));
+    const isTargetSuper = Boolean(
+      user.assigned_roles && user.assigned_roles.some((r) => r.slug === 'super_admin')
+    );
 
     if (isTargetSuper) {
       throw new Error('Super Admin accounts cannot be deleted');
     }
 
-    if (!adminUser.isSuperAdmin && adminUser.email !== 'admin@gmail.com') {
+    if (!adminUser.isSuperAdmin) {
       throw new Error('Only Super Admin has authority to delete administrative accounts');
     }
 

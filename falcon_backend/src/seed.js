@@ -101,6 +101,11 @@ const seedDatabase = async () => {
       console.log('✓ Customer account already exists in DB.');
     }
 
+    // 4. Seed RBAC Roles & Permissions
+    const { seedRbac } = require('./scripts/seedRbac');
+    console.log('Syncing RBAC Roles & Permissions...');
+    await seedRbac();
+
     console.log('\n==================================================');
     console.log('🎉 DATABASE SEEDING COMPLETED SUCCESSFULLY');
     console.log('==================================================');

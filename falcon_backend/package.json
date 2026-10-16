@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "npx nodemon server.js",
     "seed": "node src/seed.js",
+    "seed:rbac": "node src/scripts/seedRbac.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
