@@ -58,17 +58,17 @@ export default function CouponCard({ onApplyCoupon, onRemoveCoupon, appliedCoupo
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
+    <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-2xs space-y-4">
       {/* Title */}
-      <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 font-sans tracking-tight">
+      <h3 className="text-md sm:text-lg font-bold text-slate-900 font-sans tracking-tight">
         {locale === 'ar' ? 'هل لديك كوبون خصم؟' : 'Got a coupon?'}
       </h3>
 
       {/* Applied Coupon View or Input Box */}
       {appliedCoupon ? (
-        <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 flex items-center justify-between">
+        <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-slate-900 text-sm tracking-wide uppercase font-sans">
@@ -94,7 +94,7 @@ export default function CouponCard({ onApplyCoupon, onRemoveCoupon, appliedCoupo
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="bg-[#F5F6F8] rounded-2xl px-4 py-3.5 flex items-center justify-between border border-transparent focus-within:border-slate-300 focus-within:bg-white transition-all shadow-2xs">
+          <div className="bg-[#F5F6F8] rounded-2xl px-3 py-2.5 flex items-center justify-between border border-transparent focus-within:border-slate-300 focus-within:bg-white transition-all shadow-2xs">
             <input
               type="text"
               placeholder={locale === 'ar' ? 'رمز الكوبون' : 'Coupon Code'}
@@ -143,7 +143,7 @@ export default function CouponCard({ onApplyCoupon, onRemoveCoupon, appliedCoupo
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#EBF3FF] text-[#0066FF] flex items-center justify-center font-black text-sm shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
               %
             </div>
-            <span className="font-extrabold text-slate-800 text-sm sm:text-base font-sans group-hover:text-[#0066FF] transition-colors">
+            <span className="font-bold text-slate-800 text-sm sm:text-base font-sans group-hover:text-[#0066FF] transition-colors">
               {locale === 'ar' ? 'عرض العروض المتاحة' : 'View Available Offers'}
             </span>
           </div>

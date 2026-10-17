@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
+import { useAuth } from '../../../src/contexts/AuthContext';
 import {
   FolderTree,
   Plus,
@@ -28,6 +29,10 @@ import {
 export default function AdminCategoriesPage() {
   const { t, locale } = useLanguage();
   const { showToast } = useToast();
+  const { hasPermission, isSuperAdmin } = useAuth();
+  const canCreate = isSuperAdmin || hasPermission('categories.create');
+  const canEdit = isSuperAdmin || hasPermission('categories.edit');
+  const canDelete = isSuperAdmin || hasPermission('categories.delete');
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

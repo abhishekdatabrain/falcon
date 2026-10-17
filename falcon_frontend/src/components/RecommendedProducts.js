@@ -22,7 +22,7 @@ const FALLBACK_RECOMMENDED_PRODUCTS = [];
 export default function RecommendedProducts() {
   const { cart, addToCart, updateQuantity, removeItem } = useCart();
   const { locale } = useLanguage();
-  const { toggleWishlist, isInWishlist } = useWishlist ? useWishlist() : { toggleWishlist: () => {}, isInWishlist: () => false };
+  const { toggleWishlist, isInWishlist } = useWishlist ? useWishlist() : { toggleWishlist: () => { }, isInWishlist: () => false };
   const scrollContainerRef = useRef(null);
 
   const [recommendedProducts, setRecommendedProducts] = useState([]);
@@ -248,7 +248,7 @@ export default function RecommendedProducts() {
 
             // Check if product is multi-variant
             const hasVariants = Boolean(
-              item.has_variants || 
+              item.has_variants ||
               (Array.isArray(item.variants) && item.variants.length > 0)
             );
             const variantCount = Array.isArray(item.variants) ? item.variants.length : 2;
@@ -285,11 +285,10 @@ export default function RecommendedProducts() {
                       aria-label="Wishlist"
                     >
                       <Heart
-                        className={`w-5 h-5 transition-colors ${
-                          isWishlisted
+                        className={`w-5 h-5 transition-colors ${isWishlisted
                             ? 'text-[#FF1E56] fill-[#FF1E56]'
                             : 'text-slate-300 hover:text-[#FF1E56] stroke-[1.8]'
-                        }`}
+                          }`}
                       />
                     </button>
                   </div>
@@ -309,9 +308,8 @@ export default function RecommendedProducts() {
                         <img
                           src={getImageUrl(itemImage)}
                           alt={itemName}
-                          className={`max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 ${
-                            isOutOfStock ? 'opacity-50 grayscale' : 'group-hover/card:scale-105'
-                          }`}
+                          className={`max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover/card:scale-105'
+                            }`}
                           onError={(e) => {
                             e.target.onerror = null;
                             e.target.src = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400';
@@ -405,11 +403,10 @@ export default function RecommendedProducts() {
                       aria-label="Wishlist"
                     >
                       <Heart
-                        className={`w-5 h-5 transition-colors ${
-                          isWishlisted
+                        className={`w-5 h-5 transition-colors ${isWishlisted
                             ? 'text-[#FF1E56] fill-[#FF1E56]'
                             : 'text-slate-300 hover:text-[#FF1E56] stroke-[1.8]'
-                        }`}
+                          }`}
                       />
                     </button>
                   </div>
@@ -427,9 +424,8 @@ export default function RecommendedProducts() {
                       <img
                         src={getImageUrl(itemImage)}
                         alt={itemName}
-                        className={`max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 ${
-                          isOutOfStock ? 'opacity-50 grayscale' : 'group-hover/card:scale-105'
-                        }`}
+                        className={`max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover/card:scale-105'
+                          }`}
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400';
@@ -444,9 +440,8 @@ export default function RecommendedProducts() {
                       {brandName}
                     </span>
                     <span
-                      className={`font-bold shrink-0 text-xs ${
-                        isOutOfStock ? 'text-rose-600' : 'text-[#00B074]'
-                      }`}
+                      className={`font-bold shrink-0 text-xs ${isOutOfStock ? 'text-rose-600' : 'text-[#00B074]'
+                        }`}
                     >
                       {isOutOfStock
                         ? (locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock')
@@ -459,7 +454,7 @@ export default function RecommendedProducts() {
                     <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-1 mb-1 font-sans hover:text-[#043927] transition-colors">
                       {itemName}
                     </h3>
-                      <span className="text-xs font-medium text-slate-500">{item.unit_value} {item.unit_type}</span>
+                    <span className="text-xs font-medium text-slate-500">{item.unit_value} {item.unit_type}</span>
                   </Link>
 
                   {/* Rating Row */}
@@ -527,11 +522,10 @@ export default function RecommendedProducts() {
                       type="button"
                       onClick={(e) => !isOutOfStock && handleAddToCart(e, item)}
                       disabled={isAdding || isOutOfStock}
-                      className={`w-full py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition-all font-sans ${
-                        isOutOfStock
+                      className={`w-full py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition-all font-sans ${isOutOfStock
                           ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                           : 'bg-[#006E2D] hover:bg-[#008938] text-white cursor-pointer active:scale-98 shadow-sm hover:shadow'
-                      }`}
+                        }`}
                     >
                       {isAdding ? (
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

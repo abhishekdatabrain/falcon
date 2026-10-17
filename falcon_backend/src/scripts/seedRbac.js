@@ -159,6 +159,33 @@ const MODULE_DEFINITIONS = [
       { action: 'assign', name: 'Assign Roles to Admins', desc: 'Can assign or revoke roles from sub-admins' },
     ],
   },
+  {
+    module: 'coupons',
+    name: 'Coupons & Discounts',
+    actions: [
+      { action: 'view', name: 'View Coupons', desc: 'Can view promo coupons and discount rules' },
+      { action: 'create', name: 'Create Coupons', desc: 'Can add new coupon codes and discounts' },
+      { action: 'edit', name: 'Edit Coupons', desc: 'Can modify discounts, validity, and limits' },
+      { action: 'delete', name: 'Delete Coupons', desc: 'Can remove promotional coupons' },
+    ],
+  },
+  {
+    module: 'feedback',
+    name: 'Customer Feedback',
+    actions: [
+      { action: 'view', name: 'View Feedback', desc: 'Can view customer reviews and feedback ratings' },
+      { action: 'delete', name: 'Delete Feedback', desc: 'Can moderate and remove customer feedback' },
+    ],
+  },
+  {
+    module: 'notifications',
+    name: 'Push & Admin Notifications',
+    actions: [
+      { action: 'view', name: 'View Notifications', desc: 'Can view notifications stream' },
+      { action: 'create', name: 'Send Notifications', desc: 'Can broadcast push alerts to customers and drivers' },
+      { action: 'delete', name: 'Delete Notifications', desc: 'Can delete notification logs' },
+    ],
+  },
 ];
 
 async function seedRbac() {
@@ -210,6 +237,62 @@ async function seedRbac() {
   // Seed standard business roles
   const standardRoles = [
     {
+      slug: 'admin',
+      name: 'Admin',
+      description: 'Configurable operational access across core store modules.',
+      is_system: false,
+      filterModules: [
+        'dashboard',
+        'products',
+        'categories',
+        'inventory',
+        'orders',
+        'payments',
+        'refunds',
+        'delivery',
+        'drivers',
+        'customers',
+        'invoices',
+        'zatca',
+        'cms',
+        'banners',
+        'reports',
+        'coupons',
+        'feedback',
+        'notifications',
+      ],
+      excludeActions: ['delete'],
+    },
+    {
+      slug: 'product_manager',
+      name: 'Product Manager',
+      description: 'Manages products catalog, categories taxonomy, and stock inventory.',
+      is_system: false,
+      filterModules: ['dashboard', 'products', 'categories', 'inventory'],
+    },
+    {
+      slug: 'order_manager',
+      name: 'Order Manager',
+      description: 'Supervises incoming orders, payment confirmations, and delivery fulfillment.',
+      is_system: false,
+      filterModules: ['dashboard', 'orders', 'payments', 'delivery', 'refunds'],
+    },
+    {
+      slug: 'delivery_manager',
+      name: 'Delivery Manager',
+      description: 'Oversees delivery logistics, time slots, driver fleet, and dispatching.',
+      is_system: false,
+      filterModules: ['dashboard', 'delivery', 'drivers'],
+    },
+    {
+      slug: 'staff',
+      name: 'Staff',
+      description: 'Limited operational view-only access across orders and catalog.',
+      is_system: false,
+      filterModules: ['dashboard', 'products', 'orders', 'customers'],
+      allowedActions: ['view'],
+    },
+    {
       slug: 'store_manager',
       name: 'Store Manager',
       description: 'Manages catalog, inventory, order processing, and homepage showcase.',
@@ -253,6 +336,7 @@ async function seedRbac() {
 
     const rolePerms = allPermissions.filter((p) => {
       if (!roleDef.filterModules.includes(p.module)) return false;
+      if (roleDef.allowedActions && !roleDef.allowedActions.includes(p.action)) return false;
       if (roleDef.excludeActions && roleDef.excludeActions.includes(p.action)) return false;
       return true;
     });

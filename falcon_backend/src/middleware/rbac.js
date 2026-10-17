@@ -9,6 +9,11 @@ const authorize = (...allowedRoles) => {
       return sendError(res, 'Unauthenticated user.', [], 401);
     }
 
+    // If single argument with dot notation (e.g. authorize('products.create')), check permission
+    if (allowedRoles.length === 1 && typeof allowedRoles[0] === 'string' && allowedRoles[0].includes('.')) {
+      return checkPermission(allowedRoles[0])(req, res, next);
+    }
+
     if (!allowedRoles.includes(req.user.role)) {
       return sendError(
         res,

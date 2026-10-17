@@ -344,6 +344,11 @@ class RbacService {
         department: json.admin?.department || 'Operations',
         isSuperAdmin: isSuper,
         roles: json.assigned_roles || [],
+        assigned_role: json.assigned_roles?.[0] || null,
+        admin_profile: {
+          name: json.admin?.name || json.email.split('@')[0],
+          department: json.admin?.department || 'Operations',
+        },
         createdAt: json.createdAt,
       };
     });
@@ -472,6 +477,11 @@ class RbacService {
       department: json.admin?.department || 'Operations',
       isSuperAdmin: isSuper,
       roles: json.assigned_roles || [],
+      assigned_role: json.assigned_roles?.[0] || null,
+      admin_profile: {
+        name: json.admin?.name || json.email.split('@')[0],
+        department: json.admin?.department || 'Operations',
+      },
       createdAt: json.createdAt,
     };
   }

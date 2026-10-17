@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const orderController = require('../controllers/orderController');
 const { authenticate } = require('../middleware/auth');
-const { authorize } = require('../middleware/rbac');
+const { authorize, checkPermission } = require('../middleware/rbac');
 const ROLES = require('../constants/roles');
 
 // Public Order Confirmation Route (by UUID)
@@ -22,6 +22,6 @@ router.get('/:id', (req, res, next) => orderController.getOrderById(req, res, ne
 router.post('/:id/cancel', (req, res, next) => orderController.cancelOrder(req, res, next));
 
 // Admin Routes
-router.get('/', authorize(ROLES.ADMIN), (req, res, next) => orderController.getAllOrdersAdmin(req, res, next));
+router.get('/', authorize(ROLES.ADMIN), checkPermission('orders.view'), (req, res, next) => orderController.getAllOrdersAdmin(req, res, next));
 
 module.exports = router;

@@ -53,6 +53,19 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
           permission: 'admin_management.view',
         },
         {
+          href: '/admin/employees',
+          label: locale === 'ar' ? 'إدارة الموظفين' : 'Employees Management',
+          icon: Users,
+          permission: 'admin_management.view',
+        },
+      ],
+    },
+    {
+      key: 'customers',
+      title: locale === 'ar' ? 'إدارة العملاء' : 'Customers',
+      isExpandable: true,
+      items: [
+        {
           href: '/admin/customers',
           label: locale === 'ar' ? 'إدارة العملاء' : 'Customer Management',
           icon: Users,
@@ -176,11 +189,13 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
           href: '/admin/notifications',
           label: locale === 'ar' ? 'إدارة الإشعارات' : 'Notification Management',
           icon: Bell,
+          permission: 'notifications.view',
         },
         {
           href: '/admin/feedback',
           label: locale === 'ar' ? 'إدارة الملاحظات' : 'Feedback Management',
           icon: MessageSquare,
+          permission: 'feedback.view',
         },
       ],
     },

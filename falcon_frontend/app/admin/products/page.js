@@ -173,10 +173,10 @@ export default function AdminProductsPage() {
     vat_percentage: '15',
     price_includes_vat: true,
     stock_quantity: '',
-    is_available: true,
+    is_available: false,
     is_active: true,
     is_featured: false,
-    is_new_arrival: true,
+    is_new_arrival: false,
     is_best_seller: false,
     is_best_deal: false,
     is_popular_pick: false,
@@ -293,7 +293,7 @@ export default function AdminProductsPage() {
       vat_percentage: '15',
       price_includes_vat: true,
       stock_quantity: '',
-      is_available: true,
+      is_available: false,
       is_active: true,
       is_featured: false,
       is_new_arrival: false,
@@ -2602,7 +2602,7 @@ export default function AdminProductsPage() {
                       <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
-                          checked={productForm.is_available}
+                          checked={Boolean(productForm.is_available)}
                           onChange={(e) => setProductForm({ ...productForm, is_available: e.target.checked })}
                           className="sr-only peer"
                         />

@@ -12,6 +12,7 @@ import { ShieldAlert, ArrowLeft } from 'lucide-react';
 const ROUTE_PERMISSIONS = {
   '/admin/dashboard': 'dashboard.view',
   '/admin/roles': 'admin_management.view',
+  '/admin/employees': 'admin_management.view',
   '/admin/customers': 'customers.view',
   '/admin/products': 'products.view',
   '/admin/categories': 'categories.view',
@@ -26,6 +27,9 @@ const ROUTE_PERMISSIONS = {
   '/admin/drivers': 'drivers.view',
   '/admin/delivery-slots': 'delivery.view',
   '/admin/deliveries': 'delivery.view',
+  '/admin/notifications': 'notifications.view',
+  '/admin/feedback': 'feedback.view',
+  '/admin/coupons': 'coupons.view',
 };
 
 export default function AdminLayout({ children }) {

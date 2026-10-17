@@ -180,11 +180,11 @@ const STATIC_TRENDING = [
 ];
 
 const DEALS_PRODUCTS = [
-  
+
 ];
 
 const POPULAR_PRODUCTS = [
- ];
+];
 
 const PROMO_CARDS_BANNER = [{}];
 
@@ -314,7 +314,7 @@ function SubCategorySlider({ title, items, locale }) {
   return (
     <div className="space-y-5 select-none">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+        <h2 className="text-xl sm:text-2xl lg:text-[26px] font-bold text-slate-900 tracking-tight">
           {title}
         </h2>
 
@@ -324,7 +324,7 @@ function SubCategorySlider({ title, items, locale }) {
             type="button"
             onClick={() => scroll('prev')}
             disabled={!canScrollLeft}
-            className="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
             aria-label={locale === 'ar' ? 'السابق' : 'Previous'}
           >
             <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
@@ -333,7 +333,7 @@ function SubCategorySlider({ title, items, locale }) {
             type="button"
             onClick={() => scroll('next')}
             disabled={!canScrollRight}
-            className="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
             aria-label={locale === 'ar' ? 'التالي' : 'Next'}
           >
             <ChevronRight className="w-5 h-5 rtl:rotate-180" />
@@ -341,68 +341,43 @@ function SubCategorySlider({ title, items, locale }) {
         </div>
       </div>
 
-      {/* Cards Slider Container with Floating Edge Overlays */}
-      <div className="relative group/subCatCarousel">
-        {/* Left Edge Floating Arrow */}
-        <button
-          type="button"
-          onClick={() => scroll('prev')}
-          disabled={!canScrollLeft}
-          className="absolute -left-3.5 sm:-left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 shadow-lg hover:bg-white flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/subCatCarousel:opacity-100 cursor-pointer active:scale-95 disabled:opacity-0 disabled:pointer-events-none hidden sm:flex"
-          aria-label="Scroll left"
-        >
-          <ChevronLeft className="w-5 h-5 rtl:rotate-180 text-slate-700" />
-        </button>
+      {/* Horizontal Scroll Track - 6 items per row on desktop */}
+      <div
+        ref={scrollRef}
+        onScroll={checkScroll}
+        className="flex items-stretch gap-3.5 sm:gap-4 overflow-x-auto scrollbar-none py-1.5 px-0.5 scroll-smooth snap-x snap-mandatory"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {items.map((item) => {
+          const rawImg = item.image_url || item.img || '';
+          const resolvedImg = rawImg.startsWith('http') || rawImg.startsWith('/subcategories/') || rawImg.startsWith('/promo/')
+            ? rawImg
+            : getImageUrl(rawImg);
+          const titleEn = item.title_en || item.name_en || '';
+          const titleAr = item.title_ar || item.name_ar || titleEn;
+          const itemTitle = locale === 'ar' ? titleAr : titleEn;
+          const itemLink = item.link_url || item.href || `/products?category=${encodeURIComponent(titleEn.toLowerCase())}`;
 
-        {/* Right Edge Floating Arrow */}
-        <button
-          type="button"
-          onClick={() => scroll('next')}
-          disabled={!canScrollRight}
-          className="absolute -right-3.5 sm:-right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 shadow-lg hover:bg-white flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/subCatCarousel:opacity-100 cursor-pointer active:scale-95 disabled:opacity-0 disabled:pointer-events-none hidden sm:flex"
-          aria-label="Scroll right"
-        >
-          <ChevronRight className="w-5 h-5 rtl:rotate-180 text-slate-700" />
-        </button>
+          return (
+            <Link
+              key={item.id}
+              href={itemLink}
+              className="group flex flex-col items-center cursor-pointer text-center shrink-0 snap-start w-[calc((100%-16px)/2.3)] sm:w-[calc((100%-32px)/3.3)] md:w-[calc((100%-48px)/4.5)] lg:w-[calc((100%-5*16px)/6)]"
+            >
+              <div className="w-full aspect-square bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+                <img
+                  src={resolvedImg}
+                  alt={itemTitle}
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
 
-        {/* Horizontal Scroll Track */}
-        <div
-          ref={scrollRef}
-          onScroll={checkScroll}
-          className="flex items-stretch gap-4 sm:gap-5 overflow-x-auto scrollbar-none py-2 px-1 scroll-smooth snap-x snap-mandatory"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {items.map((item) => {
-            const rawImg = item.image_url || item.img || '';
-            const resolvedImg = rawImg.startsWith('http') || rawImg.startsWith('/subcategories/') || rawImg.startsWith('/promo/')
-              ? rawImg
-              : getImageUrl(rawImg);
-            const titleEn = item.title_en || item.name_en || '';
-            const titleAr = item.title_ar || item.name_ar || titleEn;
-            const itemTitle = locale === 'ar' ? titleAr : titleEn;
-            const itemLink = item.link_url || item.href || `/products?category=${encodeURIComponent(titleEn.toLowerCase())}`;
-
-            return (
-              <Link
-                key={item.id}
-                href={itemLink}
-                className="group flex flex-col items-center cursor-pointer text-center shrink-0 snap-start w-[150px] sm:w-[170px] md:w-[185px] lg:w-[200px]"
-              >
-                <div className="w-full aspect-square bg-white rounded-xl sm:rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
-                  <img
-                    src={resolvedImg}
-                    alt={itemTitle}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-
-                <span className="font-bold text-slate-800 text-xs sm:text-[14px] text-center mt-3 leading-snug group-hover:text-emerald-800 transition-colors">
-                  {itemTitle}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+              <span className="font-semibold text-slate-800 text-xs sm:text-[14px] text-center mt-2.5 sm:mt-3 leading-snug group-hover:text-emerald-800 transition-colors">
+                {itemTitle}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
@@ -421,6 +396,7 @@ export default function HomePage() {
   const [canScrollDealsLeft, setCanScrollDealsLeft] = useState(false);
   const [canScrollDealsRight, setCanScrollDealsRight] = useState(true);
   const popularScrollRef = useRef(null);
+  const promoScrollRef = useRef(null);
   const [canScrollPopularLeft, setCanScrollPopularLeft] = useState(false);
   const [canScrollPopularRight, setCanScrollPopularRight] = useState(true);
   const [products, setProducts] = useState([]);
@@ -758,7 +734,7 @@ export default function HomePage() {
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
                 {locale === 'ar' ? 'استكشف تصنيفاتنا' : 'Explore Our Categories'}
               </h2>
-              
+
             </div>
 
             {/* Desktop Navigation Arrows in Header */}
@@ -1213,84 +1189,140 @@ export default function HomePage() {
 
         {/* 4. Promotional Cards Banner Section (Everyday Groceries, Home Needs, Snack Time) */}
         <section className="pt-2">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
-            {(promoBanners.length > 0 ? promoBanners : PROMO_CARDS_BANNER).map((card) => {
-              const bgStyle = card.bg_color ? { backgroundColor: card.bg_color } : {};
-              const bgClass = card.bg || '';
-              const imgSrc = getImageUrl(card.image_url || card.img);
-              const cardTitle = locale === 'ar' ? (card.title_ar || card.title_en) : (card.title_en || card.title_ar);
-              const cardDesc = locale === 'ar' ? (card.desc_ar || card.desc_en) : (card.desc_en || card.desc_ar);
-              const cardBtnText = locale === 'ar'
-                ? (card.btn_text_ar || card.btn_ar || 'اطلب الآن')
-                : (card.btn_text_en || card.btn_en || 'Order Now');
-              const cardHref = card.btn_link || card.href || '/products';
-
+          {(() => {
+            const promoScroll = (dir) => {
+              if (promoScrollRef.current) {
+                const w = promoScrollRef.current.offsetWidth / 3;
+                promoScrollRef.current.scrollBy({ left: dir === 'left' ? -w : w, behavior: 'smooth' });
+              }
+            };
+            const cards = promoBanners.length > 0 ? promoBanners : PROMO_CARDS_BANNER;
+            if (cards.length <= 3) {
+              // Just use grid if 3 or fewer
               return (
-                <div
-                  key={card.id}
-                  style={bgStyle}
-                  className={`${bgClass} rounded-[28px] relative overflow-hidden flex justify-between min-h-[200px] sm:min-h-[220px] shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group font-sans`}
-                >
-                  {/* Left Text Content */}
-                  <div className="p-6 sm:p-7 max-w-[62%] flex flex-col justify-between z-10">
-                    <div className="space-y-2">
-                      <h3 className="font-extrabold text-slate-900 text-xl sm:text-2xl leading-snug tracking-tight font-sans">
-                        {cardTitle}
-                      </h3>
-                      <p className="text-slate-800/80 font-medium text-xs sm:text-sm leading-relaxed">
-                        {cardDesc}
-                      </p>
-                    </div>
-
-                    <div className="pt-4">
-                      <Link
-                        href={cardHref}
-                        className="bg-white text-slate-900 hover:bg-slate-900 hover:text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl shadow-xs hover:shadow-md transition-all hover:scale-105 inline-block cursor-pointer"
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+                  {cards.map((card) => {
+                    const bgStyle = card.bg_color ? { backgroundColor: card.bg_color } : {};
+                    const bgClass = card.bg || '';
+                    const imgSrc = getImageUrl(card.image_url || card.img);
+                    const cardTitle = locale === 'ar' ? (card.title_ar || card.title_en) : (card.title_en || card.title_ar);
+                    const cardDesc = locale === 'ar' ? (card.desc_ar || card.desc_en) : (card.desc_en || card.desc_ar);
+                    const cardBtnText = locale === 'ar'
+                      ? (card.btn_text_ar || card.btn_ar || 'اطلب الآن')
+                      : (card.btn_text_en || card.btn_en || 'Order Now');
+                    const cardHref = card.btn_link || card.href || '/products';
+                    return (
+                      <div
+                        key={card.id}
+                        style={bgStyle}
+                        className={`${bgClass} rounded-[28px] relative overflow-hidden flex justify-between min-h-[200px] sm:min-h-[220px] shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group font-sans`}
                       >
-                        {cardBtnText}
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Right Image Container with Rounded Cutout */}
-                  <div className="w-[38%] bg-white rounded-tl-[48px] rounded-bl-none absolute right-0 top-0 bottom-0 flex items-center justify-center p-3 shadow-inner">
-                    <img
-                      src={imgSrc}
-                      alt={cardTitle}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm"
-                      onError={(e) => {
-                        e.target.src = '/promo/promo_groceries.png';
-                      }}
-                    />
-                  </div>
+                        <div className="p-4 sm:p-7 max-w-[62%] flex flex-col justify-between z-10">
+                          <div className="space-y-2">
+                            <h3 className="font-extrabold text-slate-900 text-xl sm:text-2xl leading-snug tracking-tight font-sans">{cardTitle}</h3>
+                            <p className="text-slate-800/80 font-medium text-xs sm:text-sm leading-relaxed">{cardDesc}</p>
+                          </div>
+                          <div className="pt-4">
+                            <Link href={cardHref} className="bg-white text-slate-900 hover:bg-slate-900 hover:text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl shadow-xs hover:shadow-md transition-all hover:scale-105 inline-block cursor-pointer">
+                              {cardBtnText}
+                            </Link>
+                          </div>
+                        </div>
+                        <div className="w-[38%] bg-white rounded-tl-[48px] rounded-bl-none absolute right-0 top-0 bottom-0 flex items-center justify-center p-3 shadow-inner">
+                          <img src={imgSrc} alt={cardTitle} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm" onError={(e) => { e.target.src = '/promo/promo_groceries.png'; }} />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
-            })}
-          </div>
+            }
+            // Carousel for more than 3 cards
+            return (
+              <div className="relative group/promoslider">
+                {/* Left Arrow */}
+                <button
+                  type="button"
+                  onClick={() => promoScroll('left')}
+                  className="absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-md hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/promoslider:opacity-100 cursor-pointer active:scale-95 hidden sm:flex"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
+                </button>
+                {/* Right Arrow */}
+                <button
+                  type="button"
+                  onClick={() => promoScroll('right')}
+                  className="absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-md hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/promoslider:opacity-100 cursor-pointer active:scale-95 hidden sm:flex"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+                </button>
+                <div
+                  ref={promoScrollRef}
+                  className="flex gap-5 sm:gap-6 overflow-x-auto scrollbar-none scroll-smooth py-1"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                  {cards.map((card) => {
+                    const bgStyle = card.bg_color ? { backgroundColor: card.bg_color } : {};
+                    const bgClass = card.bg || '';
+                    const imgSrc = getImageUrl(card.image_url || card.img);
+                    const cardTitle = locale === 'ar' ? (card.title_ar || card.title_en) : (card.title_en || card.title_ar);
+                    const cardDesc = locale === 'ar' ? (card.desc_ar || card.desc_en) : (card.desc_en || card.desc_ar);
+                    const cardBtnText = locale === 'ar'
+                      ? (card.btn_text_ar || card.btn_ar || 'اطلب الآن')
+                      : (card.btn_text_en || card.btn_en || 'Order Now');
+                    const cardHref = card.btn_link || card.href || '/products';
+                    return (
+                      <div
+                        key={card.id}
+                        style={{ ...bgStyle, width: 'calc(33.333% - 14px)', minWidth: '260px', flexShrink: 0 }}
+                        className={`${bgClass} rounded-[28px] relative overflow-hidden flex justify-between min-h-[200px] sm:min-h-[220px] shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group font-sans`}
+                      >
+                        <div className="p-6 sm:p-7 max-w-[62%] flex flex-col justify-between z-10">
+                          <div className="space-y-2">
+                            <h3 className="font-extrabold text-slate-900 text-xl sm:text-2xl leading-snug tracking-tight font-sans">{cardTitle}</h3>
+                            <p className="text-slate-800/80 font-medium text-xs sm:text-sm leading-relaxed">{cardDesc}</p>
+                          </div>
+                          <div className="pt-4">
+                            <Link href={cardHref} className="bg-white text-slate-900 hover:bg-slate-900 hover:text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl shadow-xs hover:shadow-md transition-all hover:scale-105 inline-block cursor-pointer">
+                              {cardBtnText}
+                            </Link>
+                          </div>
+                        </div>
+                        <div className="w-[38%] bg-white rounded-tl-[48px] rounded-bl-none absolute right-0 top-0 bottom-0 flex items-center justify-center p-3 shadow-inner">
+                          <img src={imgSrc} alt={cardTitle} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm" onError={(e) => { e.target.src = '/promo/promo_groceries.png'; }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </section>
+
 
         {/* 5. Dynamic Household Essentials & Groceries Sub-Category Showcase Grids */}
         {categorySections && categorySections.length > 0 ? (
-          <div className="space-y-8 sm:space-y-10">
+          <section
+            style={{ backgroundColor: categorySections[0]?.bg_color || '#F6FFF8' }}
+            className="rounded-[28px] sm:rounded-[36px] p-6 sm:p-10 lg:p-12 space-y-10 sm:space-y-12 transition-all duration-300"
+          >
             {categorySections.map((sec, secIdx) => {
               const itemsToRender = (sec.items || []).slice(0, sec.max_items || 12);
               if (itemsToRender.length === 0) return null;
 
               return (
-                <section
+                <SubCategorySlider
                   key={sec.id || 'sec-' + secIdx}
-                  style={{ backgroundColor: sec.bg_color || '#F6FFF8' }}
-                  className="rounded-[28px] sm:rounded-[36px] p-6 sm:p-10 lg:p-12 transition-all duration-300"
-                >
-                  <SubCategorySlider
-                    title={locale === 'ar' ? (sec.title_ar || sec.title_en) : (sec.title_en || sec.title_ar)}
-                    items={itemsToRender}
-                    locale={locale}
-                  />
-                </section>
+                  title={locale === 'ar' ? (sec.title_ar || sec.title_en) : (sec.title_en || sec.title_ar)}
+                  items={itemsToRender}
+                  locale={locale}
+                />
               );
             })}
-          </div>
+          </section>
         ) : (
           <section className="bg-[#F6FFF8] rounded-[28px] sm:rounded-[36px] p-6 sm:p-10 lg:p-12 space-y-10 sm:space-y-12">
             {/* Sub-Section 1: Household Essentials */}
@@ -1349,11 +1381,11 @@ export default function HomePage() {
           return (
             <section
               style={{ backgroundColor: cfg.bg_color || '#FAF7F0' }}
-              className="rounded-[24px] sm:rounded-[32px] overflow-hidden border border-amber-200/50 shadow-xs hover:shadow-md transition-all duration-300 relative group font-sans bg-gradient-to-r from-[#FAF7F0] via-[#F9F5EC] to-[#F5EFE3]"
+              className="rounded-[15px] sm:rounded-[32px] overflow-hidden border border-amber-200/50 shadow-xs hover:shadow-md transition-all duration-300 relative group font-sans bg-gradient-to-r from-[#FAF7F0] via-[#F9F5EC] to-[#F5EFE3]"
             >
               <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
                 {/* Left Dynamic Text Column */}
-                <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 space-y-5 text-left rtl:text-right z-10">
+                <div className="lg:col-span-6 p-2 sm:p-4 lg:p-6 space-y-4 text-left rtl:text-right z-10">
                   {/* Category Tag */}
                   <span className="text-[#043927] font-black text-xs sm:text-[13px] uppercase tracking-[0.22em] block font-sans">
                     {tagText}
@@ -1361,12 +1393,12 @@ export default function HomePage() {
 
                   {/* Headline with serif styling & leaf graphic */}
                   <div className="flex items-center gap-3 flex-wrap">
-                    <h2 className="text-3xl sm:text-4xl lg:text-[46px] font-black tracking-tight leading-[1.12] font-serif">
+                    <h2 className="text-2xl sm:text-4xl lg:text-[46px] font-bold tracking-tight leading-[1.12]">
                       <span className="text-[#043927] block">{h1Text}</span>
                       <span className="text-[#C68A27] inline-block mt-0.5">{h2Text}</span>
                     </h2>
                     <div className="inline-block self-end mb-2">
-                      <svg className="w-8 h-8 text-[#043927] fill-[#043927]" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6 text-[#043927] fill-[#043927]" viewBox="0 0 24 24">
                         <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66l.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z" />
                       </svg>
                     </div>
@@ -1381,7 +1413,7 @@ export default function HomePage() {
                   <div className="pt-1">
                     <Link
                       href={btnLink}
-                      className="inline-flex items-center gap-3 px-7 py-3 rounded-full bg-[#043927] hover:bg-[#02281b] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all hover:scale-105 cursor-pointer group"
+                      className="inline-flex items-center gap-3 px-5 py-3 rounded-[15px] bg-[#043927] hover:bg-[#02281b] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all hover:scale-105 cursor-pointer group"
                     >
                       <span>{btnText}</span>
                       <ArrowRight className="w-4 h-4 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
@@ -1514,282 +1546,282 @@ export default function HomePage() {
                     className="flex flex-col gap-4 w-[calc((100%-16px)/2)] sm:w-[calc((100%-32px)/3)] md:w-[calc((100%-48px)/4)] lg:w-[calc((100%-64px)/5)] shrink-0 snap-start min-w-0"
                   >
                     {colItems.map((prod, idx) => {
-                const titleEn = prod.name_en || prod.title_en;
-                const titleAr = prod.name_ar || prod.title_ar || titleEn;
-                const title = locale === 'ar' ? titleAr : titleEn;
+                      const titleEn = prod.name_en || prod.title_en;
+                      const titleAr = prod.name_ar || prod.title_ar || titleEn;
+                      const title = locale === 'ar' ? titleAr : titleEn;
 
-                const brandEn = prod.brand;
-                const brandAr = prod.brand_ar || brandEn;
-                const brandName = locale === 'ar' ? brandAr : brandEn;
+                      const brandEn = prod.brand;
+                      const brandAr = prod.brand_ar || brandEn;
+                      const brandName = locale === 'ar' ? brandAr : brandEn;
 
-                let imgRaw = '';
-                if (Array.isArray(prod.images) && prod.images.length > 0) {
-                  imgRaw = typeof prod.images[0] === 'string' ? prod.images[0] : (prod.images[0]?.image_url || prod.images[0]?.url);
-                } else if (prod.image_url) {
-                  imgRaw = prod.image_url;
-                } else if (prod.img) {
-                  imgRaw = prod.img;
-                }
-                const finalImg = imgRaw ? getImageUrl(imgRaw) : '';
+                      let imgRaw = '';
+                      if (Array.isArray(prod.images) && prod.images.length > 0) {
+                        imgRaw = typeof prod.images[0] === 'string' ? prod.images[0] : (prod.images[0]?.image_url || prod.images[0]?.url);
+                      } else if (prod.image_url) {
+                        imgRaw = prod.image_url;
+                      } else if (prod.img) {
+                        imgRaw = prod.img;
+                      }
+                      const finalImg = imgRaw ? getImageUrl(imgRaw) : '';
 
-                const hasVariants = Boolean(prod.has_variants && prod.variants && prod.variants.length > 0);
-                const currentPrice = parseFloat(prod.price || 0);
-                let finalPrice = currentPrice;
-                let originalPrice = null;
+                      const hasVariants = Boolean(prod.has_variants && prod.variants && prod.variants.length > 0);
+                      const currentPrice = parseFloat(prod.price || 0);
+                      let finalPrice = currentPrice;
+                      let originalPrice = null;
 
-                if (hasVariants) {
-                  const activeVars = prod.variants.filter((v) => v.is_active !== false);
-                  const varsToUse = activeVars.length > 0 ? activeVars : prod.variants;
-                  const prices = varsToUse
-                    .map((v) => parseFloat(v.discount_price || v.price))
-                    .filter((p) => !isNaN(p) && p > 0);
-                  if (prices.length > 0) {
-                    finalPrice = Math.min(...prices);
-                  }
-                } else {
-                  const isDiscounted = prod.discount_price && parseFloat(prod.discount_price) < currentPrice;
-                  finalPrice = isDiscounted ? parseFloat(prod.discount_price) : currentPrice;
-                  originalPrice = isDiscounted ? currentPrice : (prod.purchase_price ? parseFloat(prod.purchase_price) : null);
-                }
+                      if (hasVariants) {
+                        const activeVars = prod.variants.filter((v) => v.is_active !== false);
+                        const varsToUse = activeVars.length > 0 ? activeVars : prod.variants;
+                        const prices = varsToUse
+                          .map((v) => parseFloat(v.discount_price || v.price))
+                          .filter((p) => !isNaN(p) && p > 0);
+                        if (prices.length > 0) {
+                          finalPrice = Math.min(...prices);
+                        }
+                      } else {
+                        const isDiscounted = prod.discount_price && parseFloat(prod.discount_price) < currentPrice;
+                        finalPrice = isDiscounted ? parseFloat(prod.discount_price) : currentPrice;
+                        originalPrice = isDiscounted ? currentPrice : (prod.purchase_price ? parseFloat(prod.purchase_price) : null);
+                      }
 
-                const specs = hasVariants
-                  ? `${prod.variants.length} ${locale === 'ar' ? 'خيارات متاحة' : 'Variants Available'}`
-                  : (prod.unit_value && prod.unit_type && prod.pack_size
-                    ? `${prod.unit_value} ${prod.unit_type} (${prod.pack_size})`
-                    : locale === 'ar'
-                      ? prod.specs_ar
-                      : prod.specs_en);
-                const ratingVal = prod.rating !== undefined && prod.rating !== null && prod.rating !== '' ? Number(prod.rating).toFixed(1) : '4.8';
-                const reviewsVal = (prod.reviews_count !== undefined && prod.reviews_count !== null ? Number(prod.reviews_count) : (prod.reviews ? Number(prod.reviews) : 120)).toLocaleString();
+                      const specs = hasVariants
+                        ? `${prod.variants.length} ${locale === 'ar' ? 'خيارات متاحة' : 'Variants Available'}`
+                        : (prod.unit_value && prod.unit_type && prod.pack_size
+                          ? `${prod.unit_value} ${prod.unit_type} (${prod.pack_size})`
+                          : locale === 'ar'
+                            ? prod.specs_ar
+                            : prod.specs_en);
+                      const ratingVal = prod.rating !== undefined && prod.rating !== null && prod.rating !== '' ? Number(prod.rating).toFixed(1) : '4.8';
+                      const reviewsVal = (prod.reviews_count !== undefined && prod.reviews_count !== null ? Number(prod.reviews_count) : (prod.reviews ? Number(prod.reviews) : 120)).toLocaleString();
 
-                const totalVariantStock = hasVariants && Array.isArray(prod.variants)
-                  ? prod.variants.reduce((acc, v) => acc + parseInt(v.stock_quantity || '0', 10), 0)
-                  : 0;
-                const isOutOfStock = hasVariants
-                  ? (prod.variants.length > 0 && totalVariantStock <= 0)
-                  : (prod.stock_quantity !== undefined && prod.stock_quantity !== null && parseInt(prod.stock_quantity, 10) <= 0);
+                      const totalVariantStock = hasVariants && Array.isArray(prod.variants)
+                        ? prod.variants.reduce((acc, v) => acc + parseInt(v.stock_quantity || '0', 10), 0)
+                        : 0;
+                      const isOutOfStock = hasVariants
+                        ? (prod.variants.length > 0 && totalVariantStock <= 0)
+                        : (prod.stock_quantity !== undefined && prod.stock_quantity !== null && parseInt(prod.stock_quantity, 10) <= 0);
 
-                return (
-                  <Link
-                    key={prod.id ? `pop-${prod.id}-${colIdx}-${idx}` : `pop-${colIdx}-${idx}`}
-                    href={prod.id ? `/products/${prod.id}` : '/products'}
-                    className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer flex-1"
-                  >
-                    {/* Top Badges */}
-                    <div className="flex items-center justify-between z-10 mb-1">
-                      {isOutOfStock ? (
-                        <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
-                          <Ban className="w-2.5 h-2.5 text-white" />
-                          <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
-                        </span>
-                      ) : prod.is_best_seller === true ? (
-                        <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
-                          <Star className="w-2.5 h-2.5 fill-current text-white" />
-                          <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>
-                        </span>
-                      ) : null}
+                      return (
+                        <Link
+                          key={prod.id ? `pop-${prod.id}-${colIdx}-${idx}` : `pop-${colIdx}-${idx}`}
+                          href={prod.id ? `/products/${prod.id}` : '/products'}
+                          className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer flex-1"
+                        >
+                          {/* Top Badges */}
+                          <div className="flex items-center justify-between z-10 mb-1">
+                            {isOutOfStock ? (
+                              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                                <Ban className="w-2.5 h-2.5 text-white" />
+                                <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
+                              </span>
+                            ) : prod.is_best_seller === true ? (
+                              <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                                <Star className="w-2.5 h-2.5 fill-current text-white" />
+                                <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>
+                              </span>
+                            ) : null}
 
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleWishlist(prod);
-                        }}
-                        className="text-slate-300 hover:text-rose-500 transition-colors cursor-pointer p-0.5 ml-auto"
-                        title="Add to Wishlist"
-                      >
-                        <Heart className={`w-4 h-4 ${isInWishlist(prod.id) ? 'text-rose-500 fill-rose-500' : ''}`} />
-                      </button>
-                    </div>
-
-                    {/* Product Image Container */}
-                    <div className="w-full aspect-[4/3] rounded-xl bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
-                      {isOutOfStock && (
-                        <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl">
-                          <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                            {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
-                          </span>
-                        </div>
-                      )}
-                      <img
-                        src={finalImg}
-                        alt={title}
-                        className={`w-full h-full object-contain transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
-                        }}
-                      />
-                    </div>
-
-                    {/* Info Content */}
-                    <div className="space-y-1 pt-0.5 flex-1 flex flex-col justify-between">
-                      <div>
-                        {/* Brand & In Stock Tag */}
-                        <div className="flex items-center justify-between text-[11px] font-medium leading-none mb-1">
-                          <span className="text-slate-400 truncate">{brandName}</span>
-                          {isOutOfStock ? (
-                            <span className="text-rose-600 font-bold shrink-0">
-                              {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
-                            </span>
-                          ) : hasVariants ? (
-                            <span className="text-[#00B074] font-bold shrink-0">
-                              {locale === 'ar' ? 'متوفر بخيارات' : 'Multi-Variant'}
-                            </span>
-                          ) : (
-                            <span className="text-[#00B074] font-bold shrink-0">
-                              {locale === 'ar' ? 'متوفر' : 'In Stock'}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Product Title */}
-                        <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug font-sans group-hover:text-[#043927] transition-colors mb-1">
-                          {title}
-                        </h3>
-
-                        {/* Specs / Tags */}
-                        <p className="text-[10px] text-slate-400 font-normal truncate mb-1">
-                          {specs}
-                        </p>
-
-                        {/* Rating & Reviews */}
-                        <div className="flex items-center justify-between text-[11px] py-1 border-t border-slate-100">
-                          <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
-                            <span className="text-amber-400 font-bold">★</span>
-                            <span className="font-bold text-slate-700">{ratingVal}</span>
-                            <span className="text-slate-400">({reviewsVal})</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Price & Add to Cart / Quantity Action Row */}
-                      <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 mt-auto">
-                        <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                          <span className="text-sm sm:text-[15px] font-black text-slate-900 font-sans whitespace-nowrap leading-tight">
-                            <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
-                            {finalPrice.toFixed(2)}
-                          </span>
-                          {!hasVariants && originalPrice && (
-                            <span className="text-[10px] text-slate-400 line-through font-normal whitespace-nowrap">
-                              SAR {originalPrice.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Quantity Counter, Select Options, or Add to Cart Button */}
-                        {(() => {
-                          if (isOutOfStock) {
-                            return (
-                              <button
-                                type="button"
-                                disabled
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }}
-                                className="h-8 w-full rounded-xl bg-slate-100 border border-slate-200 text-slate-400 font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 cursor-not-allowed select-none"
-                              >
-                                <Ban className="w-3.5 h-3.5 text-slate-400" />
-                                <span>{locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>
-                              </button>
-                            );
-                          }
-
-                          if (hasVariants) {
-                            return (
-                              <div className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#00B074] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5">
-                                <Zap className="w-3.5 h-3.5 text-amber-300" />
-                                <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
-                              </div>
-                            );
-                          }
-
-                          const cartItem = getCartItem(prod.id);
-                          const inCart = cartItem && cartItem.quantity > 0;
-                          const isBusy = addingId === prod.id || actionId === prod.id;
-
-                          if (inCart) {
-                            return (
-                              <div
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }}
-                                className="h-8 w-full bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between p-0.5 px-1 shadow-2xs"
-                              >
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleDecrement(prod.id);
-                                  }}
-                                  disabled={isBusy}
-                                  className="w-6.5 h-6.5 rounded-lg bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                                  title={cartItem.quantity === 1 ? (locale === 'ar' ? 'حذف' : 'Remove') : (locale === 'ar' ? 'إنقاص' : 'Decrease')}
-                                >
-                                  <Minus className="w-3 h-3 stroke-[2.5]" />
-                                </button>
-
-                                <span className="flex-1 text-center text-xs font-black text-slate-900 font-sans select-none">
-                                  {isBusy ? (
-                                    <Loader2 className="w-3 h-3 animate-spin mx-auto text-emerald-600" />
-                                  ) : (
-                                    cartItem.quantity
-                                  )}
-                                </span>
-
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleIncrement(prod.id, prod);
-                                  }}
-                                  disabled={isBusy || (prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity)}
-                                  className="w-6.5 h-6.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                                  title={prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity ? (locale === 'ar' ? 'تم الوصول للحد الأقصى للمخزون' : 'Max stock reached') : (locale === 'ar' ? 'زيادة' : 'Increase')}
-                                >
-                                  <Plus className="w-3 h-3 stroke-[2.5]" />
-                                </button>
-                              </div>
-                            );
-                          }
-
-                          return (
                             <button
-                              type="button"
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleAddToCart(prod.id, prod);
+                                toggleWishlist(prod);
                               }}
-                              disabled={isBusy}
-                              className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all hover:scale-[1.01] cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
+                              className="text-slate-300 hover:text-rose-500 transition-colors cursor-pointer p-0.5 ml-auto"
+                              title="Add to Wishlist"
                             >
-                              {isBusy ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <>
-                                  <ShoppingBag className="w-3.5 h-3.5" />
-                                  <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
-                                </>
-                              )}
+                              <Heart className={`w-4 h-4 ${isInWishlist(prod.id) ? 'text-rose-500 fill-rose-500' : ''}`} />
                             </button>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
+                          </div>
+
+                          {/* Product Image Container */}
+                          <div className="w-full aspect-[4/3] rounded-xl bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
+                            {isOutOfStock && (
+                              <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl">
+                                <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                                  {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                                </span>
+                              </div>
+                            )}
+                            <img
+                              src={finalImg}
+                              alt={title}
+                              className={`w-full h-full object-contain transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+                              }}
+                            />
+                          </div>
+
+                          {/* Info Content */}
+                          <div className="space-y-1 pt-0.5 flex-1 flex flex-col justify-between">
+                            <div>
+                              {/* Brand & In Stock Tag */}
+                              <div className="flex items-center justify-between text-[11px] font-medium leading-none mb-1">
+                                <span className="text-slate-400 truncate">{brandName}</span>
+                                {isOutOfStock ? (
+                                  <span className="text-rose-600 font-bold shrink-0">
+                                    {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                                  </span>
+                                ) : hasVariants ? (
+                                  <span className="text-[#00B074] font-bold shrink-0">
+                                    {locale === 'ar' ? 'متوفر بخيارات' : 'Multi-Variant'}
+                                  </span>
+                                ) : (
+                                  <span className="text-[#00B074] font-bold shrink-0">
+                                    {locale === 'ar' ? 'متوفر' : 'In Stock'}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Product Title */}
+                              <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug font-sans group-hover:text-[#043927] transition-colors mb-1">
+                                {title}
+                              </h3>
+
+                              {/* Specs / Tags */}
+                              <p className="text-[10px] text-slate-400 font-normal truncate mb-1">
+                                {specs}
+                              </p>
+
+                              {/* Rating & Reviews */}
+                              <div className="flex items-center justify-between text-[11px] py-1 border-t border-slate-100">
+                                <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
+                                  <span className="text-amber-400 font-bold">★</span>
+                                  <span className="font-bold text-slate-700">{ratingVal}</span>
+                                  <span className="text-slate-400">({reviewsVal})</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Price & Add to Cart / Quantity Action Row */}
+                            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 mt-auto">
+                              <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                                <span className="text-sm sm:text-[15px] font-black text-slate-900 font-sans whitespace-nowrap leading-tight">
+                                  <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
+                                  {finalPrice.toFixed(2)}
+                                </span>
+                                {!hasVariants && originalPrice && (
+                                  <span className="text-[10px] text-slate-400 line-through font-normal whitespace-nowrap">
+                                    SAR {originalPrice.toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Quantity Counter, Select Options, or Add to Cart Button */}
+                              {(() => {
+                                if (isOutOfStock) {
+                                  return (
+                                    <button
+                                      type="button"
+                                      disabled
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                      className="h-8 w-full rounded-xl bg-slate-100 border border-slate-200 text-slate-400 font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 cursor-not-allowed select-none"
+                                    >
+                                      <Ban className="w-3.5 h-3.5 text-slate-400" />
+                                      <span>{locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>
+                                    </button>
+                                  );
+                                }
+
+                                if (hasVariants) {
+                                  return (
+                                    <div className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#00B074] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                                      <Zap className="w-3.5 h-3.5 text-amber-300" />
+                                      <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
+                                    </div>
+                                  );
+                                }
+
+                                const cartItem = getCartItem(prod.id);
+                                const inCart = cartItem && cartItem.quantity > 0;
+                                const isBusy = addingId === prod.id || actionId === prod.id;
+
+                                if (inCart) {
+                                  return (
+                                    <div
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                      className="h-8 w-full bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between p-0.5 px-1 shadow-2xs"
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          handleDecrement(prod.id);
+                                        }}
+                                        disabled={isBusy}
+                                        className="w-6.5 h-6.5 rounded-lg bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                                        title={cartItem.quantity === 1 ? (locale === 'ar' ? 'حذف' : 'Remove') : (locale === 'ar' ? 'إنقاص' : 'Decrease')}
+                                      >
+                                        <Minus className="w-3 h-3 stroke-[2.5]" />
+                                      </button>
+
+                                      <span className="flex-1 text-center text-xs font-black text-slate-900 font-sans select-none">
+                                        {isBusy ? (
+                                          <Loader2 className="w-3 h-3 animate-spin mx-auto text-emerald-600" />
+                                        ) : (
+                                          cartItem.quantity
+                                        )}
+                                      </span>
+
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          handleIncrement(prod.id, prod);
+                                        }}
+                                        disabled={isBusy || (prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity)}
+                                        className="w-6.5 h-6.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                                        title={prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity ? (locale === 'ar' ? 'تم الوصول للحد الأقصى للمخزون' : 'Max stock reached') : (locale === 'ar' ? 'زيادة' : 'Increase')}
+                                      >
+                                        <Plus className="w-3 h-3 stroke-[2.5]" />
+                                      </button>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleAddToCart(prod.id, prod);
+                                    }}
+                                    disabled={isBusy}
+                                    className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all hover:scale-[1.01] cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
+                                  >
+                                    {isBusy ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <>
+                                        <ShoppingBag className="w-3.5 h-3.5" />
+                                        <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
+                                      </>
+                                    )}
+                                  </button>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ));
+              })()}
             </div>
-          ));
-        })()}
-      </div>
-    </div>
-  </section>
+          </div>
+        </section>
 
         {/* 8. Freshness at your Doorstep Banner Section */}
         <section className="py-10 sm:py-14 text-center space-y-3 max-w-3xl mx-auto font-sans">
