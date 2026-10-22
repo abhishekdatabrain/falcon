@@ -82,6 +82,71 @@ const HeroBanner = sequelize.define('HeroBanner', {
     allowNull: false,
     defaultValue: true,
   },
+  show_badges: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true,
+    defaultValue: true,
+  },
+  badge_1_title_en: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Fast & Reliable',
+  },
+  badge_1_title_ar: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'سريع وموثوق',
+  },
+  badge_1_subtitle_en: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Delivery',
+  },
+  badge_1_subtitle_ar: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'التوصيل',
+  },
+  badge_2_title_en: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Great Prices',
+  },
+  badge_2_title_ar: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'أسعار رائعة',
+  },
+  badge_2_subtitle_en: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Everyday',
+  },
+  badge_2_subtitle_ar: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'كل يوم',
+  },
+  badge_3_title_en: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Secure',
+  },
+  badge_3_title_ar: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'آمن ومحمي',
+  },
+  badge_3_subtitle_en: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Payments',
+  },
+  badge_3_subtitle_ar: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'المدفوعات',
+  },
 }, {
   tableName: 'hero_banners',
   timestamps: true,

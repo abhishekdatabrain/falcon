@@ -6,6 +6,7 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useCart } from '../../src/contexts/CartContext';
 import { useWishlist } from '../../src/contexts/WishlistContext';
 import { fetchApi, getImageUrl } from '../../src/services/api';
+import ProductFilterSidebar from '../../src/components/ProductFilterSidebar';
 import {
   Search,
   ShoppingBag,
@@ -50,16 +51,76 @@ function ProductsCatalogContent() {
   const [selectedSubcategory, setSelectedSubcategory] = useState(subcategoryIdParam);
   const [selectedSubSubcategory, setSelectedSubSubcategory] = useState(subSubcategoryIdParam);
   const [selectedSubSubSubcategory, setSelectedSubSubSubcategory] = useState(subSubSubcategoryIdParam);
+
+  const categoryIdsQuery = searchParams.get('categoryIds');
+  const initialCategoryIds = useMemo(() => {
+    if (categoryIdsQuery) {
+      return categoryIdsQuery.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+    const single = subSubSubcategoryIdParam || subSubcategoryIdParam || subcategoryIdParam || categoryIdParam;
+    return single ? [single] : [];
+  }, [categoryIdsQuery, categoryIdParam, subcategoryIdParam, subSubcategoryIdParam, subSubSubcategoryIdParam]);
+
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState(initialCategoryIds);
+
+  useEffect(() => {
+    setSelectedCategoryIds(initialCategoryIds);
+  }, [initialCategoryIds]);
+
+  const handleToggleCategory = (catId, node) => {
+    setSelectedCategoryIds((prev) => {
+      const isSelected = prev.includes(catId) || (node?.slug && prev.includes(node.slug));
+      const next = isSelected ? [] : [catId];
+
+      const newParams = new URLSearchParams(searchParams.toString());
+      if (next.length > 0) {
+        newParams.set('categoryId', next[0]);
+      } else {
+        newParams.delete('categoryId');
+      }
+      newParams.delete('category');
+      newParams.delete('categoryIds');
+      newParams.delete('subcategoryId');
+      newParams.delete('sub');
+      newParams.delete('subSubcategoryId');
+      newParams.delete('subSub');
+      newParams.delete('subSubSubcategoryId');
+      newParams.delete('subSubSub');
+      newParams.set('page', '1');
+
+      router.push(`/products?${newParams.toString()}`, { scroll: false });
+      return next;
+    });
+    setCurrentPage(1);
+  };
+
   const [expandedCats, setExpandedCats] = useState(new Set());
   const [addingId, setAddingId] = useState(null);
   const [actionId, setActionId] = useState(null);
   const [activeFilterChip, setActiveFilterChip] = useState('ALL');
-  const [priceRange, setPriceRange] = useState(150);
-  const [minPrice, setMinPrice] = useState(5);
+  const [priceRange, setPriceRange] = useState(500);
+  const [minPrice, setMinPrice] = useState(0);
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [availableBrands, setAvailableBrands] = useState([]);
+  const [deliverySpeed, setDeliverySpeed] = useState('express');
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const sortParam = searchParams.get('sort') || searchParams.get('sortBy') || 'featured';
   const [sortOption, setSortOption] = useState(sortParam);
+
+  const toggleBrand = (brandName) => {
+    setSelectedBrands((prev) =>
+      prev.includes(brandName) ? prev.filter((b) => b !== brandName) : [...prev, brandName]
+    );
+    setCurrentPage(1);
+  };
+
+  const resetAllFilters = () => {
+    setMinPrice(0);
+    setPriceRange(500);
+    setSelectedBrands([]);
+    setDeliverySpeed('express');
+    setCurrentPage(1);
+  };
 
   // Dynamic Pagination State
   const pageParam = parseInt(searchParams.get('page') || '1', 10);
@@ -105,10 +166,14 @@ function ProductsCatalogContent() {
     try {
       setLoading(true);
       let query = `/products?page=${currentPage}&limit=${itemsPerPage}&search=${encodeURIComponent(search)}`;
-      if (selectedCategory) query += `&categoryId=${selectedCategory}`;
-      if (selectedSubcategory) query += `&subcategoryId=${selectedSubcategory}`;
-      if (selectedSubSubcategory) query += `&subSubcategoryId=${selectedSubSubcategory}`;
-      if (selectedSubSubSubcategory) query += `&subSubSubcategoryId=${selectedSubSubSubcategory}`;
+      if (selectedCategoryIds && selectedCategoryIds.length > 0) {
+        query += `&categoryIds=${encodeURIComponent(selectedCategoryIds.join(','))}`;
+      } else {
+        if (selectedCategory) query += `&categoryId=${selectedCategory}`;
+        if (selectedSubcategory) query += `&subcategoryId=${selectedSubcategory}`;
+        if (selectedSubSubcategory) query += `&subSubcategoryId=${selectedSubSubcategory}`;
+        if (selectedSubSubSubcategory) query += `&subSubSubcategoryId=${selectedSubSubSubcategory}`;
+      }
 
       if (minPrice !== undefined && minPrice !== null && minPrice !== '') query += `&minPrice=${minPrice}`;
       if (priceRange !== undefined && priceRange !== null && priceRange !== '') query += `&maxPrice=${priceRange}`;
@@ -156,14 +221,14 @@ function ProductsCatalogContent() {
   // When filters, brands or search change, reset page back to 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategory, selectedSubcategory, selectedSubSubcategory, selectedSubSubSubcategory, search, minPrice, priceRange, sortOption, selectedBrands]);
+  }, [selectedCategoryIds, selectedCategory, selectedSubcategory, selectedSubSubcategory, selectedSubSubSubcategory, search, minPrice, priceRange, sortOption, selectedBrands]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       loadProducts();
     }, 250);
     return () => clearTimeout(timer);
-  }, [selectedCategory, selectedSubcategory, selectedSubSubcategory, selectedSubSubSubcategory, search, minPrice, priceRange, sortOption, selectedBrands, currentPage, itemsPerPage]);
+  }, [selectedCategoryIds, selectedCategory, selectedSubcategory, selectedSubSubcategory, selectedSubSubSubcategory, search, minPrice, priceRange, sortOption, selectedBrands, currentPage, itemsPerPage]);
 
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > totalPages || newPage === currentPage) return;
@@ -445,28 +510,6 @@ function ProductsCatalogContent() {
     );
   };
 
-  const toggleBrand = (brandName) => {
-    setSelectedBrands((prev) => {
-      const next = prev.includes(brandName)
-        ? prev.filter((b) => b !== brandName)
-        : [...prev, brandName];
-      return next;
-    });
-  };
-
-  const resetAllFilters = () => {
-    setActiveFilterChip('ALL');
-    setSelectedCategory('');
-    setSelectedSubcategory('');
-    setSelectedSubSubcategory('');
-    setSelectedSubSubSubcategory('');
-    setMinPrice(5);
-    setPriceRange(200);
-    setSelectedBrands([]);
-    setCurrentPage(1);
-    router.push('/products', { scroll: false });
-  };
-
   const getCartItem = (productId) => {
     if (!cart?.items || !productId) return null;
     return cart.items.find(
@@ -628,9 +671,25 @@ function ProductsCatalogContent() {
             ))}
           </div> */}
 
-          {/* Right Items Count & Sort Selector */}
-          <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 shrink-0 self-end sm:self-auto">
+          {/* Right Items Count, Mobile Filter Button & Sort Selector */}
+          <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 shrink-0 self-end sm:self-auto">
             <span>{locale === 'ar' ? `عرض ${totalItems} منتج` : `Showing ${totalItems} items`}</span>
+            
+            {/* Mobile Filters Trigger */}
+            <button
+              type="button"
+              onClick={() => setIsMobileFilterOpen(true)}
+              className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs shadow-2xs cursor-pointer"
+            >
+              <Filter className="w-3.5 h-3.5 text-[#043927]" />
+              <span>{locale === 'ar' ? 'تصفية' : 'Filters'}</span>
+              {(minPrice > 0 || priceRange < 500 || selectedBrands.length > 0) && (
+                <span className="w-4 h-4 rounded-full bg-[#043927] text-white text-[10px] flex items-center justify-center font-bold">
+                  {(minPrice > 0 ? 1 : 0) + (priceRange < 500 ? 1 : 0) + selectedBrands.length}
+                </span>
+              )}
+            </button>
+
             <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
               <span className="text-slate-400">{locale === 'ar' ? 'ترتيب حسب:' : 'Sort By:'}</span>
               <select
@@ -659,185 +718,36 @@ function ProductsCatalogContent() {
       {/* 3. Main 2-Column Catalog Layout (Left Sidebar Filters + Right 4-Column Product Grid) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-        {/* LEFT SIDEBAR FILTERS PANEL (3 Columns) */}
-        <aside className="lg:col-span-3 bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs space-y-6 sticky top-24 self-start font-sans">
-          
-          {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
-              <SlidersHorizontal className="w-4 h-4 text-[#043927]" />
-              <span>{locale === 'ar' ? 'تصفية المنتجات' : 'Filter Products'}</span>
-            </h3>
-            <button
-              type="button"
-              onClick={resetAllFilters}
-              className="text-xs font-bold text-emerald-700 hover:underline cursor-pointer"
-            >
-              {locale === 'ar' ? 'إعادة ضبط' : 'Reset All'}
-            </button>
-          </div>
-
-          {/* 1. Produce Categories (Nested Tree) */}
-          <div className="space-y-3">
-            <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
-              {locale === 'ar' ? 'تصنيفات المنتجات' : 'Produce Categories'}
-            </h4>
-            <div className="space-y-1 text-xs font-medium text-slate-700">
-              {displayCategoryTree.map((catNode) => renderCategoryNode(catNode, 1))}
-            </div>
-          </div>
-
-          {/* 2. Delivery Speed */}
-          <div className="space-y-3 pt-3 border-t border-slate-100">
-            <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
-              {locale === 'ar' ? 'سرعة التوصيل' : 'Delivery Speed'}
-            </h4>
-            <div className="space-y-2 text-xs font-medium text-slate-700">
-              <label className="flex items-center gap-2.5 cursor-pointer text-[#043927] font-bold">
-                <input type="radio" name="speed" defaultChecked className="w-4 h-4 text-[#043927]" />
-                <span className="flex items-center gap-1">
-                  <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                  <span>Express 2-Hours</span>
-                </span>
-              </label>
-              <label className="flex items-center gap-2.5 cursor-pointer text-slate-700">
-                <input type="radio" name="speed" className="w-4 h-4 text-[#043927]" />
-                <span>Scheduled Delivery Slot</span>
-              </label>
-            </div>
-          </div>
-
-          {/* 3. Price Range (SAR) */}
-          <div className="space-y-3 pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between text-xs font-bold text-slate-900">
-              <span>{locale === 'ar' ? 'نطاق السعر (ريال)' : 'Price Range (SAR)'}</span>
-              <span className="text-[#043927] font-black">SAR {minPrice} - SAR {priceRange}</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="500"
-              value={priceRange}
-              onChange={(e) => setPriceRange(Number(e.target.value))}
-              className="w-full accent-[#043927] cursor-pointer"
-            />
-            <div className="flex items-center gap-2">
-              <div className="w-1/2 flex items-center bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700">
-                <span className="text-slate-400 mr-1 font-normal">SAR</span>
-                <input
-                  type="number"
-                  min="0"
-                  max={priceRange}
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(Number(e.target.value))}
-                  className="w-full bg-transparent text-center font-bold focus:outline-none"
-                />
-              </div>
-              <span className="text-slate-400">-</span>
-              <div className="w-1/2 flex items-center bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700">
-                <span className="text-slate-400 mr-1 font-normal">SAR</span>
-                <input
-                  type="number"
-                  min={minPrice}
-                  max="1000"
-                  value={priceRange}
-                  onChange={(e) => setPriceRange(Number(e.target.value))}
-                  className="w-full bg-transparent text-center font-bold focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 4. Dietary & Harvest Type */}
-          {/* <div className="space-y-3 pt-3 border-t border-slate-100">
-            <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
-              {locale === 'ar' ? 'نوع الحصاد' : 'Dietary & Harvest Type'}
-            </h4>
-            <div className="space-y-2 text-xs font-medium text-slate-700">
-              {[
-                { name: '100% Organic Certified', count: 45 },
-                { name: 'Saudi Local Farm Produce', count: 74 },
-                { name: 'Pesticide Free & Hydroponic', count: 61 },
-                { name: 'Halal Certified', count: 98 },
-                { name: 'Winter Fresh Harvest', count: 19 },
-              ].map((item, idx) => (
-                <label key={idx} className="flex items-center justify-between hover:text-[#043927] cursor-pointer">
-                  <div className="flex items-center gap-2.5">
-                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-[#043927]" />
-                    <span>{item.name}</span>
-                  </div>
-                  <span className="text-slate-400 text-[11px]">({item.count})</span>
-                </label>
-              ))}
-            </div>
-          </div> */}
-
-          {/* 5. Trusted Farm Brands */}
-          <div className="space-y-3 pt-3 border-t border-slate-100 font-sans">
-            <div className="flex items-center justify-between">
-              <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
-                {locale === 'ar' ? 'العلامات التجارية الموثوقة' : 'Trusted Farm Brands'}
-              </h4>
-              {selectedBrands.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedBrands([])}
-                  className="text-[10px] text-emerald-700 font-bold hover:underline cursor-pointer"
-                >
-                  {locale === 'ar' ? 'إعادة ضبط' : 'Clear'}
-                </button>
-              )}
-            </div>
-            <div className="space-y-2 text-xs font-medium text-slate-700">
-              {(() => {
-                // If DB has brands, use DB brands; otherwise fallback to default list
-                const displayBrands = (availableBrands && availableBrands.length > 0)
-                  ? availableBrands
-                  : [
-                      { name: 'FreshKart Organic Farms', count: 41 },
-                      { name: 'Almarai / Al Kabeer', count: 35 },
-                      { name: 'NADEC Foods', count: 28 },
-                      { name: 'Sunbulah / Hayat', count: 19 },
-                      { name: 'Emirates Selection', count: 11 },
-                    ];
-
-                return displayBrands.map((brand, idx) => {
-                  const isChecked = selectedBrands.includes(brand.name);
-                  return (
-                    <label
-                      key={idx}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        toggleBrand(brand.name);
-                      }}
-                      className={`flex items-center justify-between transition-colors cursor-pointer select-none py-0.5 ${
-                        isChecked ? 'text-[#043927] font-bold' : 'text-slate-700 hover:text-[#043927]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${
-                            isChecked
-                              ? 'bg-[#043927] border-[#043927] text-white shadow-2xs'
-                              : 'border-slate-300 bg-white hover:border-[#043927]'
-                          }`}
-                        >
-                          {isChecked && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                        </div>
-                        <span className="text-xs">{brand.name}</span>
-                      </div>
-                      <span className="text-slate-400 text-[11px] font-normal">({brand.count})</span>
-                    </label>
-                  );
-                });
-              })()}
-            </div>
-          </div>
-
-          {/* 6. Customer Ratings */}
-        
-
-        </aside>
+        {/* REUSABLE PRODUCT FILTER SIDEBAR (3 Columns Desktop + Slide-over Drawer Mobile) */}
+        <div className="lg:col-span-3">
+          <ProductFilterSidebar
+            categories={categories}
+            selectedCategory={selectedCategory}
+            selectedSubcategory={selectedSubcategory}
+            selectedSubSubcategory={selectedSubSubcategory}
+            selectedSubSubSubcategory={selectedSubSubSubcategory}
+            selectedCategoryIds={selectedCategoryIds}
+            onToggleCategory={handleToggleCategory}
+            onSelectCategory={handleSelectCat}
+            minPrice={0}
+            maxPrice={500}
+            currentMinPrice={minPrice}
+            currentMaxPrice={priceRange}
+            onChangePrice={(min, max) => {
+              setMinPrice(min);
+              setPriceRange(max);
+            }}
+            selectedBrands={selectedBrands}
+            availableBrands={availableBrands}
+            onToggleBrand={toggleBrand}
+            onClearBrands={() => setSelectedBrands([])}
+            deliverySpeed={deliverySpeed}
+            onChangeDeliverySpeed={setDeliverySpeed}
+            onResetFilters={resetAllFilters}
+            isOpenMobile={isMobileFilterOpen}
+            onCloseMobile={() => setIsMobileFilterOpen(false)}
+          />
+        </div>
 
         {/* RIGHT MAIN CONTENT AREA: 4-Column Product Cards Grid (9 Columns) */}
         <main id="products-catalog-main" className="lg:col-span-9 w-full space-y-6">
@@ -886,7 +796,12 @@ function ProductsCatalogContent() {
                         <Ban className="w-2.5 h-2.5 text-white" />
                         <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
                       </span>
-                    ) : (
+                    ) : Boolean(prod.is_best_seller || prod.isBestSeller) ? (
+                      <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                        <Star className="w-2.5 h-2.5 fill-current text-white" />
+                        <span>{locale === 'ar' ? 'الأكثر مبيعاً' : 'BEST SELLER'}</span>
+                      </span>
+                    ) : prod.badge ? (
                       <span
                         className={`px-2 py-0.5 rounded-full text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs ${
                           prod.badgeType === 'red'
@@ -897,8 +812,10 @@ function ProductsCatalogContent() {
                         }`}
                       >
                         <Star className="w-2.5 h-2.5 fill-current text-white" />
-                        <span>{prod.badge || (hasVariants ? (locale === 'ar' ? 'متعدد الأحجام' : 'MULTI-PACK') : 'BEST SELLER')}</span>
+                        <span>{prod.badge}</span>
                       </span>
+                    ) : (
+                      <span />
                     )}
 
                     <button

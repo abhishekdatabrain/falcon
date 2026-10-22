@@ -86,55 +86,53 @@ export default function CheckoutPage() {
   const [error, setError] = useState('');
   const isSubmittingRef = useRef(false);
 
-  // Modal State
+  // Modal & Address State
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addressModalTab, setAddressModalTab] = useState('list'); // 'list' | 'new'
   const [newAddress, setNewAddress] = useState({
-    full_name: 'Mohammed Al-Salem',
-    mobile: '+966 50 123 4567',
+    full_name: '',
+    mobile: '',
     country: 'Saudi Arabia',
     state: 'Riyadh Province',
     city: 'Riyadh',
-    area: 'Al-Olaya District',
-    address_line: 'Building 42, King Fahd Road',
-    postal_code: '13211',
+    area: '',
+    address_line: '',
+    postal_code: '',
     is_default: true,
   });
+
+  // Prefill newAddress full_name and mobile from logged in user if available
+  useEffect(() => {
+    if (user) {
+      const name = user.name || (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : '') || (user.email ? user.email.split('@')[0] : '');
+      const phone = user.mobile || user.phone_number || '';
+      setNewAddress((prev) => ({
+        ...prev,
+        full_name: prev.full_name || name,
+        mobile: prev.mobile || phone,
+      }));
+    }
+  }, [user]);
 
   const loadAddresses = async () => {
     try {
       const res = await fetchApi('/customers/addresses');
-      if (res.success && res.data.addresses && res.data.addresses.length > 0) {
+      if (res.success && res.data?.addresses && res.data.addresses.length > 0) {
         setAddresses(res.data.addresses);
-        const defaultAddr = res.data.addresses.find((a) => a.is_default) || res.data.addresses[0];
-        setSelectedAddressId(defaultAddr.id);
-      } else {
-        // Default fallback address if user has no saved addresses
-        setAddresses([
-          {
-            id: 'addr-default',
-            full_name: 'Mohammed Al-Salem',
-            mobile: '+966 50 123 4567',
-            city: 'Riyadh',
-            area: 'Al-Olaya District',
-            address_line: 'Building 42, King Fahd Road, Al-Olaya District, Riyadh 13211, Kingdom of Saudi Arabia',
-            is_default: true
+        setSelectedAddressId((prevId) => {
+          if (prevId && res.data.addresses.some((a) => a.id === prevId)) {
+            return prevId;
           }
-        ]);
-        setSelectedAddressId('addr-default');
+          const defaultAddr = res.data.addresses.find((a) => a.is_default) || res.data.addresses[0];
+          return defaultAddr.id;
+        });
+      } else {
+        setAddresses([]);
+        setSelectedAddressId('');
       }
     } catch (err) {
-      setAddresses([
-        {
-          id: 'addr-default',
-          full_name: 'Mohammed Al-Salem',
-          mobile: '+966 50 123 4567',
-          city: 'Riyadh',
-          area: 'Al-Olaya District',
-          address_line: 'Building 42, King Fahd Road, Al-Olaya District, Riyadh 13211, Kingdom of Saudi Arabia',
-          is_default: true
-        }
-      ]);
-      setSelectedAddressId('addr-default');
+      setAddresses([]);
+      setSelectedAddressId('');
     }
   };
 
@@ -155,16 +153,24 @@ export default function CheckoutPage() {
     e.preventDefault();
     try {
       const payload = {
-        full_name: newAddress.full_name,
-        mobile: newAddress.mobile,
+        full_name: (newAddress.full_name || '').trim(),
+        mobile: (newAddress.mobile || '').trim(),
         country: newAddress.country || 'Saudi Arabia',
         state: newAddress.state || newAddress.city || 'Riyadh',
-        city: newAddress.city,
-        area: newAddress.area,
-        address_line: newAddress.address_line,
-        postal_code: newAddress.postal_code || '',
-        is_default: newAddress.is_default !== undefined ? newAddress.is_default : true,
+        city: (newAddress.city || '').trim() || 'Riyadh',
+        area: (newAddress.area || '').trim(),
+        address_line: (newAddress.address_line || '').trim(),
+        postal_code: (newAddress.postal_code || '').trim(),
+        is_default: addresses.length === 0 ? true : Boolean(newAddress.is_default),
       };
+
+      if (!payload.full_name || !payload.mobile || !payload.city || !payload.area || !payload.address_line) {
+        showToast(
+          locale === 'ar' ? 'يرجى ملء جميع حقول العنوان المطلوبة' : 'Please fill in all required address fields',
+          'error'
+        );
+        return;
+      }
 
       const res = await fetchApi('/customers/addresses', {
         method: 'POST',
@@ -194,8 +200,13 @@ export default function CheckoutPage() {
       showToast(locale === 'ar' ? 'السلة فارغة' : 'Your bag is empty', 'error');
       return;
     }
-    if (!selectedAddressId) {
-      showToast(locale === 'ar' ? 'يرجى تحديد عنوان التوصيل' : 'Please select a delivery address', 'error');
+    if (!selectedAddressId || addresses.length === 0) {
+      showToast(
+        locale === 'ar' ? 'يرجى إضافة عنوان التوصيل أولاً للمتابعة' : 'Please add a delivery address first to proceed',
+        'error'
+      );
+      setAddressModalTab('new');
+      setShowAddressModal(true);
       return;
     }
     setGatewayStep('input');
@@ -229,10 +240,36 @@ export default function CheckoutPage() {
       // Simulate 3D Secure / SAMA Gateway network latency
       await new Promise((resolve) => setTimeout(resolve, 1200));
 
+      const addressIdToUse = selectedAddressId;
+      if (!addressIdToUse || addresses.length === 0) {
+        setShowPaymentGatewayModal(false);
+        showToast(
+          locale === 'ar' ? 'يرجى تحديد أو إضافة عنوان التوصيل' : 'Please select or add a delivery address',
+          'error'
+        );
+        setAddressModalTab('new');
+        setShowAddressModal(true);
+        return;
+      }
+
+      if (deliverySpeed === 'standard') {
+        const slotToUse = selectedTimeSlot || (scheduleSlots[0] ? (locale === 'ar' ? (scheduleSlots[0].slot_label_ar || scheduleSlots[0].slot_label_en) : (scheduleSlots[0].slot_label_en || scheduleSlots[0].slot_label_ar)) : '1:00 PM - 3:00 PM');
+        if (!slotToUse || isSlotExpired(slotToUse, selectedDate)) {
+          setShowPaymentGatewayModal(false);
+          showToast(
+            locale === 'ar'
+              ? 'فترة التوصيل المحددة انتهى وقتها، يرجى اختيار فترة قادمة متاحة'
+              : 'The selected delivery slot has already passed. Please choose an upcoming slot.',
+            'error'
+          );
+          return;
+        }
+      }
+
       const res = await fetchApi('/orders', {
         method: 'POST',
         body: JSON.stringify({
-          addressId: selectedAddressId,
+          addressId: addressIdToUse,
           notes: driverInstructions,
           deliverySpeed,
           outOfStockPref,
@@ -245,7 +282,8 @@ export default function CheckoutPage() {
 
       if (res.success && res.data?.order) {
         const orderId = res.data.order.id;
-        await fetchCart();
+        await clearCart(false);
+        await fetchCart().catch(() => {});
         setShowPaymentGatewayModal(false);
         showToast(
           locale === 'ar' ? 'تم الدفع بنجاح وتأكيد الطلب! 🎉' : 'Payment authorized & Order placed! 🎉',
@@ -254,25 +292,19 @@ export default function CheckoutPage() {
         router.push(`/order-confirmation?orderId=${orderId}`);
         return;
       } else {
-        const targetId = 'aeddee08-8e31-4cc5-bb94-7c0329f2c239';
-        await fetchCart();
         setShowPaymentGatewayModal(false);
         showToast(
-          locale === 'ar' ? 'تم الدفع بنجاح وتأكيد الطلب! 🎉' : 'Payment authorized & Order placed! 🎉',
-          'success'
+          res?.message || (locale === 'ar' ? 'فشل إتمام الطلب' : 'Failed to place order'),
+          'error'
         );
-        router.push(`/order-confirmation?orderId=${targetId}`);
         return;
       }
     } catch (err) {
-      const targetId = 'aeddee08-8e31-4cc5-bb94-7c0329f2c239';
-      await fetchCart().catch(() => {});
       setShowPaymentGatewayModal(false);
       showToast(
-        locale === 'ar' ? 'تم الدفع بنجاح وتأكيد الطلب! 🎉' : 'Payment authorized & Order placed! 🎉',
-        'success'
+        err.message || (locale === 'ar' ? 'حدث خطأ أثناء إتمام الطلب' : 'An error occurred while placing order'),
+        'error'
       );
-      router.push(`/order-confirmation?orderId=${targetId}`);
       return;
     } finally {
       setLoading(false);
@@ -302,6 +334,111 @@ export default function CheckoutPage() {
     fetchActiveCoupons();
   }, []);
 
+  // Parse slot start time for time-passed validation
+  const parseSlotStartTime = (slotStr) => {
+    if (!slotStr || typeof slotStr !== 'string') return null;
+    let str = slotStr
+      .replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 1632))
+      .replace(/م/g, 'PM')
+      .replace(/ص/g, 'AM');
+
+    const parts = str.split(/[-–—]/);
+    if (!parts[0]) return null;
+    const startPart = parts[0].trim();
+    const endPart = parts[1] ? parts[1].trim() : '';
+
+    const match = startPart.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
+    if (!match) return null;
+
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2] ? parseInt(match[2], 10) : 0;
+    let meridian = match[3] ? match[3].toUpperCase() : null;
+
+    if (!meridian && endPart) {
+      const endMeridianMatch = endPart.match(/(AM|PM)/i);
+      if (endMeridianMatch) {
+        const endMeridian = endMeridianMatch[1].toUpperCase();
+        const endHourMatch = endPart.match(/(\d{1,2})/);
+        const endHour = endHourMatch ? parseInt(endHourMatch[1], 10) : hours;
+        if (endMeridian === 'PM') {
+          if (hours < endHour || hours === 12) {
+            meridian = 'PM';
+          } else if (hours > endHour && hours !== 12) {
+            meridian = 'AM';
+          } else {
+            meridian = 'PM';
+          }
+        } else {
+          meridian = 'AM';
+        }
+      }
+    }
+
+    if (meridian === 'PM' && hours < 12) {
+      hours += 12;
+    } else if (meridian === 'AM' && hours === 12) {
+      hours = 0;
+    }
+
+    return { hours, minutes };
+  };
+
+  // Check if a given date label represents "Today"
+  const isDateToday = (dateLabel = selectedDate) => {
+    if (!dateLabel) return true;
+    const found = scheduleDates.find(
+      (d) => dateLabel === d.label_en || dateLabel === d.label_ar || dateLabel === d.key || dateLabel === d.date
+    );
+    if (found) {
+      return Boolean(found.is_today);
+    }
+    const lower = String(dateLabel).toLowerCase();
+    return lower.includes('today') || lower.includes('اليوم');
+  };
+
+  // Check if a time slot is passed/expired for the currently (or specified) selected date
+  const isSlotExpired = (slotLabel, dateToCheck = selectedDate) => {
+    if (!isDateToday(dateToCheck)) {
+      return false; // Tomorrow or later days are never expired
+    }
+    const parsed = parseSlotStartTime(slotLabel);
+    if (!parsed) return false;
+
+    const now = new Date();
+    const currentH = now.getHours();
+    const currentM = now.getMinutes();
+
+    // If current time >= slot start time, the slot is expired / passed
+    if (currentH > parsed.hours) return true;
+    if (currentH === parsed.hours && currentM >= parsed.minutes) return true;
+
+    return false;
+  };
+
+  // Handle Date Selection and auto-shift slot if expired
+  const handleSelectDate = (dateLabel) => {
+    setSelectedDate(dateLabel);
+    if (isSlotExpired(selectedTimeSlot, dateLabel)) {
+      const availableList = scheduleSlots.length > 0 ? scheduleSlots : [
+        { slot_label_en: '1:00 PM - 3:00 PM', slot_label_ar: '1:00 م - 3:00 م' },
+        { slot_label_en: '4:00 PM - 6:00 PM', slot_label_ar: '4:00 م - 6:00 م' },
+        { slot_label_en: '7:00 PM - 9:00 PM', slot_label_ar: '7:00 م - 9:00 م' },
+      ];
+      const validSlot = availableList.find((s) => {
+        const label = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+        return !isSlotExpired(label, dateLabel);
+      });
+      if (validSlot) {
+        const validLabel = locale === 'ar'
+          ? (validSlot.slot_label_ar || validSlot.slot_label_en)
+          : (validSlot.slot_label_en || validSlot.slot_label_ar);
+        setSelectedTimeSlot(validLabel);
+      } else {
+        setSelectedTimeSlot('');
+      }
+    }
+  };
+
   // Fetch dynamic delivery slots & schedule from server (configured in Admin Panel)
   useEffect(() => {
     const fetchDeliverySchedule = async () => {
@@ -314,19 +451,22 @@ export default function CheckoutPage() {
           setScheduleDates(dates);
           setScheduleSlots(slots);
 
-          setSelectedDate((curr) => {
-            if (!curr && dates.length > 0) {
-              return locale === 'ar' ? dates[0].label_ar : dates[0].label_en;
-            }
-            return curr;
-          });
+          const defaultDate = dates.length > 0 ? (locale === 'ar' ? dates[0].label_ar : dates[0].label_en) : '';
+          setSelectedDate((curr) => curr || defaultDate);
+
           setSelectedTimeSlot((curr) => {
-            if (!curr && slots.length > 0) {
+            if (curr && !isSlotExpired(curr, defaultDate)) return curr;
+            // Find first available slot whose time has not passed
+            const validSlot = slots.find((s) => {
+              const label = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+              return !isSlotExpired(label, defaultDate);
+            });
+            if (validSlot) {
               return locale === 'ar'
-                ? (slots[0].slot_label_ar || slots[0].slot_label_en)
-                : (slots[0].slot_label_en || slots[0].slot_label_ar);
+                ? (validSlot.slot_label_ar || validSlot.slot_label_en)
+                : (validSlot.slot_label_en || validSlot.slot_label_ar);
             }
-            return curr;
+            return '';
           });
         }
       } catch (err) {
@@ -434,8 +574,8 @@ export default function CheckoutPage() {
   }
 
   // Redirect to order confirmation if order state is present
-  if (order) {
-    router.push(`/order-confirmation?orderId=${order.id || 'aeddee08-8e31-4cc5-bb94-7c0329f2c239'}`);
+  if (order?.id) {
+    router.push(`/order-confirmation?orderId=${order.id}`);
     return (
       <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center py-24">
         <div className="w-12 h-12 border-4 border-[#05A764] border-t-transparent rounded-full animate-spin" />
@@ -490,16 +630,23 @@ export default function CheckoutPage() {
 
                 <button
                   type="button"
-                  onClick={() => setShowAddressModal(true)}
+                  onClick={() => {
+                    setAddressModalTab(addresses.length > 0 ? 'list' : 'new');
+                    setShowAddressModal(true);
+                  }}
                   className="text-xs font-bold text-[#05A764] hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <MapPin className="w-3.5 h-3.5" />
-                  <span>Change Address</span>
+                  <span>
+                    {addresses.length > 0
+                      ? (locale === 'ar' ? 'تغيير العنوان' : 'Change Address')
+                      : (locale === 'ar' ? '+ إضافة عنوان' : '+ Add Address')}
+                  </span>
                 </button>
               </div>
 
-              {/* Selected Address Display Box */}
-              {addresses.length > 0 ? (() => {
+              {/* Selected Address Display Box OR Empty State */}
+              {addresses.length > 0 && selectedAddressId ? (() => {
                 const activeAddress = addresses.find((a) => a.id === selectedAddressId) || addresses[0];
                 return (
                   <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 relative shadow-2xs">
@@ -520,7 +667,7 @@ export default function CheckoutPage() {
                           </span>
                           {activeAddress.is_default && (
                             <span className="bg-slate-200 text-slate-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md font-sans">
-                              Default
+                              {locale === 'ar' ? 'افتراضي' : 'Default'}
                             </span>
                           )}
                         </div>
@@ -549,15 +696,28 @@ export default function CheckoutPage() {
                   </div>
                 );
               })() : (
-                <div className="p-5 bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-center space-y-3">
-                  <MapPin className="w-7 h-7 text-slate-400 mx-auto" />
-                  <p className="text-xs font-semibold text-slate-600">No delivery address saved yet.</p>
+                <div className="p-6 bg-slate-50/80 border-2 border-dashed border-slate-200 rounded-2xl text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-emerald-50 text-[#05A764] flex items-center justify-center mx-auto">
+                    <MapPin className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-slate-800">
+                      {locale === 'ar' ? 'لم يتم حفظ أي عنوان توصيل' : 'No delivery address saved yet'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {locale === 'ar' ? 'يرجى إضافة عنوانك لتوصيل الطلب إليك' : 'Please add a delivery address to proceed with checkout'}
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setShowAddressModal(true)}
-                    className="px-4 py-2 bg-[#05A764] text-white rounded-xl text-xs font-extrabold shadow-sm hover:bg-[#048b53] transition-colors cursor-pointer"
+                    onClick={() => {
+                      setAddressModalTab('new');
+                      setShowAddressModal(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#05A764] hover:bg-[#048b53] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
                   >
-                    + Add Delivery Address
+                    <Plus className="w-4 h-4" />
+                    <span>{locale === 'ar' ? 'إضافة عنوان توصيل' : 'Add Delivery Address'}</span>
                   </button>
                 </div>
               )}
@@ -666,7 +826,7 @@ export default function CheckoutPage() {
                         <button
                           key={d.key || d.date}
                           type="button"
-                          onClick={() => setSelectedDate(label)}
+                          onClick={() => handleSelectDate(label)}
                           className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer font-sans ${
                             isSelected
                               ? 'bg-slate-900 text-white shadow-2xs'
@@ -682,7 +842,7 @@ export default function CheckoutPage() {
                       <button
                         key={d}
                         type="button"
-                        onClick={() => setSelectedDate(d)}
+                        onClick={() => handleSelectDate(d)}
                         className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer font-sans ${
                           selectedDate === d
                             ? 'bg-slate-900 text-white shadow-2xs'
@@ -706,21 +866,40 @@ export default function CheckoutPage() {
                     scheduleSlots.map((s) => {
                       const slotLabel = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
                       const tagLabel = locale === 'ar' ? (s.tag_ar || s.tag_en) : (s.tag_en || s.tag_ar);
-                      const isSelected = selectedTimeSlot === slotLabel || selectedTimeSlot === s.slot_label_en || selectedTimeSlot === s.slot_label_ar;
+                      const expired = isSlotExpired(slotLabel);
+                      const isSelected = !expired && (selectedTimeSlot === slotLabel || selectedTimeSlot === s.slot_label_en || selectedTimeSlot === s.slot_label_ar);
+
                       return (
                         <div
                           key={s.id || slotLabel}
-                          onClick={() => setSelectedTimeSlot(slotLabel)}
-                          className={`p-3 rounded-xl cursor-pointer text-center transition-all bg-white border ${
-                            isSelected
-                              ? 'border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs'
-                              : 'border-slate-200/80 hover:border-slate-300'
+                          onClick={() => {
+                            if (expired) {
+                              showToast(
+                                locale === 'ar'
+                                  ? 'انتهى وقت هذه الفترة لليوم، يرجى اختيار موعد آخر'
+                                  : 'This time slot has already passed today. Please pick an upcoming slot.',
+                                'warning'
+                              );
+                              return;
+                            }
+                            setSelectedTimeSlot(slotLabel);
+                          }}
+                          className={`p-3 rounded-xl text-center transition-all border relative ${
+                            expired
+                              ? 'bg-slate-100/90 border-slate-200 text-slate-400 cursor-not-allowed select-none opacity-60'
+                              : isSelected
+                              ? 'bg-white border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs cursor-pointer'
+                              : 'bg-white border-slate-200/80 hover:border-slate-300 cursor-pointer'
                           }`}
                         >
-                          <span className="font-extrabold text-xs text-slate-900 block font-sans">
+                          <span className={`font-extrabold text-xs block font-sans ${expired ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
                             {slotLabel}
                           </span>
-                          {tagLabel && (
+                          {expired ? (
+                            <span className="text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full bg-slate-200 text-slate-500 font-sans">
+                              {locale === 'ar' ? 'انتهى الوقت' : 'Time Passed'}
+                            </span>
+                          ) : tagLabel ? (
                             <span
                               className={`text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full font-sans ${
                                 s.is_express
@@ -730,7 +909,7 @@ export default function CheckoutPage() {
                             >
                               {tagLabel}
                             </span>
-                          )}
+                          ) : null}
                         </div>
                       );
                     })
@@ -739,32 +918,67 @@ export default function CheckoutPage() {
                       { slot: '1:00 PM - 3:00 PM', tag: 'Express Available', isExpress: true },
                       { slot: '4:00 PM - 6:00 PM', tag: 'Standard Slot', isExpress: false },
                       { slot: '7:00 PM - 9:00 PM', tag: 'Evening Chill Slot', isExpress: false }
-                    ].map((s) => (
-                      <div
-                        key={s.slot}
-                        onClick={() => setSelectedTimeSlot(s.slot)}
-                        className={`p-3 rounded-xl cursor-pointer text-center transition-all bg-white border ${
-                          selectedTimeSlot === s.slot
-                            ? 'border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs'
-                            : 'border-slate-200/80 hover:border-slate-300'
-                        }`}
-                      >
-                        <span className="font-extrabold text-xs text-slate-900 block font-sans">
-                          {s.slot}
-                        </span>
-                        <span
-                          className={`text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full font-sans ${
-                            s.isExpress
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : 'bg-slate-100 text-slate-600'
+                    ].map((s) => {
+                      const expired = isSlotExpired(s.slot);
+                      const isSelected = !expired && selectedTimeSlot === s.slot;
+
+                      return (
+                        <div
+                          key={s.slot}
+                          onClick={() => {
+                            if (expired) {
+                              showToast(
+                                locale === 'ar'
+                                  ? 'انتهى وقت هذه الفترة لليوم، يرجى اختيار موعد آخر'
+                                  : 'This time slot has already passed today. Please pick an upcoming slot.',
+                                'warning'
+                              );
+                              return;
+                            }
+                            setSelectedTimeSlot(s.slot);
+                          }}
+                          className={`p-3 rounded-xl text-center transition-all border relative ${
+                            expired
+                              ? 'bg-slate-100/90 border-slate-200 text-slate-400 cursor-not-allowed select-none opacity-60'
+                              : isSelected
+                              ? 'bg-white border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs cursor-pointer'
+                              : 'border-slate-200/80 hover:border-slate-300 bg-white cursor-pointer'
                           }`}
                         >
-                          {s.tag}
-                        </span>
-                      </div>
-                    ))
+                          <span className={`font-extrabold text-xs block font-sans ${expired ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                            {s.slot}
+                          </span>
+                          {expired ? (
+                            <span className="text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full bg-slate-200 text-slate-500 font-sans">
+                              {locale === 'ar' ? 'انتهى الوقت' : 'Time Passed'}
+                            </span>
+                          ) : (
+                            <span
+                              className={`text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full font-sans ${
+                                s.isExpress
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              {s.tag}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })
                   )}
                 </div>
+
+                {/* If all slots for today have ended, show warning */}
+                {isDateToday() && (scheduleSlots.length > 0 ? scheduleSlots : [
+                  { slot_label_en: '1:00 PM - 3:00 PM' },
+                  { slot_label_en: '4:00 PM - 6:00 PM' },
+                  { slot_label_en: '7:00 PM - 9:00 PM' }
+                ]).every((s) => isSlotExpired(s.slot_label_en || s.slot)) && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs text-amber-800 font-bold font-sans">
+                    {locale === 'ar' ? '⚠️ انتهت جميع مواعيد التوصيل لليوم، يرجى اختيار موعد ليوم الغد للمتابعة' : '⚠️ All delivery slots for today have ended. Please select tomorrow to schedule your order.'}
+                  </div>
+                )}
               </div>
 
               {/* Delivery Instructions for Driver */}
@@ -1155,13 +1369,15 @@ export default function CheckoutPage() {
 
       </div>
 
-      {/* Address Creation Modal */}
+      {/* Address Selection & Creation Modal */}
       {showAddressModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl space-y-5 relative">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl space-y-5 relative max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-lg font-extrabold text-slate-900 font-sans">
-                Add New Delivery Address
+                {addressModalTab === 'list' && addresses.length > 0
+                  ? (locale === 'ar' ? 'اختر عنوان التوصيل' : 'Select Delivery Address')
+                  : (locale === 'ar' ? 'إضافة عنوان توصيل جديد' : 'Add New Delivery Address')}
               </h3>
               <button
                 type="button"
@@ -1172,97 +1388,191 @@ export default function CheckoutPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateAddress} className="space-y-3.5 text-xs font-semibold">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Mohammed Al-Salem"
-                    value={newAddress.full_name}
-                    onChange={(e) => setNewAddress({ ...newAddress, full_name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-[#05A764] focus:bg-white"
-                  />
+            {/* If tab is list and user has saved addresses */}
+            {addressModalTab === 'list' && addresses.length > 0 ? (
+              <div className="space-y-4">
+                <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+                  {addresses.map((addr) => {
+                    const isSelected = addr.id === selectedAddressId;
+                    return (
+                      <div
+                        key={addr.id}
+                        onClick={() => {
+                          setSelectedAddressId(addr.id);
+                          setShowAddressModal(false);
+                          showToast(
+                            locale === 'ar' ? 'تم اختيار عنوان التوصيل' : 'Delivery address selected',
+                            'success'
+                          );
+                        }}
+                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
+                          isSelected
+                            ? 'border-[#05A764] bg-emerald-50/50 shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
+                              isSelected
+                                ? 'border-[#05A764] bg-[#05A764]'
+                                : 'border-slate-300 bg-white'
+                            }`}
+                          >
+                            {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-xs text-slate-900">
+                                {addr.area || addr.city || 'Home'}
+                              </span>
+                              {addr.is_default && (
+                                <span className="bg-slate-200 text-slate-700 text-[9px] font-extrabold px-1.5 py-0.5 rounded">
+                                  {locale === 'ar' ? 'افتراضي' : 'Default'}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-600 font-medium">
+                              {addr.address_line || `${addr.area || ''}, ${addr.city || ''}`}
+                            </p>
+                            <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium pt-0.5">
+                              {addr.full_name && <span>👤 {addr.full_name}</span>}
+                              {addr.mobile && <span>📞 {addr.mobile}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAddressModalTab('new')}
+                    className="flex-1 py-2.5 rounded-xl border border-dashed border-[#05A764] text-[#05A764] hover:bg-emerald-50 font-extrabold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{locale === 'ar' ? 'إضافة عنوان جديد' : '+ Add New Address'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddressModal(false)}
+                    className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer"
+                  >
+                    {locale === 'ar' ? 'إغلاق' : 'Close'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleCreateAddress} className="space-y-3.5 text-xs font-semibold">
+                {addresses.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setAddressModalTab('list')}
+                    className="text-[11px] font-bold text-[#05A764] hover:underline flex items-center gap-1 mb-1 cursor-pointer"
+                  >
+                    ← {locale === 'ar' ? 'الرجوع إلى العناوين المحفوظة' : 'Back to saved addresses'}
+                  </button>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                      {locale === 'ar' ? 'الاسم الكامل *' : 'Full Name *'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={locale === 'ar' ? 'مثال: أحمد الصالح' : 'e.g. Ahmed Al-Saleh'}
+                      value={newAddress.full_name}
+                      onChange={(e) => setNewAddress({ ...newAddress, full_name: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-[#05A764] focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                      {locale === 'ar' ? 'رقم الجوال *' : 'Mobile Number *'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={locale === 'ar' ? 'مثال: 0501234567' : 'e.g. +966 50 123 4567'}
+                      value={newAddress.mobile}
+                      onChange={(e) => setNewAddress({ ...newAddress, mobile: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-[#05A764] focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                      {locale === 'ar' ? 'المدينة *' : 'City *'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Riyadh"
+                      value={newAddress.city}
+                      onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-[#05A764] focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                      {locale === 'ar' ? 'الحي / المنطقة *' : 'District / Area *'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={locale === 'ar' ? 'مثال: حي العليا' : 'e.g. Al-Olaya'}
+                      value={newAddress.area}
+                      onChange={(e) => setNewAddress({ ...newAddress, area: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-[#05A764] focus:bg-white"
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
-                    Mobile Number
+                    {locale === 'ar' ? 'تفاصيل العنوان / الشارع *' : 'Street Address Line *'}
                   </label>
-                  <input
-                    type="text"
+                  <textarea
                     required
-                    placeholder="+966501234567"
-                    value={newAddress.mobile}
-                    onChange={(e) => setNewAddress({ ...newAddress, mobile: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-[#05A764] focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Riyadh"
-                    value={newAddress.city}
-                    onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                    rows={2}
+                    placeholder={locale === 'ar' ? 'اسم الشارع، رقم المبنى، رقم الشقة أو المعلم القريب' : 'Street name, building number, apartment, or landmark'}
+                    value={newAddress.address_line}
+                    onChange={(e) => setNewAddress({ ...newAddress, address_line: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-[#05A764] focus:bg-white"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
-                    District / Area
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Al-Olaya District"
-                    value={newAddress.area}
-                    onChange={(e) => setNewAddress({ ...newAddress, area: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-[#05A764] focus:bg-white"
-                  />
+                <div className="flex gap-2.5 pt-3 font-sans">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (addresses.length > 0) {
+                        setAddressModalTab('list');
+                      } else {
+                        setShowAddressModal(false);
+                      }
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer"
+                  >
+                    {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 rounded-xl bg-[#05A764] hover:bg-[#048b53] text-white font-extrabold text-xs transition-colors shadow-sm cursor-pointer"
+                  >
+                    {locale === 'ar' ? 'حفظ العنوان' : 'Save Address'}
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
-                  Street Address Line
-                </label>
-                <textarea
-                  required
-                  rows={2}
-                  placeholder="Building 42, King Fahd Road, Al-Olaya District, Riyadh"
-                  value={newAddress.address_line}
-                  onChange={(e) => setNewAddress({ ...newAddress, address_line: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-[#05A764] focus:bg-white"
-                />
-              </div>
-
-              <div className="flex gap-2.5 pt-3 font-sans">
-                <button
-                  type="button"
-                  onClick={() => setShowAddressModal(false)}
-                  className="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 rounded-xl bg-[#05A764] hover:bg-[#048b53] text-white font-extrabold text-xs transition-colors shadow-sm cursor-pointer"
-                >
-                  Save Address
-                </button>
-              </div>
-            </form>
+              </form>
+            )}
           </div>
         </div>
       )}

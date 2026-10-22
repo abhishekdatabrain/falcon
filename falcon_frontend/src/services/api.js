@@ -13,8 +13,8 @@ export const getImageUrl = (url) => {
   const targetUrl = url.trim();
   if (!targetUrl) return '';
 
-  // 1. Data URLs (base64)
-  if (targetUrl.startsWith('data:')) return targetUrl;
+  // 1. Data URLs (base64) and Blob URLs (local file preview)
+  if (targetUrl.startsWith('data:') || targetUrl.startsWith('blob:')) return targetUrl;
 
   const cleanApiBase = API_BASE.replace(/\/$/, '');
   const backendBase = API_BASE.replace(/\/api\/v1\/?$/, '');
@@ -84,7 +84,11 @@ export const fetchApi = async (endpoint, options = {}) => {
     }
 
     if (!res.ok) {
-      throw new Error(data.message || 'An error occurred during API request');
+      const err = new Error(data.message || 'An error occurred during API request');
+      err.data = data;
+      err.fieldErrors = data.fieldErrors || {};
+      err.errors = data.errors || [];
+      throw err;
     }
 
     return data;

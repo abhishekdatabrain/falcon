@@ -27,7 +27,6 @@ import {
   Globe,
   Settings,
   X,
-  ExternalLink,
   CheckCircle,
   AlertCircle,
   HelpCircle,
@@ -95,7 +94,12 @@ export default function AdminHomepageCmsPage() {
       setLoading(true);
       const res = await fetchApi('/homepage-cms/admin/all');
       if (res.success) {
-        setSections(res.data?.sections || []);
+        const rawSections = res.data?.sections || [];
+        // Filter out household_featured as it is now managed on its own dedicated separate page (/admin/featured-banner)
+        const filteredSections = rawSections.filter(
+          (sec) => sec.section_key !== 'household_featured'
+        );
+        setSections(filteredSections);
         const s = res.data?.settings || {};
         setSettings(s);
         setHasUnpublished(Boolean(res.data?.has_unpublished_changes));
@@ -177,10 +181,10 @@ export default function AdminHomepageCmsPage() {
           prev.map((s) =>
             s.id === id
               ? {
-                  ...s,
-                  draft_is_active: res.data?.draft_is_active,
-                  has_unpublished_changes: true,
-                }
+                ...s,
+                draft_is_active: res.data?.draft_is_active,
+                has_unpublished_changes: true,
+              }
               : s
           )
         );
@@ -413,44 +417,10 @@ export default function AdminHomepageCmsPage() {
             {/* Live Preview Button */}
             <button
               onClick={handleOpenPreview}
-              className="flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer shadow-xs"
             >
               <Eye className="w-4 h-4 text-emerald-700" />
               <span>{locale === 'ar' ? 'معاينة حية' : 'Preview Changes'}</span>
-            </button>
-
-            {/* Discard Draft Button */}
-            {hasUnpublished && (
-              <button
-                onClick={handleDiscardDraft}
-                className="flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all cursor-pointer"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>{locale === 'ar' ? 'تراجع عن المسودة' : 'Discard Draft'}</span>
-              </button>
-            )}
-
-            {/* Publish Changes Button */}
-            <button
-              onClick={handlePublishAll}
-              disabled={publishing || !hasUnpublished}
-              className={`flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-extrabold rounded-xl shadow-md transition-all cursor-pointer ${
-                hasUnpublished
-                  ? 'bg-[#043927] hover:bg-[#03291c] text-white ring-2 ring-emerald-500/30'
-                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-              }`}
-            >
-              {publishing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{locale === 'ar' ? 'جارٍ النشر...' : 'Publishing...'}</span>
-                </>
-              ) : (
-                <>
-                  <Check className="w-4 h-4" />
-                  <span>{locale === 'ar' ? 'نشر التعديلات للمتجر' : 'Publish Changes'}</span>
-                </>
-              )}
             </button>
           </div>
         </div>
@@ -459,11 +429,10 @@ export default function AdminHomepageCmsPage() {
         <div className="flex items-center gap-2 border-t border-slate-100 pt-4 flex-wrap">
           <button
             onClick={() => setActiveTab('layout')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
-              activeTab === 'layout'
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${activeTab === 'layout'
                 ? 'bg-[#043927] text-white shadow-2xs'
                 : 'text-slate-600 hover:bg-slate-100'
-            }`}
+              }`}
           >
             <Layers className="w-4 h-4" />
             <span>{locale === 'ar' ? 'مخطط وترتيب الأقسام' : 'Layout & Sections Builder'}</span>
@@ -474,42 +443,16 @@ export default function AdminHomepageCmsPage() {
 
           <button
             onClick={() => setActiveTab('header_footer')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
-              activeTab === 'header_footer'
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${activeTab === 'header_footer'
                 ? 'bg-[#043927] text-white shadow-2xs'
                 : 'text-slate-600 hover:bg-slate-100'
-            }`}
+              }`}
           >
             <Globe className="w-4 h-4" />
             <span>{locale === 'ar' ? 'إعدادات الهيدر والفوتر' : 'Header & Footer CMS'}</span>
           </button>
 
-          {/* Quick links to existing dedicated modules */}
-          <div className="ml-auto flex items-center gap-2">
-            <Link
-              href="/admin/hero-banners"
-              className="text-xs font-bold text-slate-600 hover:text-emerald-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 flex items-center gap-1 border border-slate-200/60"
-            >
-              <span>{locale === 'ar' ? 'البنرات الرئيسية' : 'Hero Banners'}</span>
-              <ExternalLink className="w-3 h-3" />
-            </Link>
 
-            <Link
-              href="/admin/promo-banners"
-              className="text-xs font-bold text-slate-600 hover:text-emerald-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 flex items-center gap-1 border border-slate-200/60"
-            >
-              <span>{locale === 'ar' ? 'البطاقات الترويجية' : 'Promo Cards'}</span>
-              <ExternalLink className="w-3 h-3" />
-            </Link>
-
-            <Link
-              href="/admin/category-sections"
-              className="text-xs font-bold text-slate-600 hover:text-emerald-800 px-3 py-1.5 rounded-lg hover:bg-slate-50 flex items-center gap-1 border border-slate-200/60"
-            >
-              <span>{locale === 'ar' ? 'معرض الفئات' : 'Category Showcase'}</span>
-              <ExternalLink className="w-3 h-3" />
-            </Link>
-          </div>
         </div>
       </div>
 
@@ -545,7 +488,9 @@ export default function AdminHomepageCmsPage() {
           </div>
 
           <div className="space-y-3">
-            {sections.map((sec, idx) => {
+            {sections
+              .filter((sec) => sec.section_key !== 'household_featured')
+              .map((sec, idx) => {
               const typeBadge = SECTION_TYPE_BADGES[sec.section_type] || {
                 label: sec.section_type,
                 color: 'bg-slate-100 text-slate-700 border-slate-200',
@@ -555,9 +500,8 @@ export default function AdminHomepageCmsPage() {
               return (
                 <div
                   key={sec.id}
-                  className={`bg-white rounded-2xl border transition-all duration-200 shadow-2xs hover:shadow-md p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                    !isActiveInDraft ? 'opacity-65 bg-slate-50/80 border-slate-200' : 'border-slate-200/90'
-                  }`}
+                  className={`bg-white rounded-2xl border transition-all duration-200 shadow-2xs hover:shadow-md p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 ${!isActiveInDraft ? 'opacity-65 bg-slate-50/80 border-slate-200' : 'border-slate-200/90'
+                    }`}
                 >
                   <div className="flex items-center gap-4">
                     {/* Order buttons */}
@@ -616,19 +560,18 @@ export default function AdminHomepageCmsPage() {
                     {/* Active toggle */}
                     <button
                       onClick={() => handleToggleDraft(sec.id)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        isActiveInDraft
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${isActiveInDraft
                           ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                           : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                      }`}
+                        }`}
                     >
                       {isActiveInDraft
                         ? locale === 'ar'
                           ? 'ظاهر بالمتجر'
                           : 'Visible'
                         : locale === 'ar'
-                        ? 'مخفي'
-                        : 'Hidden'}
+                          ? 'مخفي'
+                          : 'Hidden'}
                     </button>
 
                     {/* Edit config */}
@@ -864,6 +807,74 @@ export default function AdminHomepageCmsPage() {
         </form>
       )}
 
+      {/* BOTTOM ACTION BAR: Publish Changes */}
+      <div className="bg-white/95 backdrop-blur-md p-4 sm:p-5 rounded-3xl border border-slate-200/90 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky bottom-4 z-20">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-10 h-10 rounded-2xl flex items-center justify-center border shrink-0 ${
+              hasUnpublished
+                ? 'bg-amber-50 text-amber-800 border-amber-200/70'
+                : 'bg-emerald-50 text-emerald-800 border-emerald-200/70'
+            }`}
+          >
+            {hasUnpublished ? (
+              <Sparkles className="w-5 h-5 text-amber-600 animate-pulse" />
+            ) : (
+              <Check className="w-5 h-5 text-emerald-700" />
+            )}
+          </div>
+          <div>
+            <h4 className="text-xs font-black text-slate-900">
+              {hasUnpublished
+                ? (locale === 'ar' ? 'توجد تعديلات غير منشورة بالمسودة' : 'Unpublished Changes in Draft')
+                : (locale === 'ar' ? 'جميع الأقسام منشورة ومحدثة على المتجر' : 'Storefront Layout is Live & Up to Date')}
+            </h4>
+            <p className="text-[11px] text-slate-500 font-medium">
+              {hasUnpublished
+                ? (locale === 'ar' ? 'اضغط على زر نشر التعديلات لتطبيقها فوراً على الصفحة الرئيسية للمتجر' : 'Click Publish Changes to apply draft changes live to the customer storefront.')
+                : (locale === 'ar' ? 'الصفحة الرئيسية تعرض أحدث التعديلات الحالية' : 'Storefront currently displays the latest published layout.')}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 self-end sm:self-auto">
+          {hasUnpublished && (
+            <button
+              type="button"
+              onClick={handleDiscardDraft}
+              disabled={publishing}
+              className="px-4 py-2.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>{locale === 'ar' ? 'تراجع عن المسودة' : 'Discard Draft'}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handlePublishAll}
+            disabled={publishing || !hasUnpublished}
+            className={`flex items-center gap-2 px-6 py-3 text-xs sm:text-sm font-extrabold rounded-xl shadow-lg transition-all cursor-pointer ${
+              hasUnpublished
+                ? 'bg-[#043927] hover:bg-[#03291c] text-white ring-2 ring-emerald-500/30 hover:scale-[1.02] active:scale-[0.98]'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            {publishing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>{locale === 'ar' ? 'جارٍ النشر...' : 'Publishing...'}</span>
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                <span>{locale === 'ar' ? 'نشر التعديلات للمتجر' : 'Publish Changes'}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* 3. SECTION EDIT MODAL */}
       {isEditModalOpen && editingSection && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
@@ -964,40 +975,49 @@ export default function AdminHomepageCmsPage() {
                       </div>
                     </div>
 
-                    {/* Mode Selector */}
-                    <div className="flex items-center bg-slate-200/70 p-1 rounded-xl">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSectionFormData({
-                            ...sectionFormData,
-                            config: { ...sectionFormData.config, banner_mode: 'split_content' },
-                          })
-                        }
-                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
-                          sectionFormData.config?.banner_mode !== 'full_banner'
-                            ? 'bg-white text-[#043927] shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
-                        }`}
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href="/admin/featured-banner"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#043927] hover:bg-[#03291c] text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
                       >
-                        {locale === 'ar' ? 'تصميم ديناميكي (نص + صورة)' : 'Dynamic Layout'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSectionFormData({
-                            ...sectionFormData,
-                            config: { ...sectionFormData.config, banner_mode: 'full_banner' },
-                          })
-                        }
-                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
-                          sectionFormData.config?.banner_mode === 'full_banner'
-                            ? 'bg-white text-[#043927] shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        {locale === 'ar' ? 'بانر كامل (صورة مدمجة)' : 'Full Banner Image'}
-                      </button>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>{locale === 'ar' ? 'فتح الصفحة المخصصة' : 'Open Dedicated Page'}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </Link>
+
+                      {/* Mode Selector */}
+                      <div className="flex items-center bg-slate-200/70 p-1 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSectionFormData({
+                              ...sectionFormData,
+                              config: { ...sectionFormData.config, banner_mode: 'split_content' },
+                            })
+                          }
+                          className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${sectionFormData.config?.banner_mode !== 'full_banner'
+                              ? 'bg-white text-[#043927] shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                        >
+                          {locale === 'ar' ? 'تصميم ديناميكي (نص + صورة)' : 'Dynamic Layout'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSectionFormData({
+                              ...sectionFormData,
+                              config: { ...sectionFormData.config, banner_mode: 'full_banner' },
+                            })
+                          }
+                          className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${sectionFormData.config?.banner_mode === 'full_banner'
+                              ? 'bg-white text-[#043927] shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                        >
+                          {locale === 'ar' ? 'بانر كامل (صورة مدمجة)' : 'Full Banner Image'}
+                        </button>
+                      </div>
                     </div>
                   </div>
 

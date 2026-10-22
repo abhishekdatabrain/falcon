@@ -21,6 +21,7 @@ import {
   Bell,
   Clock,
   ShieldCheck,
+  Layers,
 } from 'lucide-react';
 
 export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPaymentsCount = 0 }) {
@@ -38,6 +39,80 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
           label: locale === 'ar' ? 'لوحة التحكم' : 'Dashboard Overview',
           icon: LayoutDashboard,
           permission: 'dashboard.view',
+        },
+      ],
+    },
+     {
+      key: 'homepage_cms',
+      title: locale === 'ar' ? 'إدارة الصفحة الرئيسية' : 'Homepage Management',
+      isExpandable: true,
+      items: [
+        {
+          href: '/admin/homepage-cms',
+          label: locale === 'ar' ? 'إدارة الصفحة الرئيسية' : 'Homepage Management',
+          icon: LayoutDashboard,
+          permission: 'cms.view',
+        },
+        {
+          href: '/admin/hero-banners',
+          label: locale === 'ar' ? 'شريط البانر الرئيسي' : 'Hero Banners',
+          icon: Sparkles,
+          permission: 'banners.view',
+        },
+        {
+          href: '/admin/promo-banners',
+          label: locale === 'ar' ? 'البطاقات الترويجية' : 'Promotional Cards',
+          icon: LayoutDashboard,
+          permission: 'banners.view',
+        },
+        {
+          href: '/admin/featured-banner',
+          label: locale === 'ar' ? 'بانر المستلزمات المميز' : 'Featured Household Banner',
+          icon: Sparkles,
+          permission: 'cms.view',
+        },
+        {
+          href: '/admin/category-sections',
+          label: locale === 'ar' ? 'معرض الفئات' : 'Category Showcase',
+          icon: FolderTree,
+          permission: 'cms.view',
+        },
+      ],
+    },
+    {
+      key: 'category_banners',
+      title: locale === 'ar' ? 'بانرات الأقسام' : 'Category Banners',
+      isExpandable: true,
+      items: [
+        {
+          href: '/admin/main-category-banners',
+          label: locale === 'ar' ? 'بانرات الأقسام الرئيسية (L1)' : 'Main Category Banners (L1)',
+          icon: Layers,
+          permission: 'banners.view',
+        },
+        {
+          href: '/admin/subcategory-banners',
+          label: locale === 'ar' ? 'بانرات الأقسام الفرعية (L2)' : 'Subcategory Banners (L2)',
+          icon: FolderTree,
+          permission: 'banners.view',
+        },
+        {
+          href: '/admin/sub-subcategory-banners',
+          label: locale === 'ar' ? 'بانرات الأقسام الفرعية 2 (L3)' : 'Sub-Subcategory Banners (L3)',
+          icon: Layers,
+          permission: 'banners.view',
+        },
+        {
+          href: '/admin/sub-sub-subcategory-banners',
+          label: locale === 'ar' ? 'بانرات الأقسام الفرعية 3 (L4)' : 'Sub-Sub-Subcategory (L4)',
+          icon: Sparkles,
+          permission: 'banners.view',
+        },
+        {
+          href: '/admin/category-banner',
+          label: locale === 'ar' ? 'بانر صفحة المنتجات (Hero)' : 'Category Hero Banner',
+          icon: Sparkles,
+          permission: 'banners.view',
         },
       ],
     },
@@ -93,6 +168,19 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
       ],
     },
     {
+      key: 'orders',
+      title: locale === 'ar' ? 'إدارة الطلبات' : 'Order Management',
+      isExpandable: true,
+      items: [
+        {
+          href: '/admin/orders',
+          label: locale === 'ar' ? 'إدارة وتوجيه الطلبات' : 'Order Management',
+          icon: Package,
+          permission: 'orders.view',
+        },
+      ],
+    },
+    {
       key: 'finance',
       title: locale === 'ar' ? 'إدارة العمليات والمالية' : 'Operations & Finance',
       isExpandable: true,
@@ -105,12 +193,6 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
           permission: 'payments.view',
         },
         {
-          href: '/admin/orders',
-          label: locale === 'ar' ? 'إدارة وتوجيه الطلبات' : 'Order Management',
-          icon: Package,
-          permission: 'orders.view',
-        },
-        {
           href: '/admin/invoices',
           label: locale === 'ar' ? 'إدارة فواتير ZATCA' : 'ZATCA Invoice Management',
           icon: FileText,
@@ -118,43 +200,7 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
         },
       ],
     },
-    {
-      key: 'homepage_cms',
-      title: locale === 'ar' ? 'إدارة الصفحة الرئيسية (CMS)' : 'Homepage CMS',
-      isExpandable: true,
-      items: [
-        {
-          href: '/admin/homepage-cms',
-          label: locale === 'ar' ? 'إدارة الصفحة الرئيسية' : 'Homepage Management',
-          icon: LayoutDashboard,
-          permission: 'cms.view',
-        },
-        {
-          href: '/admin/hero-banners',
-          label: locale === 'ar' ? 'شريط البانر الرئيسي' : 'Hero Banners',
-          icon: Sparkles,
-          permission: 'banners.view',
-        },
-        {
-          href: '/admin/category-banner',
-          label: locale === 'ar' ? 'بانر صفحة المنتجات (Hero)' : 'Category Hero Banner',
-          icon: Sparkles,
-          permission: 'banners.view',
-        },
-        {
-          href: '/admin/promo-banners',
-          label: locale === 'ar' ? 'البطاقات الترويجية' : 'Promotional Cards',
-          icon: LayoutDashboard,
-          permission: 'banners.view',
-        },
-        {
-          href: '/admin/category-sections',
-          label: locale === 'ar' ? 'معرض الفئات' : 'Category Showcase',
-          icon: FolderTree,
-          permission: 'cms.view',
-        },
-      ],
-    },
+   
     {
       key: 'fleet',
       title: locale === 'ar' ? 'إدارة التوصيل والأسطول' : 'Fleet & Delivery',
@@ -209,21 +255,27 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
     }))
     .filter((cat) => cat.items.length > 0);
 
-  // Single Accordion State: Only 1 category expanded at a time
-  const [activeCategoryKey, setActiveCategoryKey] = useState('identity_access');
+  // Single Accordion State: Only one dropdown category open at a time
+  const [expandedKey, setExpandedKey] = useState(() => {
+    const matched = visibleCategories.find((cat) =>
+      cat.isExpandable && cat.items.some((item) => item.href === pathname)
+    );
+    return matched ? matched.key : 'homepage_cms';
+  });
 
-  // Auto-expand category containing current active route
+  // Auto-expand the category containing the current active route
   useEffect(() => {
     const matched = visibleCategories.find((cat) =>
-      cat.items.some((item) => item.href === pathname)
+      cat.isExpandable && cat.items.some((item) => item.href === pathname)
     );
-    if (matched && matched.isExpandable) {
-      setActiveCategoryKey(matched.key);
+    if (matched) {
+      setExpandedKey(matched.key);
     }
   }, [pathname]);
 
   const toggleCategory = (catKey) => {
-    setActiveCategoryKey((prevKey) => (prevKey === catKey ? null : catKey));
+    // If clicked category is open, close it; otherwise open it and close all others
+    setExpandedKey((prev) => (prev === catKey ? null : catKey));
   };
 
   return (
@@ -267,7 +319,7 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
 
           <nav className="space-y-4">
             {visibleCategories.map((cat) => {
-              const isExpanded = !cat.isExpandable || activeCategoryKey === cat.key;
+              const isExpanded = !cat.isExpandable || expandedKey === cat.key;
               const hasActiveChild = cat.items.some((item) => pathname === item.href);
 
               return (

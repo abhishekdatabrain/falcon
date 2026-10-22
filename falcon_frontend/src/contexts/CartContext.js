@@ -313,38 +313,37 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const clearCart = async () => {
-    // GUEST USER
-    if (!user || user.role !== 'CUSTOMER') {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(GUEST_CART_KEY);
+  const clearCart = async (showNotification = false) => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(GUEST_CART_KEY);
+    }
+    const emptyCart = {
+      items: [],
+      subtotal: 0,
+      taxTotal: 0,
+      deliveryFee: 0,
+      discountTotal: 0,
+      grandTotal: 0,
+    };
+    setCart(emptyCart);
+
+    if (user && user.role === 'CUSTOMER') {
+      try {
+        const res = await fetchApi('/cart', {
+          method: 'DELETE',
+        });
+        if (res.success && res.data) {
+          setCart(res.data);
+        }
+      } catch (err) {
+        // State is already empty
       }
-      const emptyCart = {
-        items: [],
-        subtotal: 0,
-        taxTotal: 0,
-        deliveryFee: 0,
-        discountTotal: 0,
-        grandTotal: 0,
-      };
-      setCart(emptyCart);
-      showToast(locale === 'ar' ? 'تم تفريغ السلة' : 'Cart cleared', 'info');
-      return { success: true, data: emptyCart };
     }
 
-    // LOGGED IN USER
-    try {
-      const res = await fetchApi('/cart', {
-        method: 'DELETE',
-      });
-      if (res.success && res.data) {
-        setCart(res.data);
-        showToast(locale === 'ar' ? 'تم تفريغ السلة' : 'Cart cleared', 'info');
-      }
-      return res;
-    } catch (err) {
-      showToast(err.message, 'error');
+    if (showNotification) {
+      showToast(locale === 'ar' ? 'تم تفريغ السلة' : 'Cart cleared', 'info');
     }
+    return { success: true, data: emptyCart };
   };
 
   const cartCount = cart.items ? cart.items.length : 0;

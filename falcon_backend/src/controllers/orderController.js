@@ -4,11 +4,19 @@ const { sendSuccess, sendError } = require('../utils/response');
 class OrderController {
   async createOrder(req, res, next) {
     try {
-      const customerId = req.user.customer.id;
-      const { addressId, notes, paymentMethod, couponCode, deliveryDate, deliverySlot, deliverySpeed } = req.body;
-      if (!addressId) {
-        return sendError(res, 'Delivery addressId is required', [], 400);
+      let customer = req.user.customer;
+      if (!customer) {
+        const { Customer } = require('../models');
+        customer = await Customer.findOne({ where: { user_id: req.user.id } });
+        if (!customer) {
+          customer = await Customer.create({
+            user_id: req.user.id,
+            first_name: req.user.email ? req.user.email.split('@')[0] : 'Customer',
+          });
+        }
       }
+      const customerId = customer.id;
+      const { addressId, notes, paymentMethod, couponCode, deliveryDate, deliverySlot, deliverySpeed } = req.body;
 
       const order = await orderService.createOrderFromCart(
         customerId,
@@ -28,7 +36,15 @@ class OrderController {
 
   async getMyOrders(req, res, next) {
     try {
-      const customerId = req.user.customer.id;
+      let customer = req.user.customer;
+      if (!customer) {
+        const { Customer } = require('../models');
+        customer = await Customer.findOne({ where: { user_id: req.user.id } });
+      }
+      if (!customer) {
+        return sendSuccess(res, 'Orders retrieved', { orders: [] });
+      }
+      const customerId = customer.id;
       const orders = await orderService.getCustomerOrders(customerId);
       return sendSuccess(res, 'Orders retrieved', { orders });
     } catch (error) {

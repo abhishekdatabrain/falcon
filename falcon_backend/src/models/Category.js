@@ -32,6 +32,16 @@ const Category = sequelize.define('Category', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  banner: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    defaultValue: {},
+  },
+  content: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    defaultValue: {},
+  },
   is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,

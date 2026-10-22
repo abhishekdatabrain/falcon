@@ -1,12 +1,12 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useWishlist } from '../../src/contexts/WishlistContext';
 import { useCart } from '../../src/contexts/CartContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { getImageUrl } from '../../src/services/api';
+import { fetchApi, getImageUrl } from '../../src/services/api';
 import {
   Heart,
   ShoppingBag,
@@ -22,166 +22,165 @@ import {
   Headphones,
   LogOut,
   Home,
-  Check,
   Star,
-  Zap,
-  Filter,
   Grid,
   List,
   Plus,
   Minus,
-  AlertCircle,
-  Sparkles,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  Check,
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function WishlistPage() {
   const router = useRouter();
   const { locale } = useLanguage();
-  const { user, loading: authLoading } = useAuth();
-  const { wishlist, removeFromWishlist, clearWishlist } = useWishlist();
+  const { user, loading: authLoading, logout } = useAuth();
+  const { wishlist, removeFromWishlist, clearWishlist, loading: wishlistLoading } = useWishlist();
   const { addToCart } = useCart();
+
   const [addingId, setAddingId] = useState(null);
   const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL' | 'IN_STOCK' | 'DEALS' | 'ORGANIC'
   const [sortBy, setSortBy] = useState('RECENT');
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
   const [quantities, setQuantities] = useState({});
-  const [selectAllInStock, setSelectAllInStock] = useState(false);
+  const sortRef = useRef(null);
 
-  // Showcase Items matching exact user screenshot design
-  const defaultWishlistItems = [
-    {
-      id: 'w-1',
-      name_en: 'Heirloom Tiger Striped Heirloom Tomatoes',
-      brand: 'AL-KHARJ OASIS FARMS',
-      description_en: 'Naturally vine-ripened, intensely sweet and juicy flavor profile.',
-      rating: 4.9,
-      reviews_count: 1200,
-      price: 18.50,
-      badge_top: '⏱️ Harvested 4h Ago',
-      badge_bottom: '⚡ Express 35m',
-      tags: ['500g Pack', '1kg Box'],
-      image_url: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600',
-      in_stock: true,
-      stock_qty: 24,
-    },
-    {
-      id: 'w-2',
-      name_en: 'Pure Whole Unpasteurized Camel Milk (1L)',
-      brand: 'TABUK PASTURE HERDS',
-      description_en: 'Rich in immunoglobulins and vitamins, directly chilled from Tabuk.',
-      rating: 4.9,
-      reviews_count: 1200,
-      price: 26.00,
-      badge_top: '🥛 Pasture Fed',
-      badge_warning: 'Only 4 left in Riyadh hub',
-      tags: ['Glass Bottle • 1 Liter'],
-      image_url: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=600',
-      in_stock: true,
-      stock_qty: 4,
-    },
-    {
-      id: 'w-3',
-      name_en: 'Premium Rutab Sukkari Soft Dates (1kg Box)',
-      brand: 'AL-QASSIM HERITAGE FARM',
-      description_en: 'Melt-in-the-mouth caramel texture, unpasteurized and chilled.',
-      rating: 5.0,
-      reviews_count: 2410,
-      price: 34.00,
-      badge_top: '🌴 100% Qassim Harvest',
-      tags: ['Grade A Royal', 'Cold Box Shipped'],
-      image_url: 'https://images.unsplash.com/photo-1596560548464-f010549b84d7?w=600',
-      in_stock: true,
-      stock_qty: 50,
-    },
-    {
-      id: 'w-4',
-      name_en: 'Living Hydroponic Butterhead Lettuce (250g)',
-      brand: 'AL-KHARJ HYDRO FARMS',
-      description_en: 'Zero pesticides, stays crisp for up to 10 days in water cup.',
-      rating: 4.9,
-      reviews_count: 640,
-      price: 9.50,
-      badge_top: '🌱 Living Roots Intact',
-      tags: ['Pesticide Free'],
-      image_url: 'https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=600',
-      in_stock: true,
-      stock_qty: 15,
-    },
-    {
-      id: 'w-5',
-      name_en: 'Extra Virgin Single Estate Olive Oil (500ml)',
-      brand: 'AL-JOUF OLIVE GROVES',
-      description_en: 'Acidity < 0.2%, intense grassy and peppery finish.',
-      rating: 4.9,
-      reviews_count: 1850,
-      price: 42.00,
-      badge_top: '🫒 First Cold Press',
-      tags: ['UV Protected Bottle'],
-      image_url: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600',
-      in_stock: true,
-      stock_qty: 30,
-    },
-    {
-      id: 'w-6',
-      name_en: 'Artisanal Sheep & Goat Halloumi with Nigella (250g)',
-      brand: 'AL-SHAM CREAMERY',
-      description_en: 'Perfect high grilling point with fragrant black caraway seeds.',
-      rating: 4.8,
-      reviews_count: 340,
-      price: 21.00,
-      badge_top: '',
-      tags: ['Handcrafted • Vacuum Sealed'],
-      image_url: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600',
-      in_stock: true,
-      stock_qty: 12,
-    },
-    {
-      id: 'w-7',
-      name_en: 'Wild Forest Mountain Berries (Out of Season)',
-      brand: 'TAIF ORCHARDS',
-      description_en: 'Seasonal crop currently out of harvest period.',
-      rating: 4.7,
-      reviews_count: 190,
-      price: 7.50,
-      badge_top: '',
-      out_of_season: true,
-      image_url: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=600',
-      in_stock: false,
-      stock_qty: 0,
-    },
-    {
-      id: 'w-8',
-      name_en: 'Raw Mountain Honeycomb (400g Block)',
-      brand: 'AL-BAHA MOUNTAIN APIARIES',
-      description_en: '100% pure raw honeycomb harvested from Sidr trees.',
-      rating: 4.9,
-      reviews_count: 880,
-      price: 48.00,
-      original_price: 60.00,
-      badge_top: '🏷️ Price Drop: Save SAR 12.00',
-      tags: ['Raw Sidr', 'Unfiltered'],
-      image_url: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600',
-      in_stock: true,
-      stock_qty: 18,
-    }
+  // Server-side wishlist state
+  const [serverProducts, setServerProducts] = useState(null);
+  const [serverCounts, setServerCounts] = useState({ total: 0, inStock: 0, deals: 0, organic: 0 });
+  const [fetchingServer, setFetchingServer] = useState(false);
+
+  const sortOptions = [
+    { value: 'RECENT', label_en: 'Recently Added', label_ar: 'المضاف حديثاً' },
+    { value: 'PRICE_LOW', label_en: 'Price: Low to High', label_ar: 'السعر: من الأقل للأعلى' },
+    { value: 'PRICE_HIGH', label_en: 'Price: High to Low', label_ar: 'السعر: من الأعلى للأقل' },
+    { value: 'RATING', label_en: 'Highest Rated', label_ar: 'الأعلى تقييماً' },
+    { value: 'NAME_ASC', label_en: 'Name: A to Z', label_ar: 'الاسم: أ - ي' },
+    { value: 'NAME_DESC', label_en: 'Name: Z to A', label_ar: 'الاسم: ي - أ' },
   ];
 
-  // Effective items (real wishlist items or showcase defaults)
-  const displayItems = (wishlist && wishlist.length > 0)
-    ? wishlist.map((item, idx) => ({
-        id: item.id || `real-${idx}`,
-        name_en: item.name_en || item.name || 'Farm Product',
-        brand: item.brand || 'SAUDI LOCAL FARM',
-        description_en: item.description_en || 'Fresh local produce harvested daily.',
-        rating: 4.9,
-        reviews_count: 500,
-        price: parseFloat(item.price || 15.00),
-        image_url: item.image_url || (Array.isArray(item.images) ? item.images[0] : 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600'),
-        in_stock: item.stock_quantity > 0 || true,
-        stock_qty: item.stock_quantity || 10,
-        tags: [item.unit || 'Standard Pack']
-      }))
-    : defaultWishlistItems;
+  // Close sort dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (sortRef.current && !sortRef.current.contains(e.target)) {
+        setIsSortOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Fetch server-side filtered & sorted wishlist
+  useEffect(() => {
+    let isMounted = true;
+    const loadServerWishlist = async () => {
+      if (authLoading) return;
+
+      if (!user || user?.role?.toUpperCase() !== 'CUSTOMER') {
+        if (isMounted) {
+          setServerProducts([]);
+          setServerCounts({ total: 0, inStock: 0, deals: 0, organic: 0 });
+        }
+        return;
+      }
+
+      try {
+        setFetchingServer(true);
+        const params = new URLSearchParams();
+        if (activeFilter && activeFilter !== 'ALL') params.set('filter', activeFilter);
+        if (sortBy) params.set('sortBy', sortBy);
+
+        const res = await fetchApi(`/wishlist?${params.toString()}`);
+        if (isMounted && res && res.success && res.data) {
+          setServerProducts(res.data.products || []);
+          if (res.data.counts) {
+            setServerCounts(res.data.counts);
+          }
+        }
+      } catch (err) {
+        console.warn('Error fetching server-side wishlist:', err.message);
+      } finally {
+        if (isMounted) setFetchingServer(false);
+      }
+    };
+
+    loadServerWishlist();
+    return () => {
+      isMounted = false;
+    };
+  }, [authLoading, user, activeFilter, sortBy, wishlist.length]);
+
+  // Map items directly from server response (or fallback to local context wishlist)
+  const rawItems = useMemo(() => {
+    if (serverProducts !== null) {
+      if (activeFilter !== 'ALL') {
+        return serverProducts;
+      }
+      if (serverProducts.length > 0) {
+        return serverProducts;
+      }
+      if (wishlist && wishlist.length > 0) {
+        return wishlist;
+      }
+      return [];
+    }
+    return wishlist || [];
+  }, [serverProducts, activeFilter, wishlist]);
+  const displayItems = rawItems.map((item, idx) => {
+    const p = item.product || item;
+    const img = p.image_url ||
+      (Array.isArray(p.images) && p.images.length > 0
+        ? (typeof p.images[0] === 'string' ? p.images[0] : p.images[0]?.image_url)
+        : null) ||
+      '';
+
+    const basePrice = parseFloat(p.price || 0);
+    const discountPrice = p.discount_price ? parseFloat(p.discount_price) : null;
+    const hasDiscount = discountPrice !== null && !isNaN(discountPrice) && discountPrice < basePrice;
+    const finalPrice = hasDiscount ? discountPrice : basePrice;
+
+    const inStock = p.stock_quantity !== undefined && p.stock_quantity !== null
+      ? Number(p.stock_quantity) > 0
+      : (p.is_available !== false);
+
+    const title = (locale === 'ar' && p.name_ar) ? p.name_ar : (p.name_en || p.name || 'Product');
+    const desc = (locale === 'ar' && p.description_ar) ? p.description_ar : (p.description_en || p.description || '');
+
+    return {
+      id: p.id || `item-${idx}`,
+      name: title,
+      brand: p.brand || p.brand_name || (p.category ? (locale === 'ar' && p.category.name_ar ? p.category.name_ar : p.category.name_en) : ''),
+      description: desc,
+      rating: p.rating ? parseFloat(p.rating) : null,
+      reviews_count: p.reviews_count || p.review_count || 0,
+      price: finalPrice,
+      original_price: hasDiscount ? basePrice : null,
+      hasDiscount,
+      badge_bottom: inStock && Number(p.stock_quantity) <= 5 && Number(p.stock_quantity) > 0
+        ? `${locale === 'ar' ? 'بقي فقط' : 'Only'} ${p.stock_quantity} ${locale === 'ar' ? 'قطع' : 'left'}`
+        : null,
+      tags: p.unit ? [p.unit] : [],
+      image_url: img,
+      in_stock: inStock,
+      stock_qty: p.stock_quantity || 0,
+      rawProduct: p
+    };
+  });
+
+  const totalCount = (serverCounts && serverCounts.total > 0)
+    ? serverCounts.total
+    : (wishlist && wishlist.length > 0 ? wishlist.length : displayItems.length);
+  const inStockCount = (serverCounts && serverCounts.inStock !== undefined)
+    ? serverCounts.inStock
+    : displayItems.filter((i) => i.in_stock).length;
+  const dealsCount = (serverCounts && serverCounts.deals !== undefined)
+    ? serverCounts.deals
+    : displayItems.filter((i) => i.hasDiscount).length;
+  const organicCount = serverCounts?.organic || 0;
 
   const handleQtyChange = (id, delta) => {
     setQuantities((prev) => {
@@ -195,7 +194,7 @@ export default function WishlistPage() {
     try {
       setAddingId(item.id);
       const qty = quantities[item.id] || 1;
-      await addToCart(item.id, qty);
+      await addToCart(item.id, qty, item.rawProduct);
     } catch (err) {
       console.error(err);
     } finally {
@@ -203,119 +202,167 @@ export default function WishlistPage() {
     }
   };
 
-  // Filter items based on active tab
-  const filteredItems = displayItems.filter((item) => {
-    if (activeFilter === 'IN_STOCK' && !item.in_stock) return false;
-    if (activeFilter === 'DEALS' && !item.original_price && !item.badge_top?.includes('Price Drop')) return false;
-    if (activeFilter === 'ORGANIC' && !item.tags?.some(t => t.toLowerCase().includes('organic') || t.toLowerCase().includes('pesticide'))) return false;
-    return true;
-  });
+  const handleRemove = async (itemId) => {
+    await removeFromWishlist(itemId);
+    setServerProducts((prev) => (prev ? prev.filter((p) => p.id !== itemId) : []));
+    setServerCounts((prev) => ({
+      ...prev,
+      total: Math.max(0, (prev.total || 1) - 1),
+    }));
+  };
+
+  const isLoading = authLoading || (wishlistLoading && (!wishlist || wishlist.length === 0) && serverProducts === null);
 
   return (
     <div className="min-h-screen bg-[#F8FAF8] font-sans pb-24 text-slate-800 space-y-8">
-      
       {/* Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         
         {/* ================= PAGE TITLE & SUBTITLE ================= */}
         <div className="space-y-1 mb-6">
           <h1 className="text-3xl sm:text-4xl font-black text-[#043927] tracking-tight">
-            My Wishlist
+            {locale === 'ar' ? 'قائمة المفضلة' : 'My Wishlist'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Keep track of your favorite farm-fresh produce, regional pantry staples, and recurring weekly essentials with express delivery to Riyadh.
+            {locale === 'ar'
+              ? 'تتبع منتجات المزرعة الطازجة، ومنتجات المؤونة المفضلة لديك مع التوصيل السريع إلى الرياض.'
+              : 'Keep track of your favorite farm-fresh produce, regional pantry staples, and recurring weekly essentials with express delivery to Riyadh.'}
           </p>
         </div>
 
         {/* ================= TOP FILTER & CONTROL BAR ================= */}
-        <div className="bg-white rounded-2xl p-3 border border-slate-200/90 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="bg-white rounded-xl py-2 px-3 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           
-          {/* Left Checkbox & Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 text-xs font-extrabold text-slate-700 cursor-pointer pr-3 border-r border-slate-200">
-              <input
-                type="checkbox"
-                checked={selectAllInStock}
-                onChange={(e) => setSelectAllInStock(e.target.checked)}
-                className="rounded border-slate-300 text-[#043927] focus:ring-[#043927] cursor-pointer"
-              />
-              <span>Select All In-Stock ({filteredItems.filter(i => i.in_stock).length})</span>
-            </label>
+          {/* Tabs Pills */}
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+            <button
+              type="button"
+              onClick={() => setActiveFilter('ALL')}
+              className={`px-3 py-1 rounded-lg border transition-all cursor-pointer ${
+                activeFilter === 'ALL'
+                  ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {locale === 'ar' ? 'الكل' : 'All Items'} ({totalCount})
+            </button>
 
-            {/* Tabs Pills */}
-            <div className="flex flex-wrap items-center gap-1.5 text-xs font-extrabold">
-              <button
-                type="button"
-                onClick={() => setActiveFilter('ALL')}
-                className={`px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                  activeFilter === 'ALL'
-                    ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                All Items ({displayItems.length})
-              </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter('IN_STOCK')}
+              className={`px-3 py-1 rounded-lg border transition-all cursor-pointer ${
+                activeFilter === 'IN_STOCK'
+                  ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {locale === 'ar' ? 'المتوفر فقط' : 'In Stock Only'} ({inStockCount})
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveFilter('IN_STOCK')}
-                className={`px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                  activeFilter === 'IN_STOCK'
-                    ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                In Stock Only ({displayItems.filter(i => i.in_stock).length})
-              </button>
-
+            {dealsCount > 0 && (
               <button
                 type="button"
                 onClick={() => setActiveFilter('DEALS')}
-                className={`px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-lg border transition-all cursor-pointer ${
                   activeFilter === 'DEALS'
                     ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                On Deals (4)
+                {locale === 'ar' ? 'العروض' : 'On Deals'} ({dealsCount})
               </button>
+            )}
 
+            {organicCount > 0 && (
               <button
                 type="button"
                 onClick={() => setActiveFilter('ORGANIC')}
-                className={`px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-lg border transition-all cursor-pointer ${
                   activeFilter === 'ORGANIC'
                     ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                🌱 Organic Certified (7)
+                🌱 {locale === 'ar' ? 'عضوي موثق' : 'Organic'} ({organicCount})
               </button>
-            </div>
+            )}
           </div>
 
           {/* Right Sort & View Controls */}
-          <div className="flex items-center gap-3 text-xs font-bold text-slate-600 self-end md:self-auto">
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-400 uppercase text-[10px] tracking-wider">SORT:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-slate-800 text-xs font-bold focus:outline-none focus:border-[#043927] cursor-pointer"
-              >
-                <option value="RECENT">Recently Added</option>
-                <option value="PRICE_LOW">Price: Low to High</option>
-                <option value="PRICE_HIGH">Price: High to Low</option>
-                <option value="RATING">Highest Rated</option>
-              </select>
+          <div className="flex items-center gap-2.5 text-[11px] font-bold text-slate-600 self-end sm:self-auto">
+            {/* Custom Dynamic Sort Dropdown */}
+            <div className="relative" ref={sortRef}>
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-400 uppercase text-[9px] font-black tracking-wider">
+                  {locale === 'ar' ? 'ترتيب:' : 'SORT:'}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setIsSortOpen((prev) => !prev)}
+                  className="bg-white hover:bg-slate-50 border border-[#043927] rounded-full px-3 py-1 text-[#043927] text-[11px] font-black flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#043927]/20"
+                >
+                  <span>
+                    {locale === 'ar'
+                      ? (sortOptions.find((o) => o.value === sortBy)?.label_ar || 'المضاف حديثاً')
+                      : (sortOptions.find((o) => o.value === sortBy)?.label_en || 'Recently Added')}
+                  </span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-[#043927] transition-transform duration-200 ${
+                      isSortOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Dropdown Menu Popup */}
+              {isSortOpen && (
+                <div className="absolute right-0 rtl:right-auto rtl:left-0 mt-1.5 w-44 bg-white rounded-xl shadow-lg border border-slate-200/90 py-1 z-30 animate-in fade-in zoom-in-95 duration-150">
+                  {sortOptions.map((opt) => {
+                    const isSelected = sortBy === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setSortBy(opt.value);
+                          setIsSortOpen(false);
+                        }}
+                        className={`w-full text-left rtl:text-right px-3 py-1.5 text-[11px] font-bold flex items-center justify-between transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-emerald-50 text-[#043927] font-black'
+                            : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span>{locale === 'ar' ? opt.label_ar : opt.label_en}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#05A764]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1">
-              <button type="button" className="p-1 rounded-lg bg-white shadow-2xs text-[#043927]" title="Grid View">
-                <Grid className="w-4 h-4" />
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 gap-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`p-1 rounded-md transition-colors cursor-pointer ${
+                  viewMode === 'grid' ? 'bg-white shadow-2xs text-[#043927]' : 'text-slate-400 hover:text-slate-700'
+                }`}
+                title="Grid View"
+              >
+                <Grid className="w-3.5 h-3.5" />
               </button>
-              <button type="button" className="p-1 rounded-lg text-slate-400 hover:text-slate-700" title="List View">
-                <List className="w-4 h-4" />
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`p-1 rounded-md transition-colors cursor-pointer ${
+                  viewMode === 'list' ? 'bg-white shadow-2xs text-[#043927]' : 'text-slate-400 hover:text-slate-700'
+                }`}
+                title="List View"
+              >
+                <List className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -327,7 +374,6 @@ export default function WishlistPage() {
 
           {/* ================= LEFT ACCOUNT SIDEBAR ================= */}
           <div className="lg:col-span-3 space-y-4">
-            
             <div className="bg-white rounded-3xl p-3 border border-slate-200/90 shadow-xs space-y-1 text-xs font-sans">
               
               <Link
@@ -336,7 +382,7 @@ export default function WishlistPage() {
               >
                 <div className="flex items-center gap-2.5">
                   <Sliders className="w-4 h-4 text-slate-400" />
-                  <span>Dashboard Overview</span>
+                  <span>{locale === 'ar' ? 'لوحة المتابعة' : 'Dashboard Overview'}</span>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-300 rtl:rotate-180" />
               </Link>
@@ -347,11 +393,9 @@ export default function WishlistPage() {
               >
                 <div className="flex items-center gap-2.5">
                   <Package className="w-4 h-4 text-slate-400" />
-                  <span>My Orders</span>
+                  <span>{locale === 'ar' ? 'طلباتي' : 'My Orders'}</span>
                 </div>
-                <span className="bg-emerald-100 text-emerald-900 text-[10px] font-black px-2 py-0.5 rounded-full">
-                  3 active
-                </span>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 rtl:rotate-180" />
               </Link>
 
               <Link
@@ -360,9 +404,9 @@ export default function WishlistPage() {
               >
                 <div className="flex items-center gap-2.5">
                   <MapPin className="w-4 h-4 text-slate-400" />
-                  <span>Track Live Order</span>
+                  <span>{locale === 'ar' ? 'تتبع الطلب المباشر' : 'Track Live Order'}</span>
                 </div>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 rtl:rotate-180" />
               </Link>
 
               <Link
@@ -371,9 +415,11 @@ export default function WishlistPage() {
               >
                 <div className="flex items-center gap-2.5">
                   <Heart className="w-4 h-4 fill-rose-400 text-rose-400" />
-                  <span>Wishlist</span>
+                  <span>{locale === 'ar' ? 'قائمة المفضلة' : 'Wishlist'}</span>
                 </div>
-                <span className="text-[11px] font-extrabold text-emerald-200">12</span>
+                <span className="text-[11px] font-extrabold text-emerald-200">
+                  {wishlist.length}
+                </span>
               </Link>
 
               <Link
@@ -382,9 +428,9 @@ export default function WishlistPage() {
               >
                 <div className="flex items-center gap-2.5">
                   <Home className="w-4 h-4 text-slate-400" />
-                  <span>Saved Addresses</span>
+                  <span>{locale === 'ar' ? 'العناوين المسجلة' : 'Saved Addresses'}</span>
                 </div>
-                <span className="text-[11px] font-extrabold text-slate-400">3</span>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 rtl:rotate-180" />
               </Link>
 
               <Link
@@ -393,12 +439,9 @@ export default function WishlistPage() {
               >
                 <div className="flex items-center gap-2.5">
                   <CreditCard className="w-4 h-4 text-slate-400" />
-                  <span>Payment Methods</span>
+                  <span>{locale === 'ar' ? 'طرق الدفع' : 'Payment Methods'}</span>
                 </div>
-                <div className="flex gap-1 text-[9px] font-extrabold">
-                  <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">mada</span>
-                  <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">Visa</span>
-                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 rtl:rotate-180" />
               </Link>
 
               <Link
@@ -407,8 +450,9 @@ export default function WishlistPage() {
               >
                 <div className="flex items-center gap-2.5">
                   <User className="w-4 h-4 text-slate-400" />
-                  <span>My Profile</span>
+                  <span>{locale === 'ar' ? 'الملف الشخصي' : 'My Profile'}</span>
                 </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 rtl:rotate-180" />
               </Link>
 
               <Link
@@ -417,11 +461,9 @@ export default function WishlistPage() {
               >
                 <div className="flex items-center gap-2.5">
                   <Bell className="w-4 h-4 text-slate-400" />
-                  <span>Notifications</span>
+                  <span>{locale === 'ar' ? 'الإشعارات' : 'Notifications'}</span>
                 </div>
-                <span className="bg-rose-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-                  2
-                </span>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 rtl:rotate-180" />
               </Link>
 
               <Link
@@ -430,159 +472,310 @@ export default function WishlistPage() {
               >
                 <div className="flex items-center gap-2.5">
                   <Headphones className="w-4 h-4 text-emerald-600" />
-                  <span>Customer Support (24/7)</span>
+                  <span>{locale === 'ar' ? 'خدمة العملاء' : 'Customer Support'}</span>
                 </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 rtl:rotate-180" />
               </Link>
 
-              <div className="pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  className="w-full flex items-center gap-2.5 p-3 rounded-2xl text-xs font-extrabold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4 text-rose-500" />
-                  <span>Sign Out</span>
-                </button>
-              </div>
-
-            </div>
-
-            {/* Fast 30-Min Delivery Promo Card */}
-            <div className="bg-[#043927] text-white rounded-3xl p-5 shadow-md border border-emerald-900 space-y-3 font-sans relative overflow-hidden">
-              <div className="flex items-center gap-1.5 text-amber-300 font-black text-xs">
-                <Zap className="w-4 h-4 fill-amber-300" />
-                <span>Fast 30-Min Delivery</span>
-              </div>
-              <p className="text-xs text-emerald-100 font-medium leading-relaxed">
-                Order your weekly dairy & produce basket again with a single tap.
-              </p>
-              <div className="bg-emerald-900/60 p-2.5 rounded-2xl border border-emerald-800 text-[11px] flex items-center justify-between">
-                <div>
-                  <span className="text-emerald-300 font-bold block text-[9px] uppercase">Routine Basket #3</span>
-                  <span className="font-black text-white">SAR 142.50 • 5 Items</span>
+              {user && (
+                <div className="pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="w-full flex items-center gap-2.5 p-3 rounded-2xl text-xs font-extrabold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4 text-rose-500" />
+                    <span>{locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}</span>
+                  </button>
                 </div>
-              </div>
-              <button
-                type="button"
-                className="w-full py-2.5 rounded-xl bg-[#05A764] hover:bg-emerald-500 text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
-              >
-                Quick Reorder
-              </button>
+              )}
+
             </div>
 
           </div>
 
-          {/* ================= RIGHT WISHLIST PRODUCTS GRID (9 Cols) ================= */}
+          {/* ================= RIGHT WISHLIST PRODUCTS GRID / LIST (9 Cols) ================= */}
           <div className="lg:col-span-9">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              
-              {filteredItems.map((item) => {
-                const qty = quantities[item.id] || 1;
-                const isOutOfSeason = item.out_of_season;
 
-                return (
-                  <div
-                    key={item.id}
-                    className={`bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col justify-between hover:shadow-md transition-all font-sans relative ${
-                      isOutOfSeason ? 'opacity-70 bg-slate-50/80' : ''
-                    }`}
+            {/* Loading State */}
+            {isLoading ? (
+              <div className="bg-white rounded-3xl p-16 text-center space-y-3 border border-slate-200/90 shadow-xs">
+                <div className="w-8 h-8 border-4 border-[#043927] border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs font-extrabold text-slate-500">
+                  {locale === 'ar' ? 'جاري تحميل قائمة المفضلة...' : 'Loading your wishlist...'}
+                </p>
+              </div>
+            ) : !user ? (
+              /* Non-authenticated prompt */
+              <div className="bg-white rounded-3xl border border-slate-200/90 p-12 text-center shadow-xs space-y-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-50 text-[#043927] flex items-center justify-center mx-auto border border-emerald-200">
+                  <LogIn className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-black text-slate-900">
+                    {locale === 'ar' ? 'سجل الدخول لعرض المفضلة' : 'Sign In to View Your Wishlist'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium max-w-md mx-auto">
+                    {locale === 'ar'
+                      ? 'يرجى تسجيل الدخول لحفظ المنتجات في قائمة المفضلة ومزامنتها عبر جميع أجهزتك.'
+                      : 'Please sign in to keep track of your favorite items, sync across all devices, and receive price drop alerts.'}
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
                   >
-                    
-                    {/* Top Media Container */}
-                    <div className="relative w-full aspect-square bg-[#F8F9FA] p-3 overflow-hidden flex items-center justify-center border-b border-slate-100">
-                      
-                      {/* Top Left Badge */}
-                      {item.badge_top && (
-                        <span className="absolute top-3 left-3 bg-[#043927] text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-2xs z-10">
-                          {item.badge_top}
-                        </span>
-                      )}
+                    <LogIn className="w-4 h-4" />
+                    <span>{locale === 'ar' ? 'تسجيل الدخول' : 'Sign In Now'}</span>
+                  </Link>
+                </div>
+              </div>
+            ) : displayItems.length === 0 ? (
+              /* Empty State */
+              <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center space-y-4 shadow-xs">
+                <div className="w-16 h-16 rounded-full bg-emerald-50 text-[#043927] flex items-center justify-center mx-auto border border-emerald-200">
+                  <Heart className="w-8 h-8 text-[#043927]" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-black text-slate-900">
+                    {displayItems.length === 0
+                      ? (locale === 'ar' ? 'قائمة المفضلة فارغة حالياً' : 'Your Wishlist is Empty')
+                      : (locale === 'ar' ? 'لا توجد منتجات تطابق هذا التصنيف' : 'No Items Match This Filter')}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium max-w-md mx-auto">
+                    {displayItems.length === 0
+                      ? (locale === 'ar'
+                          ? 'استكشف منتجاتنا الطازجة من الخضار والفواكه والألبان والمؤونة وأضف ما يعجبك للمفضلة!'
+                          : 'Explore our farm-fresh produce, regional dairy, and pantry items and save your favorites to order anytime!')
+                      : (locale === 'ar'
+                          ? 'اختر "الكل" لعرض كافة المنتجات المحفوظة في قائمتك.'
+                          : 'Switch to "All Items" to view all products saved in your wishlist.')}
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Link
+                    href="/products"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
+                  >
+                    <span>{locale === 'ar' ? 'تصفح المنتجات' : 'Explore Products'}</span>
+                    <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                  </Link>
+                </div>
+              </div>
+            ) : viewMode === 'grid' ? (
+              /* Grid View */
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {displayItems.map((item) => {
+                  const qty = quantities[item.id] || 1;
 
-                      {/* Bottom Left Badge / Stock Warning */}
-                      {item.badge_bottom && (
-                        <span className="absolute bottom-3 left-3 bg-[#043927] text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-2xs z-10">
-                          {item.badge_bottom}
-                        </span>
-                      )}
+                  return (
+                    <div
+                      key={item.id}
+                      className={`bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-emerald-500/40 transition-all font-sans relative ${
+                        !item.in_stock ? 'opacity-80 bg-slate-50/70' : ''
+                      }`}
+                    >
+                      {/* Compact Top Media Container */}
+                      <div className="relative w-full h-36 sm:h-40 bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center border-b border-slate-100 group">
 
-                      {item.badge_warning && (
-                        <span className="absolute bottom-3 left-3 bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-2xs z-10">
-                          {item.badge_warning}
-                        </span>
-                      )}
-
-                      {/* Out of Season Overlay */}
-                      {isOutOfSeason && (
-                        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-20">
-                          <span className="bg-slate-900 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-full shadow-md">
-                            Out of Season
+                        {/* Bottom Left Badge */}
+                        {item.badge_bottom && (
+                          <span className="absolute bottom-2 left-2 bg-amber-50 text-amber-900 border border-amber-200 text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-2xs z-10">
+                            {item.badge_bottom}
                           </span>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Top Right Remove Trash Button */}
-                      <button
-                        type="button"
-                        onClick={() => removeFromWishlist(item.id)}
-                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 flex items-center justify-center transition-colors shadow-2xs z-10 cursor-pointer"
-                        title="Remove from wishlist"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-
-                      {/* Image */}
-                      <img
-                        src={getImageUrl(item.image_url)}
-                        alt={item.name_en}
-                        className={`w-full h-full object-cover rounded-2xl transition-transform duration-300 group-hover:scale-105 ${
-                          isOutOfSeason ? 'grayscale' : ''
-                        }`}
-                      />
-                    </div>
-
-                    {/* Card Body Details */}
-                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                      <div className="space-y-1.5">
-                        {/* Vendor Brand */}
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
-                          {item.brand}
-                        </span>
-
-                        {/* Product Title */}
-                        <h3 className="font-extrabold text-slate-900 text-sm leading-snug line-clamp-2">
-                          {item.name_en}
-                        </h3>
-
-                        {/* Description */}
-                        <p className="text-xs text-slate-500 font-medium leading-normal line-clamp-2">
-                          {item.description_en}
-                        </p>
-
-                        {/* Rating */}
-                        <div className="flex items-center gap-1 text-[11px] font-extrabold text-amber-500 pt-0.5">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                          <span>{item.rating}</span>
-                          <span className="text-slate-400 font-medium">({item.reviews_count})</span>
-                        </div>
-
-                        {/* Tags / Options Pills */}
-                        {item.tags && item.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 pt-1">
-                            {item.tags.map((tag, tIdx) => (
-                              <span
-                                key={tIdx}
-                                className="bg-emerald-50 text-emerald-900 border border-emerald-200/80 text-[10px] font-extrabold px-2 py-0.5 rounded-md"
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                        {/* Out of stock overlay */}
+                        {!item.in_stock && (
+                          <div className="absolute inset-0 bg-slate-900/35 backdrop-blur-[1px] flex items-center justify-center z-15">
+                            <span className="bg-slate-900 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-full shadow-md">
+                              {locale === 'ar' ? 'غير متوفر حالياً' : 'Out of Stock'}
+                            </span>
                           </div>
                         )}
+
+                        {/* Top Right Remove Trash Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(item.id)}
+                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/95 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 flex items-center justify-center transition-colors shadow-2xs z-20 cursor-pointer"
+                          title="Remove from wishlist"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Product Image */}
+                        <Link href={`/products/${item.id}`} className="w-full h-full flex items-center justify-center">
+                          {item.image_url ? (
+                            <img
+                              src={getImageUrl(item.image_url)}
+                              alt={item.name}
+                              className={`w-full h-full object-contain transition-transform duration-300 group-hover:scale-105 ${
+                                !item.in_stock ? 'grayscale' : ''
+                              }`}
+                            />
+                          ) : (
+                            <div className="w-full h-full rounded-xl bg-slate-100 flex items-center justify-center text-slate-300">
+                              <ShoppingBag className="w-8 h-8" />
+                            </div>
+                          )}
+                        </Link>
                       </div>
 
-                      {/* Price & Quantity & Move to Cart Button */}
-                      <div className="pt-3 border-t border-slate-100 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-baseline gap-1.5">
+                      {/* Card Body Details */}
+                      <div className="p-3 space-y-2 flex-1 flex flex-col justify-between">
+                        <div className="space-y-1">
+                          {item.brand && (
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">
+                              {item.brand}
+                            </span>
+                          )}
+
+                          <Link href={`/products/${item.id}`}>
+                            <h3 className="font-bold text-slate-900 text-xs sm:text-sm leading-snug line-clamp-1 hover:text-[#043927] transition-colors" title={item.name}>
+                              {item.name}
+                            </h3>
+                          </Link>
+
+                          {/* Rating & Tag in single compact line */}
+                          <div className="flex items-center justify-between text-[10px] pt-0.5">
+                            {item.rating ? (
+                              <div className="flex items-center gap-1 font-extrabold text-amber-500">
+                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                <span>{item.rating}</span>
+                                {item.reviews_count > 0 && (
+                                  <span className="text-slate-400 font-medium">({item.reviews_count})</span>
+                                )}
+                              </div>
+                            ) : (
+                              <div />
+                            )}
+
+                            {item.tags && item.tags.length > 0 && (
+                              <span className="bg-emerald-50 text-emerald-900 border border-emerald-200/80 font-bold px-1.5 py-0.5 rounded text-[9px]">
+                                {item.tags[0]}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Price & Quantity & Move to Cart Button */}
+                        <div className="pt-2 border-t border-slate-100 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-sm sm:text-base font-black text-slate-900">
+                                SAR {item.price.toFixed(2)}
+                              </span>
+                              {item.original_price && (
+                                <span className="text-[11px] text-slate-400 line-through font-semibold">
+                                  SAR {item.original_price.toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+
+                            <span className={`text-[9px] font-extrabold ${item.in_stock ? 'text-emerald-700' : 'text-rose-600'}`}>
+                              {item.in_stock ? (locale === 'ar' ? 'متوفر' : 'In Stock') : (locale === 'ar' ? 'غير متوفر' : 'Unavailable')}
+                            </span>
+                          </div>
+
+                          {/* Action Buttons Row */}
+                          {item.in_stock ? (
+                            <div className="flex items-center gap-1.5">
+                              {/* Quantity Stepper */}
+                              <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg px-1.5 py-1 text-xs font-bold text-slate-800">
+                                <button
+                                  type="button"
+                                  onClick={() => handleQtyChange(item.id, -1)}
+                                  className="text-slate-500 hover:text-slate-900 px-0.5 cursor-pointer"
+                                >
+                                  <Minus className="w-2.5 h-2.5" />
+                                </button>
+                                <span className="px-1.5 font-black text-xs">{qty}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleQtyChange(item.id, 1)}
+                                  className="text-slate-500 hover:text-slate-900 px-0.5 cursor-pointer"
+                                >
+                                  <Plus className="w-2.5 h-2.5" />
+                                </button>
+                              </div>
+
+                              {/* Move to Cart Button */}
+                              <button
+                                type="button"
+                                onClick={() => handleAddToCart(item)}
+                                disabled={addingId === item.id}
+                                className="flex-1 py-1.5 px-2 rounded-lg bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-[11px] shadow-2xs transition-colors flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                              >
+                                {addingId === item.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <ShoppingBag className="w-3 h-3 text-[#05A764]" />
+                                )}
+                                <span className="truncate">
+                                  {addingId === item.id
+                                    ? (locale === 'ar' ? 'جاري الإضافة...' : 'Adding...')
+                                    : (locale === 'ar' ? 'أضف للسلة' : 'Move to Cart')}
+                                </span>
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled
+                              className="w-full py-2 rounded-lg bg-slate-200 text-slate-400 font-bold text-xs cursor-not-allowed"
+                            >
+                              {locale === 'ar' ? 'غير متوفر حالياً' : 'Out of Stock'}
+                            </button>
+                          )}
+                        </div>
+
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* List View */
+              <div className="space-y-4">
+                {displayItems.map((item) => {
+                  const qty = quantities[item.id] || 1;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-4 flex flex-col sm:flex-row items-center justify-between gap-4 hover:shadow-md transition-all"
+                    >
+                      <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <Link
+                          href={`/products/${item.id}`}
+                          className="w-20 h-20 bg-slate-50 rounded-2xl overflow-hidden shrink-0 border border-slate-100 flex items-center justify-center"
+                        >
+                          {item.image_url ? (
+                            <img
+                              src={getImageUrl(item.image_url)}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <ShoppingBag className="w-8 h-8 text-slate-300" />
+                          )}
+                        </Link>
+
+                        <div className="space-y-1 flex-1">
+                          {item.brand && (
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                              {item.brand}
+                            </span>
+                          )}
+                          <Link href={`/products/${item.id}`}>
+                            <h3 className="font-extrabold text-slate-900 text-sm leading-snug hover:text-[#043927]">
+                              {item.name}
+                            </h3>
+                          </Link>
+                          <div className="flex items-center gap-2">
                             <span className="text-base font-black text-slate-900">
                               SAR {item.price.toFixed(2)}
                             </span>
@@ -591,64 +784,69 @@ export default function WishlistPage() {
                                 SAR {item.original_price.toFixed(2)}
                               </span>
                             )}
+                            <span className={`text-[10px] font-extrabold ${item.in_stock ? 'text-emerald-700' : 'text-rose-600'}`}>
+                              • {item.in_stock ? (locale === 'ar' ? 'متوفر' : 'In Stock') : (locale === 'ar' ? 'غير متوفر' : 'Unavailable')}
+                            </span>
                           </div>
-
-                          <span className={`text-[10px] font-extrabold ${item.in_stock ? 'text-emerald-700' : 'text-rose-600'}`}>
-                            {item.in_stock ? 'In Stock' : 'Unavailable'}
-                          </span>
                         </div>
-
-                        {/* Action Buttons Row */}
-                        {!isOutOfSeason ? (
-                          <div className="flex items-center gap-2">
-                            {/* Quantity Stepper */}
-                            <div className="flex items-center bg-slate-100 border border-slate-200 rounded-xl px-2 py-1 text-xs font-bold text-slate-800">
-                              <button
-                                type="button"
-                                onClick={() => handleQtyChange(item.id, -1)}
-                                className="text-slate-500 hover:text-slate-900 px-1 cursor-pointer"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <span className="px-2 font-black">{qty}</span>
-                              <button
-                                type="button"
-                                onClick={() => handleQtyChange(item.id, 1)}
-                                className="text-slate-500 hover:text-slate-900 px-1 cursor-pointer"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
-                            </div>
-
-                            {/* Move to Cart Button */}
-                            <button
-                              type="button"
-                              onClick={() => handleAddToCart(item)}
-                              disabled={addingId === item.id}
-                              className="flex-1 py-2.5 px-3 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                            >
-                              <ShoppingBag className="w-3.5 h-3.5 text-[#05A764]" />
-                              <span>{addingId === item.id ? 'Adding...' : 'Move to Cart'}</span>
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled
-                            className="w-full py-2.5 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs cursor-not-allowed"
-                          >
-                            Out of Season
-                          </button>
-                        )}
                       </div>
 
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                        {item.in_stock && (
+                          <div className="flex items-center bg-slate-100 border border-slate-200 rounded-xl px-2 py-1 text-xs font-bold text-slate-800">
+                            <button
+                              type="button"
+                              onClick={() => handleQtyChange(item.id, -1)}
+                              className="text-slate-500 hover:text-slate-900 px-1 cursor-pointer"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="px-2 font-black">{qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleQtyChange(item.id, 1)}
+                              className="text-slate-500 hover:text-slate-900 px-1 cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+
+                        {item.in_stock ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAddToCart(item)}
+                            disabled={addingId === item.id}
+                            className="py-2.5 px-4 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          >
+                            {addingId === item.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <ShoppingBag className="w-3.5 h-3.5 text-[#05A764]" />
+                            )}
+                            <span>{locale === 'ar' ? 'أضف للسلة' : 'Move to Cart'}</span>
+                          </button>
+                        ) : (
+                          <span className="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl">
+                            {locale === 'ar' ? 'غير متوفر' : 'Unavailable'}
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(item.id)}
+                          className="w-9 h-9 rounded-xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+                          title="Remove from wishlist"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
+            )}
 
-                  </div>
-                );
-              })}
-
-            </div>
           </div>
 
         </div>

@@ -4,8 +4,8 @@ const { sendSuccess, sendError } = require('../utils/response');
 class WishlistController {
   async getWishlist(req, res) {
     try {
-      const productIds = await wishlistService.getUserWishlist(req.user.id);
-      return sendSuccess(res, 'Wishlist retrieved', { productIds });
+      const result = await wishlistService.getUserWishlist(req.user.id, req.query);
+      return sendSuccess(res, 'Wishlist retrieved', result);
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }

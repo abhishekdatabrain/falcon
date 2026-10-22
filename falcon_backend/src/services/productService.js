@@ -83,60 +83,74 @@ class ProductService {
     const activeSubSubId = subSubcategoryId || sub_subcategory_id;
     const activeSubId = subcategoryId;
     const activeCatId = categoryId;
+    const rawCategoryInput = query.categoryIds || query.category_ids || activeLeafId || activeSubSubId || activeSubId || activeCatId;
 
-    const targetFilterId = activeLeafId || activeSubSubId || activeSubId || activeCatId;
+    if (rawCategoryInput) {
+      const inputList = Array.isArray(rawCategoryInput)
+        ? rawCategoryInput
+        : String(rawCategoryInput).split(',').map((s) => s.trim()).filter(Boolean);
 
-    if (targetFilterId) {
-      const catObj = await Category.findOne({
-        where: {
-          [Op.or]: [
-            { id: targetFilterId },
-            { slug: targetFilterId }
-          ]
-        }
-      });
-
-      if (catObj) {
-        // Collect catObj.id and all descendant category IDs recursively
+      if (inputList.length > 0) {
+        // Helper to collect all descendant category IDs recursively
         const getDescendantIds = async (parentIds) => {
           const children = await Category.findAll({
             where: { parent_id: { [Op.in]: parentIds } },
             attributes: ['id']
           });
           if (children.length === 0) return [];
-          const childIds = children.map(c => c.id);
+          const childIds = children.map((c) => c.id);
           const deeper = await getDescendantIds(childIds);
           return [...childIds, ...deeper];
         };
 
-        const descendantIds = await getDescendantIds([catObj.id]);
-        const allTargetIds = Array.from(new Set([catObj.id, ...descendantIds]));
+        const allTargetIds = new Set();
 
-        where[Op.or] = [
-          { category_id: { [Op.in]: allTargetIds } },
-          { subcategory_id: { [Op.in]: allTargetIds } },
-          { sub_subcategory_id: { [Op.in]: allTargetIds } },
-          { sub_sub_subcategory_id: { [Op.in]: allTargetIds } }
-        ];
-      } else {
-        where[Op.or] = [
-          { category_id: targetFilterId },
-          { subcategory_id: targetFilterId },
-          { sub_subcategory_id: targetFilterId },
-          { sub_sub_subcategory_id: targetFilterId }
-        ];
+        for (const item of inputList) {
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item);
+          const catObj = await Category.findOne({
+            where: isUUID
+              ? { [Op.or]: [{ id: item }, { slug: item }] }
+              : { slug: item }
+          });
+
+          if (catObj) {
+            allTargetIds.add(catObj.id);
+            const descendantIds = await getDescendantIds([catObj.id]);
+            descendantIds.forEach((id) => allTargetIds.add(id));
+          } else if (isUUID) {
+            allTargetIds.add(item);
+          }
+        }
+
+        if (allTargetIds.size > 0) {
+          const targetArray = Array.from(allTargetIds);
+          const categoryCondition = {
+            [Op.or]: [
+              { category_id: { [Op.in]: targetArray } },
+              { subcategory_id: { [Op.in]: targetArray } },
+              { sub_subcategory_id: { [Op.in]: targetArray } },
+              { sub_sub_subcategory_id: { [Op.in]: targetArray } }
+            ]
+          };
+          if (!where[Op.and]) where[Op.and] = [];
+          where[Op.and].push(categoryCondition);
+        }
       }
     }
 
     if (search) {
-      where[Op.or] = [
-        { name_en: { [Op.iLike]: `%${search}%` } },
-        { name_ar: { [Op.iLike]: `%${search}%` } },
-        { brand: { [Op.iLike]: `%${search}%` } },
-        { sku: { [Op.iLike]: `%${search}%` } },
-        { description_en: { [Op.iLike]: `%${search}%` } },
-        { description_ar: { [Op.iLike]: `%${search}%` } },
-      ];
+      const searchCondition = {
+        [Op.or]: [
+          { name_en: { [Op.iLike]: `%${search}%` } },
+          { name_ar: { [Op.iLike]: `%${search}%` } },
+          { brand: { [Op.iLike]: `%${search}%` } },
+          { sku: { [Op.iLike]: `%${search}%` } },
+          { description_en: { [Op.iLike]: `%${search}%` } },
+          { description_ar: { [Op.iLike]: `%${search}%` } },
+        ]
+      };
+      if (!where[Op.and]) where[Op.and] = [];
+      where[Op.and].push(searchCondition);
     }
 
     const minP = minPrice !== undefined && minPrice !== '' ? parseFloat(minPrice) : (query.min_price !== undefined && query.min_price !== '' ? parseFloat(query.min_price) : null);
@@ -174,6 +188,8 @@ class ProductService {
       orderClause = [['price', 'DESC']];
     } else if (sortKey === 'rating' || sortKey === 'highest_rated') {
       orderClause = [['rating', 'DESC'], ['created_at', 'DESC']];
+    } else if (sortKey === 'popularity' || sortKey === 'popular') {
+      orderClause = [['is_popular_pick', 'DESC'], ['is_best_seller', 'DESC'], ['rating', 'DESC'], ['created_at', 'DESC']];
     } else if (sortKey === 'featured') {
       orderClause = [['is_featured', 'DESC'], ['created_at', 'DESC']];
     } else if (sortKey === 'newest') {

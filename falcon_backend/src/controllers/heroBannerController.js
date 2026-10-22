@@ -46,6 +46,19 @@ class HeroBannerController {
         bg_color,
         order_index,
         is_active,
+        show_badges,
+        badge_1_title_en,
+        badge_1_title_ar,
+        badge_1_subtitle_en,
+        badge_1_subtitle_ar,
+        badge_2_title_en,
+        badge_2_title_ar,
+        badge_2_subtitle_en,
+        badge_2_subtitle_ar,
+        badge_3_title_en,
+        badge_3_title_ar,
+        badge_3_subtitle_en,
+        badge_3_subtitle_ar,
       } = req.body;
 
       let finalImageUrl = image_url;
@@ -73,6 +86,19 @@ class HeroBannerController {
         bg_color: bg_color || '#FAF7F0',
         order_index: order_index !== undefined ? parseInt(order_index) : 0,
         is_active: is_active !== undefined ? (is_active === true || is_active === 'true') : true,
+        show_badges: show_badges !== undefined ? (show_badges === true || show_badges === 'true') : true,
+        badge_1_title_en: badge_1_title_en !== undefined ? badge_1_title_en : 'Fast & Reliable',
+        badge_1_title_ar: badge_1_title_ar !== undefined ? badge_1_title_ar : 'سريع وموثوق',
+        badge_1_subtitle_en: badge_1_subtitle_en !== undefined ? badge_1_subtitle_en : 'Delivery',
+        badge_1_subtitle_ar: badge_1_subtitle_ar !== undefined ? badge_1_subtitle_ar : 'التوصيل',
+        badge_2_title_en: badge_2_title_en !== undefined ? badge_2_title_en : 'Great Prices',
+        badge_2_title_ar: badge_2_title_ar !== undefined ? badge_2_title_ar : 'أسعار رائعة',
+        badge_2_subtitle_en: badge_2_subtitle_en !== undefined ? badge_2_subtitle_en : 'Everyday',
+        badge_2_subtitle_ar: badge_2_subtitle_ar !== undefined ? badge_2_subtitle_ar : 'كل يوم',
+        badge_3_title_en: badge_3_title_en !== undefined ? badge_3_title_en : 'Secure',
+        badge_3_title_ar: badge_3_title_ar !== undefined ? badge_3_title_ar : 'آمن ومحمي',
+        badge_3_subtitle_en: badge_3_subtitle_en !== undefined ? badge_3_subtitle_en : 'Payments',
+        badge_3_subtitle_ar: badge_3_subtitle_ar !== undefined ? badge_3_subtitle_ar : 'المدفوعات',
       });
 
       return sendSuccess(res, 'Hero banner created successfully', { banner }, 201);
@@ -106,6 +132,19 @@ class HeroBannerController {
         bg_color,
         order_index,
         is_active,
+        show_badges,
+        badge_1_title_en,
+        badge_1_title_ar,
+        badge_1_subtitle_en,
+        badge_1_subtitle_ar,
+        badge_2_title_en,
+        badge_2_title_ar,
+        badge_2_subtitle_en,
+        badge_2_subtitle_ar,
+        badge_3_title_en,
+        badge_3_title_ar,
+        badge_3_subtitle_en,
+        badge_3_subtitle_ar,
       } = req.body;
 
       if (req.file) {
@@ -128,6 +167,19 @@ class HeroBannerController {
       if (bg_color !== undefined) banner.bg_color = bg_color;
       if (order_index !== undefined) banner.order_index = parseInt(order_index);
       if (is_active !== undefined) banner.is_active = is_active === true || is_active === 'true';
+      if (show_badges !== undefined) banner.show_badges = show_badges === true || show_badges === 'true';
+      if (badge_1_title_en !== undefined) banner.badge_1_title_en = badge_1_title_en;
+      if (badge_1_title_ar !== undefined) banner.badge_1_title_ar = badge_1_title_ar;
+      if (badge_1_subtitle_en !== undefined) banner.badge_1_subtitle_en = badge_1_subtitle_en;
+      if (badge_1_subtitle_ar !== undefined) banner.badge_1_subtitle_ar = badge_1_subtitle_ar;
+      if (badge_2_title_en !== undefined) banner.badge_2_title_en = badge_2_title_en;
+      if (badge_2_title_ar !== undefined) banner.badge_2_title_ar = badge_2_title_ar;
+      if (badge_2_subtitle_en !== undefined) banner.badge_2_subtitle_en = badge_2_subtitle_en;
+      if (badge_2_subtitle_ar !== undefined) banner.badge_2_subtitle_ar = badge_2_subtitle_ar;
+      if (badge_3_title_en !== undefined) banner.badge_3_title_en = badge_3_title_en;
+      if (badge_3_title_ar !== undefined) banner.badge_3_title_ar = badge_3_title_ar;
+      if (badge_3_subtitle_en !== undefined) banner.badge_3_subtitle_en = badge_3_subtitle_en;
+      if (badge_3_subtitle_ar !== undefined) banner.badge_3_subtitle_ar = badge_3_subtitle_ar;
 
       await banner.save();
       return sendSuccess(res, 'Hero banner updated successfully', { banner });

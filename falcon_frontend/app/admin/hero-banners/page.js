@@ -22,6 +22,9 @@ import {
   MoveDown,
   Loader2,
   X,
+  Truck,
+  Tag,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function AdminHeroBannersPage() {
@@ -51,6 +54,19 @@ export default function AdminHeroBannersPage() {
     bg_color: '#FAF7F0',
     order_index: 0,
     is_active: true,
+    show_badges: true,
+    badge_1_title_en: 'Fast & Reliable',
+    badge_1_title_ar: 'سريع وموثوق',
+    badge_1_subtitle_en: 'Delivery',
+    badge_1_subtitle_ar: 'التوصيل',
+    badge_2_title_en: 'Great Prices',
+    badge_2_title_ar: 'أسعار رائعة',
+    badge_2_subtitle_en: 'Everyday',
+    badge_2_subtitle_ar: 'كل يوم',
+    badge_3_title_en: 'Secure',
+    badge_3_title_ar: 'آمن ومحمي',
+    badge_3_subtitle_en: 'Payments',
+    badge_3_subtitle_ar: 'المدفوعات',
   });
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -96,6 +112,19 @@ export default function AdminHeroBannersPage() {
       bg_color: '#FAF7F0',
       order_index: banners.length,
       is_active: true,
+      show_badges: true,
+      badge_1_title_en: 'Fast & Reliable',
+      badge_1_title_ar: 'سريع وموثوق',
+      badge_1_subtitle_en: 'Delivery',
+      badge_1_subtitle_ar: 'التوصيل',
+      badge_2_title_en: 'Great Prices',
+      badge_2_title_ar: 'أسعار رائعة',
+      badge_2_subtitle_en: 'Everyday',
+      badge_2_subtitle_ar: 'كل يوم',
+      badge_3_title_en: 'Secure',
+      badge_3_title_ar: 'آمن ومحمي',
+      badge_3_subtitle_en: 'Payments',
+      badge_3_subtitle_ar: 'المدفوعات',
     });
     setSelectedFile(null);
     setPreviewUrl('/hero_grocery_bag_fresh.png');
@@ -120,6 +149,19 @@ export default function AdminHeroBannersPage() {
       bg_color: banner.bg_color || '#FAF7F0',
       order_index: banner.order_index ?? 0,
       is_active: banner.is_active ?? true,
+      show_badges: banner.show_badges ?? true,
+      badge_1_title_en: banner.badge_1_title_en || 'Fast & Reliable',
+      badge_1_title_ar: banner.badge_1_title_ar || 'سريع وموثوق',
+      badge_1_subtitle_en: banner.badge_1_subtitle_en || 'Delivery',
+      badge_1_subtitle_ar: banner.badge_1_subtitle_ar || 'التوصيل',
+      badge_2_title_en: banner.badge_2_title_en || 'Great Prices',
+      badge_2_title_ar: banner.badge_2_title_ar || 'أسعار رائعة',
+      badge_2_subtitle_en: banner.badge_2_subtitle_en || 'Everyday',
+      badge_2_subtitle_ar: banner.badge_2_subtitle_ar || 'كل يوم',
+      badge_3_title_en: banner.badge_3_title_en || 'Secure',
+      badge_3_title_ar: banner.badge_3_title_ar || 'آمن ومحمي',
+      badge_3_subtitle_en: banner.badge_3_subtitle_en || 'Payments',
+      badge_3_subtitle_ar: banner.badge_3_subtitle_ar || 'المدفوعات',
     });
     setSelectedFile(null);
     setPreviewUrl(banner.image_url || '');
@@ -387,6 +429,23 @@ export default function AdminHeroBannersPage() {
                   </p>
                 )}
 
+                {banner.show_badges !== false && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px] text-slate-600">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/60 font-semibold text-[10px]">
+                      <Truck className="w-3 h-3 text-emerald-700" />
+                      {locale === 'ar' ? (banner.badge_1_title_ar || 'سريع وموثوق') : (banner.badge_1_title_en || 'Fast & Reliable')}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/60 font-semibold text-[10px]">
+                      <Tag className="w-3 h-3 text-emerald-700" />
+                      {locale === 'ar' ? (banner.badge_2_title_ar || 'أسعار رائعة') : (banner.badge_2_title_en || 'Great Prices')}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/60 font-semibold text-[10px]">
+                      <ShieldCheck className="w-3 h-3 text-emerald-700" />
+                      {locale === 'ar' ? (banner.badge_3_title_ar || 'آمن ومحمي') : (banner.badge_3_title_en || 'Secure')}
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                   <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                     <LinkIcon className="w-3.5 h-3.5 text-slate-400" />
@@ -458,11 +517,13 @@ export default function AdminHeroBannersPage() {
                     <div className="relative w-36 h-36 rounded-2xl bg-[#FAF7F0] border-2 border-dashed border-amber-200 flex items-center justify-center p-2 overflow-hidden shadow-xs">
                       {previewUrl ? (
                         <img
-                          src={getImageUrl(previewUrl)}
+                          src={previewUrl.startsWith('blob:') || previewUrl.startsWith('data:') ? previewUrl : getImageUrl(previewUrl)}
                           alt="Preview"
-                          className="max-h-full max-w-full object-contain drop-shadow-sm"
+                          className="max-h-full max-w-full object-contain drop-shadow-sm transition-all"
                           onError={(e) => {
-                            e.target.src = '/hero_grocery_bag_fresh.png';
+                            if (!selectedFile) {
+                              e.target.src = '/hero_grocery_bag_fresh.png';
+                            }
                           }}
                         />
                       ) : (
@@ -485,6 +546,21 @@ export default function AdminHeroBannersPage() {
                         onChange={handleFileChange}
                         className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#043927] file:text-white hover:file:bg-[#02281b] cursor-pointer"
                       />
+                      {selectedFile && (
+                        <div className="flex items-center justify-between gap-2 mt-1.5 px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-xs">
+                          <span className="truncate font-medium">{selectedFile.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedFile(null);
+                              setPreviewUrl(formData.image_url || '/hero_grocery_bag_fresh.png');
+                            }}
+                            className="text-rose-600 hover:text-rose-800 font-bold shrink-0 cursor-pointer ml-2"
+                          >
+                            {locale === 'ar' ? 'إزالة' : 'Clear'}
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="relative">
@@ -663,6 +739,234 @@ export default function AdminHeroBannersPage() {
                     className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
+              </div>
+
+              {/* Trust Badges & Highlights (Hero Features) */}
+              <div className="space-y-4 bg-emerald-50/40 p-4 sm:p-5 rounded-2xl border border-emerald-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-200/50">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-[#043927] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Truck className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800">
+                        {locale === 'ar' ? 'شارات الثقة ومميزات الهيرو' : 'Trust Badges & Highlights'}
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        {locale === 'ar' ? 'تخصيص الشارات الـ 3 الظاهرة أسفل زر التسوق' : 'Manage the 3 highlight badges displayed below the CTA button'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-slate-600">
+                      {formData.show_badges ? (locale === 'ar' ? 'إظهار الشارات' : 'Show Badges') : (locale === 'ar' ? 'إخفاء الشارات' : 'Hide Badges')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, show_badges: !formData.show_badges })}
+                      className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                        formData.show_badges ? 'bg-[#043927]' : 'bg-slate-300'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                          formData.show_badges ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {formData.show_badges && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
+                    {/* Badge 1 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-emerald-200/60 shadow-2xs space-y-2.5">
+                      <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs pb-1 border-b border-emerald-100">
+                        <div className="w-6 h-6 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0">
+                          <Truck className="w-3.5 h-3.5" />
+                        </div>
+                        <span>{locale === 'ar' ? 'الشارة 1 (التوصيل)' : 'Badge 1 (Delivery)'}</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'العنوان الرئيسي (English)' : 'Title (English)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Fast & Reliable"
+                            value={formData.badge_1_title_en}
+                            onChange={(e) => setFormData({ ...formData, badge_1_title_en: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'العنوان الرئيسي (بالعربية)' : 'Title (Arabic)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="سريع وموثوق"
+                            value={formData.badge_1_title_ar}
+                            onChange={(e) => setFormData({ ...formData, badge_1_title_ar: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-right"
+                            dir="rtl"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'النص الفرعي (English)' : 'Subtitle (English)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Delivery"
+                            value={formData.badge_1_subtitle_en}
+                            onChange={(e) => setFormData({ ...formData, badge_1_subtitle_en: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'النص الفرعي (بالعربية)' : 'Subtitle (Arabic)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="التوصيل"
+                            value={formData.badge_1_subtitle_ar}
+                            onChange={(e) => setFormData({ ...formData, badge_1_subtitle_ar: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-right"
+                            dir="rtl"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Badge 2 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-emerald-200/60 shadow-2xs space-y-2.5">
+                      <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs pb-1 border-b border-emerald-100">
+                        <div className="w-6 h-6 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0">
+                          <Tag className="w-3.5 h-3.5" />
+                        </div>
+                        <span>{locale === 'ar' ? 'الشارة 2 (الأسعار)' : 'Badge 2 (Prices)'}</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'العنوان الرئيسي (English)' : 'Title (English)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Great Prices"
+                            value={formData.badge_2_title_en}
+                            onChange={(e) => setFormData({ ...formData, badge_2_title_en: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'العنوان الرئيسي (بالعربية)' : 'Title (Arabic)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="أسعار رائعة"
+                            value={formData.badge_2_title_ar}
+                            onChange={(e) => setFormData({ ...formData, badge_2_title_ar: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-right"
+                            dir="rtl"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'النص الفرعي (English)' : 'Subtitle (English)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Everyday"
+                            value={formData.badge_2_subtitle_en}
+                            onChange={(e) => setFormData({ ...formData, badge_2_subtitle_en: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'النص الفرعي (بالعربية)' : 'Subtitle (Arabic)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="كل يوم"
+                            value={formData.badge_2_subtitle_ar}
+                            onChange={(e) => setFormData({ ...formData, badge_2_subtitle_ar: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-right"
+                            dir="rtl"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Badge 3 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-emerald-200/60 shadow-2xs space-y-2.5">
+                      <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs pb-1 border-b border-emerald-100">
+                        <div className="w-6 h-6 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                        </div>
+                        <span>{locale === 'ar' ? 'الشارة 3 (الأمان والدفع)' : 'Badge 3 (Payments)'}</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'العنوان الرئيسي (English)' : 'Title (English)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Secure"
+                            value={formData.badge_3_title_en}
+                            onChange={(e) => setFormData({ ...formData, badge_3_title_en: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'العنوان الرئيسي (بالعربية)' : 'Title (Arabic)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="آمن ومحمي"
+                            value={formData.badge_3_title_ar}
+                            onChange={(e) => setFormData({ ...formData, badge_3_title_ar: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-right"
+                            dir="rtl"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'النص الفرعي (English)' : 'Subtitle (English)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Payments"
+                            value={formData.badge_3_subtitle_en}
+                            onChange={(e) => setFormData({ ...formData, badge_3_subtitle_en: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                            {locale === 'ar' ? 'النص الفرعي (بالعربية)' : 'Subtitle (Arabic)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="المدفوعات"
+                            value={formData.badge_3_subtitle_ar}
+                            onChange={(e) => setFormData({ ...formData, badge_3_subtitle_ar: e.target.value })}
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-right"
+                            dir="rtl"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Order & Active Toggle */}

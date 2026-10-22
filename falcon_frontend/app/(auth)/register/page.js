@@ -4,11 +4,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
+import { useToast } from '../../../src/contexts/ToastContext';
 import { UserPlus, AlertCircle, CheckCircle2, Mail, Phone, Lock, ArrowRight } from 'lucide-react';
 
 export default function RegisterPage() {
   const { locale } = useLanguage();
   const { register } = useAuth();
+  const { showToast } = useToast();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -20,24 +22,64 @@ export default function RegisterPage() {
   });
 
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
     setLoading(true);
 
     try {
       const res = await register(formData);
       if (res.success) {
         setSuccess(true);
+        showToast(
+          locale === 'ar' ? 'تم إنشاء الحساب بنجاح! 🎉' : 'Account created successfully! 🎉',
+          'success'
+        );
         setTimeout(() => {
           router.push('/login');
         }, 1500);
       }
     } catch (err) {
-      setError(err.message || 'Registration failed.');
+      const fErrors = err.fieldErrors || err.data?.fieldErrors || {};
+      const errMsg = err.message || '';
+
+      const isEmailTaken = fErrors.email || /email.*already/i.test(errMsg);
+      const isMobileTaken = fErrors.mobile || /mobile.*already|phone.*already/i.test(errMsg);
+      const isBothTaken = (isEmailTaken && isMobileTaken) || /both.*email.*mobile/i.test(errMsg) || /email or mobile/i.test(errMsg);
+
+      if (isBothTaken) {
+        fErrors.email = locale === 'ar' ? 'هذا البريد الإلكتروني مسجل بالفعل' : 'This email address is already registered';
+        fErrors.mobile = locale === 'ar' ? 'رقم الجوال هذا مسجل بالفعل' : 'This mobile number is already registered';
+        showToast(
+          locale === 'ar' ? 'البريد الإلكتروني ورقم الجوال مسجلان بالفعل' : 'Email and mobile number are already registered',
+          'error'
+        );
+        setError(locale === 'ar' ? 'البريد الإلكتروني ورقم الجوال مسجلان بالفعل' : 'Both email and mobile number are already registered');
+      } else if (isEmailTaken) {
+        fErrors.email = locale === 'ar' ? 'هذا البريد الإلكتروني مسجل بالفعل' : 'This email address is already registered';
+        showToast(
+          locale === 'ar' ? 'البريد الإلكتروني مسجل بالفعل' : 'This email address is already registered',
+          'error'
+        );
+        setError(locale === 'ar' ? 'هذا البريد الإلكتروني مسجل بالفعل' : 'This email address is already registered');
+      } else if (isMobileTaken) {
+        fErrors.mobile = locale === 'ar' ? 'رقم الجوال هذا مسجل بالفعل' : 'This mobile number is already registered';
+        showToast(
+          locale === 'ar' ? 'رقم الجوال مسجل بالفعل' : 'This mobile number is already registered',
+          'error'
+        );
+        setError(locale === 'ar' ? 'رقم الجوال هذا مسجل بالفعل' : 'This mobile number is already registered');
+      } else {
+        showToast(errMsg || (locale === 'ar' ? 'فشل إنشاء الحساب' : 'Registration failed'), 'error');
+        setError(errMsg || (locale === 'ar' ? 'فشل إنشاء الحساب' : 'Registration failed.'));
+      }
+
+      setFieldErrors(fErrors);
     } finally {
       setLoading(false);
     }
@@ -102,10 +144,24 @@ export default function RegisterPage() {
                   type="text"
                   required
                   value={formData.first_name}
-                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, first_name: e.target.value });
+                    if (fieldErrors.first_name) setFieldErrors(prev => ({ ...prev, first_name: null }));
+                    if (error) setError('');
+                  }}
                   placeholder="Ahmed"
-                  className="w-full px-3.5 py-3 rounded-2xl bg-slate-50/90 border border-slate-200 text-slate-900 placeholder-slate-400 text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#05442e] transition-all"
+                  className={`w-full px-3.5 py-3 rounded-2xl bg-slate-50/90 border text-slate-900 placeholder-slate-400 text-xs font-semibold focus:bg-white focus:outline-none transition-all ${
+                    fieldErrors.first_name
+                      ? 'border-rose-400 focus:ring-2 focus:ring-rose-500 bg-rose-50/30'
+                      : 'border-slate-200 focus:ring-2 focus:ring-[#05442e]'
+                  }`}
                 />
+                {fieldErrors.first_name && (
+                  <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                    <span>{fieldErrors.first_name}</span>
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -116,10 +172,24 @@ export default function RegisterPage() {
                   type="text"
                   required
                   value={formData.last_name}
-                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, last_name: e.target.value });
+                    if (fieldErrors.last_name) setFieldErrors(prev => ({ ...prev, last_name: null }));
+                    if (error) setError('');
+                  }}
                   placeholder="Al-Mansoor"
-                  className="w-full px-3.5 py-3 rounded-2xl bg-slate-50/90 border border-slate-200 text-slate-900 placeholder-slate-400 text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#05442e] transition-all"
+                  className={`w-full px-3.5 py-3 rounded-2xl bg-slate-50/90 border text-slate-900 placeholder-slate-400 text-xs font-semibold focus:bg-white focus:outline-none transition-all ${
+                    fieldErrors.last_name
+                      ? 'border-rose-400 focus:ring-2 focus:ring-rose-500 bg-rose-50/30'
+                      : 'border-slate-200 focus:ring-2 focus:ring-[#05442e]'
+                  }`}
                 />
+                {fieldErrors.last_name && (
+                  <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                    <span>{fieldErrors.last_name}</span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -133,12 +203,26 @@ export default function RegisterPage() {
                   type="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: null }));
+                    if (error) setError('');
+                  }}
                   placeholder="ahmed@example.com"
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50/90 border border-slate-200 text-slate-900 placeholder-slate-400 text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#05442e] transition-all"
+                  className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50/90 border text-slate-900 placeholder-slate-400 text-xs font-semibold focus:bg-white focus:outline-none transition-all ${
+                    fieldErrors.email
+                      ? 'border-rose-400 focus:ring-2 focus:ring-rose-500 bg-rose-50/30'
+                      : 'border-slate-200 focus:ring-2 focus:ring-[#05442e]'
+                  }`}
                 />
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Mail className={`w-4 h-4 absolute left-3.5 top-3.5 ${fieldErrors.email ? 'text-rose-400' : 'text-slate-400'}`} />
               </div>
+              {fieldErrors.email && (
+                <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1 animate-in fade-in">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                  <span>{fieldErrors.email}</span>
+                </p>
+              )}
             </div>
 
             {/* Mobile */}
@@ -151,12 +235,26 @@ export default function RegisterPage() {
                   type="text"
                   required
                   value={formData.mobile}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, mobile: e.target.value });
+                    if (fieldErrors.mobile) setFieldErrors(prev => ({ ...prev, mobile: null }));
+                    if (error) setError('');
+                  }}
                   placeholder="+966501234567"
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50/90 border border-slate-200 text-slate-900 placeholder-slate-400 text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#05442e] transition-all"
+                  className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50/90 border text-slate-900 placeholder-slate-400 text-xs font-semibold focus:bg-white focus:outline-none transition-all ${
+                    fieldErrors.mobile
+                      ? 'border-rose-400 focus:ring-2 focus:ring-rose-500 bg-rose-50/30'
+                      : 'border-slate-200 focus:ring-2 focus:ring-[#05442e]'
+                  }`}
                 />
-                <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Phone className={`w-4 h-4 absolute left-3.5 top-3.5 ${fieldErrors.mobile ? 'text-rose-400' : 'text-slate-400'}`} />
               </div>
+              {fieldErrors.mobile && (
+                <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1 animate-in fade-in">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                  <span>{fieldErrors.mobile}</span>
+                </p>
+              )}
             </div>
 
             {/* Password */}
@@ -170,19 +268,33 @@ export default function RegisterPage() {
                   required
                   minLength={6}
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, password: e.target.value });
+                    if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: null }));
+                    if (error) setError('');
+                  }}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50/90 border border-slate-200 text-slate-900 placeholder-slate-400 text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#05442e] transition-all"
+                  className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50/90 border text-slate-900 placeholder-slate-400 text-xs font-semibold focus:bg-white focus:outline-none transition-all ${
+                    fieldErrors.password
+                      ? 'border-rose-400 focus:ring-2 focus:ring-rose-500 bg-rose-50/30'
+                      : 'border-slate-200 focus:ring-2 focus:ring-[#05442e]'
+                  }`}
                 />
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Lock className={`w-4 h-4 absolute left-3.5 top-3.5 ${fieldErrors.password ? 'text-rose-400' : 'text-slate-400'}`} />
               </div>
+              {fieldErrors.password && (
+                <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1 animate-in fade-in">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                  <span>{fieldErrors.password}</span>
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 rounded-2xl bg-[#05442e] hover:bg-emerald-800 text-white font-extrabold text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer mt-3"
+              className="w-full py-4 rounded-2xl bg-[#05442e] hover:bg-emerald-800 text-white font-extrabold text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer mt-3 disabled:opacity-50"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

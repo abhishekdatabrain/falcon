@@ -6,8 +6,20 @@ class AuthController {
   async register(req, res, next) {
     try {
       const { email, mobile, password, first_name, last_name } = req.body;
-      if (!email || !mobile || !password || !first_name || !last_name) {
-        return sendError(res, 'All registration fields are required', [], 400);
+      const fieldErrors = {};
+      if (!first_name) fieldErrors.first_name = 'First name is required';
+      if (!last_name) fieldErrors.last_name = 'Last name is required';
+      if (!email) fieldErrors.email = 'Email address is required';
+      if (!mobile) fieldErrors.mobile = 'Mobile number is required';
+      if (!password) fieldErrors.password = 'Password is required';
+
+      if (Object.keys(fieldErrors).length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please fill in all required fields',
+          errors: Object.values(fieldErrors),
+          fieldErrors,
+        });
       }
 
       const result = await authService.registerCustomer({ email, mobile, password, first_name, last_name });
@@ -16,7 +28,12 @@ class AuthController {
         email: result.user.email,
       }, 201);
     } catch (error) {
-      return sendError(res, error.message, [], 400);
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+        errors: error.fieldErrors ? Object.values(error.fieldErrors) : [error.message],
+        fieldErrors: error.fieldErrors || {},
+      });
     }
   }
 

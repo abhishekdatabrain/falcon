@@ -665,37 +665,51 @@ export default function HomePage() {
                   </div>
 
                   {/* Trust Badges Row */}
-                  <div className="pt-2.5 sm:pt-3 border-t border-amber-200/50 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-700 font-sans">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
-                        <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  {activeHero.show_badges !== false && (
+                    <div className="pt-2.5 sm:pt-3 border-t border-amber-200/50 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-700 font-sans">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
+                          <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">
+                            {locale === 'ar' ? (activeHero.badge_1_title_ar || 'سريع وموثوق') : (activeHero.badge_1_title_en || 'Fast & Reliable')}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {locale === 'ar' ? (activeHero.badge_1_subtitle_ar || 'التوصيل') : (activeHero.badge_1_subtitle_en || 'Delivery')}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col leading-tight">
-                        <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">{locale === 'ar' ? 'سريع وموثوق' : 'Fast & Reliable'}</span>
-                        <span className="text-[10px] text-slate-500 font-medium">{locale === 'ar' ? 'التوصيل' : 'Delivery'}</span>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
-                        <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
+                          <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">
+                            {locale === 'ar' ? (activeHero.badge_2_title_ar || 'أسعار رائعة') : (activeHero.badge_2_title_en || 'Great Prices')}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {locale === 'ar' ? (activeHero.badge_2_subtitle_ar || 'كل يوم') : (activeHero.badge_2_subtitle_en || 'Everyday')}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col leading-tight">
-                        <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">{locale === 'ar' ? 'أسعار رائعة' : 'Great Prices'}</span>
-                        <span className="text-[10px] text-slate-500 font-medium">{locale === 'ar' ? 'كل يوم' : 'Everyday'}</span>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
-                        <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </div>
-                      <div className="flex flex-col leading-tight">
-                        <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">{locale === 'ar' ? 'آمن ومحمي' : 'Secure'}</span>
-                        <span className="text-[10px] text-slate-500 font-medium">{locale === 'ar' ? 'المدفوعات' : 'Payments'}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
+                          <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">
+                            {locale === 'ar' ? (activeHero.badge_3_title_ar || 'آمن ومحمي') : (activeHero.badge_3_title_en || 'Secure')}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {locale === 'ar' ? (activeHero.badge_3_subtitle_ar || 'المدفوعات') : (activeHero.badge_3_subtitle_en || 'Payments')}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                 </div>
 
@@ -802,7 +816,7 @@ export default function HomePage() {
                 return (
                   <Link
                     key={cat.id || cat._id || catSlug}
-                    href={`/products?category=${encodeURIComponent(catSlug)}`}
+                    href={`/category/${encodeURIComponent(catSlug)}`}
                     className="group/card bg-[#FFFDF8] hover:bg-[#FFF9EC] rounded-[22px] p-4 flex flex-col items-center justify-between border border-[#F6EEDF] shadow-2xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer min-h-[210px] sm:min-h-[230px] w-[155px] sm:w-[175px] md:w-[190px] shrink-0 snap-start"
                   >
                     <div className="w-full aspect-square max-w-[130px] sm:max-w-[145px] flex items-center justify-center overflow-hidden my-auto p-1.5">

@@ -7,14 +7,35 @@ class AuthService {
   async registerCustomer(data) {
     const { email, mobile, password, first_name, last_name } = data;
 
-    const existingUser = await User.findOne({
-      where: {
-        [sequelize.Sequelize.Op.or]: [{ email }, { mobile }],
-      },
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const normalizedMobile = (mobile || '').trim();
+
+    const existingEmail = await User.findOne({
+      where: { email: normalizedEmail },
+    });
+    const existingMobile = await User.findOne({
+      where: { mobile: normalizedMobile },
     });
 
-    if (existingUser) {
-      throw new Error('Email or mobile number is already registered');
+    if (existingEmail && existingMobile) {
+      const err = new Error('Both email address and mobile number are already registered');
+      err.fieldErrors = {
+        email: 'Email address is already registered',
+        mobile: 'Mobile number is already registered',
+      };
+      throw err;
+    } else if (existingEmail) {
+      const err = new Error('This email address is already registered');
+      err.fieldErrors = {
+        email: 'This email address is already registered',
+      };
+      throw err;
+    } else if (existingMobile) {
+      const err = new Error('This mobile number is already registered');
+      err.fieldErrors = {
+        mobile: 'This mobile number is already registered',
+      };
+      throw err;
     }
 
     const hashedPassword = await hashPassword(password);

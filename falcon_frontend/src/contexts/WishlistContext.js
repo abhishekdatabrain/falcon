@@ -12,20 +12,24 @@ export function WishlistProvider({ children }) {
   const { locale } = useLanguage();
   const { showToast } = useToast();
   const [wishlist, setWishlist] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Load wishlist from localStorage or API only for authenticated user
   useEffect(() => {
     const loadWishlist = async () => {
       // If user is not authenticated as a customer, reset wishlist
-      if (!user || user.role !== 'CUSTOMER') {
+      if (!user || user?.role?.toUpperCase() !== 'CUSTOMER') {
         setWishlist([]);
+        setLoading(false);
         if (typeof window !== 'undefined') {
           localStorage.removeItem('user_wishlist');
         }
         return;
       }
 
-      // Try loading user-specific wishlist from localStorage
+      setLoading(true);
+
+      // Try loading user-specific wishlist from localStorage first for instant display
       try {
         const saved = localStorage.getItem(`user_wishlist_${user.id}`);
         if (saved) {
@@ -35,14 +39,19 @@ export function WishlistProvider({ children }) {
         console.error('Error loading wishlist from localStorage:', e);
       }
 
-      // If user is authenticated, fetch from backend DB
+      // If user is authenticated, fetch latest from backend DB
       try {
         const res = await fetchApi('/wishlist');
-        if (res.success && Array.isArray(res.data?.productIds)) {
-          // DB sync notice
+        if (res.success && Array.isArray(res.data?.products)) {
+          setWishlist(res.data.products);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(`user_wishlist_${user.id}`, JSON.stringify(res.data.products));
+          }
         }
       } catch (err) {
         console.log('DB Wishlist fetch notice:', err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -63,7 +72,7 @@ export function WishlistProvider({ children }) {
 
   const toggleWishlist = async (product) => {
     // Require customer authentication: show toast message instead of redirecting
-    if (!user || user.role !== 'CUSTOMER') {
+    if (!user || user?.role?.toUpperCase() !== 'CUSTOMER') {
       showToast(
         locale === 'ar'
           ? 'يرجى تسجيل الدخول لإضافة المنتجات إلى قائمة المفضلة'
@@ -107,12 +116,12 @@ export function WishlistProvider({ children }) {
   };
 
   const isInWishlist = (productId) => {
-    if (!user || user.role !== 'CUSTOMER') return false;
-    return wishlist.some((item) => item.id === productId);
+    if (!user || user?.role?.toUpperCase() !== 'CUSTOMER') return false;
+    return wishlist.some((item) => (item.id === productId || item._id === productId));
   };
 
   const removeFromWishlist = async (productId) => {
-    if (!user || user.role !== 'CUSTOMER') {
+    if (!user || user?.role?.toUpperCase() !== 'CUSTOMER') {
       showToast(
         locale === 'ar'
           ? 'يرجى تسجيل الدخول لإدارة قائمة المفضلة'
@@ -154,6 +163,7 @@ export function WishlistProvider({ children }) {
       value={{
         wishlist,
         wishlistCount: user ? wishlist.length : 0,
+        loading,
         toggleWishlist,
         isInWishlist,
         removeFromWishlist,
