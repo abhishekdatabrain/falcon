@@ -30,6 +30,9 @@ const { ORDER_STATUS, VALID_STATUS_TRANSITIONS } = require('../constants/orderSt
 const PAYMENT_STATUS = require('../constants/paymentStatus');
 const ROLES = require('../constants/roles');
 
+// Cooldown map to prevent duplicate rapid reorder requests
+const recentReorderLocks = new Map();
+
 class OrderService {
   async createOrderFromCart(customerId, addressId, notes = '', paymentMethod = 'COD', couponCode = null, deliveryDate = null, deliverySlot = null, deliverySpeed = 'express') {
     let address = null;
@@ -815,13 +818,8 @@ class OrderService {
 
     // 4. Atomic database transaction with row locks to prevent race conditions & duplicate cancellations
     const cancellationResult = await sequelize.transaction(async (t) => {
+      // 1. Lock the order row exclusively without outer join (avoids PostgreSQL 'FOR UPDATE cannot be applied to nullable side of an outer join')
       const order = await Order.findByPk(orderId, {
-        include: [
-          { model: OrderItem, as: 'items' },
-          { model: Payment, as: 'payment' },
-          { model: Delivery, as: 'delivery' },
-          { model: Invoice, as: 'invoice' },
-        ],
         transaction: t,
         lock: t.LOCK.UPDATE,
       });
@@ -829,6 +827,21 @@ class OrderService {
       if (!order) {
         throw new Error('Order not found');
       }
+
+      // 2. Fetch associated records for this order within the transaction
+      const items = await OrderItem.findAll({ where: { order_id: orderId }, transaction: t });
+      const payment = await Payment.findOne({ where: { order_id: orderId }, transaction: t });
+      const delivery = await Delivery.findOne({ where: { order_id: orderId }, transaction: t });
+      const invoice = await Invoice.findOne({ where: { order_id: orderId }, transaction: t });
+
+      order.items = items;
+      order.payment = payment;
+      order.delivery = delivery;
+      order.invoice = invoice;
+      order.setDataValue('items', items);
+      order.setDataValue('payment', payment);
+      order.setDataValue('delivery', delivery);
+      order.setDataValue('invoice', invoice);
 
       // Check ownership (Requirement 4)
       if (order.customer_id !== customer.id) {
@@ -1086,6 +1099,391 @@ class OrderService {
     }
 
     return await this.getOrderById(cancellationResult.orderId, userId, role);
+  }
+
+  /**
+   * Reorder (Order Again) functionality
+   * Validates past order items against current product/variant availability, stock, and prices.
+   * Merges into existing cart without exceeding stock limits.
+   * Supports preview mode and custom selections (for partial quantities / alternative variants).
+   */
+  async reorder(orderId, userId, role, options = {}) {
+    // 1. Resolve customer
+    let customer = await Customer.findOne({ where: { user_id: userId } });
+    if (!customer) {
+      const user = await User.findByPk(userId);
+      customer = await Customer.create({
+        user_id: userId,
+        first_name: user?.name || user?.email?.split('@')[0] || 'Customer',
+      });
+    }
+
+    // 2. Fetch target order with its items
+    const order = await Order.findByPk(orderId, {
+      include: [
+        {
+          model: OrderItem,
+          as: 'items',
+        },
+      ],
+    });
+
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    // Verify ownership
+    if (order.customer_id !== customer.id && role !== ROLES.ADMIN) {
+      throw new Error('You are only authorized to reorder your own orders');
+    }
+
+    // Allow reorder for delivered orders by default
+    if (order.order_status !== ORDER_STATUS.DELIVERED && !options.allowAnyStatus) {
+      throw new Error('Reorder is only available for delivered orders');
+    }
+
+    if (!order.items || order.items.length === 0) {
+      throw new Error('Previous order has no items to reorder');
+    }
+
+    // Debounce / duplicate prevention check (within 2.5 seconds)
+    const lockKey = `${customer.id}_${orderId}`;
+    if (!options.preview) {
+      if (recentReorderLocks.has(lockKey)) {
+        throw new Error('A reorder request is already being processed. Please wait a moment.');
+      }
+      recentReorderLocks.set(lockKey, Date.now());
+      setTimeout(() => recentReorderLocks.delete(lockKey), 2500);
+    }
+
+    // 3. Fetch customer's current cart and map existing quantities
+    const currentCart = await cartService.getOrCreateCart(customer.id);
+    const existingCartMap = new Map();
+    if (currentCart && currentCart.items) {
+      for (const cItem of currentCart.items) {
+        const key = `${cItem.product_id}_${cItem.variant_id || 'none'}`;
+        existingCartMap.set(key, (existingCartMap.get(key) || 0) + Number(cItem.quantity || 0));
+      }
+    }
+
+    // 4. Batch query current active products & variants
+    const productIds = [...new Set(order.items.map((it) => it.product_id))];
+    const liveProducts = await Product.findAll({
+      where: { id: productIds },
+      include: [
+        { model: ProductImage, as: 'images', where: { is_primary: true }, required: false },
+        { model: ProductVariant, as: 'variants', where: { is_active: true }, required: false },
+      ],
+    });
+
+    const liveProductMap = new Map(liveProducts.map((p) => [p.id, p]));
+
+    // 5. Evaluate each order item against live data
+    const itemAnalyses = [];
+
+    for (const ordItem of order.items) {
+      const p = liveProductMap.get(ordItem.product_id);
+      const orderedQty = Number(ordItem.quantity || 1);
+      const oldUnitPrice = parseFloat(ordItem.unit_price || 0);
+
+      // A) Check if product exists and is active & available
+      if (!p || !p.is_active || !p.is_available) {
+        itemAnalyses.push({
+          orderItemId: ordItem.id,
+          productId: ordItem.product_id,
+          variantId: ordItem.variant_id || null,
+          nameEn: ordItem.product_name_en,
+          nameAr: ordItem.product_name_ar,
+          image: null,
+          orderedQty,
+          availableQty: 0,
+          currentPrice: oldUnitPrice,
+          oldPrice: oldUnitPrice,
+          priceChanged: false,
+          priceDiff: 0,
+          status: 'UNAVAILABLE',
+          reason: !p ? 'Product has been deleted or discontinued' : 'Product is currently unavailable',
+          canAdd: false,
+          availableVariants: [],
+        });
+        continue;
+      }
+
+      const primaryImg = p.images && p.images.length > 0 ? p.images[0].image_url : null;
+      let targetVariant = null;
+      let variantUnavailable = false;
+      const otherActiveVariants = (p.variants || []).map((v) => ({
+        id: v.id,
+        sku: v.sku,
+        unit_value: v.unit_value,
+        unit_type: v.unit_type,
+        pack_size: v.pack_size,
+        price: parseFloat(v.price),
+        discount_price: v.discount_price ? parseFloat(v.discount_price) : null,
+        stock_quantity: Number(v.stock_quantity || 0),
+        image_url: v.image_url || primaryImg,
+      }));
+
+      // B) Check Variant if ordered with a variant
+      if (ordItem.variant_id) {
+        targetVariant = (p.variants || []).find((v) => v.id === ordItem.variant_id);
+        if (!targetVariant || !targetVariant.is_active) {
+          variantUnavailable = true;
+        }
+      }
+
+      if (variantUnavailable) {
+        itemAnalyses.push({
+          orderItemId: ordItem.id,
+          productId: p.id,
+          variantId: ordItem.variant_id,
+          nameEn: p.name_en,
+          nameAr: p.name_ar,
+          image: primaryImg,
+          orderedQty,
+          availableQty: 0,
+          currentPrice: parseFloat(p.price),
+          oldPrice: oldUnitPrice,
+          priceChanged: false,
+          priceDiff: 0,
+          status: 'VARIANT_UNAVAILABLE',
+          reason: 'Original variant is no longer available',
+          canAdd: false,
+          availableVariants: otherActiveVariants.filter((v) => v.stock_quantity > 0),
+        });
+        continue;
+      }
+
+      // C) Determine live price & stock
+      const totalStock = targetVariant
+        ? Number(targetVariant.stock_quantity || 0)
+        : Number(p.stock_quantity || 0);
+
+      const pPrice = targetVariant ? parseFloat(targetVariant.price) : parseFloat(p.price);
+      const pDiscount = targetVariant
+        ? (targetVariant.discount_price ? parseFloat(targetVariant.discount_price) : null)
+        : (p.discount_price ? parseFloat(p.discount_price) : null);
+      const effectiveUnitPrice = pDiscount && pDiscount > 0 && pDiscount < pPrice ? pDiscount : pPrice;
+
+      const priceDiff = Math.round((effectiveUnitPrice - oldUnitPrice) * 100) / 100;
+      const priceChanged = Math.abs(priceDiff) >= 0.01;
+
+      // Check current in-cart quantity for this exact variant/product
+      const cartKey = `${p.id}_${targetVariant ? targetVariant.id : 'none'}`;
+      const inCartQty = existingCartMap.get(cartKey) || 0;
+      const maxCanAdd = Math.max(0, totalStock - inCartQty);
+
+      const itemImg = (targetVariant && targetVariant.image_url) || primaryImg;
+
+      if (totalStock <= 0) {
+        itemAnalyses.push({
+          orderItemId: ordItem.id,
+          productId: p.id,
+          variantId: targetVariant ? targetVariant.id : null,
+          nameEn: p.name_en,
+          nameAr: p.name_ar,
+          variantName: targetVariant ? `${targetVariant.unit_value || ''} ${targetVariant.unit_type || ''}`.trim() : null,
+          image: itemImg,
+          orderedQty,
+          availableQty: 0,
+          totalStock: 0,
+          inCartQty,
+          currentPrice: effectiveUnitPrice,
+          oldPrice: oldUnitPrice,
+          priceChanged,
+          priceDiff,
+          status: 'OUT_OF_STOCK',
+          reason: 'Product is currently out of stock',
+          canAdd: false,
+          availableVariants: otherActiveVariants.filter((v) => v.stock_quantity > 0 && v.id !== (targetVariant?.id)),
+        });
+      } else if (maxCanAdd <= 0) {
+        itemAnalyses.push({
+          orderItemId: ordItem.id,
+          productId: p.id,
+          variantId: targetVariant ? targetVariant.id : null,
+          nameEn: p.name_en,
+          nameAr: p.name_ar,
+          variantName: targetVariant ? `${targetVariant.unit_value || ''} ${targetVariant.unit_type || ''}`.trim() : null,
+          image: itemImg,
+          orderedQty,
+          availableQty: 0,
+          totalStock,
+          inCartQty,
+          currentPrice: effectiveUnitPrice,
+          oldPrice: oldUnitPrice,
+          priceChanged,
+          priceDiff,
+          status: 'CART_LIMIT_REACHED',
+          reason: `Maximum stock (${totalStock}) already added to your cart`,
+          canAdd: false,
+          availableVariants: [],
+        });
+      } else if (maxCanAdd < orderedQty) {
+        itemAnalyses.push({
+          orderItemId: ordItem.id,
+          productId: p.id,
+          variantId: targetVariant ? targetVariant.id : null,
+          nameEn: p.name_en,
+          nameAr: p.name_ar,
+          variantName: targetVariant ? `${targetVariant.unit_value || ''} ${targetVariant.unit_type || ''}`.trim() : null,
+          image: itemImg,
+          orderedQty,
+          availableQty: maxCanAdd,
+          totalStock,
+          inCartQty,
+          currentPrice: effectiveUnitPrice,
+          oldPrice: oldUnitPrice,
+          priceChanged,
+          priceDiff,
+          status: 'PARTIAL_AVAILABLE',
+          reason: `Only ${maxCanAdd} available to add (you originally ordered ${orderedQty})`,
+          canAdd: true,
+          availableVariants: otherActiveVariants.filter((v) => v.stock_quantity > 0 && v.id !== (targetVariant?.id)),
+        });
+      } else {
+        itemAnalyses.push({
+          orderItemId: ordItem.id,
+          productId: p.id,
+          variantId: targetVariant ? targetVariant.id : null,
+          nameEn: p.name_en,
+          nameAr: p.name_ar,
+          variantName: targetVariant ? `${targetVariant.unit_value || ''} ${targetVariant.unit_type || ''}`.trim() : null,
+          image: itemImg,
+          orderedQty,
+          availableQty: orderedQty,
+          totalStock,
+          inCartQty,
+          currentPrice: effectiveUnitPrice,
+          oldPrice: oldUnitPrice,
+          priceChanged,
+          priceDiff,
+          status: 'AVAILABLE',
+          reason: 'Fully available',
+          canAdd: true,
+          availableVariants: [],
+        });
+      }
+    }
+
+    // Summary counts
+    const totalItems = itemAnalyses.length;
+    const availableItemsCount = itemAnalyses.filter((it) => it.status === 'AVAILABLE').length;
+    const partialItemsCount = itemAnalyses.filter((it) => it.status === 'PARTIAL_AVAILABLE').length;
+    const unavailableCount = itemAnalyses.filter((it) => ['UNAVAILABLE', 'OUT_OF_STOCK', 'CART_LIMIT_REACHED'].includes(it.status)).length;
+    const variantUnavailableCount = itemAnalyses.filter((it) => it.status === 'VARIANT_UNAVAILABLE').length;
+    const priceChangedCount = itemAnalyses.filter((it) => it.priceChanged).length;
+
+    const canDirectReorder =
+      availableItemsCount === totalItems &&
+      partialItemsCount === 0 &&
+      unavailableCount === 0 &&
+      variantUnavailableCount === 0 &&
+      priceChangedCount === 0;
+
+    // IF PREVIEW MODE: return the analysis without making cart modifications
+    if (options.preview) {
+      return {
+        preview: true,
+        orderId: order.id,
+        orderNumber: order.order_number,
+        canDirectReorder,
+        items: itemAnalyses,
+        summary: {
+          totalItems,
+          availableItemsCount,
+          partialItemsCount,
+          unavailableCount,
+          variantUnavailableCount,
+          priceChangedCount,
+        },
+      };
+    }
+
+    // IF EXECUTE MODE:
+    // User can supply options.customSelections = [{ productId, variantId, quantity, skip: boolean }]
+    // or by default, add all eligible items with their availableQty
+    const toAdd = [];
+
+    if (Array.isArray(options.customSelections) && options.customSelections.length > 0) {
+      for (const sel of options.customSelections) {
+        if (sel.skip) continue;
+        const requestedQty = Number(sel.quantity || 1);
+        if (requestedQty <= 0 || !sel.productId) continue;
+
+        // Verify live product and variant
+        const product = await Product.findByPk(sel.productId);
+        if (!product || !product.is_active || !product.is_available) continue;
+
+        let variant = null;
+        if (sel.variantId) {
+          variant = await ProductVariant.findOne({
+            where: { id: sel.variantId, product_id: sel.productId, is_active: true },
+          });
+          if (!variant) continue;
+        }
+
+        const currentStock = variant ? Number(variant.stock_quantity || 0) : Number(product.stock_quantity || 0);
+        if (currentStock <= 0) continue;
+
+        // Check how many already in cart
+        const cartKey = `${product.id}_${variant ? variant.id : 'none'}`;
+        const inCart = existingCartMap.get(cartKey) || 0;
+        const maxCanAdd = Math.max(0, currentStock - inCart);
+        if (maxCanAdd <= 0) continue;
+
+        const finalAddQty = Math.min(requestedQty, maxCanAdd);
+        toAdd.push({
+          productId: product.id,
+          variantId: variant ? variant.id : null,
+          quantity: finalAddQty,
+          nameEn: product.name_en,
+          nameAr: product.name_ar,
+        });
+      }
+    } else {
+      for (const it of itemAnalyses) {
+        if (it.canAdd && it.availableQty > 0) {
+          toAdd.push({
+            productId: it.productId,
+            variantId: it.variantId || null,
+            quantity: it.availableQty,
+            nameEn: it.nameEn,
+            nameAr: it.nameAr,
+          });
+        }
+      }
+    }
+
+    if (toAdd.length === 0) {
+      throw new Error('No items from this order are currently available to add to your cart');
+    }
+
+    // Add items to cart sequentially
+    const addedItems = [];
+    for (const itemToAdd of toAdd) {
+      await cartService.addItemToCart(
+        customer.id,
+        itemToAdd.productId,
+        itemToAdd.quantity,
+        itemToAdd.variantId
+      );
+      addedItems.push(itemToAdd);
+    }
+
+    // Recalculate cart totals
+    const updatedCart = await cartService.calculateCartTotals(customer.id);
+
+    return {
+      success: true,
+      orderId: order.id,
+      orderNumber: order.order_number,
+      addedItems,
+      skippedItems: itemAnalyses.filter((it) => !it.canAdd),
+      partialItems: itemAnalyses.filter((it) => it.status === 'PARTIAL_AVAILABLE'),
+      priceChanges: itemAnalyses.filter((it) => it.priceChanged),
+      cart: updatedCart,
+    };
   }
 }
 

@@ -95,10 +95,14 @@ export default function Navbar() {
           {/* Left Side: Logo & Deliver To Location Selector */}
           <div className="flex items-center gap-6 shrink-0">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group">
-              <span className="text-2xl font-black text-white tracking-tight font-serif group-hover:text-emerald-300 transition-colors">
-                Logo
-              </span>
+            <Link href="/" className="flex items-center group">
+              <div className="bg-white px-2.5 py-1 rounded-xl shadow-xs group-hover:shadow-md transition-all">
+                <img
+                  src="/logo.png"
+                  alt="saqrcart"
+                  className="h-7 sm:h-8 w-auto object-contain"
+                />
+              </div>
             </Link>
 
             {/* Location Indicator */}
@@ -109,7 +113,7 @@ export default function Navbar() {
                   {locale === 'ar' ? 'التوصيل إلى' : 'Deliver to'}
                 </span>
                 <span className="font-bold text-white">
-                  {locale === 'ar' ? 'الرياض، المملكة العربية السعودية' : 'Riyadh, Saudi Arabia'}
+                  {locale === 'ar' ? 'الرياض، المملكة العربية السعودية' : 'Saudi Arabia'}
                 </span>
               </div>
             </div>

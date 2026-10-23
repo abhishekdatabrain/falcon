@@ -72,8 +72,8 @@ export function printZatcaInvoiceHtml(order, locale = 'en') {
         timeStyle: 'short',
       });
 
-  const sellerNameEn = 'Falcon E-Commerce Trading Co.';
-  const sellerNameAr = 'شركة فالكون للتجارة الإلكترونية';
+  const sellerNameEn = 'saqrcart E-Commerce Trading Co.';
+  const sellerNameAr = 'شركة صقر كارت للتجارة الإلكترونية';
   const sellerVat = '300000000000003';
   const sellerCr = '1010892341';
   const sellerAddress = isAr ? 'المملكة العربية السعودية، الرياض، طريق الملك فهد' : 'King Fahd Rd, Riyadh, Saudi Arabia';
@@ -317,7 +317,9 @@ export function printZatcaInvoiceHtml(order, locale = 'en') {
     <!-- Header -->
     <div class="header-bar">
       <div>
-        <div class="brand-title">🦅 Falcon Fresh</div>
+        <div class="brand-title">
+          <img src="/logo.png" alt="saqrcart" style="height: 38px; width: auto; object-fit: contain; margin-bottom: 4px;" />
+        </div>
         <div style="font-size: 13px; font-weight: 700; color: #334155; margin-top: 2px;">
           ${sellerNameAr} • ${sellerNameEn}
         </div>

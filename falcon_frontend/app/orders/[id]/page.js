@@ -38,7 +38,9 @@ import {
   HelpCircle,
   CreditCard,
   ExternalLink,
-  Loader2
+  Loader2,
+  AlertTriangle,
+  Tag
 } from 'lucide-react';
 
 export default function OrderDetailsPage() {
@@ -47,11 +49,153 @@ export default function OrderDetailsPage() {
   const router = useRouter();
   const { t, locale } = useLanguage();
   const { showToast } = useToast();
-  const { addToCart } = useCart();
+  const { addToCart, fetchCart } = useCart();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(false);
+
+  // Reorder (Order Again) State
+  const [reorderLoading, setReorderLoading] = useState(false);
+  const [showReorderModal, setShowReorderModal] = useState(false);
+  const [reorderPreviewData, setReorderPreviewData] = useState(null);
+  const [reorderSelections, setReorderSelections] = useState({});
+  const [isConfirmingReorder, setIsConfirmingReorder] = useState(false);
+
+  const handleOrderAgain = async (ord) => {
+    if (!ord || reorderLoading) return;
+    try {
+      setReorderLoading(true);
+      const res = await fetchApi(`/orders/${ord.id}/reorder`, {
+        method: 'POST',
+        body: JSON.stringify({ preview: true }),
+      });
+
+      if (!res.success || !res.data) {
+        showToast(res.message || (locale === 'ar' ? 'فشل فحص توفر المنتجات' : 'Failed to verify items availability'), 'error');
+        return;
+      }
+
+      const analysis = res.data;
+
+      // If all items are 100% available with exact original variants, no partial stock, and no price changes:
+      if (analysis.canDirectReorder) {
+        const addRes = await fetchApi(`/orders/${ord.id}/reorder`, {
+          method: 'POST',
+          body: JSON.stringify({ preview: false }),
+        });
+
+        if (addRes.success) {
+          if (fetchCart) await fetchCart();
+          showToast(
+            locale === 'ar'
+              ? `تمت إضافة منتجات الطلب #${ord.order_number} إلى السلة 🛒`
+              : `Items from #${ord.order_number} added to your cart 🛒`,
+            'success'
+          );
+          router.push('/cart');
+          return;
+        } else {
+          showToast(addRes.message || (locale === 'ar' ? 'فشل إضافة المنتجات' : 'Failed to add items to cart'), 'error');
+          return;
+        }
+      }
+
+      // Initialize interactive user selections for the confirmation modal:
+      const initialSelections = {};
+      (analysis.items || []).forEach((item) => {
+        if (item.status === 'AVAILABLE' || item.status === 'PARTIAL_AVAILABLE') {
+          initialSelections[item.orderItemId] = {
+            selected: true,
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.availableQty,
+            maxQty: item.availableQty,
+            skip: false,
+          };
+        } else if (item.status === 'VARIANT_UNAVAILABLE' && item.availableVariants && item.availableVariants.length > 0) {
+          const firstVar = item.availableVariants[0];
+          const chosenQty = Math.min(item.orderedQty, firstVar.stock_quantity);
+          initialSelections[item.orderItemId] = {
+            selected: true,
+            productId: item.productId,
+            variantId: firstVar.id,
+            quantity: chosenQty,
+            maxQty: firstVar.stock_quantity,
+            skip: false,
+          };
+        } else {
+          initialSelections[item.orderItemId] = {
+            selected: false,
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: 0,
+            maxQty: 0,
+            skip: true,
+          };
+        }
+      });
+
+      setReorderSelections(initialSelections);
+      setReorderPreviewData(analysis);
+      setShowReorderModal(true);
+    } catch (err) {
+      console.error('Order again error:', err);
+      showToast(err.message || (locale === 'ar' ? 'حدث خطأ أثناء إعادة الطلب' : 'Error preparing reorder'), 'error');
+    } finally {
+      setReorderLoading(false);
+    }
+  };
+
+  const handleConfirmReorder = async () => {
+    if (!reorderPreviewData || isConfirmingReorder) return;
+
+    const customSelections = Object.entries(reorderSelections).map(([orderItemId, sel]) => ({
+      orderItemId,
+      productId: sel.productId,
+      variantId: sel.variantId || null,
+      quantity: sel.quantity,
+      skip: !sel.selected || sel.skip || sel.quantity <= 0,
+    })).filter((s) => !s.skip);
+
+    if (customSelections.length === 0) {
+      showToast(
+        locale === 'ar' ? 'يرجى تحديد منتج واحد على الأقل لإضافته إلى السلة' : 'Please select at least one item to add to your cart',
+        'error'
+      );
+      return;
+    }
+
+    try {
+      setIsConfirmingReorder(true);
+      const res = await fetchApi(`/orders/${reorderPreviewData.orderId}/reorder`, {
+        method: 'POST',
+        body: JSON.stringify({
+          preview: false,
+          customSelections,
+        }),
+      });
+
+      if (res.success) {
+        if (fetchCart) await fetchCart();
+        setShowReorderModal(false);
+        showToast(
+          locale === 'ar'
+            ? `تمت إضافة المنتجات المحددة إلى السلة بنجاح 🛒`
+            : `Selected items added to your cart successfully 🛒`,
+          'success'
+        );
+        router.push('/cart');
+      } else {
+        showToast(res.message || (locale === 'ar' ? 'فشل إضافة المنتجات إلى السلة' : 'Failed to add items to cart'), 'error');
+      }
+    } catch (err) {
+      console.error('Confirm reorder error:', err);
+      showToast(err.message || (locale === 'ar' ? 'حدث خطأ أثناء الإضافة إلى السلة' : 'Error adding items to cart'), 'error');
+    } finally {
+      setIsConfirmingReorder(false);
+    }
+  };
 
   // Dynamic Review Modal State & Persistence
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -161,66 +305,26 @@ export default function OrderDetailsPage() {
 
       if (res && res.success && res.data?.order) {
         setOrder(res.data.order);
-      } else {
-        // Fallback realistic demo state
-        setOrder({
-          id: id,
-          order_number: 'ORD-20261012-4307',
-          createdAt: new Date().toISOString(),
-          order_status: 'PENDING_PAYMENT',
-          subtotal: '80.00',
-          delivery_fee: '25.00',
-          tax_total: '12.00',
-          discount_total: '0.00',
-          grand_total: '117.00',
-          notes: '',
-          customer: {
-            first_name: 'Abhishek',
-            last_name: 'Raushan',
-            user: { email: 'abhishek@gmail.com', mobile: '8577575765' }
-          },
-          address: {
-            full_name: 'Lucky',
-            mobile: '7765084488',
-            country: 'Saudi Arabia',
-            state: 'Riyadh Province',
-            city: 'delhi',
-            area: 'dwarka',
-            address_line: '55 foot road',
-            postal_code: '12211'
-          },
-          items: [
-            {
-              id: 'item-1',
-              product_id: 'prod-1',
-              product_name_en: 'Fresh Mix Vegetable',
-              product_name_ar: 'خضروات مشكلة طازجة',
-              unit_price: '50.00',
-              quantity: 2,
-              total_price: '80.00',
-              product: {
-                name_en: 'Fresh Mix Vegetable',
-                name_ar: 'خضروات مشكلة طازجة',
-                unit: '250 g',
-                images: []
-              }
-            }
-          ],
-          payment: {
-            status: 'PENDING',
-            amount: '117.00'
-          }
-        });
       }
 
       // Fetch existing feedback for this order from server
       try {
         const fbRes = await fetchApi(`/feedback/order/${id}`).catch(() => null);
-        if (fbRes?.success && fbRes.data?.feedback) {
-          const fb = fbRes.data.feedback;
+        if (fbRes?.success && fbRes.data) {
+          const list = fbRes.data.feedbacks || (fbRes.data.feedback ? [fbRes.data.feedback] : []);
+          const map = {};
+          list.forEach(fb => {
+            if (fb.order_item_id) {
+              map[fb.order_item_id] = { rating: fb.rating, comment: fb.comment };
+            }
+            if (fb.product_id) {
+              map[fb.product_id] = { rating: fb.rating, comment: fb.comment };
+            }
+            map[id] = { rating: fb.rating, comment: fb.comment };
+          });
           setReviewsMap(prev => ({
             ...prev,
-            [id]: { rating: fb.rating, comment: fb.comment }
+            ...map
           }));
         }
       } catch (e) { }
@@ -301,6 +405,8 @@ export default function OrderDetailsPage() {
     const itemKey = selectedReviewItem?.id || selectedReviewItem?.product_id || targetOrderId;
     const itemName = selectedReviewItem?.product_name_en || selectedReviewItem?.name_en || '';
     const formattedComment = itemName ? `[${itemName}] ${reviewComment.trim()}` : reviewComment.trim();
+    const productId = selectedReviewItem?.product_id || selectedReviewItem?.product?.id || selectedReviewItem?.productId || null;
+    const orderItemId = selectedReviewItem?.id || null;
 
     try {
       // 1. Submit to backend API
@@ -308,6 +414,8 @@ export default function OrderDetailsPage() {
         method: 'POST',
         body: {
           orderId: targetOrderId,
+          orderItemId,
+          productId,
           rating,
           comment: formattedComment,
         },
@@ -502,6 +610,22 @@ export default function OrderDetailsPage() {
                 <span>{badge.label}</span>
               </span>
 
+              {currentStatus === 'DELIVERED' && (
+                <button
+                  type="button"
+                  disabled={reorderLoading}
+                  onClick={() => handleOrderAgain(order)}
+                  className="px-4 py-2 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98 font-sans disabled:opacity-60"
+                >
+                  {reorderLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 text-[#05A764] animate-spin" />
+                  ) : (
+                    <RotateCcw className="w-3.5 h-3.5 text-[#05A764]" />
+                  )}
+                  <span>{reorderLoading ? (locale === 'ar' ? 'جاري التحقق...' : 'Checking...') : (locale === 'ar' ? 'إعادة الطلب' : 'Order Again')}</span>
+                </button>
+              )}
+
               {isCancelEligible(currentStatus) && (
                 <button
                   type="button"
@@ -579,18 +703,17 @@ export default function OrderDetailsPage() {
                       {locale === 'ar' ? 'حالة الاسترداد المالي' : 'Refund Status'}
                     </span>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`px-2.5 py-0.5 rounded-full font-black text-[10px] ${
-                        order?.refund_status === 'REFUNDED'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                          : order?.refund_status === 'PENDING_REFUND'
+                      <span className={`px-2.5 py-0.5 rounded-full font-black text-[10px] ${order?.refund_status === 'REFUNDED'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : order?.refund_status === 'PENDING_REFUND'
                           ? 'bg-amber-100 text-amber-800 border border-amber-300'
                           : 'bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}>
+                        }`}>
                         {order?.refund_status === 'REFUNDED'
                           ? (locale === 'ar' ? 'تم الاسترداد' : 'REFUNDED')
                           : order?.refund_status === 'PENDING_REFUND'
-                          ? (locale === 'ar' ? 'قيد المعالجة' : 'PENDING REFUND')
-                          : (locale === 'ar' ? 'غير مطلوب (دفع عند الاستلام)' : 'NOT APPLICABLE')}
+                            ? (locale === 'ar' ? 'قيد المعالجة' : 'PENDING REFUND')
+                            : (locale === 'ar' ? 'غير مطلوب (دفع عند الاستلام)' : 'NOT APPLICABLE')}
                       </span>
                     </div>
                     <p className="text-[10px] text-slate-500 font-medium mt-1 leading-snug">
@@ -599,12 +722,12 @@ export default function OrderDetailsPage() {
                           ? `تمت معالجة استرداد ${grandTotalVal.toFixed(2)} ر.س إلى وسيلة الدفع الأصلية.`
                           : `Refund of SAR ${grandTotalVal.toFixed(2)} processed to original payment method.`)
                         : ((order?.payment_method || '').toUpperCase() === 'COD' || order?.payment?.payment_method === 'COD')
-                        ? (locale === 'ar'
-                          ? 'دفع عند الاستلام: لم يتم تحصيل أي مبلغ مالي.'
-                          : 'Cash on Delivery: No charge was made.')
-                        : (locale === 'ar'
-                          ? 'تم الإلغاء قبل تأكيد الخصم.'
-                          : 'Cancelled prior to charge capture.')}
+                          ? (locale === 'ar'
+                            ? 'دفع عند الاستلام: لم يتم تحصيل أي مبلغ مالي.'
+                            : 'Cash on Delivery: No charge was made.')
+                          : (locale === 'ar'
+                            ? 'تم الإلغاء قبل تأكيد الخصم.'
+                            : 'Cancelled prior to charge capture.')}
                     </p>
                   </div>
                 </div>
@@ -1178,8 +1301,8 @@ export default function OrderDetailsPage() {
                     >
                       <Star
                         className={`w-8 h-8 transition-colors ${isFilled
-                            ? 'text-amber-500 fill-amber-400 drop-shadow-xs'
-                            : 'text-slate-300 fill-slate-50'
+                          ? 'text-amber-500 fill-amber-400 drop-shadow-xs'
+                          : 'text-slate-300 fill-slate-50'
                           }`}
                       />
                     </button>
@@ -1252,7 +1375,7 @@ export default function OrderDetailsPage() {
       {showCancelModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-slate-200 shadow-2xl space-y-5 font-sans animate-in fade-in zoom-in-95 duration-150">
-            
+
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
               <div className="flex items-center gap-2.5 text-rose-700">
                 <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center">
@@ -1360,6 +1483,331 @@ export default function OrderDetailsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= ORDER AGAIN CONFIRMATION MODAL ================= */}
+      {showReorderModal && reorderPreviewData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div
+            className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden font-sans"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#043927] border border-emerald-100 flex items-center justify-center shrink-0 shadow-2xs">
+                  <RotateCcw className="w-5 h-5 text-[#05A764]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <span>{locale === 'ar' ? 'إعادة طلب المنتجات' : 'Order Again'}</span>
+                    <span className="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full">
+                      #{reorderPreviewData.orderNumber}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    {locale === 'ar'
+                      ? 'مراجعة توفر المنتجات والأسعار والكميات قبل الإضافة إلى السلة'
+                      : 'Review current availability, stock, and prices before adding to cart'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isConfirmingReorder}
+                onClick={() => setShowReorderModal(false)}
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
+
+            {/* Modal Alerts / Notices */}
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              {reorderPreviewData.summary.partialItemsCount > 0 && (
+                <div className="bg-amber-50/90 border border-amber-200/90 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-amber-900">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-extrabold">{locale === 'ar' ? 'كميات جزئية متوفرة' : 'Partial Quantities Available'}</p>
+                    <p className="text-[11px] text-amber-800 font-medium mt-0.5">
+                      {locale === 'ar'
+                        ? 'بعض المنتجات يتوفر منها كميات أقل من طلبك الأصلي. تم تعديل الكمية إلى المتاح في المخزون.'
+                        : 'Some products have limited stock. Quantities have been pre-set to current maximum available stock.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {reorderPreviewData.summary.variantUnavailableCount > 0 && (
+                <div className="bg-purple-50/90 border border-purple-200/90 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-purple-900">
+                  <Sparkles className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-extrabold">{locale === 'ar' ? 'نوع المنتج غير متاح' : 'Variant Selection Required'}</p>
+                    <p className="text-[11px] text-purple-800 font-medium mt-0.5">
+                      {locale === 'ar'
+                        ? 'النوع الذي طلبته سابقاً غير متوفر حالياً. يرجى اختيار حجم/نوع بديل من الخيارات المتاحة.'
+                        : 'The specific variant from your previous order is currently unavailable. Please select an available alternative.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {reorderPreviewData.summary.priceChangedCount > 0 && (
+                <div className="bg-blue-50/90 border border-blue-200/90 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-blue-900">
+                  <Tag className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-extrabold">{locale === 'ar' ? 'تحديثات في الأسعار' : 'Price Updates'}</p>
+                    <p className="text-[11px] text-blue-800 font-medium mt-0.5">
+                      {locale === 'ar'
+                        ? 'تم تحديث أسعار بعض المنتجات وفقاً لأسعار البيع الحالية في المتجر.'
+                        : 'Some item prices have changed since your previous order. Current selling prices are shown.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {reorderPreviewData.summary.unavailableCount > 0 && (
+                <div className="bg-slate-100 border border-slate-200 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-slate-700">
+                  <AlertCircle className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-extrabold">{locale === 'ar' ? 'منتجات غير متوفرة' : 'Unavailable Items'}</p>
+                    <p className="text-[11px] text-slate-600 font-medium mt-0.5">
+                      {locale === 'ar'
+                        ? 'المنتجات غير المتوفرة في المخزون سيتم تخطيها تلقائياً ولن تُضاف إلى السلة.'
+                        : 'Out of stock or discontinued items will be skipped and not added to your cart.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Items List */}
+              <div className="space-y-3 pt-1">
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">
+                  {locale === 'ar' ? 'المنتجات المطلوبة سابقاً:' : 'Items from Previous Order:'}
+                </span>
+
+                {reorderPreviewData.items.map((item) => {
+                  const currentSel = reorderSelections[item.orderItemId] || {};
+                  const isSelectable =
+                    item.status === 'AVAILABLE' ||
+                    item.status === 'PARTIAL_AVAILABLE' ||
+                    (item.status === 'VARIANT_UNAVAILABLE' && item.availableVariants && item.availableVariants.length > 0);
+
+                  return (
+                    <div
+                      key={item.orderItemId}
+                      className={`p-3.5 rounded-2xl border transition-all ${
+                        !isSelectable
+                          ? 'bg-slate-50/70 border-slate-200/70 opacity-60'
+                          : currentSel.selected
+                          ? 'bg-white border-emerald-300 shadow-2xs ring-1 ring-emerald-100'
+                          : 'bg-white border-slate-200 opacity-70'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="pt-1">
+                          <input
+                            type="checkbox"
+                            disabled={!isSelectable || isConfirmingReorder}
+                            checked={Boolean(currentSel.selected)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setReorderSelections((prev) => ({
+                                ...prev,
+                                [item.orderItemId]: {
+                                  ...prev[item.orderItemId],
+                                  selected: checked,
+                                  skip: !checked,
+                                },
+                              }));
+                            }}
+                            className="w-4 h-4 rounded text-[#05A764] focus:ring-[#043927] border-slate-300 cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </div>
+
+                        <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden relative">
+                          {item.image ? (
+                            <img
+                              src={getImageUrl(item.image)}
+                              alt={item.nameEn || 'Product'}
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <ShoppingBag className="w-5 h-5 text-slate-400" />
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <h4 className="font-extrabold text-sm text-slate-900 truncate">
+                              {locale === 'ar' ? item.nameAr || item.nameEn : item.nameEn || item.nameAr}
+                            </h4>
+                            <div className="text-right shrink-0">
+                              {item.priceChanged ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="line-through text-slate-400 text-xs">SAR {item.oldPrice.toFixed(2)}</span>
+                                  <span className="font-black text-slate-900 text-xs">SAR {item.currentPrice.toFixed(2)}</span>
+                                  <span
+                                    className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+                                      item.priceDiff > 0 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'
+                                    }`}
+                                  >
+                                    {item.priceDiff > 0 ? `+${item.priceDiff.toFixed(2)}` : `${item.priceDiff.toFixed(2)}`}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="font-black text-slate-900 text-xs">SAR {item.currentPrice.toFixed(2)}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {item.variantName && item.status !== 'VARIANT_UNAVAILABLE' && (
+                            <p className="text-[11px] font-bold text-slate-500 mt-0.5">
+                              {locale === 'ar' ? 'النوع:' : 'Variant:'} {item.variantName}
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                            {item.status === 'AVAILABLE' && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                <CheckCircle2 className="w-3 h-3 text-[#05A764]" />
+                                {locale === 'ar' ? `متوفر بالكامل (كمية: ${item.availableQty})` : `In Stock (Qty: ${item.availableQty})`}
+                              </span>
+                            )}
+
+                            {item.status === 'PARTIAL_AVAILABLE' && (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                  <AlertTriangle className="w-3 h-3 text-amber-600" />
+                                  {locale === 'ar'
+                                    ? `متاح ${item.availableQty} فقط من أصل ${item.orderedQty}`
+                                    : `Only ${item.availableQty} of ${item.orderedQty} available`}
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-500">
+                                  ({locale === 'ar' ? `سيتم إضافة ${item.availableQty}` : `Adding ${item.availableQty}`})
+                                </span>
+                              </div>
+                            )}
+
+                            {item.status === 'OUT_OF_STOCK' && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+                                <AlertCircle className="w-3 h-3 text-rose-600" />
+                                {locale === 'ar' ? 'نفد من المخزون (سيتم تخطيه)' : 'Out of Stock (Will be skipped)'}
+                              </span>
+                            )}
+
+                            {item.status === 'CART_LIMIT_REACHED' && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                                <AlertCircle className="w-3 h-3 text-slate-500" />
+                                {locale === 'ar' ? 'الكمية القصوى موجودة بالفعل في السلة' : 'Max stock already in cart'}
+                              </span>
+                            )}
+
+                            {item.status === 'UNAVAILABLE' && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                                {item.reason}
+                              </span>
+                            )}
+                          </div>
+
+                          {item.status === 'VARIANT_UNAVAILABLE' && (
+                            <div className="mt-2.5 bg-purple-50/70 border border-purple-200/80 rounded-xl p-2.5 space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black text-purple-900 uppercase">
+                                  {locale === 'ar' ? 'النوع الأصلي غير متاح - اختر بديلاً:' : 'Original variant unavailable - choose alternative:'}
+                                </span>
+                              </div>
+                              {item.availableVariants && item.availableVariants.length > 0 ? (
+                                <select
+                                  disabled={isConfirmingReorder || !currentSel.selected}
+                                  value={currentSel.variantId || ''}
+                                  onChange={(e) => {
+                                    const chosenVarId = e.target.value;
+                                    const chosenVar = item.availableVariants.find((v) => v.id === chosenVarId);
+                                    const maxVarQty = chosenVar ? chosenVar.stock_quantity : 0;
+                                    setReorderSelections((prev) => ({
+                                      ...prev,
+                                      [item.orderItemId]: {
+                                        ...prev[item.orderItemId],
+                                        variantId: chosenVarId,
+                                        quantity: Math.min(item.orderedQty, maxVarQty),
+                                        maxQty: maxVarQty,
+                                      },
+                                    }));
+                                  }}
+                                  className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#043927] cursor-pointer"
+                                >
+                                  {item.availableVariants.map((v) => (
+                                    <option key={v.id} value={v.id}>
+                                      {`${v.unit_value || ''} ${v.unit_type || ''} ${v.pack_size ? `(${v.pack_size})` : ''}`.trim() || 'Alternative Option'}{' '}
+                                      - SAR {v.discount_price && v.discount_price < v.price ? v.discount_price.toFixed(2) : v.price.toFixed(2)}{' '}
+                                      ({v.stock_quantity} in stock)
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <p className="text-[11px] font-bold text-rose-700">
+                                  {locale === 'ar' ? 'لا توجد بدائل متوفرة حالياً' : 'No alternative variants available currently'}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <span className="font-extrabold text-slate-600">
+                {(() => {
+                  const selectedCount = Object.values(reorderSelections).filter((s) => s.selected && !s.skip && s.quantity > 0).length;
+                  return locale === 'ar'
+                    ? `تم تحديد ${selectedCount} من أصل ${reorderPreviewData.items.length} منتج`
+                    : `${selectedCount} of ${reorderPreviewData.items.length} items selected to add`;
+                })()}
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isConfirmingReorder}
+                  onClick={() => setShowReorderModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all cursor-pointer disabled:opacity-60"
+                >
+                  {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    isConfirmingReorder ||
+                    Object.values(reorderSelections).filter((s) => s.selected && !s.skip && s.quantity > 0).length === 0
+                  }
+                  onClick={handleConfirmReorder}
+                  className="px-5 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-black shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 active:scale-98"
+                >
+                  {isConfirmingReorder ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-[#05A764]" />
+                      <span>{locale === 'ar' ? 'جاري الإضافة إلى السلة...' : 'Adding to Cart...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-4 h-4 text-[#05A764]" />
+                      <span>{locale === 'ar' ? 'إضافة إلى السلة والمتابعة' : 'Add to Cart & Proceed'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -27,7 +27,6 @@ import {
   Tag,
   Lock,
   RefreshCw,
-  MessageSquare,
   Sparkles,
   Calendar,
   CreditCard,
@@ -1307,28 +1306,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-            </div>
-
-            {/* Need Help Box */}
-            <div className="bg-[#F5F6F8] rounded-2xl p-4 flex items-center justify-between border border-slate-200/80">
-              <div className="flex items-center gap-3">
-                <MessageSquare className="w-5 h-5 text-slate-700 shrink-0" />
-                <div>
-                  <h4 className="font-extrabold text-xs text-slate-900 font-sans">
-                    Need help with checkout?
-                  </h4>
-                  <p className="text-[10px] text-slate-500 font-medium">
-                    Support is live 24/7 in Riyadh
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="bg-white hover:bg-slate-50 text-slate-800 font-extrabold text-xs px-3.5 py-1.5 rounded-full border border-slate-200 shadow-2xs cursor-pointer font-sans"
-              >
-                Chat Now
-              </button>
             </div>
 
           </div>

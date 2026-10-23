@@ -3,14 +3,17 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useLanguage } from './LanguageContext';
 import { CheckCircle2, AlertCircle, Info, X, LogIn, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
+import { getImageUrl } from '../services/api';
 
 const ToastContext = createContext();
 
 export function ToastProvider({ children }) {
   const { locale } = useLanguage();
   const [toast, setToast] = useState(null); // { message, type, linkUrl, productDetails }
+  const [imgError, setImgError] = useState(false);
 
   const showToast = useCallback((message, type = 'success', linkUrl = null, productDetails = null) => {
+    setImgError(false);
     setToast({ message, type, linkUrl, productDetails, id: Date.now() });
     setTimeout(() => {
       setToast((current) => (current?.message === message ? null : current));
@@ -36,12 +39,13 @@ export function ToastProvider({ children }) {
               : 'bg-slate-900/95 border-slate-700/80'
           }`}>
             <div className="flex items-center gap-3">
-              {toast.productDetails?.image ? (
+              {toast.productDetails?.image && !imgError ? (
                 <div className="w-11 h-11 rounded-xl bg-white p-1 border border-white/20 shrink-0 flex items-center justify-center overflow-hidden">
                   <img
-                    src={toast.productDetails.image}
+                    src={getImageUrl(toast.productDetails.image)}
                     alt={toast.productDetails.name || 'Product'}
                     className="w-full h-full object-contain"
+                    onError={() => setImgError(true)}
                   />
                 </div>
               ) : toast.type === 'success' ? (

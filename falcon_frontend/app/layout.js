@@ -10,8 +10,8 @@ import Navbar from '../src/components/Navbar';
 import Footer from '../src/components/Footer';
 
 export const metadata = {
-  title: 'Single Vendor E-Commerce Platform',
-  description: 'Premium single-vendor e-commerce web platform with real-time GPS tracking and ZATCA e-invoicing.',
+  title: 'saqrcart | Your Store for Retail & Wholesale',
+  description: 'Premium e-commerce grocery and essentials platform with real-time GPS tracking and ZATCA e-invoicing.',
 };
 
 export default function RootLayout({ children }) {

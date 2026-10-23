@@ -83,18 +83,12 @@ export default function AdminNavbar({ mobileOpen, setMobileOpen }) {
         <div className="flex items-center gap-4">
 
           {/* Brand Logo Header */}
-          <Link href="/admin/dashboard" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-600 p-0.5 shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform duration-300 flex items-center justify-center text-white">
-              <ShoppingBag className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-black tracking-tight text-slate-900 leading-tight">
-                {locale === 'ar' ? 'أورا ماركت البقالة والطازج' : 'Super Mart'}
-              </span>
-              <span className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest -mt-0.5 flex items-center gap-1">
-                <Apple className="w-2.5 h-2.5 text-emerald-500" /> Super Mart Control
-              </span>
-            </div>
+          <Link href="/admin/dashboard" className="flex items-center gap-2 group">
+            <img
+              src="/logo.png"
+              alt="saqrcart"
+              className="h-8 sm:h-9 w-auto object-contain"
+            />
           </Link>
 
           {/* Breadcrumb Separator Line & Current Path */}

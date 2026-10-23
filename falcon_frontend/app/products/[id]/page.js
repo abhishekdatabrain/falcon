@@ -25,7 +25,36 @@ import {
   ChevronRight,
   Ban,
   Activity,
+  Award,
+  Apple,
+  Sun,
+  Flame,
+  Clock,
+  Droplets,
+  Package,
 } from 'lucide-react';
+
+const renderProductIcon = (iconName, className = 'w-4 h-4') => {
+  switch (iconName) {
+    case 'Sparkles': return <Sparkles className={className} />;
+    case 'Leaf': return <Leaf className={className} />;
+    case 'Zap': return <Zap className={className} />;
+    case 'ShieldCheck': return <ShieldCheck className={className} />;
+    case 'Award': return <Award className={className} />;
+    case 'Heart': return <Heart className={className} />;
+    case 'Star': return <Star className={className} />;
+    case 'Apple': return <Apple className={className} />;
+    case 'Sun': return <Sun className={className} />;
+    case 'Flame': return <Flame className={className} />;
+    case 'Clock': return <Clock className={className} />;
+    case 'Droplets': return <Droplets className={className} />;
+    case 'Package': return <Package className={className} />;
+    case 'Truck': return <Truck className={className} />;
+    case 'Check':
+    default:
+      return <Check className={className} />;
+  }
+};
 
 // const DEMO_EGG_PRODUCT = {
 //   id: 'egg-1',
@@ -330,6 +359,22 @@ export default function ProductDetailPage() {
   const categoryNameAr = categoryObj?.name_ar || product?.category_ar || 'الألبان والبيض';
   const categoryLink = categoryObj?.id ? `/products?categoryId=${categoryObj.id}` : '/products';
 
+  const validBadges = (
+    Array.isArray(product?.feature_badges)
+      ? product.feature_badges
+      : typeof product?.feature_badges === 'string'
+        ? (() => { try { return JSON.parse(product.feature_badges); } catch (e) { return []; } })()
+        : []
+  ).filter((b) => b && ((b.text_en && b.text_en.trim()) || (b.text_ar && b.text_ar.trim()) || (b.text && b.text.trim())));
+
+  const validHighlights = (
+    Array.isArray(product?.highlights)
+      ? product.highlights
+      : typeof product?.highlights === 'string'
+        ? (() => { try { return JSON.parse(product.highlights); } catch (e) { return []; } })()
+        : []
+  ).filter((hl) => hl && ((hl.text_en && hl.text_en.trim()) || (hl.text_ar && hl.text_ar.trim()) || (hl.text && hl.text.trim())));
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-10 font-sans bg-white pb-24">
 
@@ -413,23 +458,24 @@ export default function ProductDetailPage() {
             })}
           </div>
 
-          {/* Feature Badges Bar */}
-          <div className="bg-[#F9F6F0] rounded-2xl p-3.5 border border-amber-200/50 flex items-center justify-around text-xs font-bold text-slate-800 font-sans shadow-2xs">
-            <div className="flex items-center gap-1.5">
-              <Check className="w-4 h-4 text-[#043927]" />
-              <span>{locale === 'ar' ? 'طازج من المزرعة' : 'Farm Fresh'}</span>
+          {/* Section 2: Product Highlights (Dynamic below Gallery) */}
+          {validHighlights.length > 0 && (
+            <div className="bg-[#FFFDF7] rounded-2xl p-3.5 border border-[#F5DE98] flex flex-wrap items-center justify-around gap-2 text-xs font-bold text-slate-800 font-sans shadow-2xs">
+              {validHighlights.map((hl, idx) => {
+                const text = locale === 'ar' ? (hl.text_ar || hl.text_en || hl.text) : (hl.text_en || hl.text || hl.text_ar);
+                if (!text) return null;
+                return (
+                  <React.Fragment key={idx}>
+                    {idx > 0 && <span className="text-[#F5DE98] font-bold hidden sm:inline select-none">|</span>}
+                    <div className="flex items-center gap-1.5">
+                      {renderProductIcon(hl.icon || 'Check', 'w-4 h-4 text-[#043927] shrink-0')}
+                      <span>{text}</span>
+                    </div>
+                  </React.Fragment>
+                );
+              })}
             </div>
-            <span className="text-amber-300">|</span>
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-[#043927]" />
-              <span>{locale === 'ar' ? 'غني بالعناصر الغذائية' : 'Rich in Nutrients'}</span>
-            </div>
-            <span className="text-amber-300">|</span>
-            <div className="flex items-center gap-1.5">
-              <Leaf className="w-4 h-4 text-[#043927]" />
-              <span>{locale === 'ar' ? 'إنتاج محلي' : 'Locally Sourced'}</span>
-            </div>
-          </div>
+          )}
 
         </div>
 
@@ -449,42 +495,52 @@ export default function ProductDetailPage() {
 
             {/* Rating Stars & Reviews Count */}
             <div className="flex items-center gap-2 mt-2">
-              <div className="flex items-center gap-0.5 text-amber-500 font-extrabold text-sm">
-                <span>★ ★ ★ ★ ★</span>
-                <span className="text-slate-900 font-bold ml-1">
-                  {product.rating !== undefined && product.rating !== null && product.rating !== ''
-                    ? Number(product.rating).toFixed(1)
-                    : (product.avg_rating ? Number(product.avg_rating).toFixed(1) : '4.8')}
+              {((product.reviews_count !== undefined && product.reviews_count !== null && Number(product.reviews_count) > 0) || (product.rating !== undefined && product.rating !== null && Number(product.rating) > 0)) ? (
+                <>
+                  <div className="flex items-center gap-0.5 text-amber-500 font-extrabold text-sm">
+                    <span>★ ★ ★ ★ ★</span>
+                    <span className="text-slate-900 font-bold ml-1">
+                      {Number(product.rating || 0).toFixed(1)}
+                    </span>
+                  </div>
+                  <span className="text-slate-400 text-xs font-normal">
+                    ({Number(product.reviews_count || product.reviews || 0).toLocaleString()} {locale === 'ar' ? 'تقييم' : 'reviews'})
+                  </span>
+                </>
+              ) : (
+                <span className="text-slate-400 text-xs font-medium">
+                  {locale === 'ar' ? 'لا توجد تقييمات بعد' : 'ings yet'}
                 </span>
-              </div>
-              <span className="text-slate-400 text-xs font-normal">
-                ({(product.reviews_count !== undefined && product.reviews_count !== null
-                  ? Number(product.reviews_count)
-                  : (product.reviews ? Number(product.reviews) : 120)).toLocaleString()} {locale === 'ar' ? 'تقييم' : 'reviews'})
-              </span>
+              )}
             </div>
 
-            {/* Short Description */}
-            <p className="text-slate-600 font-medium text-sm sm:text-base leading-relaxed mt-2">
-              {locale === 'ar' ? product.description_ar : product.description_en}
-            </p>
-          </div>
+            {/* Section 1: Product Feature Badges (Dynamic below Title & Rating) */}
+            {validBadges.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                {validBadges.map((badge, idx) => {
+                  const text = locale === 'ar' ? (badge.text_ar || badge.text_en || badge.text) : (badge.text_en || badge.text || badge.text_ar);
+                  if (!text) return null;
+                  return (
+                    <span
+                      key={idx}
+                      className="bg-[#EBF7F0] text-[#043927] font-bold text-xs px-3.5 py-1.5 rounded-full border border-emerald-200/80 inline-flex items-center gap-1.5 shadow-2xs"
+                    >
+                      <span className="w-4 h-4 rounded-full bg-[#05A764] text-white flex items-center justify-center shrink-0">
+                        {renderProductIcon(badge.icon || 'Check', 'w-2.5 h-2.5 text-white stroke-[3]')}
+                      </span>
+                      <span>{text}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
 
-          {/* Key Feature Chips Row */}
-          <div className="flex flex-wrap items-center gap-2">
-            {[
-              { en: '100% Natural', ar: '١٠٠٪ طبيعي' },
-              { en: 'High in Protein', ar: 'غني بالبروتين' },
-              { en: 'No Artificial Additives', ar: 'بدون إضافات صناعية' },
-            ].map((chip, idx) => (
-              <span
-                key={idx}
-                className="bg-emerald-50 text-[#043927] font-bold text-xs px-3 py-1.5 rounded-lg border border-emerald-100 flex items-center gap-1.5"
-              >
-                <Check className="w-3.5 h-3.5 text-[#05A764]" />
-                <span>{locale === 'ar' ? chip.ar : chip.en}</span>
-              </span>
-            ))}
+            {/* Short Description */}
+            {(product.description_ar || product.description_en) && (
+              <p className="text-slate-600 font-medium text-sm sm:text-base leading-relaxed mt-3">
+                {locale === 'ar' ? product.description_ar : product.description_en}
+              </p>
+            )}
           </div>
 
           {/* Price Box - Single Line Layout */}
@@ -501,7 +557,7 @@ export default function ProductDetailPage() {
               </span>
             )}
 
-          
+
           </div>
 
           {/* Dynamic Variant Selector (Has Variants) */}
@@ -536,20 +592,18 @@ export default function ProductDetailPage() {
                           setSelectedImg(v.image_url);
                         }
                       }}
-                      className={`p-3.5 rounded-2xl border text-left rtl:text-right transition-all cursor-pointer relative flex flex-col justify-between min-h-[75px] ${
-                        varOutOfStock
+                      className={`p-3.5 rounded-2xl border text-left rtl:text-right transition-all cursor-pointer relative flex flex-col justify-between min-h-[75px] ${varOutOfStock
                           ? 'opacity-40 cursor-not-allowed bg-slate-50 border-slate-200'
                           : isSelected
-                          ? 'border-2 border-[#043927] bg-emerald-50/50 shadow-xs ring-2 ring-[#043927]/10'
-                          : 'border-slate-200 hover:border-emerald-300 bg-white'
-                      }`}
+                            ? 'border-2 border-[#043927] bg-emerald-50/50 shadow-xs ring-2 ring-[#043927]/10'
+                            : 'border-slate-200 hover:border-emerald-300 bg-white'
+                        }`}
                     >
                       <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                         <span>{v.unit_value ? `${v.unit_value} ${v.unit_type || ''}` : v.sku}</span>
                         <div
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                            isSelected ? 'border-[#043927] bg-[#043927] text-white' : 'border-slate-300'
-                          }`}
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? 'border-[#043927] bg-[#043927] text-white' : 'border-slate-300'
+                            }`}
                         >
                           {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                         </div>
@@ -625,19 +679,18 @@ export default function ProductDetailPage() {
             <button
               onClick={handleAddToCart}
               disabled={adding || isOutOfStock}
-              className={`flex-1 py-4 px-8 rounded-full text-white font-extrabold text-base shadow-md transition-all flex items-center justify-center gap-2 group ${
-                isOutOfStock
+              className={`flex-1 py-4 px-8 rounded-full text-white font-extrabold text-base shadow-md transition-all flex items-center justify-center gap-2 group ${isOutOfStock
                   ? 'bg-slate-400 cursor-not-allowed'
                   : 'bg-[#043927] hover:bg-[#02281b] hover:shadow-xl cursor-pointer'
-              }`}
+                }`}
             >
               <ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span>
                 {adding
                   ? (locale === 'ar' ? 'جاري الإضافة...' : 'Adding...')
                   : isOutOfStock
-                  ? (locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock')
-                  : (locale === 'ar' ? 'أضف إلى السلة' : 'Add to Cart')}
+                    ? (locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock')
+                    : (locale === 'ar' ? 'أضف إلى السلة' : 'Add to Cart')}
               </span>
             </button>
 
@@ -885,9 +938,7 @@ export default function ProductDetailPage() {
             {Number(product?.reviews_count || product?.reviews || product?.review_count || 0) > 0 ? (
               <div className="flex items-center gap-3 bg-amber-50 p-4 rounded-2xl border border-amber-200">
                 <span className="text-3xl font-black text-amber-600">
-                  {product?.rating !== undefined && product?.rating !== null && product?.rating !== ''
-                    ? Number(product.rating).toFixed(1)
-                    : (product?.avg_rating ? Number(product.avg_rating).toFixed(1) : '4.8')}
+                  {Number(product?.rating || 0).toFixed(1)}
                 </span>
                 <div>
                   <div className="text-amber-500 font-extrabold text-sm">★ ★ ★ ★ ★</div>
@@ -931,11 +982,10 @@ export default function ProductDetailPage() {
                 onClick={() => scrollRelated('left')}
                 disabled={!canScrollRelLeft}
                 aria-label="Previous products"
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
-                  canScrollRelLeft
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${canScrollRelLeft
                     ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
                     : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50'
-                }`}
+                  }`}
               >
                 <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
               </button>
@@ -944,11 +994,10 @@ export default function ProductDetailPage() {
                 onClick={() => scrollRelated('right')}
                 disabled={!canScrollRelRight}
                 aria-label="Next products"
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
-                  canScrollRelRight
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${canScrollRelRight
                     ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
                     : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50'
-                }`}
+                  }`}
               >
                 <ChevronRight className="w-5 h-5 rtl:rotate-180" />
               </button>
@@ -987,8 +1036,9 @@ export default function ProductDetailPage() {
                   '';
                 const itemName = locale === 'ar' ? (item.name_ar || item.name_en || item.name || item.title) : (item.name_en || item.name_ar || item.name || item.title);
                 const itemUnit = item.unit || item.tag_en || item.unit_type || (locale === 'ar' ? 'عبوة 1' : '1 Pack');
-                const itemRating = item.rating !== undefined && item.rating !== null && item.rating !== '' ? Number(item.rating).toFixed(1) : (item.avg_rating ? Number(item.avg_rating).toFixed(1) : '4.8');
-                const itemReviews = (item.reviews_count !== undefined && item.reviews_count !== null ? Number(item.reviews_count) : (item.reviews ? Number(item.reviews) : (item.review_count ? Number(item.review_count) : 120))).toLocaleString();
+                const hasItemRatings = (item.reviews_count !== undefined && item.reviews_count !== null && Number(item.reviews_count) > 0) || (item.rating !== undefined && item.rating !== null && Number(item.rating) > 0);
+                const itemRating = hasItemRatings && item.rating ? Number(item.rating).toFixed(1) : null;
+                const itemReviews = hasItemRatings ? Number(item.reviews_count || item.reviews || item.review_count || 0).toLocaleString() : 0;
 
                 const hasVariants = Boolean(item.has_variants && Array.isArray(item.variants) && item.variants.length > 0);
                 let finalPrice = parseFloat(item.price || 0);
@@ -1049,8 +1099,16 @@ export default function ProductDetailPage() {
                         )}
 
                         <div className="flex items-center gap-1 text-[10px] text-amber-500 font-extrabold">
-                          <span>★ {itemRating || '4.8'}</span>
-                          <span className="text-slate-400 font-normal">({itemReviews})</span>
+                          {hasItemRatings ? (
+                            <>
+                              <span>★ {itemRating}</span>
+                              <span className="text-slate-400 font-normal">({itemReviews})</span>
+                            </>
+                          ) : (
+                            <span className="text-slate-400 font-medium text-[10px]">
+                              {locale === 'ar' ? '' : ''}
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex items-baseline gap-1.5 pt-1">

@@ -467,11 +467,12 @@ export default function DriverDashboardPage() {
             </button>
 
             {/* Brand Logo */}
-            <Link href="/driver/dashboard" className="flex items-center gap-2 group">
-              <span className="text-2xl font-black text-[#043927] tracking-tight font-heading">
-                Logo
-              </span>
-              <Leaf className="w-5 h-5 text-[#05A764] fill-[#05A764] -mt-1 group-hover:rotate-12 transition-transform" />
+            <Link href="/driver/dashboard" className="flex items-center group">
+              <img
+                src="/logo.png"
+                alt="saqrcart"
+                className="h-7 sm:h-8 w-auto object-contain"
+              />
             </Link>
 
             {/* Dedicated Driver Portal Tag */}

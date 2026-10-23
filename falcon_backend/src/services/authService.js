@@ -116,16 +116,25 @@ class AuthService {
     });
 
     if (!user) {
-      throw new Error('Invalid credentials');
+      const error = new Error('No account with this email or mobile number');
+      error.field = 'loginInput';
+      error.statusCode = 400;
+      throw error;
     }
 
     if (user.status !== 'ACTIVE') {
-      throw new Error('Your account is deactivated. Please contact support.');
+      const error = new Error('Your account is deactivated. Please contact support.');
+      error.field = 'general';
+      error.statusCode = 403;
+      throw error;
     }
 
     const isPasswordValid = await comparePassword(password, user.password_hash);
     if (!isPasswordValid) {
-      throw new Error('Invalid credentials');
+      const error = new Error('Incorrect password. Please try again.');
+      error.field = 'password';
+      error.statusCode = 400;
+      throw error;
     }
 
     const payload = {

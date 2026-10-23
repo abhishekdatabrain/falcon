@@ -380,8 +380,8 @@ export default function AdminCategorySectionsPage() {
 
   // Helper to format image source safely
   const resolveImgSrc = (url) => {
-    if (!url) return '/subcategories/laundry_care.png';
-    if (url.startsWith('http') || url.startsWith('/subcategories/') || url.startsWith('/promo/')) {
+    if (!url) return getImageUrl('/subcategories/laundry_care.png');
+    if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('http')) {
       return url;
     }
     return getImageUrl(url);
@@ -642,13 +642,17 @@ export default function AdminCategorySectionsPage() {
                   {(sec.items || []).slice(0, sec.max_items || 6).map((item, itIdx) => (
                     <div
                       key={item.id || itIdx}
-                      className="group flex flex-col items-center text-center relative"
+                      className="group flex flex-col items-center text-center relative min-w-0"
                     >
-                      <div className="w-full aspect-square bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1 relative">
+                      <div className="relative w-full aspect-square bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center overflow-hidden shrink-0 min-h-0 min-w-0 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
                         <img
                           src={resolveImgSrc(item.image_url)}
                           alt={item.title_en}
-                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = getImageUrl('/subcategories/laundry_care.png');
+                          }}
                         />
                         {!item.is_active && (
                           <div className="absolute inset-0 bg-slate-900/60 rounded-2xl flex items-center justify-center backdrop-blur-2xs">
@@ -659,9 +663,11 @@ export default function AdminCategorySectionsPage() {
                         )}
                       </div>
 
-                      <span className="font-bold text-slate-800 text-xs sm:text-[13px] text-center mt-2.5 leading-snug">
-                        {locale === 'ar' ? (item.title_ar || item.title_en) : item.title_en}
-                      </span>
+                      <div className="w-full mt-2.5 h-[38px] sm:h-[42px] flex items-start justify-center px-0.5">
+                        <span className="font-bold text-slate-800 text-xs sm:text-[13px] text-center leading-snug line-clamp-2">
+                          {locale === 'ar' ? (item.title_ar || item.title_en) : item.title_en}
+                        </span>
+                      </div>
                     </div>
                   ))}
 
@@ -1167,17 +1173,23 @@ export default function AdminCategorySectionsPage() {
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
                       {(formData.items || []).slice(0, parseInt(formData.max_items, 10) || 6).map((item, itIdx) => (
-                        <div key={item.id || itIdx} className="group flex flex-col items-center text-center">
-                          <div className="w-full aspect-square bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+                        <div key={item.id || itIdx} className="group flex flex-col items-center text-center min-w-0">
+                          <div className="relative w-full aspect-square bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center overflow-hidden shrink-0 min-h-0 min-w-0 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
                             <img
                               src={resolveImgSrc(item.image_url)}
                               alt={item.title_en}
-                              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                              className="w-full h-full max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = getImageUrl('/subcategories/laundry_care.png');
+                              }}
                             />
                           </div>
-                          <span className="font-bold text-slate-800 text-xs sm:text-[14px] text-center mt-3 leading-snug">
-                            {locale === 'ar' ? (item.title_ar || item.title_en) : item.title_en}
-                          </span>
+                          <div className="w-full mt-2.5 sm:mt-3 h-[38px] sm:h-[42px] flex items-start justify-center px-0.5">
+                            <span className="font-bold text-slate-800 text-xs sm:text-[13px] md:text-[14px] text-center leading-snug line-clamp-2">
+                              {locale === 'ar' ? (item.title_ar || item.title_en) : item.title_en}
+                            </span>
+                          </div>
                         </div>
                       ))}
                     </div>

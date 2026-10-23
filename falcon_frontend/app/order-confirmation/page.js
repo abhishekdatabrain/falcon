@@ -414,11 +414,11 @@ function OrderConfirmationContent() {
                                                     <p className="text-[10px] text-slate-400 font-medium truncate">
                                                         {item.subtitle}
                                                     </p>
-                                                    {item.tag && (
+                                                    {/* {item.tag && (
                                                         <span className="text-[9px] font-black px-1.5 py-0.5 rounded inline-block mt-0.5 font-sans bg-emerald-50 text-emerald-700">
                                                             {item.tag}
                                                         </span>
-                                                    )}
+                                                    )} */}
                                                 </div>
                                             </div>
 

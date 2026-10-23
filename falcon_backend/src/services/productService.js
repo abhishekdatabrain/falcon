@@ -1,4 +1,4 @@
-const { Product, ProductVariant, ProductImage, Category, StockLog, sequelize } = require('../models');
+const { Product, ProductVariant, ProductImage, Category, Feedback, StockLog, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 class ProductService {
@@ -23,6 +23,9 @@ class ProductService {
       is_best_seller,
       is_best_deal,
       isBestDeal,
+      show_on_store,
+      showOnStore,
+      best_deals_or_store,
       is_popular_pick,
       isPopularPick,
     } = query;
@@ -69,9 +72,21 @@ class ProductService {
       }
     }
 
-    if (is_best_deal !== undefined || isBestDeal !== undefined) {
-      const val = is_best_deal !== undefined ? is_best_deal : isBestDeal;
-      where.is_best_deal = String(val) === 'true';
+    if (best_deals_or_store !== undefined && (String(best_deals_or_store) === 'true' || best_deals_or_store === true)) {
+      where[Op.or] = [
+        { is_best_deal: true },
+        { show_on_store: true }
+      ];
+    } else {
+      if (is_best_deal !== undefined || isBestDeal !== undefined) {
+        const val = is_best_deal !== undefined ? is_best_deal : isBestDeal;
+        where.is_best_deal = String(val) === 'true';
+      }
+
+      if (show_on_store !== undefined || showOnStore !== undefined) {
+        const val = show_on_store !== undefined ? show_on_store : showOnStore;
+        where.show_on_store = String(val) === 'true';
+      }
     }
 
     if (is_popular_pick !== undefined || isPopularPick !== undefined) {
@@ -215,6 +230,9 @@ class ProductService {
         {
           model: ProductVariant, as: 'variants', separate: true, order: [['price', 'ASC']]
         },
+        {
+          model: Feedback, as: 'feedbacks', attributes: ['id', 'rating', 'comment'], separate: true
+        },
       ],
       order: orderClause,
       limit: limitNum,
@@ -271,6 +289,7 @@ class ProductService {
         { model: Category, as: 'sub_sub_subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         { model: ProductImage, as: 'images' },
         { model: ProductVariant, as: 'variants', separate: true, order: [['price', 'ASC']] },
+        { model: Feedback, as: 'feedbacks', attributes: ['id', 'rating', 'comment'], separate: true },
       ],
     });
 
@@ -338,6 +357,68 @@ class ProductService {
     }
   }
 
+  sanitizeBadgeArray(items) {
+    if (!Array.isArray(items)) return [];
+    const ALLOWED_ICONS = new Set([
+      'Check', 'Sparkles', 'Leaf', 'Zap', 'ShieldCheck', 'Award', 'Heart',
+      'Star', 'Apple', 'Sun', 'Flame', 'Clock', 'Droplets', 'Package', 'Truck', 'CheckCircle2'
+    ]);
+    return items
+      .map(item => {
+        if (!item) return null;
+        if (typeof item === 'string') {
+          const trimmed = item.trim().slice(0, 100);
+          return trimmed ? { text: trimmed, text_en: trimmed, text_ar: '', icon: 'Check' } : null;
+        }
+        if (typeof item === 'object') {
+          const text_en = String(item.text_en || item.text || '').trim().slice(0, 100);
+          const text_ar = String(item.text_ar || '').trim().slice(0, 100);
+          const rawIcon = String(item.icon || 'Check').trim();
+          const icon = ALLOWED_ICONS.has(rawIcon) ? rawIcon : 'Check';
+          if (!text_en && !text_ar) return null;
+          return {
+            text: text_en || text_ar,
+            text_en,
+            text_ar,
+            icon,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+
+  sanitizeHighlightArray(items) {
+    if (!Array.isArray(items)) return [];
+    const ALLOWED_ICONS = new Set([
+      'Check', 'Sparkles', 'Leaf', 'Zap', 'ShieldCheck', 'Award', 'Heart',
+      'Star', 'Apple', 'Sun', 'Flame', 'Clock', 'Droplets', 'Package', 'Truck', 'CheckCircle2'
+    ]);
+    return items
+      .map(item => {
+        if (!item) return null;
+        if (typeof item === 'string') {
+          const trimmed = item.trim().slice(0, 150);
+          return trimmed ? { text: trimmed, text_en: trimmed, text_ar: '', icon: 'Check' } : null;
+        }
+        if (typeof item === 'object') {
+          const text_en = String(item.text_en || item.text || '').trim().slice(0, 150);
+          const text_ar = String(item.text_ar || '').trim().slice(0, 150);
+          const rawIcon = String(item.icon || 'Check').trim();
+          const icon = ALLOWED_ICONS.has(rawIcon) ? rawIcon : 'Check';
+          if (!text_en && !text_ar) return null;
+          return {
+            text: text_en || text_ar,
+            text_en,
+            text_ar,
+            icon,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+
   async createProduct(data) {
     const {
       category_id,
@@ -354,6 +435,7 @@ class ProductService {
       long_description_en,
       long_description_ar,
       highlights,
+      feature_badges,
       nutrition_facts,
       brand,
       unit,
@@ -386,6 +468,14 @@ class ProductService {
     if (typeof parsedHighlights === 'string') {
       try { parsedHighlights = JSON.parse(parsedHighlights); } catch (e) { parsedHighlights = []; }
     }
+    parsedHighlights = this.sanitizeHighlightArray(parsedHighlights);
+
+    let parsedBadges = feature_badges;
+    if (typeof parsedBadges === 'string') {
+      try { parsedBadges = JSON.parse(parsedBadges); } catch (e) { parsedBadges = []; }
+    }
+    parsedBadges = this.sanitizeBadgeArray(parsedBadges);
+
     let parsedNutrition = nutrition_facts;
     if (typeof parsedNutrition === 'string') {
       try { parsedNutrition = JSON.parse(parsedNutrition); } catch (e) { parsedNutrition = {}; }
@@ -429,6 +519,7 @@ class ProductService {
         long_description_en: long_description_en || null,
         long_description_ar: long_description_ar || null,
         highlights: Array.isArray(parsedHighlights) ? parsedHighlights : [],
+        feature_badges: Array.isArray(parsedBadges) ? parsedBadges : [],
         nutrition_facts: (typeof parsedNutrition === 'object' && parsedNutrition !== null) ? parsedNutrition : {},
         brand: brand || '',
         unit: computedUnit,
@@ -448,6 +539,7 @@ class ProductService {
         is_new_arrival: is_new_arrival !== undefined ? Boolean(is_new_arrival) : true,
         is_best_seller: is_best_seller !== undefined ? Boolean(is_best_seller) : false,
         is_best_deal: is_best_deal !== undefined ? Boolean(is_best_deal) : false,
+        show_on_store: show_on_store !== undefined ? Boolean(show_on_store) : false,
         is_popular_pick: is_popular_pick !== undefined ? Boolean(is_popular_pick) : false,
         has_variants: hasVariantsBool,
         rating: rating !== undefined && rating !== '' ? parseFloat(rating) : 4.8,
@@ -521,8 +613,17 @@ class ProductService {
       cleanData.reviews_count = cleanData.reviews !== '' && cleanData.reviews !== null ? parseInt(cleanData.reviews, 10) : 0;
     }
 
-    if (cleanData.highlights !== undefined && typeof cleanData.highlights === 'string') {
-      try { cleanData.highlights = JSON.parse(cleanData.highlights); } catch (e) { cleanData.highlights = []; }
+    if (cleanData.highlights !== undefined) {
+      if (typeof cleanData.highlights === 'string') {
+        try { cleanData.highlights = JSON.parse(cleanData.highlights); } catch (e) { cleanData.highlights = []; }
+      }
+      cleanData.highlights = this.sanitizeHighlightArray(cleanData.highlights);
+    }
+    if (cleanData.feature_badges !== undefined) {
+      if (typeof cleanData.feature_badges === 'string') {
+        try { cleanData.feature_badges = JSON.parse(cleanData.feature_badges); } catch (e) { cleanData.feature_badges = []; }
+      }
+      cleanData.feature_badges = this.sanitizeBadgeArray(cleanData.feature_badges);
     }
     if (cleanData.nutrition_facts !== undefined && typeof cleanData.nutrition_facts === 'string') {
       try { cleanData.nutrition_facts = JSON.parse(cleanData.nutrition_facts); } catch (e) { cleanData.nutrition_facts = {}; }

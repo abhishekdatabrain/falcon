@@ -77,16 +77,14 @@ export default function DriverLoginPage() {
       {/* Top Header Bar */}
       <header className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/" className="inline-flex items-center gap-1.5 group">
-            <span className="text-2xl sm:text-3xl font-extrabold text-[#05442e] tracking-tight font-heading">
-              Logo
-            </span>
-            <Leaf className="w-5 h-5 text-[#05A764] fill-[#05A764] -mt-1 group-hover:rotate-12 transition-transform" />
+          <Link href="/" className="inline-flex items-center group">
+            <img
+              src="/logo.png"
+              alt="saqrcart"
+              className="h-8 sm:h-9 w-auto object-contain"
+            />
           </Link>
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-[#05442e] border border-emerald-200/80 shadow-2xs">
-            <Truck className="w-3.5 h-3.5 text-[#05A764]" />
-            {locale === 'ar' ? 'بوابة السائقين' : 'Driver Portal'}
-          </span>
+          
         </div>
 
         <div className="flex items-center gap-3">
@@ -102,13 +100,13 @@ export default function DriverLoginPage() {
           </button>
 
           {/* Storefront Link */}
-          <Link
+          {/* <Link
             href="/"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[#05442e] bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 transition-all shadow-2xs"
           >
             <Store className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{locale === 'ar' ? 'المتجر الرئيسي' : 'Storefront'}</span>
-          </Link>
+          </Link> */}
         </div>
       </header>
 

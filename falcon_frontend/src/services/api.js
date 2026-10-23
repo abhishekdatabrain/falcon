@@ -29,7 +29,19 @@ export const getImageUrl = (url) => {
     }
   }
 
-  // 3. Absolute HTTP/HTTPS URLs (external CDNs, Unsplash)
+  // 3. Route preset subcategories images through backend uploads/subcategories/
+  if (targetUrl.startsWith('/subcategories/') || targetUrl.startsWith('subcategories/')) {
+    const filename = targetUrl.replace(/^\/?subcategories\//, '');
+    return `${cleanApiBase}/uploads/subcategories/${filename}`;
+  }
+
+  // 4. Route preset banners images through backend uploads/banners/
+  if (targetUrl.startsWith('/banners/') || targetUrl.startsWith('banners/')) {
+    const filename = targetUrl.replace(/^\/?banners\//, '');
+    return `${cleanApiBase}/uploads/banners/${filename}`;
+  }
+
+  // 5. Absolute HTTP/HTTPS URLs (external CDNs, Unsplash)
   if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
     return targetUrl;
   }

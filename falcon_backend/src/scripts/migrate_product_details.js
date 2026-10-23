@@ -14,6 +14,7 @@ async function migrate() {
       `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS long_description_en TEXT;`,
       `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS long_description_ar TEXT;`,
       `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS highlights JSONB DEFAULT '[]'::jsonb;`,
+      `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS feature_badges JSONB DEFAULT '[]'::jsonb;`,
       `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS nutrition_facts JSONB DEFAULT '{}'::jsonb;`
     ];
 

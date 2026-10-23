@@ -56,6 +56,19 @@ app.use('/uploads', staticUploadsHandler);
 app.use('/api/v1/uploads', staticUploadsHandler);
 app.use('/api/uploads', staticUploadsHandler);
 
+// Subcategories static assets handler (for both /subcategories and /api/v1/subcategories)
+const subcategoriesPath = path.join(uploadsPath, 'subcategories');
+const staticSubcategoriesHandler = [
+  (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(subcategoriesPath),
+];
+app.use('/subcategories', staticSubcategoriesHandler);
+app.use('/api/v1/subcategories', staticSubcategoriesHandler);
+
 // Rate Limiter
 app.use('/api/', apiLimiter);
 

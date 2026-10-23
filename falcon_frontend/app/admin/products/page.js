@@ -38,7 +38,53 @@ import {
   Activity,
   Check,
   Calendar,
+  Leaf,
+  Zap,
+  Award,
+  Heart,
+  Sun,
+  Flame,
+  Clock,
+  Droplets,
 } from 'lucide-react';
+
+const AVAILABLE_LUCIDE_ICONS = [
+  { value: 'Check', label: 'Checkmark (Default)' },
+  { value: 'Sparkles', label: 'Sparkles' },
+  { value: 'Leaf', label: 'Leaf / Natural' },
+  { value: 'Zap', label: 'Zap / Energy' },
+  { value: 'ShieldCheck', label: 'Shield / Safe' },
+  { value: 'Award', label: 'Award / Quality' },
+  { value: 'Heart', label: 'Heart / Healthy' },
+  { value: 'Star', label: 'Star / Featured' },
+  { value: 'Apple', label: 'Apple / Fresh' },
+  { value: 'Sun', label: 'Sun / Farm Grown' },
+  { value: 'Flame', label: 'Flame / Hot' },
+  { value: 'Clock', label: 'Clock / Fast' },
+  { value: 'Droplets', label: 'Droplets / Pure' },
+  { value: 'Package', label: 'Package / Box' },
+];
+
+const renderAdminIcon = (iconName, className = 'w-4 h-4') => {
+  switch (iconName) {
+    case 'Sparkles': return <Sparkles className={className} />;
+    case 'Leaf': return <Leaf className={className} />;
+    case 'Zap': return <Zap className={className} />;
+    case 'ShieldCheck': return <ShieldCheck className={className} />;
+    case 'Award': return <Award className={className} />;
+    case 'Heart': return <Heart className={className} />;
+    case 'Star': return <Star className={className} />;
+    case 'Apple': return <Apple className={className} />;
+    case 'Sun': return <Sun className={className} />;
+    case 'Flame': return <Flame className={className} />;
+    case 'Clock': return <Clock className={className} />;
+    case 'Droplets': return <Droplets className={className} />;
+    case 'Package': return <Package className={className} />;
+    case 'Check':
+    default:
+      return <Check className={className} />;
+  }
+};
 
 export default function AdminProductsPage() {
   const { locale } = useLanguage();
@@ -150,6 +196,7 @@ export default function AdminProductsPage() {
     long_description_en: '',
     long_description_ar: '',
     highlights: [],
+    feature_badges: [],
     nutrition_facts: {
       serving_size: '',
       calories: '',
@@ -270,6 +317,7 @@ export default function AdminProductsPage() {
       long_description_en: '',
       long_description_ar: '',
       highlights: [],
+      feature_badges: [],
       nutrition_facts: {
         serving_size: '',
         calories: '',
@@ -314,19 +362,30 @@ export default function AdminProductsPage() {
     setViewMode('form');
   };
 
-  const openEdit = (prod) => {
-    setEditingProduct(prod);
-    let initialImgs = [];
-    if (Array.isArray(prod.images) && prod.images.length > 0) {
-      initialImgs = prod.images.map(i => typeof i === 'string' ? i : (i?.image_url || i?.url)).filter(Boolean);
+  const openEdit = async (prod) => {
+    let targetProd = prod;
+    if (prod && prod.id) {
+      try {
+        const fullRes = await fetchApi(`/products/${prod.id}`);
+        if (fullRes?.success && fullRes?.data?.product) {
+          targetProd = fullRes.data.product;
+        }
+      } catch (e) {
+        // fallback to prod
+      }
     }
-    if (initialImgs.length === 0 && prod.image_url) {
-      initialImgs = [prod.image_url];
+    setEditingProduct(targetProd);
+    let initialImgs = [];
+    if (Array.isArray(targetProd.images) && targetProd.images.length > 0) {
+      initialImgs = targetProd.images.map(i => typeof i === 'string' ? i : (i?.image_url || i?.url)).filter(Boolean);
+    }
+    if (initialImgs.length === 0 && targetProd.image_url) {
+      initialImgs = [targetProd.image_url];
     }
     setUrlInput('');
 
-    const loadedVariants = Array.isArray(prod.variants)
-      ? prod.variants.map((v) => ({
+    const loadedVariants = Array.isArray(targetProd.variants)
+      ? targetProd.variants.map((v) => ({
           id: v.id,
           sku: v.sku || '',
           unit_value: v.unit_value || '',
@@ -341,25 +400,55 @@ export default function AdminProductsPage() {
       : [];
 
     let loadedHighlights = [];
-    if (Array.isArray(prod.highlights)) {
-      loadedHighlights = prod.highlights.map((h, i) => {
-        if (typeof h === 'string') return { id: `hl-${i}`, text_en: h, text_ar: '' };
+    if (Array.isArray(targetProd.highlights)) {
+      loadedHighlights = targetProd.highlights.map((h, i) => {
+        if (typeof h === 'string') return { id: `hl-${i}`, text_en: h, text_ar: '', icon: 'Check' };
         return {
           id: h.id || `hl-${i}`,
-          text_en: h.text_en || h.en || (typeof h === 'string' ? h : ''),
+          text_en: h.text_en || h.text || h.en || '',
           text_ar: h.text_ar || h.ar || '',
+          icon: h.icon || 'Check',
         };
       });
-    } else if (typeof prod.highlights === 'string') {
+    } else if (typeof targetProd.highlights === 'string') {
       try {
-        const parsed = JSON.parse(prod.highlights);
+        const parsed = JSON.parse(targetProd.highlights);
         if (Array.isArray(parsed)) {
           loadedHighlights = parsed.map((h, i) => {
-            if (typeof h === 'string') return { id: `hl-${i}`, text_en: h, text_ar: '' };
+            if (typeof h === 'string') return { id: `hl-${i}`, text_en: h, text_ar: '', icon: 'Check' };
             return {
               id: h.id || `hl-${i}`,
-              text_en: h.text_en || h.en || '',
+              text_en: h.text_en || h.text || h.en || '',
               text_ar: h.text_ar || h.ar || '',
+              icon: h.icon || 'Check',
+            };
+          });
+        }
+      } catch (e) {}
+    }
+
+    let loadedBadges = [];
+    if (Array.isArray(targetProd.feature_badges)) {
+      loadedBadges = targetProd.feature_badges.map((b, i) => {
+        if (typeof b === 'string') return { id: `fb-${i}`, text_en: b, text_ar: '', icon: 'Check' };
+        return {
+          id: b.id || `fb-${i}`,
+          text_en: b.text_en || b.text || b.en || '',
+          text_ar: b.text_ar || b.ar || '',
+          icon: b.icon || 'Check',
+        };
+      });
+    } else if (typeof targetProd.feature_badges === 'string') {
+      try {
+        const parsed = JSON.parse(targetProd.feature_badges);
+        if (Array.isArray(parsed)) {
+          loadedBadges = parsed.map((b, i) => {
+            if (typeof b === 'string') return { id: `fb-${i}`, text_en: b, text_ar: '', icon: 'Check' };
+            return {
+              id: b.id || `fb-${i}`,
+              text_en: b.text_en || b.text || b.en || '',
+              text_ar: b.text_ar || b.ar || '',
+              icon: b.icon || 'Check',
             };
           });
         }
@@ -377,14 +466,14 @@ export default function AdminProductsPage() {
       vitamins: '',
       minerals: '',
     };
-    if (prod.nutrition_facts && typeof prod.nutrition_facts === 'object') {
+    if (targetProd.nutrition_facts && typeof targetProd.nutrition_facts === 'object') {
       loadedNutrition = {
         ...loadedNutrition,
-        ...prod.nutrition_facts,
+        ...targetProd.nutrition_facts,
       };
-    } else if (typeof prod.nutrition_facts === 'string') {
+    } else if (typeof targetProd.nutrition_facts === 'string') {
       try {
-        const parsed = JSON.parse(prod.nutrition_facts);
+        const parsed = JSON.parse(targetProd.nutrition_facts);
         if (typeof parsed === 'object' && parsed !== null) {
           loadedNutrition = { ...loadedNutrition, ...parsed };
         }
@@ -392,43 +481,44 @@ export default function AdminProductsPage() {
     }
 
     setProductForm({
-      category_id: prod.category_id || '',
-      subcategory_id: prod.subcategory_id || '',
-      sub_subcategory_id: prod.sub_subcategory_id || '',
-      sub_sub_subcategory_id: prod.sub_sub_subcategory_id || '',
-      sku: prod.sku || '',
-      name_en: prod.name_en || '',
-      name_ar: prod.name_ar || '',
-      description_title_en: prod.description_title_en || '',
-      description_title_ar: prod.description_title_ar || '',
-      description_en: prod.description_en || '',
-      description_ar: prod.description_ar || '',
-      long_description_en: prod.long_description_en || '',
-      long_description_ar: prod.long_description_ar || '',
+      category_id: targetProd.category_id || '',
+      subcategory_id: targetProd.subcategory_id || '',
+      sub_subcategory_id: targetProd.sub_subcategory_id || '',
+      sub_sub_subcategory_id: targetProd.sub_sub_subcategory_id || '',
+      sku: targetProd.sku || '',
+      name_en: targetProd.name_en || '',
+      name_ar: targetProd.name_ar || '',
+      description_title_en: targetProd.description_title_en || '',
+      description_title_ar: targetProd.description_title_ar || '',
+      description_en: targetProd.description_en || '',
+      description_ar: targetProd.description_ar || '',
+      long_description_en: targetProd.long_description_en || '',
+      long_description_ar: targetProd.long_description_ar || '',
       highlights: loadedHighlights,
+      feature_badges: loadedBadges,
       nutrition_facts: loadedNutrition,
-      brand: prod.brand || '',
-      unit: prod.unit || '200 g',
-      unit_type: prod.unit_type || 'g',
-      unit_value: prod.unit_value || '200',
-      pack_size: prod.pack_size || '',
-      sold_by: prod.sold_by || 'Piece',
-      price: prod.price || '',
-      purchase_price: prod.purchase_price || '',
-      discount_price: prod.discount_price || '',
-      vat_percentage: prod.vat_percentage !== undefined ? String(prod.vat_percentage) : '15',
-      price_includes_vat: prod.price_includes_vat !== undefined ? prod.price_includes_vat : true,
-      stock_quantity: prod.stock_quantity || '',
-      is_available: prod.is_available !== undefined ? prod.is_available : true,
-      is_active: prod.is_active !== undefined ? prod.is_active : true,
-      is_featured: prod.is_featured !== undefined ? prod.is_featured : false,
-      is_new_arrival: prod.is_new_arrival !== undefined ? prod.is_new_arrival : true,
-      is_best_seller: prod.is_best_seller !== undefined ? prod.is_best_seller : false,
-      is_best_deal: prod.is_best_deal !== undefined ? prod.is_best_deal : false,
-      is_popular_pick: prod.is_popular_pick !== undefined ? prod.is_popular_pick : false,
-      has_variants: Boolean(prod.has_variants),
-      rating: prod.rating !== undefined && prod.rating !== null ? String(prod.rating) : '4.8',
-      reviews_count: prod.reviews_count !== undefined && prod.reviews_count !== null ? String(prod.reviews_count) : (prod.reviews ? String(prod.reviews) : '120'),
+      brand: targetProd.brand || '',
+      unit: targetProd.unit || '200 g',
+      unit_type: targetProd.unit_type || 'g',
+      unit_value: targetProd.unit_value || '200',
+      pack_size: targetProd.pack_size || '',
+      sold_by: targetProd.sold_by || 'Piece',
+      price: targetProd.price || '',
+      purchase_price: targetProd.purchase_price || '',
+      discount_price: targetProd.discount_price || '',
+      vat_percentage: targetProd.vat_percentage !== undefined ? String(targetProd.vat_percentage) : '15',
+      price_includes_vat: targetProd.price_includes_vat !== undefined ? targetProd.price_includes_vat : true,
+      stock_quantity: targetProd.stock_quantity || '',
+      is_available: targetProd.is_available !== undefined ? targetProd.is_available : true,
+      is_active: targetProd.is_active !== undefined ? targetProd.is_active : true,
+      is_featured: targetProd.is_featured !== undefined ? targetProd.is_featured : false,
+      is_new_arrival: targetProd.is_new_arrival !== undefined ? targetProd.is_new_arrival : true,
+      is_best_seller: targetProd.is_best_seller !== undefined ? targetProd.is_best_seller : false,
+      is_best_deal: targetProd.is_best_deal !== undefined ? targetProd.is_best_deal : false,
+      is_popular_pick: targetProd.is_popular_pick !== undefined ? targetProd.is_popular_pick : false,
+      has_variants: Boolean(targetProd.has_variants),
+      rating: targetProd.rating !== undefined && targetProd.rating !== null ? String(targetProd.rating) : '4.8',
+      reviews_count: targetProd.reviews_count !== undefined && targetProd.reviews_count !== null ? String(targetProd.reviews_count) : (targetProd.reviews ? String(targetProd.reviews) : '120'),
       variants: loadedVariants,
       images: initialImgs,
     });
@@ -464,13 +554,54 @@ export default function AdminProductsPage() {
     }));
   };
 
-  // Highlights Management Handlers
+  // Section 1: Product Feature Badges Management Handlers
+  const handleAddFeatureBadge = () => {
+    setProductForm((prev) => ({
+      ...prev,
+      feature_badges: [
+        ...(prev.feature_badges || []),
+        { id: `fb-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, text_en: '', text_ar: '', icon: 'Check' },
+      ],
+    }));
+  };
+
+  const handleUpdateFeatureBadge = (index, field, value) => {
+    setProductForm((prev) => {
+      const updated = [...(prev.feature_badges || [])];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], [field]: value };
+      }
+      return { ...prev, feature_badges: updated };
+    });
+  };
+
+  const handleDeleteFeatureBadge = (index) => {
+    setProductForm((prev) => {
+      const updated = [...(prev.feature_badges || [])];
+      updated.splice(index, 1);
+      return { ...prev, feature_badges: updated };
+    });
+  };
+
+  const handleMoveFeatureBadge = (index, direction) => {
+    setProductForm((prev) => {
+      const updated = [...(prev.feature_badges || [])];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= updated.length) return prev;
+      const temp = updated[index];
+      updated[index] = updated[targetIndex];
+      updated[targetIndex] = temp;
+      return { ...prev, feature_badges: updated };
+    });
+  };
+
+  // Section 2: Product Highlights Management Handlers
   const handleAddHighlight = () => {
     setProductForm((prev) => ({
       ...prev,
       highlights: [
         ...(prev.highlights || []),
-        { id: `hl-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, text_en: '', text_ar: '' },
+        { id: `hl-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, text_en: '', text_ar: '', icon: 'Check' },
       ],
     }));
   };
@@ -763,7 +894,24 @@ export default function AdminProductsPage() {
         long_description_en: productForm.long_description_en || null,
         long_description_ar: productForm.long_description_ar || null,
         highlights: Array.isArray(productForm.highlights)
-          ? productForm.highlights.filter((h) => (h.text_en && h.text_en.trim()) || (h.text_ar && h.text_ar.trim()))
+          ? productForm.highlights
+              .filter((h) => (h.text_en && h.text_en.trim()) || (h.text_ar && h.text_ar.trim()))
+              .map((h) => ({
+                text: (h.text_en || h.text_ar || '').trim(),
+                text_en: (h.text_en || '').trim(),
+                text_ar: (h.text_ar || '').trim(),
+                icon: (h.icon || 'Check').trim(),
+              }))
+          : [],
+        feature_badges: Array.isArray(productForm.feature_badges)
+          ? productForm.feature_badges
+              .filter((b) => (b.text_en && b.text_en.trim()) || (b.text_ar && b.text_ar.trim()))
+              .map((b) => ({
+                text: (b.text_en || b.text_ar || '').trim(),
+                text_en: (b.text_en || '').trim(),
+                text_ar: (b.text_ar || '').trim(),
+                icon: (b.icon || 'Check').trim(),
+              }))
           : [],
         nutrition_facts: productForm.nutrition_facts || {},
         brand: productForm.brand || null,
@@ -2302,21 +2450,143 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
 
-                  {/* Dynamic Highlights Manager */}
-                  <div className="space-y-3 pt-2 border-t border-slate-100">
-                    <div className="flex items-center justify-between">
+                  {/* ========================================================================= */}
+                  {/* SECTION 1: PRODUCT FEATURE BADGES (Dynamic Management) */}
+                  {/* ========================================================================= */}
+                  <div className="space-y-3 pt-3 border-t border-slate-100">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
-                        <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-                          Product Highlights & Key Features ({productForm.highlights?.length || 0})
-                        </label>
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          Manage dynamic bullet points with checkmarks. Add, edit, remove and sort up/down.
+                        <div className="flex items-center gap-2">
+                          <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                            Section 1: Product Feature Badges ({productForm.feature_badges?.length || 0})
+                          </label>
+                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            Below Title & Rating
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                          Light-green pill badges shown below product title (e.g. &quot;100% Natural&quot;, &quot;High in Protein&quot;, &quot;No Artificial Additives&quot;).
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddFeatureBadge}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#043927] border border-emerald-200 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 self-start sm:self-auto shrink-0"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Badge
+                      </button>
+                    </div>
+
+                    {Array.isArray(productForm.feature_badges) && productForm.feature_badges.length > 0 ? (
+                      <div className="space-y-2.5">
+                        {productForm.feature_badges.map((badge, idx) => (
+                          <div
+                            key={badge.id || idx}
+                            className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-slate-50/80 rounded-2xl border border-slate-200 hover:border-emerald-300 transition-colors"
+                          >
+                            {/* Controls: Reorder & Icon Preview */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex gap-1 sm:flex-col shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveFeatureBadge(idx, 'up')}
+                                  disabled={idx === 0}
+                                  className="w-6 h-6 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-emerald-700 hover:border-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                  title="Move Up"
+                                >
+                                  <ArrowUp className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveFeatureBadge(idx, 'down')}
+                                  disabled={idx === productForm.feature_badges.length - 1}
+                                  className="w-6 h-6 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-emerald-700 hover:border-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                  title="Move Down"
+                                >
+                                  <ArrowDown className="w-3 h-3" />
+                                </button>
+                              </div>
+
+                              {/* Green Icon Indicator */}
+                              <div className="w-7 h-7 rounded-full bg-[#05A764] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                {renderAdminIcon(badge.icon || 'Check', 'w-4 h-4 text-white')}
+                              </div>
+
+                              {/* Icon Selector (Default Checkmark) */}
+                              <select
+                                value={badge.icon || 'Check'}
+                                onChange={(e) => handleUpdateFeatureBadge(idx, 'icon', e.target.value)}
+                                className="px-2 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#043927] cursor-pointer"
+                                title="Badge Icon"
+                              >
+                                {AVAILABLE_LUCIDE_ICONS.map((ic) => (
+                                  <option key={ic.value} value={ic.value}>{ic.label}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Inputs: English & Arabic Text */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+                              <input
+                                type="text"
+                                placeholder={`Badge #${idx + 1} (English) - e.g. 100% Natural`}
+                                value={badge.text_en || ''}
+                                onChange={(e) => handleUpdateFeatureBadge(idx, 'text_en', e.target.value)}
+                                className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#043927]"
+                              />
+                              <input
+                                type="text"
+                                dir="rtl"
+                                placeholder={`الشارة #${idx + 1} (عربي) - مثال: طبيعي ١٠٠٪`}
+                                value={badge.text_ar || ''}
+                                onChange={(e) => handleUpdateFeatureBadge(idx, 'text_ar', e.target.value)}
+                                className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#043927]"
+                              />
+                            </div>
+
+                            {/* Delete Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteFeatureBadge(idx)}
+                              className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0 self-end sm:self-center"
+                              title="Delete Badge"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center text-slate-400 space-y-1">
+                        <p className="text-xs font-semibold">No dynamic feature badges added yet.</p>
+                        <p className="text-[11px] text-slate-500">Click &quot;Add Badge&quot; to show pill badges like &quot;100% Natural&quot;, &quot;High in Protein&quot;, etc. below product title.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ========================================================================= */}
+                  {/* SECTION 2: PRODUCT HIGHLIGHTS (Dynamic Management) */}
+                  {/* ========================================================================= */}
+                  <div className="space-y-3 pt-4 border-t border-slate-100">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                            Section 2: Product Highlights ({productForm.highlights?.length || 0})
+                          </label>
+                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                            Below Image Gallery
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                          Highlights shown below gallery with cream background &amp; separators (e.g. &quot;Farm Fresh&quot;, &quot;Rich in Nutrients&quot;, &quot;Locally Sourced&quot;).
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={handleAddHighlight}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#043927] border border-emerald-200 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                        className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 self-start sm:self-auto shrink-0"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         Add Highlight
@@ -2328,40 +2598,54 @@ export default function AdminProductsPage() {
                         {productForm.highlights.map((hl, idx) => (
                           <div
                             key={hl.id || idx}
-                            className="flex items-center gap-2 p-2.5 bg-slate-50/80 rounded-2xl border border-slate-200 hover:border-emerald-300 transition-colors"
+                            className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-slate-50/80 rounded-2xl border border-slate-200 hover:border-amber-300 transition-colors"
                           >
-                            {/* Sorting Arrows */}
-                            <div className="flex flex-col gap-0.5 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => handleMoveHighlight(idx, 'up')}
-                                disabled={idx === 0}
-                                className="w-5 h-5 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-emerald-700 hover:border-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                                title="Move Up"
+                            {/* Controls: Reorder & Selectable Lucide Icon */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex gap-1 sm:flex-col shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveHighlight(idx, 'up')}
+                                  disabled={idx === 0}
+                                  className="w-6 h-6 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-amber-700 hover:border-amber-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                  title="Move Up"
+                                >
+                                  <ArrowUp className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveHighlight(idx, 'down')}
+                                  disabled={idx === productForm.highlights.length - 1}
+                                  className="w-6 h-6 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-amber-700 hover:border-amber-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                  title="Move Down"
+                                >
+                                  <ArrowDown className="w-3 h-3" />
+                                </button>
+                              </div>
+
+                              {/* Highlight Icon Indicator */}
+                              <div className="w-7 h-7 rounded-full bg-[#043927] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                {renderAdminIcon(hl.icon || 'Check', 'w-4 h-4 text-amber-300')}
+                              </div>
+
+                              {/* Selectable Lucide Icon Dropdown */}
+                              <select
+                                value={hl.icon || 'Check'}
+                                onChange={(e) => handleUpdateHighlight(idx, 'icon', e.target.value)}
+                                className="px-2 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#043927] cursor-pointer"
+                                title="Highlight Icon"
                               >
-                                <ArrowUp className="w-3 h-3" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleMoveHighlight(idx, 'down')}
-                                disabled={idx === productForm.highlights.length - 1}
-                                className="w-5 h-5 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-emerald-700 hover:border-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                                title="Move Down"
-                              >
-                                <ArrowDown className="w-3 h-3" />
-                              </button>
+                                {AVAILABLE_LUCIDE_ICONS.map((ic) => (
+                                  <option key={ic.value} value={ic.value}>{ic.label}</option>
+                                ))}
+                              </select>
                             </div>
 
-                            {/* Checkmark Indicator */}
-                            <div className="w-6 h-6 rounded-full bg-[#05A764] text-white flex items-center justify-center shrink-0">
-                              <Check className="w-3.5 h-3.5" />
-                            </div>
-
-                            {/* Inputs */}
+                            {/* Inputs: English & Arabic Text */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
                               <input
                                 type="text"
-                                placeholder={`Highlight #${idx + 1} (English) - e.g. 100% natural`}
+                                placeholder={`Highlight #${idx + 1} (English) - e.g. Farm Fresh`}
                                 value={hl.text_en || ''}
                                 onChange={(e) => handleUpdateHighlight(idx, 'text_en', e.target.value)}
                                 className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#043927]"
@@ -2369,7 +2653,7 @@ export default function AdminProductsPage() {
                               <input
                                 type="text"
                                 dir="rtl"
-                                placeholder={`الميزة #${idx + 1} (عربي) - مثال: طبيعي ١٠٠٪`}
+                                placeholder={`الميزة #${idx + 1} (عربي) - مثال: طازج من المزرعة`}
                                 value={hl.text_ar || ''}
                                 onChange={(e) => handleUpdateHighlight(idx, 'text_ar', e.target.value)}
                                 className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#043927]"
@@ -2380,7 +2664,7 @@ export default function AdminProductsPage() {
                             <button
                               type="button"
                               onClick={() => handleDeleteHighlight(idx)}
-                              className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                              className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0 self-end sm:self-center"
                               title="Delete Highlight"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -2391,7 +2675,7 @@ export default function AdminProductsPage() {
                     ) : (
                       <div className="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center text-slate-400 space-y-1">
                         <p className="text-xs font-semibold">No dynamic highlights added yet.</p>
-                        <p className="text-[11px] text-slate-500">Click &quot;Add Highlight&quot; to highlight key features like &quot;100% Organic&quot;, &quot;Rich in Protein&quot;, etc.</p>
+                        <p className="text-[11px] text-slate-500">Click &quot;Add Highlight&quot; to show features like &quot;Farm Fresh&quot;, &quot;Locally Sourced&quot; below image gallery.</p>
                       </div>
                     )}
                   </div>

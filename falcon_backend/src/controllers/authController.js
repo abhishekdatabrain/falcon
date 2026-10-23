@@ -58,8 +58,11 @@ class AuthController {
   async login(req, res, next) {
     try {
       const { loginInput, password } = req.body; // email or mobile
-      if (!loginInput || !password) {
-        return sendError(res, 'Login credential and password are required', [], 400);
+      const fieldErrors = {};
+      if (!loginInput) fieldErrors.loginInput = 'Email or mobile number is required';
+      if (!password) fieldErrors.password = 'Password is required';
+      if (Object.keys(fieldErrors).length > 0) {
+        return sendError(res, 'Please fill in all required fields', Object.values(fieldErrors), 400, { fieldErrors });
       }
 
       const reqInfo = { ip: req.ip, userAgent: req.headers['user-agent'] };
@@ -69,7 +72,11 @@ class AuthController {
 
       return sendSuccess(res, 'Login successful', { user, accessToken });
     } catch (error) {
-      return sendError(res, error.message, [], 401);
+      const fieldErrors = {};
+      if (error.field && error.field !== 'general') {
+        fieldErrors[error.field] = error.message;
+      }
+      return sendError(res, error.message, error.errors || [], error.statusCode || 401, { fieldErrors });
     }
   }
 

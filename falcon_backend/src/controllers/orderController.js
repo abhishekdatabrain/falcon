@@ -101,6 +101,26 @@ class OrderController {
       return sendError(res, error.message, [], 400);
     }
   }
+
+  async reorder(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { preview, customSelections, allowAnyStatus } = req.body || {};
+      const result = await orderService.reorder(id, req.user.id, req.user.role, {
+        preview: Boolean(preview),
+        customSelections,
+        allowAnyStatus: Boolean(allowAnyStatus),
+      });
+      return sendSuccess(
+        res,
+        preview ? 'Reorder analysis retrieved' : 'Items added to cart successfully',
+        result,
+        200
+      );
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
 }
 
 module.exports = new OrderController();

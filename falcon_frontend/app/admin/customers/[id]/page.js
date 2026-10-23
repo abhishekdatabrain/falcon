@@ -217,7 +217,7 @@ export default function AdminCustomerDetailsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Breadcrumb & Navigation */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
@@ -231,7 +231,7 @@ export default function AdminCustomerDetailsPage() {
 
         <Link
           href="/admin/customers"
-          className="text-xs font-bold px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-2xs flex items-center gap-1.5"
+          className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-2xs flex items-center gap-1.5"
         >
           <ArrowLeft className="w-4 h-4 text-slate-500" />
           <span>{locale === 'ar' ? 'العودة لقائمة العملاء' : 'Back to Customers'}</span>
@@ -239,21 +239,22 @@ export default function AdminCustomerDetailsPage() {
       </div>
 
       {/* Profile Header Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-5">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-br from-rose-500 to-pink-600 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-lg shadow-rose-500/20 shrink-0 border-2 border-white">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 text-white font-black text-2xl flex items-center justify-center shadow-md shadow-rose-500/20 shrink-0 border border-white">
             {customer.first_name?.charAt(0) || 'C'}
           </div>
           <div className="space-y-1">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
                 {customer.first_name} {customer.last_name}
               </h1>
               <span
-                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold border ${customer.user?.status === 'ACTIVE'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : 'bg-rose-50 text-rose-700 border-rose-200'
-                  }`}
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${
+                  customer.user?.status === 'ACTIVE'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-rose-50 text-rose-700 border-rose-200'
+                }`}
               >
                 {customer.user?.status === 'ACTIVE' ? (
                   <>
@@ -266,14 +267,19 @@ export default function AdminCustomerDetailsPage() {
                 )}
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-mono">Customer ID: {customer.id}</p>
-            <p className="text-xs text-slate-500 flex items-center gap-1 pt-0.5">
-              <Calendar className="w-3.5 h-3.5 text-rose-500" /> Member registered on{' '}
-              <span className="font-bold text-slate-700">
-                {new Date(customer.user?.createdAt || customer.createdAt).toLocaleDateString()}
+
+            <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
+              <span className="font-mono text-slate-400 text-[11px]">Customer ID: {customer.id}</span>
+              <span className="text-slate-300">•</span>
+              <span className="flex items-center gap-1 text-slate-500">
+                <Calendar className="w-3.5 h-3.5 text-rose-500" /> Member registered on{' '}
+                <strong className="text-slate-700 font-semibold">
+                  {new Date(customer.user?.createdAt || customer.createdAt).toLocaleDateString()}
+                </strong>
               </span>
-            </p>
-            <div className="flex items-center gap-4 text-xs text-slate-600 flex-wrap pt-1 font-semibold">
+            </div>
+
+            <div className="flex items-center gap-2.5 text-xs text-slate-600 flex-wrap pt-0.5 font-medium">
               <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
                 <Mail className="w-3.5 h-3.5 text-indigo-500" /> {customer.user?.email || 'N/A'}
               </span>
@@ -282,6 +288,38 @@ export default function AdminCustomerDetailsPage() {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 self-start md:self-center">
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all border border-slate-200 flex items-center gap-1.5 cursor-pointer"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+            <span>Edit Profile</span>
+          </button>
+
+          <button
+            onClick={handleToggleStatus}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+              customer.user?.status === 'ACTIVE'
+                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+            }`}
+          >
+            {customer.user?.status === 'ACTIVE' ? (
+              <>
+                <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                <span>Disable Account</span>
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Activate Account</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -305,50 +343,51 @@ export default function AdminCustomerDetailsPage() {
       </div>
 
       {/* Main Order History Section */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-        <h3 className="text-base font-extrabold text-slate-900 border-b border-slate-100 pb-3 flex items-center justify-between">
-          <span className="flex items-center gap-2">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <span className="flex items-center gap-2 font-black text-slate-900 text-sm">
             <ShoppingBag className="w-4 h-4 text-indigo-600" /> Complete Order History
           </span>
-          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
             {(customer.orders || []).length} Orders
           </span>
-        </h3>
+        </div>
 
         {(customer.orders || []).length === 0 ? (
-          <div className="py-12 text-center text-slate-400 space-y-2">
-            <ShoppingBag className="w-10 h-10 mx-auto text-slate-300" />
+          <div className="py-10 text-center text-slate-400 space-y-2">
+            <ShoppingBag className="w-8 h-8 mx-auto text-slate-300" />
             <p className="text-xs font-bold text-slate-500">No orders placed by this customer yet.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+          <div className="overflow-x-auto rounded-xl border border-slate-200/90">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
+              <thead className="bg-slate-50/90 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
                 <tr>
-                  <th className="p-3.5">Order #</th>
-                  <th className="p-3.5">Date & Time</th>
-                  <th className="p-3.5">Status</th>
-                  <th className="p-3.5">Grand Total</th>
+                  <th className="px-4 py-3">Order #</th>
+                  <th className="px-4 py-3">Date & Time</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Grand Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-600">
+              <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
                 {customer.orders.map((ord) => (
                   <tr key={ord.id} className="hover:bg-slate-50/80 transition-all">
-                    <td className="p-3.5 font-black text-slate-900">
-                      #{ord.order_number}
+                    <td className="px-4 py-3 font-black text-slate-900 font-mono">
+                      <Link href={`/admin/orders/${ord.id}`} className="hover:text-indigo-600 transition-colors">
+                        #{ord.order_number}
+                      </Link>
                     </td>
-                    <td className="p-3.5 text-slate-500 font-medium">
+                    <td className="px-4 py-3 text-slate-500 text-[11px]">
                       {new Date(ord.createdAt).toLocaleString()}
                     </td>
-                    <td className="p-3.5">
+                    <td className="px-4 py-3">
                       <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 font-extrabold text-[10px]">
                         {ord.order_status}
                       </span>
                     </td>
-                    <td className="p-3.5 font-black text-emerald-700 text-sm">
+                    <td className="px-4 py-3 font-black text-emerald-700 text-sm">
                       {parseFloat(ord.grand_total || 0).toFixed(2)} SAR
                     </td>
-
                   </tr>
                 ))}
               </tbody>

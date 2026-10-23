@@ -85,6 +85,11 @@ const Product = sequelize.define('Product', {
     allowNull: true,
     defaultValue: [],
   },
+  feature_badges: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    defaultValue: [],
+  },
   nutrition_facts: {
     type: DataTypes.JSONB,
     allowNull: true,
@@ -165,6 +170,10 @@ const Product = sequelize.define('Product', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  show_on_store: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
   is_popular_pick: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
@@ -176,12 +185,12 @@ const Product = sequelize.define('Product', {
   rating: {
     type: DataTypes.DECIMAL(3, 1),
     allowNull: true,
-    defaultValue: 4.8,
+    defaultValue: null,
   },
   reviews_count: {
     type: DataTypes.INTEGER,
     allowNull: true,
-    defaultValue: 120,
+    defaultValue: 0,
   },
   reviews: {
     type: DataTypes.VIRTUAL,

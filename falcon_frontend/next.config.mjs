@@ -7,9 +7,8 @@ const nextConfig = {
 
     const destinationHost =
       process.env.BACKEND_INTERNAL_URL ||
-      (backendOrigin.includes('localhost') || backendOrigin.includes('127.0.0.1')
-        ? backendOrigin
-        : 'http://localhost:5001');
+      backendOrigin ||
+      'http://localhost:5001';
 
     return [
       {

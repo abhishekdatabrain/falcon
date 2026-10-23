@@ -306,7 +306,7 @@ export default function CartPage() {
                               title={item.quantity <= 1 ? 'Remove' : 'Decrease'}
                             >
                               {item.quantity <= 1 ? (
-                                <Trash2 className="w-3.5 h-3.5" />
+                             <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
                               ) : (
                                 <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
                               )}

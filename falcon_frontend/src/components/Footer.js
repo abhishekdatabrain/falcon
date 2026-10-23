@@ -32,9 +32,14 @@ export default function Footer() {
           <div className="lg:col-span-4 space-y-6">
             
             {/* Logo */}
-            <Link href="/" className="inline-flex items-center gap-1.5 group">
-              <span className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-heading">Logo</span>
-              <Leaf className="w-6 h-6 text-[#05A764] fill-[#05A764] -mt-1 group-hover:rotate-12 transition-transform" />
+            <Link href="/" className="inline-block group">
+              <div className="bg-white px-3 py-1.5 rounded-2xl shadow-sm inline-block group-hover:shadow-md transition-all">
+                <img
+                  src="/logo.png"
+                  alt="saqrcart"
+                  className="h-9 sm:h-10 w-auto object-contain"
+                />
+              </div>
             </Link>
 
             {/* Tagline */}
@@ -184,7 +189,7 @@ export default function Footer() {
         {/* Bottom Copyright & Language Switcher Bar */}
         <div className="pt-8 mt-12 border-t border-emerald-900/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-300 font-sans">
           <p className="text-center sm:text-left rtl:sm:text-right">
-            © 2026 Logo. All rights reserved.
+            © 2026 saqrcart. All rights reserved.
           </p>
 
           {/* Language Switcher */}

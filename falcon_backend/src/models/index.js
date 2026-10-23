@@ -165,8 +165,13 @@ Invoice.belongsTo(Invoice, { foreignKey: 'original_invoice_id', as: 'original_in
 Invoice.hasMany(Invoice, { foreignKey: 'original_invoice_id', as: 'credit_notes' });
 
 // --- Feedback Associations ---
+Order.hasMany(Feedback, { foreignKey: 'order_id', as: 'feedbacks', onDelete: 'CASCADE' });
 Order.hasOne(Feedback, { foreignKey: 'order_id', as: 'feedback', onDelete: 'CASCADE' });
 Feedback.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+Product.hasMany(Feedback, { foreignKey: 'product_id', as: 'feedbacks', onDelete: 'CASCADE' });
+Feedback.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
+OrderItem.hasOne(Feedback, { foreignKey: 'order_item_id', as: 'feedback', onDelete: 'CASCADE' });
+Feedback.belongsTo(OrderItem, { foreignKey: 'order_item_id', as: 'order_item' });
 
 // --- Homepage Category Showcase Associations ---
 HomepageCategorySection.hasMany(HomepageCategoryItem, { foreignKey: 'section_id', as: 'items', onDelete: 'CASCADE' });

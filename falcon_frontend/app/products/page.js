@@ -875,21 +875,21 @@ function ProductsCatalogContent() {
                         </div>
                         {/* Dynamic Rating & Reviews Row */}
                         <div className="flex items-center gap-1 text-[11px] shrink-0 font-sans">
-                          <span className="text-amber-500 font-bold text-xs">★</span>
-                          <span className="text-slate-900 font-extrabold text-[11px]">
-                            {prod.rating !== undefined && prod.rating !== null && prod.rating !== ''
-                              ? Number(prod.rating).toFixed(1)
-                              : (prod.avg_rating ? Number(prod.avg_rating).toFixed(1) : '4.8')}
-                          </span>
-                          <span className="text-slate-400 font-normal text-[10px]">
-                            ({(
-                              prod.reviews_count !== undefined && prod.reviews_count !== null
-                                ? Number(prod.reviews_count)
-                                : (prod.reviews !== undefined && prod.reviews !== null
-                                  ? Number(prod.reviews)
-                                  : (prod.review_count ? Number(prod.review_count) : 0))
-                            ).toLocaleString()})
-                          </span>
+                          {((prod.reviews_count !== undefined && prod.reviews_count !== null && Number(prod.reviews_count) > 0) || (prod.rating !== undefined && prod.rating !== null && Number(prod.rating) > 0)) ? (
+                            <>
+                              <span className="text-amber-500 font-bold text-xs">★</span>
+                              <span className="text-slate-900 font-extrabold text-[11px]">
+                                {Number(prod.rating || 0).toFixed(1)}
+                              </span>
+                              <span className="text-slate-400 font-normal text-[10px]">
+                                ({Number(prod.reviews_count || prod.reviews || prod.review_count || 0).toLocaleString()})
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-slate-400 font-medium text-[10px]">
+                              {locale === 'ar' ? '' : ''}
+                            </span>
+                          )}
                         </div>
                       </div>
 

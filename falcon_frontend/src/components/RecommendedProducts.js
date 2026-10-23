@@ -242,8 +242,9 @@ export default function RecommendedProducts() {
             const itemPrice = parseFloat(item.discount_price || item.price || 0);
             const itemMrp = parseFloat(item.price || item.mrp || item.original_price || (itemPrice * 1.25));
 
-            const ratingVal = item.rating !== undefined && item.rating !== null && item.rating !== '' ? Number(item.rating).toFixed(1) : '4.9';
-            const reviewsVal = item.reviews_count !== undefined && item.reviews_count !== null ? Number(item.reviews_count).toLocaleString() : '1,420';
+            const hasRatings = (item.reviews_count !== undefined && item.reviews_count !== null && Number(item.reviews_count) > 0) || (item.rating !== undefined && item.rating !== null && Number(item.rating) > 0);
+            const ratingVal = hasRatings && item.rating ? Number(item.rating).toFixed(1) : null;
+            const reviewsVal = hasRatings ? Number(item.reviews_count || item.reviews || 0).toLocaleString() : 0;
             const isOutOfStock = item.stock_quantity !== undefined && item.stock_quantity !== null && parseInt(item.stock_quantity, 10) <= 0;
 
             // Check if product is multi-variant
@@ -341,9 +342,17 @@ export default function RecommendedProducts() {
 
                     {/* Rating Row */}
                     <div className="flex items-center gap-1 mb-2">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
-                      <span className="font-bold text-xs sm:text-sm text-slate-900">{ratingVal}</span>
-                      <span className="text-xs sm:text-sm text-slate-400">({reviewsVal})</span>
+                      {hasRatings ? (
+                        <>
+                          <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                          <span className="font-bold text-xs sm:text-sm text-slate-900">{ratingVal}</span>
+                          <span className="text-xs sm:text-sm text-slate-400">({reviewsVal})</span>
+                        </>
+                      ) : (
+                        <span className="text-xs sm:text-sm text-slate-400 font-medium">
+                          {locale === 'ar' ? '' : ''}
+                        </span>
+                      )}
                     </div>
 
                     {/* Subtle Divider Line */}
@@ -459,9 +468,17 @@ export default function RecommendedProducts() {
 
                   {/* Rating Row */}
                   <div className="flex items-center gap-1 mb-2">
-                    <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
-                    <span className="font-bold text-xs sm:text-sm text-slate-700">{ratingVal}</span>
-                    <span className="text-xs sm:text-sm text-slate-400">({reviewsVal})</span>
+                    {hasRatings ? (
+                      <>
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                        <span className="font-bold text-xs sm:text-sm text-slate-700">{ratingVal}</span>
+                        <span className="text-xs sm:text-sm text-slate-400">({reviewsVal})</span>
+                      </>
+                    ) : (
+                      <span className="text-xs sm:text-sm text-slate-400 font-medium">
+                        {locale === 'ar' ? '' : ''}
+                      </span>
+                    )}
                   </div>
 
                   {/* Subtle Divider Line */}

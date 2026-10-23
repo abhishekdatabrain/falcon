@@ -247,9 +247,36 @@ export default function ProductCard({ product, categoryTitle = '' }) {
           {/* Rating */}
           <div className="flex items-center justify-between text-[11px] py-1 border-t border-slate-100">
             <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
-              <span className="text-amber-400 font-bold">★</span>
-              <span className="font-bold text-slate-700">{product.rating ? Number(product.rating).toFixed(1) : '4.8'}</span>
-              <span className="text-slate-400">({(product.reviews_count || 120).toLocaleString()})</span>
+              {(() => {
+                const feedbacks = Array.isArray(product.feedbacks)
+                  ? product.feedbacks
+                  : (product.feedback ? [product.feedback] : []);
+
+                const hasFeedbacks = feedbacks.length > 0;
+                const feedbackRating = hasFeedbacks
+                  ? (feedbacks.reduce((sum, f) => sum + Number(f.rating || 0), 0) / feedbacks.length).toFixed(1)
+                  : (product.rating !== undefined && product.rating !== null ? Number(product.rating).toFixed(1) : null);
+
+                const feedbackCount = hasFeedbacks
+                  ? feedbacks.length
+                  : (product.reviews_count !== undefined && product.reviews_count !== null ? Number(product.reviews_count) : (product.reviews ? Number(product.reviews) : 0));
+
+                if (feedbackRating && feedbackCount > 0) {
+                  return (
+                    <>
+                      <span className="text-amber-400 font-bold">★</span>
+                      <span className="font-bold text-slate-700">{feedbackRating}</span>
+                      <span className="text-slate-400">({feedbackCount.toLocaleString()})</span>
+                    </>
+                  );
+                }
+
+                return (
+                  <span className="text-slate-400 font-medium text-[10px]">
+                    {locale === 'ar' ? '' : ''}
+                  </span>
+                );
+              })()}
             </div>
             <span className="text-[10px] text-emerald-700 font-semibold">
               {locale === 'ar' ? 'شامل الضريبة' : 'VAT incl.'}

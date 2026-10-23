@@ -10,9 +10,26 @@ const Feedback = sequelize.define('Feedback', {
   order_id: {
     type: DataTypes.UUID,
     allowNull: false,
-    unique: true,
     references: {
       model: 'orders',
+      key: 'id',
+    },
+    onDelete: 'CASCADE',
+  },
+  order_item_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'order_items',
+      key: 'id',
+    },
+    onDelete: 'CASCADE',
+  },
+  product_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'products',
       key: 'id',
     },
     onDelete: 'CASCADE',
@@ -44,6 +61,8 @@ const Feedback = sequelize.define('Feedback', {
   underscored: true,
   indexes: [
     { fields: ['order_id'] },
+    { fields: ['order_item_id'] },
+    { fields: ['product_id'] },
     { fields: ['customer_id'] },
     { fields: ['rating'] },
   ],
