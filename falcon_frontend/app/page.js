@@ -371,8 +371,12 @@ function SubCategorySlider({ title, items, locale }) {
                   className="w-full h-full max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 pointer-events-none"
                   loading="lazy"
                   onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = getImageUrl('/subcategories/laundry_care.png');
+                    if (e.currentTarget.dataset.errorHandled) {
+                      e.currentTarget.style.opacity = '0';
+                      return;
+                    }
+                    e.currentTarget.dataset.errorHandled = 'true';
+                    e.currentTarget.src = '/subcategories/laundry_care.png';
                   }}
                 />
               </div>
@@ -408,30 +412,8 @@ export default function HomePage() {
   const [canScrollPopularRight, setCanScrollPopularRight] = useState(true);
   const [products, setProducts] = useState([]);
   const [bestDealsProducts, setBestDealsProducts] = useState([]);
-  const [heroBanners, setHeroBanners] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('falcon_hero_banners');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch (e) { }
-    }
-    return [];
-  });
-  const [heroLoaded, setHeroLoaded] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('falcon_hero_banners');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return true;
-        }
-      } catch (e) { }
-    }
-    return false;
-  });
+  const [heroBanners, setHeroBanners] = useState([]);
+  const [heroLoaded, setHeroLoaded] = useState(false);
   const [promoBanners, setPromoBanners] = useState([]);
   const [categorySections, setCategorySections] = useState([]);
   const [cmsSections, setCmsSections] = useState([]);
@@ -526,6 +508,17 @@ export default function HomePage() {
 
   // Fast priority fetch for Hero Banner to eliminate any render delay
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem('falcon_hero_banners');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setHeroBanners(parsed);
+          setHeroLoaded(true);
+        }
+      }
+    } catch (e) { }
+
     let isSubscribed = true;
     fetchApi('/hero-banners')
       .then((heroRes) => {

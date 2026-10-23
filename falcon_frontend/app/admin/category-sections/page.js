@@ -380,7 +380,7 @@ export default function AdminCategorySectionsPage() {
 
   // Helper to format image source safely
   const resolveImgSrc = (url) => {
-    if (!url) return getImageUrl('/subcategories/laundry_care.png');
+    if (!url) return '/subcategories/laundry_care.png';
     if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('http')) {
       return url;
     }
@@ -650,8 +650,12 @@ export default function AdminCategorySectionsPage() {
                           alt={item.title_en}
                           className="w-full h-full max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 pointer-events-none"
                           onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = getImageUrl('/subcategories/laundry_care.png');
+                            if (e.currentTarget.dataset.errorHandled) {
+                              e.currentTarget.style.opacity = '0';
+                              return;
+                            }
+                            e.currentTarget.dataset.errorHandled = 'true';
+                            e.currentTarget.src = '/subcategories/laundry_care.png';
                           }}
                         />
                         {!item.is_active && (
@@ -1180,8 +1184,12 @@ export default function AdminCategorySectionsPage() {
                               alt={item.title_en}
                               className="w-full h-full max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 pointer-events-none"
                               onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = getImageUrl('/subcategories/laundry_care.png');
+                                if (e.currentTarget.dataset.errorHandled) {
+                                  e.currentTarget.style.opacity = '0';
+                                  return;
+                                }
+                                e.currentTarget.dataset.errorHandled = 'true';
+                                e.currentTarget.src = '/subcategories/laundry_care.png';
                               }}
                             />
                           </div>
