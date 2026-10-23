@@ -25,6 +25,7 @@ const deliverySlotRoutes = require('./deliverySlotRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/customers', customerRoutes);
+router.use('/customer', customerRoutes);
 router.use('/products', productRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/cart', cartRoutes);

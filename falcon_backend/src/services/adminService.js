@@ -1,4 +1,4 @@
-const { User, Driver, Customer, Admin, Order, Payment, Product, Delivery, DriverAssignment, OrderStatusHistory, DriverLocation, Feedback, sequelize } = require('../models');
+const { User, Driver, Customer, Admin, Order, Payment, Product, Delivery, DriverAssignment, OrderStatusHistory, DriverLocation, Feedback, Address, OrderItem, sequelize } = require('../models');
 const { hashPassword } = require('../utils/password');
 const ROLES = require('../constants/roles');
 const { ORDER_STATUS } = require('../constants/orderStatus');
@@ -244,12 +244,24 @@ class AdminService {
   }
 
   async assignDriverToOrder(orderId, driverId, adminId, userId, reassignmentReason = '') {
-    const order = await Order.findByPk(orderId);
+    const order = await Order.findByPk(orderId, {
+      include: [
+        {
+          model: Customer,
+          as: 'customer',
+          include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile'] }],
+        },
+        { model: Address, as: 'address' },
+        { model: OrderItem, as: 'items' },
+      ],
+    });
     if (!order) {
       throw new Error('Order not found');
     }
 
-    const driver = await Driver.findByPk(driverId);
+    const driver = await Driver.findByPk(driverId, {
+      include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile'] }],
+    });
     if (!driver || driver.driver_status !== DRIVER_STATUS.ACTIVE) {
       throw new Error('Selected driver is not active or valid');
     }
@@ -363,6 +375,32 @@ class AdminService {
         driverId,
       },
     });
+
+    // Send email to customer with driver assignment details and delivery verification OTP (PIN)
+    const emailService = require('./emailService');
+    const logger = require('../utils/logger');
+    const finalOtp = result.otp || generatedOtp;
+
+    emailService.sendDriverAssignedEmail({
+      order,
+      driver,
+      otp: finalOtp,
+    }).catch((err) => {
+      logger.error('Failed to send driver assigned email to customer:', err);
+    });
+
+    // In-app notification for the customer
+    const customerUserId = order.customer?.user_id || order.customer?.user?.id;
+    if (customerUserId) {
+      notificationService.createNotification(
+        customerUserId,
+        'DRIVER_ASSIGNED',
+        `Driver Assigned • Handover PIN: ${finalOtp}`,
+        `تم تعيين سائق للطلب • رمز التسليم: ${finalOtp}`,
+        `Your order #${order.order_number} has been assigned to a driver. Your delivery verification PIN is ${finalOtp}. Please share this code with the driver upon delivery.`,
+        `تم تعيين سائق لطلبك #${order.order_number}. رمز التحقق الخاص بك هو ${finalOtp}. يرجى مشاركة هذا الرمز مع السائق عند الاستلام.`
+      ).catch(() => {});
+    }
 
     return result;
   }

@@ -62,6 +62,73 @@ export default function OrderDetailsPage() {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewsMap, setReviewsMap] = useState({});
 
+  // Cancellation Modal State & Logic (Requirements 1, 2, 3, 4, 7)
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('Found a cheaper price elsewhere');
+  const [cancellationRemarks, setCancellationRemarks] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const CANCELLATION_REASONS = [
+    { value: 'Found a cheaper price elsewhere', labelEn: 'Found a cheaper price elsewhere', labelAr: 'وجدت سعر أفضل في مكان آخر' },
+    { value: 'Ordered by mistake', labelEn: 'Ordered by mistake', labelAr: 'تم الطلب بالخطأ' },
+    { value: 'Change of mind / Need to modify items', labelEn: 'Change of mind / Need to modify items', labelAr: 'تغيير رأي / رغبة في تعديل المنتجات' },
+    { value: 'Delivery slot or time conflict', labelEn: 'Delivery slot or time conflict', labelAr: 'وقت التوصيل أو الفترة غير مناسبة' },
+    { value: 'Incorrect delivery address or contact selected', labelEn: 'Incorrect delivery address or contact selected', labelAr: 'تم اختيار عنوان أو بيانات اتصال خاطئة' },
+    { value: 'Payment method or billing issue', labelEn: 'Payment method or billing issue', labelAr: 'مشكلة في وسيلة الدفع أو الفوترة' },
+    { value: 'Other reason', labelEn: 'Other reason', labelAr: 'سبب آخر' },
+  ];
+
+  const isCancelEligible = (status) => {
+    if (!status) return false;
+    const s = String(status).toUpperCase();
+    return [
+      'PENDING',
+      'PENDING_PAYMENT',
+      'PAYMENT_SUBMITTED',
+      'CONFIRMED',
+      'PAYMENT_VERIFIED',
+      'PROCESSING',
+    ].includes(s);
+  };
+
+  const handleCancelOrder = async (e) => {
+    if (e) e.preventDefault();
+    const targetOrderId = order?.id || id;
+    if (!targetOrderId) return;
+
+    try {
+      setIsCancelling(true);
+      const res = await fetchApi(`/orders/${targetOrderId}/cancel`, {
+        method: 'POST',
+        body: {
+          reason: cancellationReason,
+          remarks: cancellationRemarks.trim() || undefined,
+        },
+      });
+
+      if (res && res.success) {
+        showToast(
+          locale === 'ar'
+            ? 'تم إلغاء الطلب بنجاح وتم تحديث حالته.'
+            : 'Order has been cancelled successfully.',
+          'success'
+        );
+        setShowCancelModal(false);
+        await loadOrderDetails();
+      } else {
+        throw new Error(res?.message || 'Failed to cancel order');
+      }
+    } catch (err) {
+      console.error('Cancellation error:', err);
+      showToast(
+        err?.message || (locale === 'ar' ? 'تعذر إلغاء الطلب' : 'Failed to cancel order'),
+        'error'
+      );
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const formatPlacedDate = (dateInput) => {
     if (!dateInput) return locale === 'ar' ? 'اليوم، 2:15 م' : 'Today, 2:15 PM';
     try {
@@ -278,6 +345,13 @@ export default function OrderDetailsPage() {
   // Status Badge Configuration
   const getStatusBadge = (status) => {
     switch (status) {
+      case 'CANCELLED':
+        return {
+          label: locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled',
+          bg: 'bg-rose-50 text-rose-800 border-rose-200/90',
+          dot: 'bg-rose-500',
+          step: 0,
+        };
       case 'DELIVERED':
         return {
           label: locale === 'ar' ? 'تم التوصيل بنجاح' : 'Delivered',
@@ -421,91 +495,203 @@ export default function OrderDetailsPage() {
               </div>
             </div>
 
-          </div>
-
-          {/* ================= 4-STEP LIFECYCLE PROGRESS BAR ================= */}
-          <div className="mt-8 pt-6 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-4">
-
-              <span className="text-xs font-bold text-slate-600 font-sans">
-                {currentStatus === 'DELIVERED'
-                  ? (locale === 'ar' ? 'اكتملت جميع المراحل' : 'All steps completed')
-                  : (locale === 'ar' ? `المرحلة ${badge.step} من 4` : `Step ${badge.step} of 4`)}
+            {/* Right Status Badge & Actions (Requirements 1, 2, 8) */}
+            <div className="flex flex-wrap items-center gap-3">
+              <span className={`px-3.5 py-1.5 rounded-full text-xs font-black border flex items-center gap-2 shadow-2xs font-sans ${badge.bg}`}>
+                <span className={`w-2 h-2 rounded-full ${badge.dot}`} />
+                <span>{badge.label}</span>
               </span>
+
+              {isCancelEligible(currentStatus) && (
+                <button
+                  type="button"
+                  onClick={() => setShowCancelModal(true)}
+                  className="px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98 font-sans"
+                >
+                  <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>{locale === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}</span>
+                </button>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative">
-
-              {/* Step 1: Placed */}
-              <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 1 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-                }`}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 1 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                    }`}>
-                    {badge.step > 1 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '1'}
-                  </div>
-                  <span className="text-xs font-extrabold truncate">
-                    {locale === 'ar' ? 'إنشاء الطلب' : 'Order Placed'}
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-500 font-medium">
-                  {order?.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Verified'}
-                </p>
-              </div>
-
-              {/* Step 2: Order Prepared */}
-              <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 2 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-                }`}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 2 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                    }`}>
-                    {badge.step > 2 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '2'}
-                  </div>
-                  <span className="text-xs font-extrabold truncate">
-                    {locale === 'ar' ? 'التجهيز والتبريد' : 'Order Prepared'}
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-500 font-medium">
-                  {badge.step >= 2 ? 'Hub Ready' : 'Cold-chain tote'}
-                </p>
-              </div>
-
-              {/* Step 3: Out for Delivery */}
-              <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 3 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-                }`}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 3 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                    }`}>
-                    {badge.step > 3 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '3'}
-                  </div>
-                  <span className="text-xs font-extrabold truncate">
-                    {locale === 'ar' ? 'خرج للتوصيل' : 'Out for Delivery'}
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-500 font-medium">
-                  {badge.step >= 3 ? 'Van en route' : 'Express courier'}
-                </p>
-              </div>
-
-              {/* Step 4: Delivered */}
-              <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 4 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-                }`}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 4 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                    }`}>
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
-                  </div>
-                  <span className="text-xs font-extrabold truncate">
-                    {locale === 'ar' ? 'تم التوصيل' : 'Delivered'}
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-500 font-medium">
-                  {badge.step >= 4 ? 'Completed' : 'Contactless handoff'}
-                </p>
-              </div>
-
-            </div>
           </div>
+
+          {/* ================= CANCELLATION DETAILS OR 4-STEP PROGRESS BAR ================= */}
+          {currentStatus === 'CANCELLED' ? (
+            /* Dedicated Order Cancelled Card (Requirement 8) */
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <div className="bg-rose-50/70 border border-rose-200/90 rounded-3xl p-5 sm:p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-rose-200/70 pb-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                      <X className="w-5 h-5 stroke-[3]" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-rose-950 font-sans">
+                        {locale === 'ar' ? 'تم إلغاء هذا الطلب' : 'Order Cancelled'}
+                      </h3>
+                      <p className="text-xs text-rose-700 font-medium">
+                        {locale === 'ar'
+                          ? 'تم تسجيل طلب الإلغاء بنجاح وإعادة الأصناف إلى المخزون المتاح.'
+                          : 'This order was cancelled. Items have been released back to fresh inventory.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="px-3 py-1 rounded-full text-[11px] font-black bg-rose-200/80 text-rose-900 uppercase tracking-wider self-start sm:self-auto font-mono">
+                    CANCELLED
+                  </span>
+                </div>
+
+                {/* Cancellation Details Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
+                  {/* Cancellation Reason */}
+                  <div className="bg-white/90 rounded-2xl p-4 border border-rose-100 space-y-1.5">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider font-sans">
+                      {locale === 'ar' ? 'سبب الإلغاء' : 'Cancellation Reason'}
+                    </span>
+                    <p className="font-extrabold text-slate-900 text-xs sm:text-sm">
+                      {order?.cancellation_reason || (locale === 'ar' ? 'طلب العميل إلغاء الطلب' : 'Customer requested cancellation')}
+                    </p>
+                    {order?.cancellation_remarks && (
+                      <p className="text-[11px] text-slate-500 italic mt-1 font-sans">
+                        "{order.cancellation_remarks}"
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Cancelled Date & Time */}
+                  <div className="bg-white/90 rounded-2xl p-4 border border-rose-100 space-y-1.5">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider font-sans">
+                      {locale === 'ar' ? 'وقت الإلغاء' : 'Cancelled At'}
+                    </span>
+                    <p className="font-extrabold text-slate-900 text-xs sm:text-sm">
+                      {order?.cancelled_at ? formatPlacedDate(order.cancelled_at) : formatPlacedDate(order?.updatedAt)}
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      {locale === 'ar' ? 'بواسطة العميل' : 'Initiated by customer'}
+                    </p>
+                  </div>
+
+                  {/* Refund Status */}
+                  <div className="bg-white/90 rounded-2xl p-4 border border-rose-100 space-y-1.5">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider font-sans">
+                      {locale === 'ar' ? 'حالة الاسترداد المالي' : 'Refund Status'}
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`px-2.5 py-0.5 rounded-full font-black text-[10px] ${
+                        order?.refund_status === 'REFUNDED'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : order?.refund_status === 'PENDING_REFUND'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                          : 'bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}>
+                        {order?.refund_status === 'REFUNDED'
+                          ? (locale === 'ar' ? 'تم الاسترداد' : 'REFUNDED')
+                          : order?.refund_status === 'PENDING_REFUND'
+                          ? (locale === 'ar' ? 'قيد المعالجة' : 'PENDING REFUND')
+                          : (locale === 'ar' ? 'غير مطلوب (دفع عند الاستلام)' : 'NOT APPLICABLE')}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 font-medium mt-1 leading-snug">
+                      {order?.refund_status === 'REFUNDED'
+                        ? (locale === 'ar'
+                          ? `تمت معالجة استرداد ${grandTotalVal.toFixed(2)} ر.س إلى وسيلة الدفع الأصلية.`
+                          : `Refund of SAR ${grandTotalVal.toFixed(2)} processed to original payment method.`)
+                        : ((order?.payment_method || '').toUpperCase() === 'COD' || order?.payment?.payment_method === 'COD')
+                        ? (locale === 'ar'
+                          ? 'دفع عند الاستلام: لم يتم تحصيل أي مبلغ مالي.'
+                          : 'Cash on Delivery: No charge was made.')
+                        : (locale === 'ar'
+                          ? 'تم الإلغاء قبل تأكيد الخصم.'
+                          : 'Cancelled prior to charge capture.')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ================= 4-STEP LIFECYCLE PROGRESS BAR ================= */
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-bold text-slate-600 font-sans">
+                  {currentStatus === 'DELIVERED'
+                    ? (locale === 'ar' ? 'اكتملت جميع المراحل' : 'All steps completed')
+                    : (locale === 'ar' ? `المرحلة ${badge.step} من 4` : `Step ${badge.step} of 4`)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative">
+                {/* Step 1: Placed */}
+                <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 1 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
+                  }`}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 1 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
+                      }`}>
+                      {badge.step > 1 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '1'}
+                    </div>
+                    <span className="text-xs font-extrabold truncate">
+                      {locale === 'ar' ? 'إنشاء الطلب' : 'Order Placed'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    {order?.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Verified'}
+                  </p>
+                </div>
+
+                {/* Step 2: Order Prepared */}
+                <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 2 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
+                  }`}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 2 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
+                      }`}>
+                      {badge.step > 2 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '2'}
+                    </div>
+                    <span className="text-xs font-extrabold truncate">
+                      {locale === 'ar' ? 'التجهيز والتبريد' : 'Order Prepared'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    {badge.step >= 2 ? 'Hub Ready' : 'Cold-chain tote'}
+                  </p>
+                </div>
+
+                {/* Step 3: Out for Delivery */}
+                <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 3 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
+                  }`}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 3 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
+                      }`}>
+                      {badge.step > 3 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '3'}
+                    </div>
+                    <span className="text-xs font-extrabold truncate">
+                      {locale === 'ar' ? 'خرج للتوصيل' : 'Out for Delivery'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    {badge.step >= 3 ? 'Van en route' : 'Express courier'}
+                  </p>
+                </div>
+
+                {/* Step 4: Delivered */}
+                <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 4 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
+                  }`}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 4 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
+                      }`}>
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                    <span className="text-xs font-extrabold truncate">
+                      {locale === 'ar' ? 'تم التوصيل' : 'Delivered'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    {badge.step >= 4 ? 'Completed' : 'Contactless handoff'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
 
@@ -1058,6 +1244,122 @@ export default function OrderDetailsPage() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ================= ORDER CANCELLATION CONFIRMATION MODAL (Requirements 1, 2, 3, 4, 7) ================= */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-slate-200 shadow-2xl space-y-5 font-sans animate-in fade-in zoom-in-95 duration-150">
+            
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+              <div className="flex items-center gap-2.5 text-rose-700">
+                <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-900">
+                    {locale === 'ar' ? 'تأكيد إلغاء الطلب' : 'Cancel Order Confirmation'}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono font-bold">
+                    #{order?.order_number || id}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={() => setShowCancelModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCancelOrder} className="space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 text-xs text-amber-900 space-y-1">
+                <p className="font-extrabold flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    {locale === 'ar'
+                      ? 'هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟'
+                      : 'Are you sure you want to cancel this order?'}
+                  </span>
+                </p>
+                <p className="text-[11px] text-amber-800/90 leading-relaxed font-medium">
+                  {locale === 'ar'
+                    ? 'سيتم إلغاء تجهيز المنتجات وإعادة حجز المخزون فوراً. للطلبات المدفوعة مسبقاً، سيتم بدء استرداد المبلغ إلى وسيلة الدفع الخاصة بك.'
+                    : 'Your reserved items will be released back to active stock. For prepaid orders, a refund will be initiated back to your payment method.'}
+                </p>
+              </div>
+
+              {/* Cancellation Reason Dropdown */}
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1.5 font-sans">
+                  {locale === 'ar' ? 'سبب الإلغاء *' : 'Reason for Cancellation *'}
+                </label>
+                <select
+                  value={cancellationReason}
+                  onChange={(e) => setCancellationReason(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-hidden focus:border-[#043927] focus:bg-white cursor-pointer transition-colors"
+                >
+                  {CANCELLATION_REASONS.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {locale === 'ar' ? r.labelAr : r.labelEn}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Optional Remarks */}
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1.5 font-sans">
+                  {locale === 'ar' ? 'ملاحظات إضافية (اختياري)' : 'Additional Remarks (Optional)'}
+                </label>
+                <textarea
+                  rows={3}
+                  value={cancellationRemarks}
+                  onChange={(e) => setCancellationRemarks(e.target.value)}
+                  placeholder={
+                    locale === 'ar'
+                      ? 'أخبرنا بمزيد من التفاصيل لمساعدتنا على تحسين الخدمة...'
+                      : 'Provide any additional details or feedback to help us improve...'
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-[#043927] focus:bg-white transition-colors"
+                  maxLength={500}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={isCancelling}
+                  onClick={() => setShowCancelModal(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold transition-colors cursor-pointer"
+                >
+                  {locale === 'ar' ? 'تراجع / الإبقاء على الطلب' : 'Keep My Order'}
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isCancelling}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400 text-white text-xs font-black transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-rose-600/20 active:scale-98"
+                >
+                  {isCancelling ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>{locale === 'ar' ? 'جاري الإلغاء...' : 'Cancelling...'}</span>
+                    </>
+                  ) : (
+                    <span>{locale === 'ar' ? 'تأكيد إلغاء الطلب' : 'Confirm Cancellation'}</span>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

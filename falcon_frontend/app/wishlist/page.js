@@ -16,7 +16,6 @@ import {
   Sliders,
   Package,
   MapPin,
-  CreditCard,
   User,
   Bell,
   Headphones,
@@ -376,16 +375,6 @@ export default function WishlistPage() {
           <div className="lg:col-span-3 space-y-4">
             <div className="bg-white rounded-3xl p-3 border border-slate-200/90 shadow-xs space-y-1 text-xs font-sans">
               
-              <Link
-                href="/profile"
-                className="flex items-center justify-between p-3 rounded-2xl text-slate-600 hover:bg-slate-50 transition-colors font-bold"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Sliders className="w-4 h-4 text-slate-400" />
-                  <span>{locale === 'ar' ? 'لوحة المتابعة' : 'Dashboard Overview'}</span>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-300 rtl:rotate-180" />
-              </Link>
 
               <Link
                 href="/orders"
@@ -434,17 +423,6 @@ export default function WishlistPage() {
               </Link>
 
               <Link
-                href="/profile#payment"
-                className="flex items-center justify-between p-3 rounded-2xl text-slate-600 hover:bg-slate-50 transition-colors font-bold"
-              >
-                <div className="flex items-center gap-2.5">
-                  <CreditCard className="w-4 h-4 text-slate-400" />
-                  <span>{locale === 'ar' ? 'طرق الدفع' : 'Payment Methods'}</span>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-300 rtl:rotate-180" />
-              </Link>
-
-              <Link
                 href="/profile"
                 className="flex items-center justify-between p-3 rounded-2xl text-slate-600 hover:bg-slate-50 transition-colors font-bold"
               >
@@ -477,18 +455,6 @@ export default function WishlistPage() {
                 <ChevronRight className="w-3.5 h-3.5 text-slate-300 rtl:rotate-180" />
               </Link>
 
-              {user && (
-                <div className="pt-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className="w-full flex items-center gap-2.5 p-3 rounded-2xl text-xs font-extrabold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                  >
-                    <LogOut className="w-4 h-4 text-rose-500" />
-                    <span>{locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}</span>
-                  </button>
-                </div>
-              )}
 
             </div>
 

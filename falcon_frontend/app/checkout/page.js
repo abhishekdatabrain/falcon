@@ -981,39 +981,7 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* Delivery Instructions for Driver */}
-              <div className="space-y-3 pt-2">
-                <label className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5 font-sans">
-                  <Truck className="w-4 h-4 text-slate-700" />
-                  <span>Delivery Instructions for Driver</span>
-                </label>
-
-                {/* Suggestion Pills */}
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {['+ Leave at front door', '+ Ring doorbell', '+ Call on arrival'].map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() =>
-                        setDriverInstructions((prev) =>
-                          prev ? `${prev}, ${preset.replace('+ ', '')}` : preset.replace('+ ', '')
-                        )
-                      }
-                      className="bg-white hover:bg-slate-100 border border-slate-200 rounded-full px-3 py-1 text-xs font-semibold text-slate-700 cursor-pointer transition-colors font-sans"
-                    >
-                      {preset}
-                    </button>
-                  ))}
-                </div>
-
-                <textarea
-                  rows={2}
-                  value={driverInstructions}
-                  onChange={(e) => setDriverInstructions(e.target.value)}
-                  placeholder="e.g. Villa 4B, please ring gate buzzer or place inside chilled delivery box near entrance..."
-                  className="w-full bg-[#F5F6F8] rounded-xl p-3 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 border border-slate-200/80 focus:outline-none focus:bg-white focus:border-slate-300 transition-all font-sans"
-                />
-              </div>
+             
             </div>
           </div>
 

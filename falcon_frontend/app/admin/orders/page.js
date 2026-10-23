@@ -1299,7 +1299,6 @@ export default function AdminOrdersPage() {
                   <option value="DELIVERED">DELIVERED</option>
                   <option value="DELIVERY_FAILED">DELIVERY FAILED</option>
                   <option value="RETURNED">RETURNED</option>
-                  <option value="CANCELLED">CANCELLED</option>
                 </select>
               </div>
 

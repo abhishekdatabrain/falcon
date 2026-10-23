@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/src/contexts/LanguageContext';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useWishlist } from '@/src/contexts/WishlistContext';
 import { useToast } from '@/src/contexts/ToastContext';
 import { fetchApi, getImageUrl } from '@/src/services/api';
 import {
@@ -15,7 +16,6 @@ import {
   Truck,
   Heart,
   MapPin,
-  CreditCard,
   Bell,
   Headphones,
   LogOut,
@@ -41,22 +41,12 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
-const DIETARY_OPTIONS = [
-  { key: 'halal', label: '100% Halal Certified', alert: false },
-  { key: 'organic', label: 'Organic & Pesticide-Free', alert: false },
-  { key: 'saudi_produce', label: 'Locally Sourced Saudi Produce', alert: false },
-  { key: 'nut_alert', label: 'Nut Allergy Alert', alert: true },
-  { key: 'gluten_free', label: 'Gluten-Free Friendly', alert: false },
-  { key: 'dairy_free', label: 'Dairy-Free / Lactose-Free', alert: false },
-  { key: 'keto', label: 'Keto & Low Carb', alert: false },
-  { key: 'diabetic', label: 'Sugar-Free / Diabetic Friendly', alert: false },
-];
-
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
 
 export default function ProfilePage() {
   const { locale } = useLanguage();
   const { user, loading: authLoading, logout, checkUser } = useAuth();
+  const { wishlist } = useWishlist();
   const { showToast } = useToast();
 
   // Loading & Action states
@@ -73,20 +63,16 @@ export default function ProfilePage() {
   const [gender, setGender] = useState('Female');
   const [interfaceLang, setInterfaceLang] = useState('English (US) - Primary');
   const [nationalId, setNationalId] = useState('');
-  const [avatar, setAvatar] = useState(DEFAULT_AVATAR);
+  const [avatar, setAvatar] = useState('');
   const [avatarRelative, setAvatarRelative] = useState('');
+
+  // Dynamic Sidebar & Activity Counts
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
+  const [addressesCount, setAddressesCount] = useState(0);
+  const [unreadNotifsCount, setUnreadNotifsCount] = useState(0);
 
   // Security Toggles
   const [tfaEnabled, setTfaEnabled] = useState(true);
-
-  // Dietary Preferences
-  const [dietaryFilters, setDietaryFilters] = useState([
-    'halal',
-    'organic',
-    'saudi_produce',
-    'nut_alert',
-  ]);
-  const [householdSize, setHouseholdSize] = useState('Family (3-4)');
 
   // Communication Toggles
   const [whatsappAlerts, setWhatsappAlerts] = useState(true);
@@ -97,16 +83,16 @@ export default function ProfilePage() {
     totalOrders: 0,
     activeOrders: 0,
     totalSpent: 0,
-    martPoints: '',
-    martPointsVal: '',
+    martPoints: 0,
+    martPointsVal: '0.00',
     tier: '',
     tierTitle: '',
     wishlistCount: 0,
     addressesCount: 0,
-    tierSavings: 45,
+    tierSavings: 0,
   });
 
-  // Fetch Profile from Backend
+  // Fetch Profile & Real-Time Stats from Backend
   const loadProfile = useCallback(async () => {
     if (!user) {
       setInitialLoading(false);
@@ -115,13 +101,19 @@ export default function ProfilePage() {
 
     try {
       setInitialLoading(true);
-      const res = await fetchApi('/customer/profile');
-      if (res.success && res.data?.profile) {
-        const p = res.data.profile;
-        setFirstName(p.first_name || p.user?.first_name || '');
-        setLastName(p.last_name || p.user?.last_name || '');
-        setEmail(p.user?.email || '');
-        setMobile(p.user?.mobile || '');
+      const [profRes, ordRes, addrRes, notifRes] = await Promise.all([
+        fetchApi('/customers/profile').catch(() => null),
+        fetchApi('/orders/my-orders').catch(() => null),
+        fetchApi('/customers/addresses').catch(() => null),
+        fetchApi('/notifications').catch(() => null),
+      ]);
+
+      if (profRes && profRes.success && profRes.data?.profile) {
+        const p = profRes.data.profile;
+        setFirstName(p.first_name || p.user?.first_name || user?.first_name || user?.name?.split(' ')[0] || '');
+        setLastName(p.last_name || p.user?.last_name || user?.last_name || (user?.name ? user.name.split(' ').slice(1).join(' ') : ''));
+        setEmail(p.user?.email || user?.email || '');
+        setMobile(p.user?.mobile || p.mobile || user?.mobile || '');
         setDob(p.dob || '');
         setGender(p.gender || 'Female');
         setNationalId(p.national_id || '');
@@ -130,17 +122,11 @@ export default function ProfilePage() {
           setAvatarRelative(p.avatar_url);
           setAvatar(getImageUrl(p.avatar_url));
         } else {
-          setAvatar(DEFAULT_AVATAR);
+          setAvatar('');
           setAvatarRelative('');
         }
 
         if (p.preferences && typeof p.preferences === 'object') {
-          if (Array.isArray(p.preferences.dietaryFilters)) {
-            setDietaryFilters(p.preferences.dietaryFilters);
-          }
-          if (p.preferences.householdSize) {
-            setHouseholdSize(p.preferences.householdSize);
-          }
           if (p.preferences.interfaceLang) {
             setInterfaceLang(p.preferences.interfaceLang);
           }
@@ -158,11 +144,32 @@ export default function ProfilePage() {
         if (p.stats) {
           setStats(p.stats);
         }
+      } else if (user) {
+        setFirstName(user?.first_name || user?.name?.split(' ')[0] || '');
+        setLastName(user?.last_name || (user?.name ? user.name.split(' ').slice(1).join(' ') : ''));
+        setEmail(user?.email || '');
+        setMobile(user?.mobile || '');
+      }
+
+      if (ordRes && ordRes.success && Array.isArray(ordRes.data?.orders)) {
+        const active = ordRes.data.orders.filter((o) =>
+          ['PENDING', 'CONFIRMED', 'PROCESSING', 'ASSIGNED', 'OUT_FOR_DELIVERY'].includes(
+            (o.order_status || '').toUpperCase()
+          )
+        ).length;
+        setActiveOrdersCount(active);
+      }
+
+      if (addrRes && addrRes.success && Array.isArray(addrRes.data?.addresses)) {
+        setAddressesCount(addrRes.data.addresses.length);
+      }
+
+      if (notifRes && notifRes.success && Array.isArray(notifRes.data?.notifications)) {
+        const unread = notifRes.data.notifications.filter((n) => !n.is_read).length;
+        setUnreadNotifsCount(unread);
       }
     } catch (err) {
       console.warn('Customer profile load notice:', err.message);
-      // Fallback with user info from auth
-     
     } finally {
       setInitialLoading(false);
     }
@@ -174,14 +181,7 @@ export default function ProfilePage() {
     }
   }, [authLoading, loadProfile]);
 
-  // Dietary Toggle
-  const toggleDietaryFilter = (key) => {
-    setDietaryFilters((prev) =>
-      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
-    );
-  };
-
-  // Avatar Upload via POST /upload
+  // Avatar Upload via POST /upload & sync profile
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -213,7 +213,7 @@ export default function ProfilePage() {
           setAvatar(resolvedUrl);
 
           // Auto-save to customer profile
-          await fetchApi('/customer/profile', {
+          await fetchApi('/customers/profile', {
             method: 'PUT',
             body: JSON.stringify({ avatar_url: relativePath }),
           });
@@ -236,12 +236,12 @@ export default function ProfilePage() {
 
   // Remove Avatar
   const handleAvatarRemove = async () => {
-    setAvatar(DEFAULT_AVATAR);
+    setAvatar('');
     setAvatarRelative('');
 
     if (user) {
       try {
-        await fetchApi('/customer/profile', {
+        await fetchApi('/customers/profile', {
           method: 'PUT',
           body: JSON.stringify({ avatar_url: '' }),
         });
@@ -253,7 +253,7 @@ export default function ProfilePage() {
     }
   };
 
-  // Save All Profile & Preferences via PUT /customer/profile
+  // Save All Profile & Preferences via PUT /customers/profile
   const handleSave = async () => {
     if (!user) {
       showToast(
@@ -275,8 +275,6 @@ export default function ProfilePage() {
         national_id: nationalId.trim(),
         avatar_url: avatarRelative || (avatar.startsWith('http') && !avatar.includes('blob:') ? avatar : undefined),
         preferences: {
-          dietaryFilters,
-          householdSize,
           interfaceLang,
           tfaEnabled,
           whatsappAlerts,
@@ -284,7 +282,7 @@ export default function ProfilePage() {
         },
       };
 
-      const res = await fetchApi('/customer/profile', {
+      const res = await fetchApi('/customers/profile', {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
@@ -317,15 +315,13 @@ export default function ProfilePage() {
     { label: 'Date of Birth', ok: Boolean(dob?.trim()) },
     { label: 'Gender Selected', ok: Boolean(gender) },
     { label: 'National ID / Nafath', ok: Boolean(nationalId?.trim()) },
-    { label: 'Profile Avatar Photo', ok: Boolean(avatar && avatar !== DEFAULT_AVATAR) },
-    { label: 'Dietary Preferences', ok: dietaryFilters.length > 0 },
-    { label: 'Household Size', ok: Boolean(householdSize) },
+    { label: 'Profile Avatar Photo', ok: Boolean(avatar) },
   ];
   const completedBadges = badgeCriteria.filter((b) => b.ok).length;
   const strengthPercentage = Math.round((completedBadges / badgeCriteria.length) * 100);
 
   // Full Name formatting
-  const fullName = [firstName, lastName].filter(Boolean).join(' ') || (user?.email ? user.email.split('@')[0] : 'Falcon Member');
+  const fullName = [firstName, lastName].filter(Boolean).join(' ') || (user?.name || (user?.email ? user.email.split('@')[0] : 'Falcon Member'));
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] font-sans text-slate-900 pb-28 select-none">
@@ -398,16 +394,17 @@ export default function ProfilePage() {
             <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-2xs space-y-4">
               <div className="flex items-center gap-3.5">
                 {/* Avatar */}
-                <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[#05A764] shadow-xs shrink-0 bg-slate-100">
-                  <img
-                    src={avatar || DEFAULT_AVATAR}
-                    alt={fullName}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = DEFAULT_AVATAR;
-                    }}
-                  />
+                <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[#05A764] shadow-xs shrink-0 bg-[#043927] text-white flex items-center justify-center font-black text-lg">
+                  {avatar ? (
+                    <img
+                      src={avatar}
+                      alt={fullName}
+                      className="w-full h-full object-cover"
+                      onError={() => setAvatar('')}
+                    />
+                  ) : (
+                    <span>{firstName ? firstName[0].toUpperCase() : (fullName ? fullName[0].toUpperCase() : 'M')}</span>
+                  )}
                   <span className="absolute bottom-0 right-0 w-4 h-4 bg-[#05A764] border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white">
                     ✓
                   </span>
@@ -418,77 +415,16 @@ export default function ProfilePage() {
                     <h2 className="font-black text-base sm:text-lg text-slate-900 truncate font-sans">
                       {fullName}
                     </h2>
-                    
                   </div>
                   <p className="text-xs text-slate-500 font-semibold truncate">
-                    {mobile || user?.mobile || (locale === 'ar' ? 'لا يوجد رقم مسجل' : '+966 5x xxx xxxx')}
+                    {mobile || user?.mobile || (locale === 'ar' ? 'لا يوجد رقم مسجل' : '+966 50 123 4567')}
                   </p>
-                 
                 </div>
               </div>
-
-              {/* Stats Split Box */}
-              {/* <div className="bg-[#F5F6F8] rounded-2xl p-3.5 flex items-center justify-around border border-slate-200/60 text-center font-sans">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
-                    MartPoints
-                  </span>
-                  <span className="text-lg font-black text-slate-900 block">
-                    {Number(stats?.martPoints || 0).toLocaleString()}
-                  </span>
-                  <span className="text-[10px] font-extrabold text-emerald-600 block">
-                    SAR {stats?.martPointsVal || '0.00'} Value
-                  </span>
-                </div>
-
-                <div className="w-px h-8 bg-slate-200" />
-
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
-                    Tier Savings
-                  </span>
-                  <span className="text-lg font-black text-slate-900 block">
-                    SAR {stats?.tierSavings || 0}
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-400 block">
-                    Year to date
-                  </span>
-                </div>
-              </div> */}
-            </div>
-
-            {/* Privilege FAST-TRACK Banner */}
-            <div className="bg-[#043927] text-white rounded-2xl p-4 space-y-1.5 relative overflow-hidden shadow-md">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Award className="w-4 h-4 text-amber-300" />
-                  <span className="font-extrabold text-xs tracking-wide font-sans">
-                    {stats?.tierTitle || ''}
-                  </span>
-                </div>
-                <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider font-sans">
-                  FAST-TRACK
-                </span>
-              </div>
-              <p className="text-xs text-emerald-100 font-medium leading-relaxed">
-                {locale === 'ar'
-                  ? 'ضمان توصيل سريع خلال 20 دقيقة في شمال الرياض مفعّل على جميع فترات تسوق الصباح.'
-                  : 'North Riyadh Express 20-Min Guarantee active on all your weekday morning grocery slots.'}
-              </p>
             </div>
 
             {/* Sidebar Navigation Menu */}
             <div className="bg-white rounded-3xl border border-slate-200/90 p-2.5 shadow-2xs space-y-1 font-sans text-xs font-bold text-slate-700">
-              <Link
-                href="/orders"
-                className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <LayoutDashboard className="w-4 h-4 text-slate-500" />
-                  <span>{locale === 'ar' ? 'لوحة المتابعة' : 'Dashboard Overview'}</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 rtl:rotate-180" />
-              </Link>
 
               <Link
                 href="/orders"
@@ -498,9 +434,15 @@ export default function ProfilePage() {
                   <ShoppingBag className="w-4 h-4 text-slate-500" />
                   <span>{locale === 'ar' ? 'طلباتي' : 'My Orders'}</span>
                 </div>
-                <span className="bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full">
-                  {stats?.activeOrders || 0} {locale === 'ar' ? 'نشط' : 'Active'}
-                </span>
+                {activeOrdersCount > 0 ? (
+                  <span className="bg-[#05A764] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                    {activeOrdersCount} {locale === 'ar' ? 'نشط' : 'Active'}
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-extrabold text-slate-400">
+                    0
+                  </span>
+                )}
               </Link>
 
               <Link
@@ -511,7 +453,7 @@ export default function ProfilePage() {
                   <Truck className="w-4 h-4 text-slate-500" />
                   <span>{locale === 'ar' ? 'تتبع الطلب المباشر' : 'Track Live Order'}</span>
                 </div>
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
               </Link>
 
               <Link
@@ -522,7 +464,9 @@ export default function ProfilePage() {
                   <Heart className="w-4 h-4 text-slate-500" />
                   <span>{locale === 'ar' ? 'المفضلة' : 'Wishlist'}</span>
                 </div>
-                <span className="text-slate-400 font-semibold">{stats?.wishlistCount || 0}</span>
+                <span className="text-[11px] font-extrabold text-slate-400">
+                  {wishlist?.length || 0}
+                </span>
               </Link>
 
               <Link
@@ -533,16 +477,10 @@ export default function ProfilePage() {
                   <MapPin className="w-4 h-4 text-slate-500" />
                   <span>{locale === 'ar' ? 'العناوين المحفوظة' : 'Saved Addresses'}</span>
                 </div>
-                <span className="text-slate-400 font-semibold">{stats?.addressesCount || 0}</span>
+                <span className="text-[11px] font-extrabold text-slate-400">
+                  {addressesCount}
+                </span>
               </Link>
-
-              <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="w-4 h-4 text-slate-500" />
-                  <span>{locale === 'ar' ? 'طرق الدفع' : 'Payment Methods'}</span>
-                </div>
-                <span className="text-[11px] text-slate-400 font-medium">Mada / Apple Pay</span>
-              </div>
 
               {/* ACTIVE ITEM: My Profile */}
               <div className="flex items-center justify-between p-3 rounded-2xl bg-[#043927] text-white font-black shadow-xs">
@@ -553,15 +491,22 @@ export default function ProfilePage() {
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer">
+              <Link
+                href="/notifications"
+                className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer text-slate-700"
+              >
                 <div className="flex items-center gap-3">
                   <Bell className="w-4 h-4 text-slate-500" />
                   <span>{locale === 'ar' ? 'الإشعارات' : 'Notifications'}</span>
                 </div>
-                <span className="bg-rose-50 text-rose-600 text-[10px] font-black px-2 py-0.5 rounded-full">
-                  2
-                </span>
-              </div>
+                {unreadNotifsCount > 0 ? (
+                  <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                    {unreadNotifsCount}
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-extrabold text-slate-400">0</span>
+                )}
+              </Link>
             </div>
 
             {/* 24/7 Concierge Support */}
@@ -577,17 +522,6 @@ export default function ProfilePage() {
               </span>
             </div>
 
-            {/* Sign Out Button */}
-            {user && (
-              <button
-                type="button"
-                onClick={() => logout && logout()}
-                className="w-full text-rose-600 hover:text-rose-700 font-bold text-xs flex items-center gap-2 px-4 py-2.5 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer font-sans"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>{locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}</span>
-              </button>
-            )}
 
             {/* Need Grocery Help? WhatsApp Box */}
             <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 flex items-center justify-between">
@@ -693,16 +627,17 @@ export default function ProfilePage() {
 
               {/* Account Avatar Edit Box */}
               <div className="flex items-center gap-4 bg-[#F5F6F8] rounded-2xl p-4 border border-slate-200/60">
-                <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-xs shrink-0 bg-slate-200">
-                  <img
-                    src={avatar || DEFAULT_AVATAR}
-                    alt="Account Avatar"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = DEFAULT_AVATAR;
-                    }}
-                  />
+                <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-xs shrink-0 bg-[#043927] text-white flex items-center justify-center font-black text-xl">
+                  {avatar ? (
+                    <img
+                      src={avatar}
+                      alt="Account Avatar"
+                      className="w-full h-full object-cover"
+                      onError={() => setAvatar('')}
+                    />
+                  ) : (
+                    <span>{firstName ? firstName[0].toUpperCase() : (fullName ? fullName[0].toUpperCase() : 'M')}</span>
+                  )}
                   <label className="absolute inset-0 bg-slate-950/40 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
                     {uploadingAvatar ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -750,7 +685,7 @@ export default function ProfilePage() {
                       />
                     </label>
 
-                    {avatar && avatar !== DEFAULT_AVATAR && (
+                    {avatar && (
                       <button
                         type="button"
                         onClick={handleAvatarRemove}
@@ -774,7 +709,7 @@ export default function ProfilePage() {
                   <input
                     type="text"
                     value={firstName}
-                    placeholder="e.g. Noura"
+                    placeholder={locale === 'ar' ? 'الاسم الأول' : 'First Name'}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
                   />
@@ -788,7 +723,7 @@ export default function ProfilePage() {
                   <input
                     type="text"
                     value={lastName}
-                    placeholder="e.g. Al-Mansoor"
+                    placeholder={locale === 'ar' ? 'اسم العائلة' : 'Last Name'}
                     onChange={(e) => setLastName(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
                   />
@@ -908,13 +843,13 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       value={nationalId}
-                      placeholder="e.g. 10xxxxxxxx"
+                      placeholder="10xxxxxxxx"
                       onChange={(e) => setNationalId(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
                     />
                     <button
                       type="button"
-                      onClick={() => showToast(locale === 'ar' ? 'تم حفظ رقم الهوية بنجاح' : 'National ID updated for tax invoicing', 'success')}
+                      onClick={handleSave}
                       className="text-xs text-[#05A764] font-extrabold hover:underline shrink-0 cursor-pointer"
                     >
                       {locale === 'ar' ? 'تحديث' : 'Update'}
@@ -1066,95 +1001,7 @@ export default function ProfilePage() {
 
             </div>
 
-            {/* SECTION 3: DIETARY PREFERENCES & ALLERGEN SAFEGUARDS */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <Leaf className="w-4 h-4 text-[#05A764]" />
-                  <div>
-                    <h2 className="font-extrabold text-sm sm:text-base text-slate-900 font-sans">
-                      {locale === 'ar' ? 'التفضيلات الغذائية وتنبيهات الحساسية' : 'Dietary Preferences & Allergen Safeguards'}
-                    </h2>
-                    <p className="text-[11px] text-slate-400 font-medium">
-                      {locale === 'ar'
-                        ? 'سنقوم تلقائياً بتصفية المنتجات وإبراز تحذيرات الحساسية في سلة التسوق الخاصة بك.'
-                        : "We'll automatically filter recommendations and highlight allergen warnings in your cart."}
-                    </p>
-                  </div>
-                </div>
 
-                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full font-sans uppercase">
-                  SMART CART FILTER
-                </span>
-              </div>
-
-              {/* Active Nutritional Filters Pills Grid */}
-              <div className="space-y-2 font-sans">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
-                  ACTIVE NUTRITIONAL FILTERS:
-                </span>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {DIETARY_OPTIONS.map((opt) => {
-                    const isSelected = dietaryFilters.includes(opt.key);
-                    let btnClass = 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold';
-                    if (isSelected) {
-                      if (opt.alert) {
-                        btnClass = 'bg-rose-50 text-rose-700 border border-rose-300 shadow-2xs font-extrabold';
-                      } else {
-                        btnClass = 'bg-[#043927] text-white shadow-2xs font-extrabold';
-                      }
-                    }
-
-                    return (
-                      <button
-                        key={opt.key}
-                        type="button"
-                        onClick={() => toggleDietaryFilter(opt.key)}
-                        className={`px-3 py-1.5 rounded-full text-xs transition-all cursor-pointer flex items-center gap-1.5 ${btnClass}`}
-                      >
-                        <span>
-                          {opt.alert ? '⚠️ ' : (isSelected ? '✓ ' : '+ ')}
-                          {opt.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Household Size for Recipe Bundling */}
-              <div className="bg-[#F5F6F8] rounded-2xl p-4 border border-slate-200/60 space-y-2 pt-3 font-sans">
-                <div>
-                  <h4 className="font-extrabold text-xs sm:text-sm text-slate-900">
-                    {locale === 'ar' ? 'حجم الأسرة لتوصيات المقادير والوصفات' : 'Household Size for Recipe Bundling'}
-                  </h4>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    {locale === 'ar'
-                      ? 'يساعد في ضبط كميات الفواكه واللحوم ومستلزمات المطبخ بما يناسب احتياج عائلتك.'
-                      : 'Calibrates family-size portion recommendations for fruits, proteins, and pantry essentials.'}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-                  {['1-2 Solo', 'Family (3-4)', 'Large (5+)'].map((sz) => (
-                    <button
-                      key={sz}
-                      type="button"
-                      onClick={() => setHouseholdSize(sz)}
-                      className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                        householdSize === sz
-                          ? 'bg-[#043927] text-white shadow-2xs'
-                          : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-700'
-                      }`}
-                    >
-                      {sz}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-            </div>
 
             {/* SECTION 4: COMMUNICATION CHANNELS */}
             <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">

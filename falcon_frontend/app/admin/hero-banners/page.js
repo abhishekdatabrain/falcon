@@ -232,6 +232,9 @@ export default function AdminHeroBannersPage() {
             : locale === 'ar' ? 'تم إضافة شريحة الهيرو بنجاح' : 'Hero slide added successfully',
           'success'
         );
+        try {
+          if (typeof window !== 'undefined') localStorage.removeItem('falcon_hero_banners');
+        } catch (e) {}
         setIsModalOpen(false);
         loadBanners();
       } else {
@@ -259,6 +262,9 @@ export default function AdminHeroBannersPage() {
             : locale === 'ar' ? 'تم تعطيل الشريحة' : 'Slide deactivated',
           'success'
         );
+        try {
+          if (typeof window !== 'undefined') localStorage.removeItem('falcon_hero_banners');
+        } catch (e) {}
         loadBanners();
       }
     } catch (err) {
@@ -276,6 +282,9 @@ export default function AdminHeroBannersPage() {
       });
       if (res.success) {
         showToast(locale === 'ar' ? 'تم حذف الشريحة بنجاح' : 'Hero slide deleted successfully', 'success');
+        try {
+          if (typeof window !== 'undefined') localStorage.removeItem('falcon_hero_banners');
+        } catch (e) {}
         loadBanners();
       }
     } catch (err) {

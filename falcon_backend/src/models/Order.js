@@ -96,6 +96,27 @@ const Order = sequelize.define('Order', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  cancellation_reason: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  cancellation_remarks: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  cancelled_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  cancelled_by: {
+    type: DataTypes.UUID,
+    allowNull: true,
+  },
+  refund_status: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+    defaultValue: null,
+  },
 }, {
   tableName: 'orders',
   timestamps: true,

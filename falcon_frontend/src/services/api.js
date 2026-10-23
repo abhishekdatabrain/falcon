@@ -60,8 +60,14 @@ export const fetchApi = async (endpoint, options = {}) => {
     delete defaultHeaders['Content-Type'];
   }
 
+  let requestBody = options.body;
+  if (requestBody && typeof requestBody === 'object' && !(requestBody instanceof FormData)) {
+    requestBody = JSON.stringify(requestBody);
+  }
+
   const config = {
     ...options,
+    body: requestBody,
     headers: {
       ...defaultHeaders,
       ...options.headers,

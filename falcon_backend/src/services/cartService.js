@@ -163,6 +163,8 @@ class CartService {
         sku: v ? v.sku : p.sku,
         price,
         discount_price,
+        effectivePrice,
+        unit_price: effectivePrice,
         vat_percentage: p.vat_percentage,
         unit_value: unitValue,
         unit_type: unitType,

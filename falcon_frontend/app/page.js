@@ -401,7 +401,30 @@ export default function HomePage() {
   const [canScrollPopularRight, setCanScrollPopularRight] = useState(true);
   const [products, setProducts] = useState([]);
   const [bestDealsProducts, setBestDealsProducts] = useState([]);
-  const [heroBanners, setHeroBanners] = useState([]);
+  const [heroBanners, setHeroBanners] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('falcon_hero_banners');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
+  const [heroLoaded, setHeroLoaded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('falcon_hero_banners');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return true;
+        }
+      } catch (e) {}
+    }
+    return false;
+  });
   const [promoBanners, setPromoBanners] = useState([]);
   const [categorySections, setCategorySections] = useState([]);
   const [cmsSections, setCmsSections] = useState([]);
@@ -494,14 +517,36 @@ export default function HomePage() {
     return () => clearTimeout(timer);
   }, [products, locale]);
 
+  // Fast priority fetch for Hero Banner to eliminate any render delay
+  useEffect(() => {
+    let isSubscribed = true;
+    fetchApi('/hero-banners')
+      .then((heroRes) => {
+        if (!isSubscribed) return;
+        if (heroRes && heroRes.success && Array.isArray(heroRes.data?.banners) && heroRes.data.banners.length > 0) {
+          setHeroBanners(heroRes.data.banners);
+          try {
+            localStorage.setItem('falcon_hero_banners', JSON.stringify(heroRes.data.banners));
+          } catch (e) {}
+        }
+      })
+      .catch((err) => console.error('Failed to load hero banner:', err))
+      .finally(() => {
+        if (isSubscribed) setHeroLoaded(true);
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [catRes, prodRes, dealsRes, heroRes, promoRes, sectionsRes, cmsRes] = await Promise.all([
+        const [catRes, prodRes, dealsRes, promoRes, sectionsRes, cmsRes] = await Promise.all([
           fetchApi('/categories?type=parent'),
           fetchApi('/products?limit=50'),
           fetchApi('/products?is_best_deal=true'),
-          fetchApi('/hero-banners').catch(() => ({ success: false })),
           fetchApi('/promo-banners').catch(() => ({ success: false })),
           fetchApi('/category-sections/active').catch(() => ({ success: false })),
           fetchApi('/homepage-cms/public').catch(() => ({ success: false })),
@@ -517,9 +562,6 @@ export default function HomePage() {
         if (dealsRes.success) {
           const dealsArr = dealsRes.data?.products?.products || dealsRes.data?.products || (Array.isArray(dealsRes.data) ? dealsRes.data : []);
           setBestDealsProducts(dealsArr);
-        }
-        if (heroRes && heroRes.success && heroRes.data?.banners?.length > 0) {
-          setHeroBanners(heroRes.data.banners);
         }
         if (promoRes && promoRes.success && promoRes.data?.banners?.length > 0) {
           setPromoBanners(promoRes.data.banners);
@@ -620,12 +662,13 @@ export default function HomePage() {
 
         const heroImage = activeHero.image_url
           ? getImageUrl(activeHero.image_url)
-          : '/hero_grocery_bag_fresh.png';
+          : (heroLoaded && (!heroBanners || heroBanners.length === 0) ? '/hero_grocery_bag_fresh.png' : '');
 
         const heroBg = activeHero.bg_color || '#FAF7F0';
 
         return (
           <section
+            suppressHydrationWarning
             style={{ backgroundColor: heroBg }}
             className="relative overflow-hidden font-sans border-amber-100/60 lg:h-[calc(115vh-125px)] lg:min-h-[460px] lg:max-h-[620px] flex flex-col justify-between pt-2 sm:pt-4 pb-0"
           >
@@ -716,14 +759,20 @@ export default function HomePage() {
                 {/* Right Column Visual Image */}
                 <div className="lg:col-span-5 relative flex items-center justify-center py-1 sm:py-2 h-full">
                   <div className="relative w-full flex items-center justify-center h-full max-h-[260px] sm:max-h-[300px] lg:max-h-[330px]">
-                    <img
-                      src={heroImage}
-                      alt={titleText}
-                      className="max-h-[220px] sm:max-h-[270px] lg:max-h-[300px] w-auto h-full object-contain drop-shadow-xl transition-transform duration-500 hover:scale-[1.02]"
-                      onError={(e) => {
-                        e.target.src = '/hero_grocery_bag_fresh.png';
-                      }}
-                    />
+                    {heroImage ? (
+                      <img
+                        src={heroImage}
+                        alt={titleText}
+                        className="max-h-[220px] sm:max-h-[270px] lg:max-h-[300px] w-auto h-full object-contain drop-shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                        onError={(e) => {
+                          e.target.style.opacity = '0';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-3xl bg-amber-100/30 animate-pulse flex items-center justify-center border border-amber-200/40">
+                        <Sparkles className="w-8 h-8 text-emerald-600/30" />
+                      </div>
+                    )}
                   </div>
                 </div>
 

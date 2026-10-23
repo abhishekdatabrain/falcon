@@ -37,6 +37,7 @@ import {
   Printer,
   Copy,
   Hash,
+  XCircle,
 } from 'lucide-react';
 
 export default function OrderDetailsPage({ params }) {
@@ -388,24 +389,33 @@ export default function OrderDetailsPage({ params }) {
             <span>Refresh</span>
           </button>
 
-          {canAssign && (
-            <button
-              onClick={() => setShowAssignModal(true)}
-              className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
-            >
-              <UserCheck className="w-4 h-4" />
-              <span>{drv ? 'Reassign Driver' : 'Assign Driver'}</span>
-            </button>
-          )}
+          {order.order_status === 'CANCELLED' ? (
+            <span className="px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-extrabold text-xs flex items-center gap-1.5 shadow-2xs">
+              <XCircle className="w-4 h-4 text-rose-600" />
+              <span>Order Cancelled (Locked)</span>
+            </span>
+          ) : (
+            <>
+              {canAssign && (
+                <button
+                  onClick={() => setShowAssignModal(true)}
+                  className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>{drv ? 'Reassign Driver' : 'Assign Driver'}</span>
+                </button>
+              )}
 
-          {canEdit && (
-            <button
-              onClick={() => setShowStatusModal(true)}
-              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span>Update Status</span>
-            </button>
+              {canEdit && (
+                <button
+                  onClick={() => setShowStatusModal(true)}
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>Update Status</span>
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -448,6 +458,65 @@ export default function OrderDetailsPage({ params }) {
               </div>
             </div>
           </div>
+
+          {/* Dedicated Cancellation Details Panel (Requirement 8 & 9) */}
+          {order.order_status === 'CANCELLED' && (
+            <div className="bg-rose-50/70 border border-rose-200 rounded-3xl p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-rose-200/60 pb-3">
+                <div className="flex items-center gap-2.5 text-rose-900 font-extrabold text-sm">
+                  <XCircle className="w-5 h-5 text-rose-600" />
+                  <span>Customer Order Cancellation Details</span>
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-rose-200 text-rose-800 uppercase tracking-wider">
+                  CANCELLED BY CUSTOMER
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                <div className="bg-white/90 rounded-2xl p-3.5 border border-rose-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Cancellation Reason</span>
+                  <p className="font-extrabold text-slate-900">
+                    {order.cancellation_reason || 'Customer requested cancellation'}
+                  </p>
+                </div>
+
+                <div className="bg-white/90 rounded-2xl p-3.5 border border-rose-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Customer Remarks</span>
+                  <p className="font-semibold text-slate-700 italic">
+                    {order.cancellation_remarks ? `"${order.cancellation_remarks}"` : 'None provided'}
+                  </p>
+                </div>
+
+                <div className="bg-white/90 rounded-2xl p-3.5 border border-rose-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Cancelled Timestamp</span>
+                  <p className="font-extrabold text-slate-900">
+                    {order.cancelled_at ? new Date(order.cancelled_at).toLocaleString() : 'Recorded'}
+                  </p>
+                </div>
+
+                <div className="bg-white/90 rounded-2xl p-3.5 border border-rose-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Refund Status</span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`px-2.5 py-1 rounded-full font-black text-[10px] ${
+                      order.refund_status === 'REFUNDED'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : order.refund_status === 'PENDING_REFUND'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                        : 'bg-slate-100 text-slate-700 border border-slate-200'
+                    }`}>
+                      {order.refund_status || (order.payment?.status === 'REFUNDED' ? 'REFUNDED' : 'NOT_APPLICABLE')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/60 rounded-2xl p-3 border border-rose-200/60 text-[11px] text-slate-600 flex items-center justify-between">
+                <span>
+                  🔒 <strong>Policy Note:</strong> Administrators cannot alter cancelled orders. Inventory stock has been automatically replenished back to active inventory logs.
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Ordered Products Section (Requirement 2) */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
@@ -964,7 +1033,6 @@ export default function OrderDetailsPage({ params }) {
                   <option value="DELIVERED">DELIVERED</option>
                   <option value="DELIVERY_FAILED">DELIVERY FAILED</option>
                   <option value="RETURNED">RETURNED</option>
-                  <option value="CANCELLED">CANCELLED</option>
                 </select>
               </div>
 

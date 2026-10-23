@@ -17,6 +17,7 @@ const {
   Admin,
   Feedback,
   Invoice,
+  StockLog,
   sequelize,
 } = require('../models');
 const { Op } = require('sequelize');
@@ -145,6 +146,9 @@ class OrderService {
       for (const item of cartTotals.items) {
         const lineTax = Math.round(item.lineTotal * 0.15 * 100) / 100;
         const variantSuffix = item.unit_value ? ` (${item.unit_value} ${item.unit_type || ''})`.trim() : '';
+        const itemUnitPrice = item.quantity > 0 
+          ? Math.round((item.lineTotal / item.quantity) * 100) / 100 
+          : (item.effectivePrice || item.price);
 
         await OrderItem.create({
           order_id: order.id,
@@ -152,7 +156,7 @@ class OrderService {
           variant_id: item.variantId || null,
           product_name_en: `${item.name_en}${variantSuffix}`,
           product_name_ar: `${item.name_ar}${variantSuffix}`,
-          unit_price: item.price,
+          unit_price: itemUnitPrice,
           quantity: item.quantity,
           tax_amount: lineTax,
           total_price: item.lineTotal,
@@ -367,6 +371,7 @@ class OrderService {
           ],
         },
         { model: Feedback, as: 'feedback' },
+        { model: User, as: 'cancelled_by_user', attributes: ['id', 'email', 'role'] },
       ],
       order: [
         [{ model: OrderStatusHistory, as: 'status_history' }, 'createdAt', 'ASC'],
@@ -659,11 +664,15 @@ class OrderService {
       throw new Error('Order not found');
     }
 
+    if (newStatus === ORDER_STATUS.CANCELLED) {
+      throw new Error('Admins cannot cancel orders directly. Order cancellation can only be initiated by the customer from the My Orders page.');
+    }
+
     const currentStatus = order.order_status;
     const allowedTransitions = VALID_STATUS_TRANSITIONS[currentStatus] || [];
 
     // Allow Admin flexibility for standard flow while checking valid paths
-    const isSpecialAdminTransition = [ORDER_STATUS.CANCELLED, ORDER_STATUS.RETURNED, ORDER_STATUS.DELIVERY_FAILED].includes(newStatus);
+    const isSpecialAdminTransition = [ORDER_STATUS.RETURNED, ORDER_STATUS.DELIVERY_FAILED].includes(newStatus);
     if (!allowedTransitions.includes(newStatus) && !isSpecialAdminTransition && currentStatus !== newStatus) {
       throw new Error(`Invalid status transition from "${currentStatus}" to "${newStatus}"`);
     }
@@ -757,13 +766,326 @@ class OrderService {
     return updatedOrder;
   }
 
-  async cancelOrder(orderId, userId, role, reason = '') {
-    const order = await this.getOrderById(orderId, userId, role);
-    if (![ORDER_STATUS.PENDING_PAYMENT, ORDER_STATUS.PAYMENT_SUBMITTED, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PAYMENT_REJECTED].includes(order.order_status) && role !== ROLES.ADMIN) {
-      throw new Error('Order cannot be cancelled at its current status');
+  async cancelOrder(orderId, userId, role, cancelData = {}) {
+    // 1. Only customers can cancel orders; Admins CANNOT cancel orders (Requirements 1 & 9)
+    if (role === ROLES.ADMIN) {
+      throw new Error('Administrators cannot cancel customer orders. Only customers can cancel their own orders.');
+    }
+    if (role !== ROLES.CUSTOMER) {
+      throw new Error('Only customers are authorized to cancel orders.');
     }
 
-    return await this.updateOrderStatus(orderId, ORDER_STATUS.CANCELLED, userId, `Cancelled. Reason: ${reason}`);
+    // Extract reason and remarks
+    let reason = 'Customer requested cancellation';
+    let remarks = '';
+    if (typeof cancelData === 'string') {
+      reason = cancelData;
+    } else if (cancelData && typeof cancelData === 'object') {
+      reason = cancelData.reason || reason;
+      remarks = cancelData.remarks || '';
+    }
+
+    // 2. Fetch customer profile to verify order ownership
+    const customer = await Customer.findOne({
+      where: {
+        [Op.or]: [
+          { id: userId },
+          { user_id: userId },
+        ],
+      },
+    });
+
+    if (!customer) {
+      throw new Error('Customer profile not found');
+    }
+
+    // 3. Eligible statuses according to Requirement 2:
+    // Pending (PENDING_PAYMENT, PAYMENT_SUBMITTED, PAYMENT_REJECTED) -> Allowed
+    // Confirmed (CONFIRMED, PAYMENT_VERIFIED) -> Allowed
+    // Processing (PROCESSING) -> Allowed
+    // Packed, Driver Assigned, Out for Delivery, Delivered, Cancelled -> Not Allowed
+    const ALLOWED_CANCELLATION_STATUSES = [
+      ORDER_STATUS.PENDING_PAYMENT,
+      ORDER_STATUS.PAYMENT_SUBMITTED,
+      ORDER_STATUS.PAYMENT_REJECTED,
+      ORDER_STATUS.CONFIRMED,
+      ORDER_STATUS.PAYMENT_VERIFIED,
+      ORDER_STATUS.PROCESSING,
+    ];
+
+    // 4. Atomic database transaction with row locks to prevent race conditions & duplicate cancellations
+    const cancellationResult = await sequelize.transaction(async (t) => {
+      const order = await Order.findByPk(orderId, {
+        include: [
+          { model: OrderItem, as: 'items' },
+          { model: Payment, as: 'payment' },
+          { model: Delivery, as: 'delivery' },
+          { model: Invoice, as: 'invoice' },
+        ],
+        transaction: t,
+        lock: t.LOCK.UPDATE,
+      });
+
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      // Check ownership (Requirement 4)
+      if (order.customer_id !== customer.id) {
+        throw new Error('You are only authorized to cancel your own orders');
+      }
+
+      // Check if already cancelled (Requirement 7)
+      if (order.order_status === ORDER_STATUS.CANCELLED) {
+        throw new Error('This order has already been cancelled');
+      }
+
+      // Check cancellation eligibility (Requirement 2 & 4)
+      if (!ALLOWED_CANCELLATION_STATUSES.includes(order.order_status)) {
+        throw new Error(`Order cannot be cancelled at status "${order.order_status}". Orders that are packed, shipped, out for delivery, or delivered cannot be cancelled.`);
+      }
+
+      const prevStatus = order.order_status;
+      const cancellationTimestamp = new Date();
+
+      // Determine refund status (Requirements 5 & 6):
+      // - COD: Cancel without refund if no payment collected -> NOT_APPLICABLE
+      // - Prepaid: If paid/verified -> initiate/mark refund -> REFUNDED
+      //            If unpaid/pending -> NOT_APPLICABLE
+      const isCod = (order.payment_method || '').toUpperCase() === 'COD' ||
+                    (order.payment?.payment_method || '').toUpperCase() === 'COD';
+      let calculatedRefundStatus = 'NOT_APPLICABLE';
+
+      if (isCod) {
+        calculatedRefundStatus = 'NOT_APPLICABLE';
+      } else {
+        const payment = order.payment;
+        if (payment) {
+          if (payment.status === PAYMENT_STATUS.PAID || payment.status === PAYMENT_STATUS.VERIFIED) {
+            calculatedRefundStatus = 'REFUNDED';
+            await payment.update({
+              status: PAYMENT_STATUS.REFUNDED,
+              rejection_reason: `Refund processed: ${reason}${remarks ? ` (${remarks})` : ''}`,
+            }, { transaction: t });
+          } else if (payment.status === PAYMENT_STATUS.REFUNDED) {
+            calculatedRefundStatus = 'REFUNDED';
+          } else {
+            // Unpaid/pending prepaid payment
+            calculatedRefundStatus = 'NOT_APPLICABLE';
+            if (payment.status === PAYMENT_STATUS.PENDING || payment.status === PAYMENT_STATUS.SUBMITTED) {
+              await payment.update({
+                status: PAYMENT_STATUS.REJECTED,
+                rejection_reason: `Order cancelled before payment capture: ${reason}`,
+              }, { transaction: t });
+            }
+          }
+        }
+      }
+
+      // Update Order record with cancellation details
+      await order.update({
+        order_status: ORDER_STATUS.CANCELLED,
+        cancellation_reason: reason,
+        cancellation_remarks: remarks || null,
+        cancelled_at: cancellationTimestamp,
+        cancelled_by: userId,
+        refund_status: calculatedRefundStatus,
+      }, { transaction: t });
+
+      // Restore Inventory according to existing stock management logic (Requirement 5)
+      for (const item of (order.items || [])) {
+        if (item.variant_id) {
+          const variant = await ProductVariant.findByPk(item.variant_id, { transaction: t, lock: t.LOCK.UPDATE });
+          if (variant) {
+            const restoredVarStock = Number(variant.stock_quantity || 0) + Number(item.quantity);
+            await variant.update({
+              stock_quantity: restoredVarStock,
+            }, { transaction: t });
+          }
+        }
+        const product = await Product.findByPk(item.product_id, { transaction: t, lock: t.LOCK.UPDATE });
+        if (product) {
+          const prevStock = Number(product.stock_quantity || 0);
+          const restoredStock = prevStock + Number(item.quantity);
+          await product.update({
+            stock_quantity: restoredStock,
+            is_available: true,
+          }, { transaction: t });
+
+          // Stock restoration log
+          await StockLog.create({
+            product_id: product.id,
+            type: 'RESTOCK',
+            quantity: item.quantity,
+            previous_stock: prevStock,
+            new_stock: restoredStock,
+            reason: `Restocked on order cancellation #${order.order_number}`,
+            created_by: `Customer (${customer.first_name || 'Customer'})`,
+          }, { transaction: t });
+        }
+      }
+
+      // If delivery record exists, cancel it and release driver
+      if (order.delivery) {
+        await order.delivery.update({
+          status: 'CANCELLED',
+          failure_reason: `Order cancelled by customer: ${reason}`,
+        }, { transaction: t });
+
+        if (order.delivery.driver_id) {
+          const driver = await Driver.findByPk(order.delivery.driver_id, { transaction: t });
+          if (driver) {
+            await driver.update({ availability_status: 'AVAILABLE' }, { transaction: t });
+          }
+        }
+      }
+
+      // Maintain cancellation in OrderStatusHistory (Requirement 6)
+      await OrderStatusHistory.create({
+        order_id: order.id,
+        from_status: prevStatus,
+        to_status: ORDER_STATUS.CANCELLED,
+        changed_by_user_id: userId,
+        notes: `Cancelled by customer. Reason: ${reason}${remarks ? ` | Remarks: ${remarks}` : ''} | Refund Status: ${calculatedRefundStatus}`,
+      }, { transaction: t });
+
+      return {
+        orderId: order.id,
+        orderNumber: order.order_number,
+        prevStatus,
+        deliveryId: order.delivery?.id,
+        driverId: order.delivery?.driver_id,
+        invoiceId: order.invoice?.id,
+        cancellationTimestamp,
+        calculatedRefundStatus,
+      };
+    });
+
+    // Outside Transaction: Audit Log
+    try {
+      const auditService = require('./auditService');
+      await auditService.log({
+        userId,
+        action: 'CUSTOMER_CANCEL_ORDER',
+        module: 'orders',
+        entityType: 'Order',
+        entityId: cancellationResult.orderId,
+        details: {
+          orderNumber: cancellationResult.orderNumber,
+          prevStatus: cancellationResult.prevStatus,
+          newStatus: ORDER_STATUS.CANCELLED,
+          reason,
+          remarks,
+          refundStatus: cancellationResult.calculatedRefundStatus,
+        },
+      });
+    } catch (auditErr) {
+      logger.error('Failed to log order cancellation audit:', auditErr);
+    }
+
+    // Outside Transaction: ZATCA credit note reversal if invoice exists
+    if (cancellationResult.invoiceId) {
+      try {
+        const zatcaInvoiceService = require('./zatcaInvoiceService');
+        await zatcaInvoiceService.generateCreditNoteForInvoice(
+          cancellationResult.invoiceId,
+          `Order Cancellation: ${reason}`,
+          userId
+        );
+      } catch (zatcaErr) {
+        logger.warn('Credit note generation on cancellation skipped/failed:', zatcaErr.message);
+      }
+    }
+
+    // Outside Transaction: Customer in-app notification (Requirement 5)
+    try {
+      const refundNoticeEn = cancellationResult.calculatedRefundStatus === 'REFUNDED'
+        ? ' Your refund has been initiated and processed to your payment method.'
+        : '';
+      const refundNoticeAr = cancellationResult.calculatedRefundStatus === 'REFUNDED'
+        ? ' تم بدء استرداد المبلغ ومعالجته إلى وسيلة الدفع الخاصة بك.'
+        : '';
+
+      await notificationService.createNotification(
+        userId,
+        'ORDER_CANCELLED',
+        `Order Cancelled #${cancellationResult.orderNumber}`,
+        `تم إلغاء الطلب #${cancellationResult.orderNumber}`,
+        `Your order #${cancellationResult.orderNumber} has been cancelled successfully.${refundNoticeEn}`,
+        `تم إلغاء طلبك #${cancellationResult.orderNumber} بنجاح.${refundNoticeAr}`
+      );
+    } catch (notifErr) {
+      logger.error('Customer cancellation notification failed:', notifErr);
+    }
+
+    // Outside Transaction: Customer Email Notification (Requirement 5)
+    try {
+      const emailService = require('./emailService');
+      const fullOrderForEmail = await Order.findByPk(cancellationResult.orderId, {
+        include: [
+          {
+            model: Customer,
+            as: 'customer',
+            include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile'] }],
+          },
+          { model: Address, as: 'address' },
+          { model: OrderItem, as: 'items' },
+        ],
+      });
+      if (fullOrderForEmail) {
+        emailService.sendOrderCancellationEmail({
+          order: fullOrderForEmail,
+          reason,
+          remarks,
+          refundStatus: cancellationResult.calculatedRefundStatus,
+        }).catch((e) => logger.error('Order cancellation email sending failed:', e));
+      }
+    } catch (emailErr) {
+      logger.error('Failed to prepare cancellation email:', emailErr);
+    }
+
+    // Outside Transaction: Admin in-app notifications (Requirement 5)
+    try {
+      const adminUsers = await User.findAll({
+        where: { role: ROLES.ADMIN, is_active: true },
+        attributes: ['id'],
+      });
+      for (const adm of adminUsers) {
+        await notificationService.createNotification(
+          adm.id,
+          'ORDER_CANCELLED',
+          `Order #${cancellationResult.orderNumber} Cancelled by Customer`,
+          `تم إلغاء الطلب #${cancellationResult.orderNumber} من قبل العميل`,
+          `Order #${cancellationResult.orderNumber} was cancelled by customer. Reason: ${reason}. Refund: ${cancellationResult.calculatedRefundStatus}`,
+          `تم إلغاء الطلب #${cancellationResult.orderNumber} من قبل العميل. السبب: ${reason}. حالة الاسترداد: ${cancellationResult.calculatedRefundStatus}`
+        ).catch(() => {});
+      }
+    } catch (adminNotifErr) {
+      logger.error('Admin cancellation notification failed:', adminNotifErr);
+    }
+
+    // Outside Transaction: Socket.IO Real-time broadcast
+    try {
+      const { emitOrderStatusUpdate } = require('../sockets/socketManager');
+      emitOrderStatusUpdate({
+        orderId: cancellationResult.orderId,
+        deliveryId: cancellationResult.deliveryId,
+        driverId: cancellationResult.driverId,
+        status: ORDER_STATUS.CANCELLED,
+        orderStatus: ORDER_STATUS.CANCELLED,
+        notes: `Order cancelled by customer. Reason: ${reason}`,
+        data: {
+          cancellation_reason: reason,
+          cancellation_remarks: remarks,
+          cancelled_at: cancellationResult.cancellationTimestamp,
+          refund_status: cancellationResult.calculatedRefundStatus,
+        },
+      });
+    } catch (socketErr) {
+      logger.error('Socket emission failed on order cancellation:', socketErr);
+    }
+
+    return await this.getOrderById(cancellationResult.orderId, userId, role);
   }
 }
 

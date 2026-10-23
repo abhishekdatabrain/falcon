@@ -45,7 +45,8 @@ import {
   FileCheck,
   Loader2,
   Send,
-  Heart
+  Heart,
+  Tag
 } from 'lucide-react';
 
 // Default Riyadh Coordinates
@@ -477,25 +478,6 @@ function TrackOrderContent() {
               </button>
             </form>
 
-            {/* Quick Demo Chips */}
-            <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
-              <span className="text-slate-400">{locale === 'ar' ? 'طلبات سريعة:' : 'Quick Test:'}</span>
-              <button
-                type="button"
-                onClick={() => { setSearchInput('ORD-20261009-9815'); loadOrder('ORD-20261009-9815'); }}
-                className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-pointer font-mono"
-              >
-                🚚 OUT_FOR_DELIVERY
-              </button>
-              <button
-                type="button"
-                onClick={() => { setSearchInput('ORD-20261013-3674'); loadOrder('ORD-20261013-3674'); }}
-                className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 cursor-pointer font-mono"
-              >
-                📦 ORD-3674
-              </button>
-            </div>
-
           </div>
         </div>
       </div>
@@ -722,9 +704,10 @@ function TrackOrderContent() {
                       ? (it.product_name_ar || it.product_name_en || it.product?.name_ar || it.product?.name_en || 'منتج طازج')
                       : (it.product_name_en || it.product_name_ar || it.product?.name_en || 'Fresh Grocery Item');
 
-                    const unitPrice = parseFloat(it.unit_price || it.price || 0);
                     const qty = it.quantity || 1;
-                    const lineTotal = parseFloat(it.total_price || unitPrice * qty || 0);
+                    const rawUnitPrice = parseFloat(it.unit_price || it.price || it.product?.discount_price || it.product?.price || 0);
+                    const lineTotal = parseFloat(it.total_price !== undefined && it.total_price !== null ? it.total_price : rawUnitPrice * qty);
+                    const unitPrice = qty > 0 ? (lineTotal / qty) : rawUnitPrice;
 
                     return (
                       <div key={it.id || idx} className="flex items-center justify-between gap-2.5 text-xs py-1.5 border-b border-slate-50 last:border-none">
@@ -758,6 +741,18 @@ function TrackOrderContent() {
                     <span>{locale === 'ar' ? 'ضريبة القيمة المضافة 15%' : 'Estimated VAT (15%):'}</span>
                     <span className="font-extrabold text-slate-900">SAR {parseFloat(order?.tax_total || 0).toFixed(2)}</span>
                   </div>
+                  {parseFloat(order?.discount_total || 0) > 0 && (
+                    <div className="flex justify-between text-emerald-700 font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>
+                          {locale === 'ar' ? 'خصم الكوبون' : 'Coupon Discount'}
+                          {order?.coupon_code ? ` (${order.coupon_code})` : ''}:
+                        </span>
+                      </span>
+                      <span className="font-extrabold text-emerald-700">- SAR {parseFloat(order.discount_total).toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between pt-1 border-t border-dashed border-slate-200 text-sm font-black text-slate-900">
                     <span>{locale === 'ar' ? 'الإجمالي المدفوع' : 'Total Paid:'}</span>
                     <span className="text-[#05A764]">SAR {parseFloat(order?.grand_total || 0).toFixed(2)}</span>

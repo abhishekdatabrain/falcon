@@ -15,6 +15,15 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+router.put('/read-all', async (req, res, next) => {
+  try {
+    await notificationService.markAllAsRead(req.user.id);
+    return sendSuccess(res, 'All notifications marked as read');
+  } catch (error) {
+    return sendError(res, error.message, [], 400);
+  }
+});
+
 router.put('/:id/read', async (req, res, next) => {
   try {
     const notification = await notificationService.markAsRead(req.params.id, req.user.id);

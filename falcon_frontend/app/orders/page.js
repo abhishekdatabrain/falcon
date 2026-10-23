@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useToast } from '../../src/contexts/ToastContext';
+import { useWishlist } from '../../src/contexts/WishlistContext';
 import { fetchApi, getImageUrl } from '../../src/services/api';
 import { downloadOrderInvoice } from '../../src/services/invoiceService';
 import {
@@ -25,7 +26,6 @@ import {
   ShieldCheck,
   Headphones,
   Bell,
-  CreditCard,
   Heart,
   Home,
   User,
@@ -43,8 +43,11 @@ import {
 export default function OrdersPage() {
   const { t, locale } = useLanguage();
   const { showToast } = useToast();
+  const { wishlist } = useWishlist();
   const [profile, setProfile] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [addressesCount, setAddressesCount] = useState(0);
+  const [unreadNotifsCount, setUnreadNotifsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'DELIVERED' | 'SCHEDULED' | 'CANCELLED'
@@ -55,9 +58,11 @@ export default function OrdersPage() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [profRes, ordRes] = await Promise.all([
+        const [profRes, ordRes, addrRes, notifRes] = await Promise.all([
           fetchApi('/customers/profile').catch(() => null),
           fetchApi('/orders/my-orders').catch(() => null),
+          fetchApi('/customers/addresses').catch(() => null),
+          fetchApi('/notifications').catch(() => null),
         ]);
 
         if (profRes && profRes.success && profRes.data?.profile) {
@@ -67,6 +72,13 @@ export default function OrdersPage() {
           setOrders(ordRes.data.orders);
         } else {
           setOrders([]);
+        }
+        if (addrRes && addrRes.success && Array.isArray(addrRes.data?.addresses)) {
+          setAddressesCount(addrRes.data.addresses.length);
+        }
+        if (notifRes && notifRes.success && Array.isArray(notifRes.data?.notifications)) {
+          const unread = notifRes.data.notifications.filter(n => !n.is_read).length;
+          setUnreadNotifsCount(unread);
         }
       } catch (err) {
         console.error('Failed to load customer data:', err);
@@ -321,15 +333,6 @@ export default function OrdersPage() {
             {/* Account Sidebar Navigation Links */}
             <div className="bg-white rounded-3xl p-3 border border-slate-200/90 shadow-xs space-y-1">
 
-              <Link
-                href="/profile"
-                className="flex items-center justify-between p-3 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Sliders className="w-4 h-4 text-slate-400" />
-                  <span>Dashboard Overview</span>
-                </div>
-              </Link>
 
               <Link
                 href="/orders"
@@ -363,7 +366,9 @@ export default function OrdersPage() {
                   <Heart className="w-4 h-4 text-slate-400" />
                   <span>Wishlist</span>
                 </div>
-                <span className="text-[11px] font-extrabold text-slate-400">12</span>
+                <span className="text-[11px] font-extrabold text-slate-400">
+                  {wishlist?.length || 0}
+                </span>
               </Link>
 
               <Link
@@ -374,19 +379,8 @@ export default function OrdersPage() {
                   <Home className="w-4 h-4 text-slate-400" />
                   <span>Saved Addresses</span>
                 </div>
-                <span className="text-[11px] font-extrabold text-slate-400">3</span>
-              </Link>
-
-              <Link
-                href="/profile#payment"
-                className="flex items-center justify-between p-3 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <CreditCard className="w-4 h-4 text-slate-400" />
-                  <span>Payment Methods</span>
-                </div>
-                <span className="bg-slate-100 text-slate-700 text-[9px] font-extrabold px-2 py-0.5 rounded-md border border-slate-200">
-                  MADA
+                <span className="text-[11px] font-extrabold text-slate-400">
+                  {addressesCount}
                 </span>
               </Link>
 
@@ -408,9 +402,15 @@ export default function OrdersPage() {
                   <Bell className="w-4 h-4 text-slate-400" />
                   <span>Notifications</span>
                 </div>
-                <span className="bg-rose-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-                  2
-                </span>
+                {unreadNotifsCount > 0 ? (
+                  <span className="bg-rose-500 text-white text-[10px] font-black min-w-4 h-4 px-1 rounded-full flex items-center justify-center">
+                    {unreadNotifsCount}
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-extrabold text-slate-400">
+                    0
+                  </span>
+                )}
               </Link>
 
               <Link
@@ -424,15 +424,6 @@ export default function OrdersPage() {
                 <span className="text-[10px] font-extrabold text-emerald-600">● Online</span>
               </Link>
 
-              <div className="pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  className="w-full flex items-center gap-2.5 p-3 rounded-2xl text-xs font-extrabold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4 text-rose-500" />
-                  <span>Sign Out</span>
-                </button>
-              </div>
 
             </div>
 

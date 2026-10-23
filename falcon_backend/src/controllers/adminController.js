@@ -121,6 +121,10 @@ class AdminController {
         return sendError(res, 'Target order status is required', [], 400);
       }
 
+      if (status.toUpperCase() === 'CANCELLED') {
+        return sendError(res, 'Admins cannot cancel orders. Order cancellation can only be initiated by the customer from the My Orders page.', [], 403);
+      }
+
       const noteText = notes || reason || '';
       const order = await orderService.updateOrderStatus(orderId, status, userId, noteText);
       return sendSuccess(res, `Order status updated to ${status}`, { order });

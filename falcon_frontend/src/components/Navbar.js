@@ -169,7 +169,13 @@ export default function Navbar() {
                   >
                     {t('nav.myOrders') || 'My Orders'}
                   </Link>
-                 
+                  <Link
+                    href="/notifications"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="block px-4 py-2 hover:bg-slate-50 text-xs font-semibold text-slate-700"
+                  >
+                    {locale === 'ar' ? 'الإشعارات' : 'Notifications'}
+                  </Link>
                   <button
                     onClick={() => {
                       setUserDropdownOpen(false);

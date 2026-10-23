@@ -94,8 +94,8 @@ class OrderController {
   async cancelOrder(req, res, next) {
     try {
       const { id } = req.params;
-      const { reason } = req.body;
-      const order = await orderService.cancelOrder(id, req.user.id, req.user.role, reason);
+      const { reason, remarks } = req.body;
+      const order = await orderService.cancelOrder(id, req.user.id, req.user.role, { reason, remarks });
       return sendSuccess(res, 'Order cancelled successfully', { order });
     } catch (error) {
       return sendError(res, error.message, [], 400);

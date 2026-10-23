@@ -19,7 +19,9 @@ router.get('/my-orders', authorize(ROLES.CUSTOMER), (req, res, next) => orderCon
 
 // Common Protected Route (Customer: own order, Driver: assigned order, Admin: any order)
 router.get('/:id', (req, res, next) => orderController.getOrderById(req, res, next));
-router.post('/:id/cancel', (req, res, next) => orderController.cancelOrder(req, res, next));
+
+// Customer Order Cancellation Route (Strictly Customer Only)
+router.post('/:id/cancel', authorize(ROLES.CUSTOMER), (req, res, next) => orderController.cancelOrder(req, res, next));
 
 // Admin Routes
 router.get('/', authorize(ROLES.ADMIN), checkPermission('orders.view'), (req, res, next) => orderController.getAllOrdersAdmin(req, res, next));

@@ -651,7 +651,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Bottom Trust Guarantee Bar */}
-          <div className="bg-[#F8F9FA] rounded-2xl p-4 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold text-slate-700 border border-slate-200/60 shadow-2xs">
+          {/* <div className="bg-[#F8F9FA] rounded-2xl p-4 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold text-slate-700 border border-slate-200/60 shadow-2xs">
             <div className="space-y-0.5">
               <div className="flex items-center justify-center gap-1 font-bold text-slate-900">
                 <Calendar className="w-3.5 h-3.5 text-[#043927]" />
@@ -675,7 +675,7 @@ export default function ProductDetailPage() {
               </div>
               <span className="text-slate-400 text-[10px] block">{locale === 'ar' ? 'بدون تعقيد' : 'Hassle free'}</span>
             </div>
-          </div>
+          </div> */}
 
         </div>
 
