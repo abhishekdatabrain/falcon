@@ -14,8 +14,9 @@ class RbacController {
 
   async getRoles(req, res, next) {
     try {
-      const roles = await rbacService.getRoles();
-      return sendSuccess(res, 'Roles retrieved successfully', { roles });
+      const { search, page, limit, sortBy, sortOrder } = req.query;
+      const data = await rbacService.getRoles({ search, page, limit, sortBy, sortOrder });
+      return sendSuccess(res, 'Roles retrieved successfully', data);
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }
@@ -62,9 +63,9 @@ class RbacController {
 
   async getSubAdmins(req, res, next) {
     try {
-      const { search, roleId, status } = req.query;
-      const subAdmins = await rbacService.getSubAdmins({ search, roleId, status });
-      return sendSuccess(res, 'Sub-admins retrieved successfully', { subAdmins });
+      const { search, roleId, status, page, limit, sortBy, sortOrder } = req.query;
+      const data = await rbacService.getSubAdmins({ search, roleId, status, page, limit, sortBy, sortOrder });
+      return sendSuccess(res, 'Sub-admins retrieved successfully', data);
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }

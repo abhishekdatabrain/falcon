@@ -32,9 +32,9 @@ class AdminController {
 
   async getDrivers(req, res, next) {
     try {
-      const { search, availability, status, accountStatus } = req.query;
-      const { drivers, stats } = await adminService.getAllDrivers({ search, availability, status, accountStatus });
-      return sendSuccess(res, 'Drivers list retrieved', { drivers, stats });
+      const { search, availability, status, accountStatus, page, limit, sortBy, sortOrder } = req.query;
+      const data = await adminService.getAllDrivers({ search, availability, status, accountStatus, page, limit, sortBy, sortOrder });
+      return sendSuccess(res, 'Drivers list retrieved', data);
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }
@@ -194,9 +194,9 @@ class AdminController {
 
   async getCustomers(req, res, next) {
     try {
-      const { search, status } = req.query;
-      const customers = await adminService.getAllCustomers({ search, status });
-      return sendSuccess(res, 'Customers list retrieved', { customers });
+      const { search, status, page = 1, limit = 10 } = req.query;
+      const data = await adminService.getAllCustomers({ search, status, page, limit });
+      return sendSuccess(res, 'Customers list retrieved', data);
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }
@@ -235,8 +235,8 @@ class AdminController {
 
   async getDeliveries(req, res, next) {
     try {
-      const { status, search } = req.query;
-      const data = await adminService.getDeliveries({ status, search });
+      const { status, search, page, limit, sortBy, sortOrder } = req.query;
+      const data = await adminService.getDeliveries({ status, search, page, limit, sortBy, sortOrder });
       return sendSuccess(res, 'Deliveries data retrieved successfully', data);
     } catch (error) {
       return sendError(res, error.message, [], 400);

@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
+import AdminPagination from '../../../src/components/AdminPagination';
 import {
   FileText,
   Download,
@@ -62,6 +63,10 @@ export default function AdminInvoicesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   // Modals & Drawers State
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -83,21 +88,32 @@ export default function AdminInvoicesPage() {
   };
 
   // 1. Fetch Invoices and Platform Stats
-  const loadInvoicesData = async () => {
+  const loadInvoicesData = async (page = currentPage, limit = pageSize) => {
     try {
       setLoading(true);
       const queryParams = new URLSearchParams({
         search: searchQuery,
         status: statusFilter,
         type: typeFilter,
+        page,
+        limit,
       });
 
       const res = await fetchApi(`/admin/invoices?${queryParams.toString()}`);
       if (res.success && res.data) {
-        setInvoices(res.data.invoices || []);
+        setInvoices(res.data.invoices || res.data.records || []);
         setEligibleOrders(res.data.eligibleOrders || []);
         if (res.data.stats) {
           setStats(res.data.stats);
+        }
+        if (res.data.pagination) {
+          setTotalPages(res.data.pagination.totalPages || 1);
+          setTotalRecords(
+            res.data.pagination.totalRecords !== undefined
+              ? res.data.pagination.totalRecords
+              : (res.data.pagination.total || 0)
+          );
+          setCurrentPage(res.data.pagination.currentPage || res.data.pagination.page || page);
         }
       }
     } catch (err) {
@@ -110,10 +126,22 @@ export default function AdminInvoicesPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadInvoicesData();
+      loadInvoicesData(1, pageSize);
     }, 250);
     return () => clearTimeout(timer);
   }, [searchQuery, statusFilter, typeFilter]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      loadInvoicesData(newPage, pageSize);
+    }
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+    loadInvoicesData(1, newPageSize);
+  };
 
   // Handle Copy to Clipboard
   const handleCopy = (text, fieldName) => {
@@ -658,6 +686,14 @@ export default function AdminInvoicesPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Server-Side Pagination */}
+          <AdminPagination
+            pagination={{ currentPage, pageSize, totalRecords, totalPages }}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            loading={loading}
+          />
         </div>
       )}
 

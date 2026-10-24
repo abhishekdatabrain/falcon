@@ -88,17 +88,24 @@ class AuditService {
       if (endDate) where.created_at[Op.lte] = new Date(endDate);
     }
 
+    const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
+    const paginationConfig = parsePagination({ page, limit }, 10, 100);
+
     const { count, rows } = await AuditLog.findAndCountAll({
       where,
-      limit: parseInt(limit, 10),
-      offset,
-      order: [['created_at', 'DESC']],
+      limit: paginationConfig.limit,
+      offset: paginationConfig.offset,
+      order: [['created_at', 'DESC'], ['id', 'DESC']],
     });
+
+    const pagination = buildPaginationResponse(count, paginationConfig.page, paginationConfig.limit);
 
     return {
       total: count,
-      page: parseInt(page, 10),
-      totalPages: Math.ceil(count / parseInt(limit, 10)),
+      page: paginationConfig.page,
+      totalPages: pagination.totalPages,
+      pagination,
+      records: rows,
       logs: rows,
     };
   }

@@ -6,7 +6,9 @@ import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import { useCart } from '../../../src/contexts/CartContext';
+import { useSocket } from '../../../src/contexts/SocketContext';
 import { downloadOrderInvoice } from '../../../src/services/invoiceService';
+import OrderTrackingTimeline from '../../../src/components/OrderTrackingTimeline';
 import {
   Package,
   Truck,
@@ -50,6 +52,7 @@ export default function OrderDetailsPage() {
   const { t, locale } = useLanguage();
   const { showToast } = useToast();
   const { addToCart, fetchCart } = useCart();
+  const { socket, joinOrderRoom, leaveOrderRoom } = useSocket();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -349,6 +352,25 @@ export default function OrderDetailsPage() {
     loadOrderDetails();
   }, [id]);
 
+  // Real-time WebSocket listener for order status changes (Requirement 5)
+  useEffect(() => {
+    if (!socket || !id) return;
+    joinOrderRoom(id);
+
+    const handleStatusUpdate = (data) => {
+      if (data && (data.orderId === id || data.orderId === order?.id)) {
+        loadOrderDetails();
+      }
+    };
+
+    socket.on('order_status_update', handleStatusUpdate);
+
+    return () => {
+      socket.off('order_status_update', handleStatusUpdate);
+      leaveOrderRoom(id);
+    };
+  }, [socket, id, order?.id]);
+
   const copyOrderId = () => {
     const orderNo = order?.order_number || id;
     if (navigator.clipboard) {
@@ -610,6 +632,29 @@ export default function OrderDetailsPage() {
                 <span>{badge.label}</span>
               </span>
 
+              {/* Conditional Live Driver Tracking Button (Requirements 1, 2, 4) */}
+              {(currentStatus === 'OUT_FOR_DELIVERY' || currentStatus === 'ARRIVED') && (
+                <Link
+                  href={`/track-order?orderNumber=${order?.order_number || id}`}
+                  className="px-4 py-2 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98 font-sans"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-[#05A764]" />
+                  <span>{locale === 'ar' ? 'تتبع السائق مباشرة' : 'Track Driver Live'}</span>
+                </Link>
+              )}
+
+              {/* Notice before OUT_FOR_DELIVERY (Requirements 2, 3) */}
+              {!['OUT_FOR_DELIVERY', 'ARRIVED', 'DELIVERED', 'CANCELLED', 'DELIVERY_FAILED', 'RETURNED'].includes(currentStatus) && (
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-100/90 border border-slate-200/80 px-3 py-1.5 rounded-xl">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>
+                    {locale === 'ar'
+                      ? 'سيتوفر التتبع المباشر فور خروج طلبك للتوصيل.'
+                      : 'Live tracking will be available once your order is out for delivery.'}
+                  </span>
+                </div>
+              )}
+
               {currentStatus === 'DELIVERED' && (
                 <button
                   type="button"
@@ -736,83 +781,7 @@ export default function OrderDetailsPage() {
           ) : (
             /* ================= 4-STEP LIFECYCLE PROGRESS BAR ================= */
             <div className="mt-8 pt-6 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold text-slate-600 font-sans">
-                  {currentStatus === 'DELIVERED'
-                    ? (locale === 'ar' ? 'اكتملت جميع المراحل' : 'All steps completed')
-                    : (locale === 'ar' ? `المرحلة ${badge.step} من 4` : `Step ${badge.step} of 4`)}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative">
-                {/* Step 1: Placed */}
-                <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 1 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 1 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                      }`}>
-                      {badge.step > 1 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '1'}
-                    </div>
-                    <span className="text-xs font-extrabold truncate">
-                      {locale === 'ar' ? 'إنشاء الطلب' : 'Order Placed'}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 font-medium">
-                    {order?.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Verified'}
-                  </p>
-                </div>
-
-                {/* Step 2: Order Prepared */}
-                <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 2 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 2 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                      }`}>
-                      {badge.step > 2 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '2'}
-                    </div>
-                    <span className="text-xs font-extrabold truncate">
-                      {locale === 'ar' ? 'التجهيز والتبريد' : 'Order Prepared'}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 font-medium">
-                    {badge.step >= 2 ? 'Hub Ready' : 'Cold-chain tote'}
-                  </p>
-                </div>
-
-                {/* Step 3: Out for Delivery */}
-                <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 3 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 3 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                      }`}>
-                      {badge.step > 3 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '3'}
-                    </div>
-                    <span className="text-xs font-extrabold truncate">
-                      {locale === 'ar' ? 'خرج للتوصيل' : 'Out for Delivery'}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 font-medium">
-                    {badge.step >= 3 ? 'Van en route' : 'Express courier'}
-                  </p>
-                </div>
-
-                {/* Step 4: Delivered */}
-                <div className={`p-3 rounded-2xl border transition-all ${badge.step >= 4 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${badge.step >= 4 ? 'bg-[#05A764] text-white shadow-2xs' : 'bg-slate-200 text-slate-500'
-                      }`}>
-                      <Check className="w-3.5 h-3.5 stroke-[3]" />
-                    </div>
-                    <span className="text-xs font-extrabold truncate">
-                      {locale === 'ar' ? 'تم التوصيل' : 'Delivered'}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 font-medium">
-                    {badge.step >= 4 ? 'Completed' : 'Contactless handoff'}
-                  </p>
-                </div>
-              </div>
+              <OrderTrackingTimeline order={order} />
             </div>
           )}
 

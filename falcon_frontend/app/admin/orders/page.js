@@ -7,6 +7,7 @@ import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import { useSocket } from '../../../src/contexts/SocketContext';
 import { useAuth } from '../../../src/contexts/AuthContext';
+import AdminPagination from '../../../src/components/AdminPagination';
 import {
   Package,
   Truck,
@@ -53,11 +54,11 @@ export default function AdminOrdersPage() {
   const canAssign = hasPermission('orders.assign');
   const canEdit = hasPermission('orders.edit');
 
-  // Data States
   const [orders, setOrders] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [stats, setStats] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1, total: 0 });
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
 
   // Status Tabs (Requirement 8): ALL, PENDING, PROCESSING, OUT_FOR_DELIVERY, COMPLETED, CANCELLED, RETURNED
@@ -103,12 +104,12 @@ export default function AdminOrdersPage() {
   const [submitting, setSubmitting] = useState(false);
 
   // Fetch Orders and Drivers from Backend REST API
-  const loadData = async (page = currentPage) => {
+  const loadData = async (page = currentPage, limit = pageSize) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       params.append('page', page);
-      params.append('limit', 10);
+      params.append('limit', limit);
 
       if (activeTab !== 'ALL') params.append('tab', activeTab);
       if (searchQuery.trim()) params.append('search', searchQuery.trim());
@@ -185,10 +186,16 @@ export default function AdminOrdersPage() {
   }, [socket, currentPage]);
 
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= pagination.totalPages) {
+    if (newPage >= 1 && newPage <= (pagination.totalPages || 1) && newPage !== currentPage) {
       setCurrentPage(newPage);
-      loadData(newPage);
+      loadData(newPage, pageSize);
     }
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+    loadData(1, newPageSize);
   };
 
   const handleResetFilters = () => {
@@ -968,31 +975,17 @@ export default function AdminOrdersPage() {
           </div>
 
           {/* Pagination Controls Footer */}
-          <div className="px-6 py-4 bg-slate-50/90 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <div className="text-slate-500 font-semibold">
-              Showing <strong className="text-slate-900">{orders.length}</strong> of <strong className="text-slate-900">{pagination.total}</strong> total orders
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handlePageChange(pagination.page - 1)}
-                disabled={pagination.page <= 1}
-                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-all cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="font-mono font-bold text-slate-700">
-                Page {pagination.page} of {pagination.totalPages || 1}
-              </span>
-              <button
-                onClick={() => handlePageChange(pagination.page + 1)}
-                disabled={pagination.page >= pagination.totalPages}
-                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-all cursor-pointer"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          <AdminPagination
+            pagination={{
+              currentPage: pagination.currentPage || pagination.page || currentPage,
+              pageSize: pagination.pageSize || pagination.limit || pageSize,
+              totalRecords: pagination.totalRecords !== undefined ? pagination.totalRecords : (pagination.total || 0),
+              totalPages: pagination.totalPages || 1,
+            }}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            loading={loading}
+          />
         </div>
       )}
 

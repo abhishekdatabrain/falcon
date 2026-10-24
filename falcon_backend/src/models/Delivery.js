@@ -58,6 +58,10 @@ const Delivery = sequelize.define('Delivery', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  sensor_temperature: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 }, {
   tableName: 'deliveries',
   timestamps: true,

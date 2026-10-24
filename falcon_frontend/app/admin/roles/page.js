@@ -33,6 +33,7 @@ import {
   Layers,
   Sparkles,
 } from 'lucide-react';
+import AdminPagination from '../../../src/components/AdminPagination';
 
 const MODULE_DISPLAY_CONFIG = [
   { key: 'dashboard', label: 'Dashboard' },
@@ -76,6 +77,8 @@ export default function AdminRolesPage() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditTotal, setAuditTotal] = useState(0);
   const [auditPage, setAuditPage] = useState(1);
+  const [auditPageSize, setAuditPageSize] = useState(10);
+  const [auditTotalPages, setAuditTotalPages] = useState(1);
 
   // Roles Filters
   const [roleSearch, setRoleSearch] = useState('');
@@ -135,20 +138,22 @@ export default function AdminRolesPage() {
   }, []);
 
   // Fetch Audit Logs when tab or page changes
-  const loadAuditLogs = async (page = 1) => {
+  const loadAuditLogs = async (page = auditPage, limit = auditPageSize) => {
     try {
       const params = new URLSearchParams();
       params.append('page', page);
-      params.append('limit', '15');
+      params.append('limit', limit);
       if (auditSearch.trim()) params.append('search', auditSearch.trim());
       if (auditModuleFilter !== 'all') params.append('module', auditModuleFilter);
       if (auditActionFilter !== 'all') params.append('action', auditActionFilter);
 
       const res = await fetchApi(`/admin/rbac/audit-logs?${params.toString()}`);
       if (res.success && res.data) {
-        setAuditLogs(res.data.logs || []);
-        setAuditTotal(res.data.total || 0);
-        setAuditPage(res.data.page || 1);
+        setAuditLogs(res.data.logs || res.data.records || []);
+        const total = res.data.pagination?.totalRecords || res.data.total || 0;
+        setAuditTotal(total);
+        setAuditPage(res.data.pagination?.currentPage || res.data.page || page);
+        setAuditTotalPages(res.data.pagination?.totalPages || res.data.totalPages || 1);
       }
     } catch (error) {
       showToast('Failed to load audit logs', 'error');
@@ -157,9 +162,29 @@ export default function AdminRolesPage() {
 
   useEffect(() => {
     if (activeTab === 'audit_logs') {
-      loadAuditLogs(1);
+      setAuditPage(1);
     }
-  }, [activeTab, auditModuleFilter, auditActionFilter]);
+  }, [auditModuleFilter, auditActionFilter, auditSearch]);
+
+  useEffect(() => {
+    if (activeTab === 'audit_logs') {
+      const timer = setTimeout(() => {
+        loadAuditLogs(auditPage, auditPageSize);
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, auditModuleFilter, auditActionFilter, auditSearch, auditPage, auditPageSize]);
+
+  const handleAuditPageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= auditTotalPages && newPage !== auditPage) {
+      setAuditPage(newPage);
+    }
+  };
+
+  const handleAuditPageSizeChange = (newSize) => {
+    setAuditPageSize(newSize);
+    setAuditPage(1);
+  };
 
   // Handle Role selection for matrix view
   const handleSelectRole = (role) => {
@@ -998,6 +1023,16 @@ export default function AdminRolesPage() {
                 </tbody>
               </table>
             </div>
+
+            <AdminPagination
+              currentPage={auditPage}
+              totalPages={auditTotalPages}
+              totalRecords={auditTotal}
+              pageSize={auditPageSize}
+              onPageChange={handleAuditPageChange}
+              onPageSizeChange={handleAuditPageSizeChange}
+              locale={locale}
+            />
           </div>
         </div>
       )}

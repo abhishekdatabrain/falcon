@@ -265,7 +265,7 @@ class PaymentService {
         { model: Admin, as: 'verified_by_admin' },
       ],
       distinct: true,
-      order: [[safeSortBy, safeSortOrder]],
+      order: [[safeSortBy, safeSortOrder], ['id', 'DESC']],
       limit: take,
       offset,
     });
@@ -307,14 +307,13 @@ class PaymentService {
       }
     }
 
+    const { buildPaginationResponse } = require('../utils/pagination');
+    const pagination = buildPaginationResponse(count, pageNum, take);
+
     return {
       payments,
-      pagination: {
-        page: pageNum,
-        limit: take,
-        total: count,
-        totalPages: Math.ceil(count / take) || 1,
-      },
+      records: payments,
+      pagination,
       stats: {
         totalCount: allPayments.length,
         totalVolume,

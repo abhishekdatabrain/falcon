@@ -28,6 +28,7 @@ import {
   AlertCircle,
   FileText,
 } from 'lucide-react';
+import AdminPagination from '../../../src/components/AdminPagination';
 
 export default function AdminDriversPage() {
   const { locale } = useLanguage();
@@ -39,6 +40,12 @@ export default function AdminDriversPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState('ALL'); // ALL, AVAILABLE, BUSY, OFFLINE
   const [accountFilter, setAccountFilter] = useState('ALL'); // ALL, ACTIVE, INACTIVE
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   // Modals & States
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -79,6 +86,8 @@ export default function AdminDriversPage() {
       setLoading(true);
 
       const params = new URLSearchParams();
+      params.append('page', currentPage);
+      params.append('limit', pageSize);
       if (searchQuery.trim()) params.append('search', searchQuery.trim());
       if (availabilityFilter !== 'ALL') params.append('availability', availabilityFilter);
       if (accountFilter !== 'ALL') params.append('accountStatus', accountFilter);
@@ -91,7 +100,13 @@ export default function AdminDriversPage() {
       ]);
 
       if (drvRes.success) {
-        setDrivers(drvRes.data?.drivers || []);
+        setDrivers(drvRes.data?.drivers || drvRes.data?.records || []);
+        if (drvRes.data?.pagination) {
+          setTotalPages(drvRes.data.pagination.totalPages || 1);
+          setTotalRecords(drvRes.data.pagination.totalRecords || 0);
+        } else {
+          setTotalRecords(drvRes.data?.drivers?.length || 0);
+        }
         if (drvRes.data?.stats) {
           setServerStats(drvRes.data.stats);
         }
@@ -110,11 +125,26 @@ export default function AdminDriversPage() {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, availabilityFilter, accountFilter]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       loadData();
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, availabilityFilter, accountFilter]);
+  }, [currentPage, pageSize, searchQuery, availabilityFilter, accountFilter]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
 
   // Server-side filtered drivers
   const filteredDrivers = drivers;
@@ -607,6 +637,16 @@ export default function AdminDriversPage() {
               </tbody>
             </table>
           </div>
+
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalRecords={totalRecords}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            locale={locale}
+          />
         </div>
       )}
 

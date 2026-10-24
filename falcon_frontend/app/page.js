@@ -6,60 +6,11 @@ import { useCart } from '../src/contexts/CartContext';
 import { useWishlist } from '../src/contexts/WishlistContext';
 import { useToast } from '../src/contexts/ToastContext';
 import { fetchApi, getImageUrl } from '../src/services/api';
+import { getCategoryUrl } from '../src/services/categoryHierarchy';
 import { ShoppingBag, Truck, ShieldCheck, FileCheck, ArrowRight, Star, Sparkles, CheckCircle2, Leaf, Tag, ChevronRight, ChevronLeft, Gift, Headphones, Shield, Smartphone, Heart, Flame, TrendingUp, Plus, Minus, Trash2, Loader2, Zap, Ban } from 'lucide-react';
 import WaveDivider from '../src/components/WaveDivider';
 
-const SAFE_DEFAULT_CATEGORIES = [
-
-];
-
-const HERO_SLIDES = [
-  {
-    id: 1,
-    tag_en: 'Daily Grocery',
-    tag_ar: 'البقالة اليومية',
-    title_en: 'Fresh and Healthy Grocery Store',
-    title_ar: 'متجر البقالة الطازجة والصحية',
-    desc_en: 'Enjoy organically grown fruits, vegetables, and seasonal produce delivered directly from local farm in 30 minutes.',
-    desc_ar: 'تمتع بالفواكه والخضروات العضوية الطازجة التي تصلك مباشرة من المزرعة خلال ٣٠ دقيقة.',
-    btn_en: 'Shop Now',
-    btn_ar: 'تسوق الآن',
-    bg: 'bg-[#05442e]',
-    accentColor: 'text-amber-300',
-    btnStyle: 'bg-[#16a34a] text-white hover:bg-emerald-700',
-    img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800',
-  },
-  {
-    id: 2,
-    tag_en: 'Exotic Picks',
-    tag_ar: 'تشكيلة استوائية',
-    title_en: 'Premium Fresh Watermelons & Tropical Fruits',
-    title_ar: 'بطيخ أحمر حلو وفواكه استوائية طازجة',
-    desc_en: 'Hand-picked premium organic watermelons, kiwis, berries, and dragon fruits with guaranteed freshness.',
-    desc_ar: 'بطيخ أحمر عضوي منتقى بعناية مع ضمان الجودة والانتعاش التام.',
-    btn_en: 'Explore Fruits',
-    btn_ar: 'استكشف الفواكه',
-    bg: 'bg-[#064e3b]',
-    accentColor: 'text-emerald-300',
-    btnStyle: 'bg-emerald-400 text-emerald-950 hover:bg-emerald-300',
-    img: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=800',
-  },
-  {
-    id: 3,
-    tag_en: 'Seafood Special',
-    tag_ar: 'عروض أسماك',
-    title_en: 'Fresh Farm Produce & Ocean Catches',
-    title_ar: 'أسماك ومأكولات بحرية طازجة يومياً',
-    desc_en: '100% Organically harvested grocery produce and fresh lobsters delivered in cold chain logistics.',
-    desc_ar: 'منتجات طازجة ومأكولات بحرية مبردة تصلك بسيارات مجهزة بدرجة حرارة خاضعة للرقابة.',
-    btn_en: 'Order Grocery',
-    btn_ar: 'اطلب الآن',
-    bg: 'bg-[#064e3b]',
-    accentColor: 'text-emerald-300',
-    btnStyle: 'bg-emerald-400 text-emerald-950 hover:bg-emerald-300',
-    img: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=800',
-  },
-];
+const SAFE_DEFAULT_CATEGORIES = [];
 
 const getCategoryImageUrl = (cat) => {
   if (cat && cat.image_url && typeof cat.image_url === 'string' && cat.image_url.trim() !== '') {
@@ -414,6 +365,8 @@ export default function HomePage() {
   const [bestDealsProducts, setBestDealsProducts] = useState([]);
   const [heroBanners, setHeroBanners] = useState([]);
   const [heroLoaded, setHeroLoaded] = useState(false);
+  const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  const [heroAutoplay, setHeroAutoplay] = useState(true);
   const [promoBanners, setPromoBanners] = useState([]);
   const [categorySections, setCategorySections] = useState([]);
   const [cmsSections, setCmsSections] = useState([]);
@@ -540,6 +493,15 @@ export default function HomePage() {
     };
   }, []);
 
+  // Hero carousel auto-play rotation
+  useEffect(() => {
+    if (!heroAutoplay) return;
+    const interval = setInterval(() => {
+      setCurrentHeroSlide((prev) => prev + 1);
+    }, 5500);
+    return () => clearInterval(interval);
+  }, [heroAutoplay]);
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -638,21 +600,29 @@ export default function HomePage() {
   return (
     <div className="space-y-16 pb-16 font-sans bg-[#fbfcfb]">
 
-      {/* 1. Hero Section (Delivered Simply Landing Banner with Dynamic Admin Management) */}
+      {/* 1. Hero Section (Dynamic Multi-Slide Carousel & Slider with Auto-Play & Navigation) */}
       {(() => {
-        const activeHero = (heroBanners && heroBanners.length > 0) ? heroBanners[0] : {};
+        // Use strictly backend heroBanners data
+        const slides = Array.isArray(heroBanners) ? heroBanners : [];
+
+        if (slides.length === 0) {
+          return null;
+        }
+
+        const safeIndex = ((currentHeroSlide % slides.length) + slides.length) % slides.length;
+        const activeHero = slides[safeIndex] || slides[0] || {};
 
         const titleText = locale === 'ar'
-          ? (activeHero.title_ar || 'كل ما تحتاجه')
-          : (activeHero.title_en || 'Everything You need');
+          ? (activeHero.title_ar || '')
+          : (activeHero.title_en || '');
 
         const subtitleText = locale === 'ar'
-          ? (activeHero.subtitle_ar || 'يصلك بكل بساطة')
-          : (activeHero.subtitle_en || 'Delivered Simply');
+          ? (activeHero.subtitle_ar || '')
+          : (activeHero.subtitle_en || '');
 
         const descText = locale === 'ar'
-          ? (activeHero.desc_ar || 'تسوق البقالة والوجبات الخفيفة والعناية الشخصية والمزيد بأفضل الأسعار. طازجة يمكنك الوثوق بها.')
-          : (activeHero.desc_en || 'Shop groceries, snacks, personal care and more at great prices. Freshness you can trust.');
+          ? (activeHero.desc_ar || '')
+          : (activeHero.desc_en || '');
 
         const btnText = locale === 'ar'
           ? (activeHero.btn_text_ar || 'تسوق الآن')
@@ -660,20 +630,55 @@ export default function HomePage() {
 
         const btnLink = activeHero.btn_link || '/products';
 
-        const heroImage = activeHero.image_url
-          ? getImageUrl(activeHero.image_url)
-          : (heroLoaded && (!heroBanners || heroBanners.length === 0) ? '/hero_grocery_bag_fresh.png' : '');
+        const heroImage = activeHero.image_url ? getImageUrl(activeHero.image_url) : '';
 
         const heroBg = activeHero.bg_color || '#FAF7F0';
+
+        const handlePrev = () => {
+          setCurrentHeroSlide((prev) => (prev - 1 + slides.length) % slides.length);
+        };
+
+        const handleNext = () => {
+          setCurrentHeroSlide((prev) => (prev + 1) % slides.length);
+        };
 
         return (
           <section
             suppressHydrationWarning
             style={{ backgroundColor: heroBg }}
-            className="relative overflow-hidden font-sans border-amber-100/60 lg:h-[calc(115vh-125px)] lg:min-h-[460px] lg:max-h-[620px] flex flex-col justify-between pt-2 sm:pt-4 pb-0"
+            onMouseEnter={() => setHeroAutoplay(false)}
+            onMouseLeave={() => setHeroAutoplay(true)}
+            className="relative overflow-hidden font-sans border-amber-100/60 lg:h-[calc(118vh-127px)] lg:min-h-[460px] lg:max-h-[620px] flex flex-col justify-between pt-2 sm:pt-4 pb-0 transition-colors duration-700 select-none group/hero"
           >
+            {/* Previous Slide Button */}
+            {slides.length > 1 && (
+              <button
+                type="button"
+                onClick={locale === 'ar' ? handleNext : handlePrev}
+                aria-label={locale === 'ar' ? 'الشريحة السابقة' : 'Previous Slide'}
+                className="absolute left-2 sm:left-5 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/80 hover:bg-white text-slate-800 shadow-md hover:shadow-xl backdrop-blur-xs border border-white/80 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer opacity-80 sm:opacity-0 group-hover/hero:opacity-100 duration-200"
+              >
+                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 rtl:rotate-180" />
+              </button>
+            )}
+
+            {/* Next Slide Button */}
+            {slides.length > 1 && (
+              <button
+                type="button"
+                onClick={locale === 'ar' ? handlePrev : handleNext}
+                aria-label={locale === 'ar' ? 'الشريحة التالية' : 'Next Slide'}
+                className="absolute right-2 sm:right-5 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/80 hover:bg-white text-slate-800 shadow-md hover:shadow-xl backdrop-blur-xs border border-white/80 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer opacity-80 sm:opacity-0 group-hover/hero:opacity-100 duration-200"
+              >
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 rtl:rotate-180" />
+              </button>
+            )}
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col justify-center my-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center py-1 sm:py-2">
+              <div
+                key={`slide-${activeHero.id || safeIndex}`}
+                className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center py-1 sm:py-2 animate-in fade-in zoom-in-[0.99] duration-500"
+              >
 
                 {/* Left Column Content */}
                 <div className="lg:col-span-7 space-y-3 sm:space-y-3.5 text-left rtl:text-right">
@@ -779,6 +784,24 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* Bottom Carousel Navigation Dots */}
+            {slides.length > 1 && (
+              <div className="flex items-center justify-center gap-2 pb-2.5 z-20">
+                {slides.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setCurrentHeroSlide(idx)}
+                    aria-label={`Slide ${idx + 1}`}
+                    className={`transition-all duration-300 rounded-full cursor-pointer h-2.5 ${safeIndex === idx
+                        ? 'w-7 sm:w-8 bg-[#043927] shadow-xs'
+                        : 'w-2.5 bg-slate-300/80 hover:bg-slate-400'
+                      }`}
+                  />
+                ))}
+              </div>
+            )}
+
             {/* Wavy Wave Curve Bottom Decorative Banner */}
             <WaveDivider className="-mb-1 shrink-0" />
           </section>
@@ -865,7 +888,7 @@ export default function HomePage() {
                 return (
                   <Link
                     key={cat.id || cat._id || catSlug}
-                    href={`/category/${encodeURIComponent(catSlug)}`}
+                    href={getCategoryUrl(cat)}
                     className="group/card bg-[#FFFDF8] hover:bg-[#FFF9EC] rounded-[22px] p-4 flex flex-col items-center justify-between border border-[#F6EEDF] shadow-2xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer min-h-[210px] sm:min-h-[230px] w-[155px] sm:w-[175px] md:w-[190px] shrink-0 snap-start min-w-0"
                   >
                     <div className="relative w-full aspect-square max-w-[130px] sm:max-w-[145px] bg-white rounded-xl flex items-center justify-center overflow-hidden shrink-0 min-h-0 min-w-0 my-auto p-2 border border-amber-100/50">
@@ -958,8 +981,8 @@ export default function HomePage() {
                 */}
                 <div
                   className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 md:gap-5 p-1 ${displayDeals.length > 10
-                      ? 'max-h-[620px] sm:max-h-[650px] lg:max-h-[670px] overflow-y-auto pr-1.5 sm:pr-2 [scrollbar-width:thin] [scrollbar-color:#04392733_transparent]'
-                      : ''
+                    ? 'max-h-[620px] sm:max-h-[650px] lg:max-h-[670px] overflow-y-auto pr-1.5 sm:pr-2 [scrollbar-width:thin] [scrollbar-color:#04392733_transparent]'
+                    : ''
                     }`}
                   style={displayDeals.length > 10 ? { scrollbarGutter: 'stable' } : {}}
                 >
@@ -1116,7 +1139,7 @@ export default function HomePage() {
                                   </>
                                 ) : (
                                   <span className="text-slate-400 font-medium text-[10px]">
-                                    {locale === 'ar' ? 'لا توجد تقييمات بعد' : 'ings yet'}
+                                    {locale === 'ar' ? 'لا توجد تقييمات بعد' : 'No ratings yet'}
                                   </span>
                                 )}
                               </div>

@@ -65,10 +65,15 @@ class OrderController {
   async trackOrder(req, res, next) {
     try {
       const { identifier } = req.params;
-      const order = await orderService.trackOrder(identifier);
+      const order = await orderService.trackOrder(identifier, req.user);
       return sendSuccess(res, 'Order tracking retrieved', { order });
     } catch (error) {
-      return sendError(res, error.message, [], 404);
+      const statusCode = error.statusCode || (
+        error.message?.includes('Access denied') ? 403 :
+        error.message?.includes('Authentication required') ? 401 :
+        error.message?.includes('not found') ? 404 : 400
+      );
+      return sendError(res, error.message, [], statusCode);
     }
   }
 

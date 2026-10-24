@@ -242,11 +242,11 @@ export default function CartPage() {
 
                       {/* Product Thumbnail */}
                       <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-slate-50 border border-slate-100 p-2.5 flex items-center justify-center shrink-0 overflow-hidden">
-                        {hasDiscount && (
+                        {/* {hasDiscount && (
                           <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white font-black text-[10px] px-1.5 py-0.5 rounded-md shadow-xs z-10">
                             {discountPercent}% OFF
                           </span>
-                        )}
+                        )} */}
                         <img
                           src={getImageUrl(item.image)}
                           alt={itemName}

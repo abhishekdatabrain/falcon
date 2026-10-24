@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getImageUrl } from '../services/api';
+import { getCategoryUrl } from '../services/categoryHierarchy';
 
 const DEFAULT_SUB_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop';
 
@@ -125,7 +126,7 @@ export default function SubcategoryGrid({
           // If level === 3, child is Level 4 -> open filtered Product Listing Page
           const childHref = level === 3
             ? `/products?categoryId=${encodeURIComponent(sub.id || sub.slug)}`
-            : `${parentPath}/${sub.slug}`;
+            : getCategoryUrl(sub, parentPath);
 
           return (
             <Link

@@ -1106,14 +1106,6 @@ function NotificationCard({
                       <Eye className="w-3.5 h-3.5 text-slate-500" />
                       <span>{item.isRead ? 'Mark as unread' : 'Mark as read'}</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteNotification(item.id, e)}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                      <span>Remove alert</span>
-                    </button>
                   </div>
                 )}
               </div>

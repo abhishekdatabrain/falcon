@@ -4,6 +4,7 @@ import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import { useAuth } from '../../../src/contexts/AuthContext';
+import AdminPagination from '../../../src/components/AdminPagination';
 import {
   ShoppingBag,
   Plus,
@@ -103,6 +104,10 @@ export default function AdminProductsPage() {
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'INACTIVE'
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   // Page View Mode: 'list' | 'form'
   const [viewMode, setViewMode] = useState('list');
@@ -234,18 +239,26 @@ export default function AdminProductsPage() {
     images: [],
   });
 
-  const loadData = async (overrideParams = {}) => {
+  const loadData = async (overrideParams = {}, page = currentPage, limit = pageSize) => {
     try {
       setLoading(true);
       const activeStatus = overrideParams.statusFilter !== undefined ? overrideParams.statusFilter : statusFilter;
       const activeStart = overrideParams.startDate !== undefined ? overrideParams.startDate : startDate;
       const activeEnd = overrideParams.endDate !== undefined ? overrideParams.endDate : endDate;
+      const activeSearch = overrideParams.search !== undefined ? overrideParams.search : searchQuery;
+      const activeCategory = overrideParams.category !== undefined ? overrideParams.category : selectedCategoryFilter;
 
       const params = new URLSearchParams();
       params.append('onlyActive', 'false');
-      params.append('all', 'true');
-      params.append('limit', '1000');
+      params.append('page', page);
+      params.append('limit', limit);
 
+      if (activeSearch && activeSearch.trim()) {
+        params.append('search', activeSearch.trim());
+      }
+      if (activeCategory) {
+        params.append('category_id', activeCategory);
+      }
       if (activeStatus && activeStatus !== 'ALL') {
         params.append('status', activeStatus.toLowerCase());
       }
@@ -260,8 +273,21 @@ export default function AdminProductsPage() {
         fetchApi(`/products?${params.toString()}`),
         categories.length === 0 ? fetchApi('/categories?all=true') : Promise.resolve({ success: true, data: { categories } }),
       ]);
-      if (prodRes.success) {
-        setProducts(prodRes.data?.products?.products || prodRes.data?.products || (Array.isArray(prodRes.data) ? prodRes.data : []));
+      if (prodRes.success && prodRes.data) {
+        const prodList = prodRes.data.products || prodRes.data.records || [];
+        setProducts(Array.isArray(prodList) ? prodList : (prodList.products || []));
+        if (prodRes.data.pagination) {
+          setTotalPages(prodRes.data.pagination.totalPages || 1);
+          setTotalRecords(
+            prodRes.data.pagination.totalRecords !== undefined
+              ? prodRes.data.pagination.totalRecords
+              : (prodRes.data.pagination.total || 0)
+          );
+          setCurrentPage(prodRes.data.pagination.currentPage || prodRes.data.pagination.page || page);
+        } else {
+          setTotalPages(1);
+          setTotalRecords(Array.isArray(prodList) ? prodList.length : 0);
+        }
       }
       if (catRes.success && categories.length === 0) {
         const fetchedCats = catRes.data?.categories || (Array.isArray(catRes.data) ? catRes.data : []);
@@ -275,8 +301,23 @@ export default function AdminProductsPage() {
   };
 
   useEffect(() => {
-    loadData();
-  }, [statusFilter, startDate, endDate]);
+    const timer = setTimeout(() => {
+      loadData({ search: searchQuery, category: selectedCategoryFilter }, 1, pageSize);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedCategoryFilter, statusFilter, startDate, endDate]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      loadData({}, newPage, pageSize);
+    }
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+    loadData({}, 1, newPageSize);
+  };
 
   // Compute 4 Levels of Category Hierarchy
   const mainCategories = categories.filter((c) => !c.parent_id);
@@ -1004,12 +1045,7 @@ export default function AdminProductsPage() {
     }
   };
 
-  const filteredProducts = products.filter((p) => {
-    if (selectedCategoryFilter && String(p.category_id) !== String(selectedCategoryFilter)) return false;
-    const title = (locale === 'ar' ? p.name_ar : p.name_en) || '';
-    const sku = p.sku || '';
-    return title.toLowerCase().includes(searchQuery.toLowerCase()) || sku.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  const filteredProducts = products;
 
   return (
     <div className="space-y-6">
@@ -1030,7 +1066,7 @@ export default function AdminProductsPage() {
                       {locale === 'ar' ? 'إدارة كتالوج المواد الغذائية وطازج' : 'Fresh Product Catalog'}
                     </h1>
                     <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                      {filteredProducts.length} {locale === 'ar' ? 'منتج' : 'Items'}
+                      {totalRecords} {locale === 'ar' ? 'منتج' : 'Items'}
                     </span>
                     {statusFilter === 'ACTIVE' && (
                       <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300">
@@ -1399,6 +1435,14 @@ export default function AdminProductsPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Server-Side Pagination */}
+              <AdminPagination
+                pagination={{ currentPage, pageSize, totalRecords, totalPages }}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                loading={loading}
+              />
             </div>
           )}
         </>

@@ -277,10 +277,7 @@ export default function SavedAddressesPage() {
             </span>
           )}
 
-          <span className="bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 rounded-xl text-emerald-900 shadow-2xs flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Live Server Verified</span>
-          </span>
+        
         </div>
 
         {/* ================= MAIN 2-COLUMN LAYOUT ================= */}
@@ -479,7 +476,7 @@ export default function SavedAddressesPage() {
                       </div>
 
                       {/* Right Location Card Visual */}
-                      <div className="md:col-span-4 space-y-2">
+                      {/* <div className="md:col-span-4 space-y-2">
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 flex flex-col justify-between space-y-2 text-xs">
                           <div className="flex items-center gap-2 text-slate-700 font-extrabold">
                             <MapPin className="w-4 h-4 text-[#05A764]" />
@@ -495,7 +492,7 @@ export default function SavedAddressesPage() {
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
                         </div>
-                      </div>
+                      </div> */}
 
                     </div>
 

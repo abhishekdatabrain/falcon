@@ -6,6 +6,7 @@ import { fetchApi, getImageUrl } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import { useAuth } from '../../../src/contexts/AuthContext';
+import AdminPagination from '../../../src/components/AdminPagination';
 import {
   Landmark,
   CheckCircle2,
@@ -68,7 +69,7 @@ export default function AdminPaymentsPage() {
   });
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: 10,
     total: 0,
     totalPages: 1,
   });
@@ -108,13 +109,14 @@ export default function AdminPaymentsPage() {
   const [copiedId, setCopiedId] = useState(null);
 
   // Load Payments Data
-  const loadPayments = async (overridePage) => {
+  const loadPayments = async (overridePage, overrideLimit) => {
     try {
       setLoading(true);
       const currentPage = overridePage !== undefined ? overridePage : pagination.page;
+      const currentLimit = overrideLimit !== undefined ? overrideLimit : (pagination.limit || 10);
       const params = new URLSearchParams();
       params.append('page', currentPage);
-      params.append('limit', pagination.limit);
+      params.append('limit', currentLimit);
 
       if (activeTab !== 'ALL') {
         params.append('status', activeTab);
@@ -130,7 +132,7 @@ export default function AdminPaymentsPage() {
 
       const res = await fetchApi(`/payments?${params.toString()}`);
       if (res.success && res.data) {
-        setPayments(res.data.payments || []);
+        setPayments(res.data.payments || res.data.records || []);
         if (res.data.stats) setStats(res.data.stats);
         if (res.data.pagination) setPagination(res.data.pagination);
       }
@@ -1239,35 +1241,12 @@ export default function AdminPaymentsPage() {
       )}
 
       {/* 5. Pagination Controls */}
-      {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs">
-          <span className="text-xs text-slate-500 font-semibold">
-            {locale === 'ar'
-              ? `عرض ${(pagination.page - 1) * pagination.limit + 1} - ${Math.min(pagination.page * pagination.limit, pagination.total)} من ${pagination.total} سجل`
-              : `Showing ${(pagination.page - 1) * pagination.limit + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} payments`}
-          </span>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => loadPayments(pagination.page - 1)}
-              disabled={pagination.page <= 1 || loading}
-              className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              {locale === 'ar' ? 'السابق' : 'Previous'}
-            </button>
-            <span className="text-xs font-black text-slate-800 px-2">
-              {pagination.page} / {pagination.totalPages}
-            </span>
-            <button
-              onClick={() => loadPayments(pagination.page + 1)}
-              disabled={pagination.page >= pagination.totalPages || loading}
-              className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              {locale === 'ar' ? 'التالي' : 'Next'}
-            </button>
-          </div>
-        </div>
-      )}
+      <AdminPagination
+        pagination={pagination}
+        onPageChange={(p) => loadPayments(p, pagination.limit || pagination.pageSize || 10)}
+        onPageSizeChange={(newLimit) => loadPayments(1, newLimit)}
+        loading={loading}
+      />
 
       {/* MODAL 1: Bank Receipt Proof Inspector (Requirement 2 & 3) */}
       {selectedProofPayment && (

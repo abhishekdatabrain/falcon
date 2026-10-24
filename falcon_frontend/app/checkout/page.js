@@ -88,30 +88,29 @@ export default function CheckoutPage() {
   // Modal & Address State
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [addressModalTab, setAddressModalTab] = useState('list'); // 'list' | 'new'
+  const getEmptyAddress = () => ({
+    full_name: '',
+    mobile: '',
+    country: 'Saudi Arabia',
+    state: '',
+    city: '',
+    area: '',
+    address_line: '',
+    postal_code: '',
+    is_default: false,
+  });
+
   const [newAddress, setNewAddress] = useState({
     full_name: '',
     mobile: '',
     country: 'Saudi Arabia',
-    state: 'Riyadh Province',
-    city: 'Riyadh',
+    state: '',
+    city: '',
     area: '',
     address_line: '',
     postal_code: '',
-    is_default: true,
+    is_default: false,
   });
-
-  // Prefill newAddress full_name and mobile from logged in user if available
-  useEffect(() => {
-    if (user) {
-      const name = user.name || (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : '') || (user.email ? user.email.split('@')[0] : '');
-      const phone = user.mobile || user.phone_number || '';
-      setNewAddress((prev) => ({
-        ...prev,
-        full_name: prev.full_name || name,
-        mobile: prev.mobile || phone,
-      }));
-    }
-  }, [user]);
 
   const loadAddresses = async () => {
     try {
@@ -178,6 +177,7 @@ export default function CheckoutPage() {
 
       if (res.success && res.data?.address) {
         setShowAddressModal(false);
+        setNewAddress(getEmptyAddress());
         showToast(
           locale === 'ar' ? 'تم إضافة العنوان بنجاح!' : 'Address added successfully!',
           'success'
@@ -710,6 +710,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => {
+                      setNewAddress(getEmptyAddress());
                       setAddressModalTab('new');
                       setShowAddressModal(true);
                     }}
@@ -1394,7 +1395,10 @@ export default function CheckoutPage() {
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-3">
                   <button
                     type="button"
-                    onClick={() => setAddressModalTab('new')}
+                    onClick={() => {
+                      setNewAddress(getEmptyAddress());
+                      setAddressModalTab('new');
+                    }}
                     className="flex-1 py-2.5 rounded-xl border border-dashed border-[#05A764] text-[#05A764] hover:bg-emerald-50 font-extrabold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
@@ -1459,7 +1463,7 @@ export default function CheckoutPage() {
                     <input
                       type="text"
                       required
-                      placeholder="Riyadh"
+                      placeholder={locale === 'ar' ? 'مثال: الرياض' : 'e.g. Riyadh'}
                       value={newAddress.city}
                       onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-[#05A764] focus:bg-white"

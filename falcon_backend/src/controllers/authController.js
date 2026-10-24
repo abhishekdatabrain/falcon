@@ -104,14 +104,14 @@ class AuthController {
   }
 
   async logout(req, res, next) {
-    const role = req.user?.role || req.headers['x-auth-role'];
+    const role = (req.body?.role || req.headers['x-auth-role'] || req.user?.role || '').toUpperCase();
     try {
       let refreshToken = null;
       if (req.cookies) {
-        if (role === 'ADMIN') refreshToken = req.cookies.admin_refresh_token || req.cookies.refresh_token;
-        else if (role === 'DRIVER') refreshToken = req.cookies.driver_refresh_token || req.cookies.refresh_token;
+        if (role === 'ADMIN') refreshToken = req.cookies.admin_refresh_token;
+        else if (role === 'DRIVER') refreshToken = req.cookies.driver_refresh_token;
         else if (role === 'CUSTOMER') refreshToken = req.cookies.customer_refresh_token || req.cookies.refresh_token;
-        else refreshToken = req.cookies.refresh_token || req.cookies.customer_refresh_token || req.cookies.admin_refresh_token;
+        else refreshToken = req.cookies.customer_refresh_token || req.cookies.refresh_token;
       }
       await authService.logout(refreshToken);
       clearAuthCookies(res, role);

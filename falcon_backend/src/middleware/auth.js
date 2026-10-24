@@ -26,17 +26,17 @@ const getTokensFromReq = (req) => {
 
   // Fallback if specific role cookie not found or path was generic
   if (!token && req.cookies) {
-    if (reqRole === 'ADMIN') token = req.cookies.admin_access_token || req.cookies.access_token;
-    else if (reqRole === 'DRIVER') token = req.cookies.driver_access_token || req.cookies.access_token;
+    if (reqRole === 'ADMIN') token = req.cookies.admin_access_token;
+    else if (reqRole === 'DRIVER') token = req.cookies.driver_access_token;
     else if (reqRole === 'CUSTOMER') token = req.cookies.customer_access_token || req.cookies.access_token;
-    else token = req.cookies.access_token || req.cookies.customer_access_token || req.cookies.admin_access_token || req.cookies.driver_access_token;
+    else token = req.cookies.customer_access_token || req.cookies.access_token;
   }
 
   if (!refreshToken && req.cookies) {
-    if (reqRole === 'ADMIN') refreshToken = req.cookies.admin_refresh_token || req.cookies.refresh_token;
-    else if (reqRole === 'DRIVER') refreshToken = req.cookies.driver_refresh_token || req.cookies.refresh_token;
+    if (reqRole === 'ADMIN') refreshToken = req.cookies.admin_refresh_token;
+    else if (reqRole === 'DRIVER') refreshToken = req.cookies.driver_refresh_token;
     else if (reqRole === 'CUSTOMER') refreshToken = req.cookies.customer_refresh_token || req.cookies.refresh_token;
-    else refreshToken = req.cookies.refresh_token || req.cookies.customer_refresh_token || req.cookies.admin_refresh_token || req.cookies.driver_refresh_token;
+    else refreshToken = req.cookies.customer_refresh_token || req.cookies.refresh_token;
   }
 
   if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {

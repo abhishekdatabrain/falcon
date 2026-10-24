@@ -10,6 +10,7 @@ import { useSocket } from '../../src/contexts/SocketContext';
 import { useToast } from '../../src/contexts/ToastContext';
 import { downloadOrderInvoice } from '../../src/services/invoiceService';
 import GoogleLiveTrackingMap from '../../src/components/GoogleLiveTrackingMap';
+import OrderTrackingTimeline from '../../src/components/OrderTrackingTimeline';
 import {
   MapPin,
   Home,
@@ -78,9 +79,9 @@ function TrackOrderContent() {
   const [driverTelemetry, setDriverTelemetry] = useState({
     lat: DEFAULT_RIYADH_DRIVER_LAT,
     lng: DEFAULT_RIYADH_DRIVER_LNG,
-    speed: 42,
+    speed: 0,
     heading: 120,
-    temp: '3.5°C',
+    temp: null,
     updatedAt: new Date().toISOString(),
   });
 
@@ -107,10 +108,13 @@ function TrackOrderContent() {
         } catch (e) {
           // fallback
         }
+        setLoading(false);
+        setError(locale === 'ar' ? 'لا توجد لديك طلبات حالية للتتبع.' : 'You have no recent orders to track.');
+        return;
       }
 
-      // Default demo order for instant preview if no query provided
-      await loadOrder('ORD-20261009-9815');
+      setLoading(false);
+      setError(locale === 'ar' ? 'يرجى تسجيل الدخول أو إدخال رقم الطلب أعلاه لمتابعة التتبع.' : 'Please sign in or enter an order number above to track your delivery.');
       return;
     }
 
@@ -132,25 +136,50 @@ function TrackOrderContent() {
         setOrder(orderData);
         setSearchInput(orderData.order_number || cleanId);
 
-        // Extract latest driver coordinates if present
-        const latestLoc = orderData.delivery?.locations?.[0];
-        if (latestLoc && parseFloat(latestLoc.latitude) && parseFloat(latestLoc.longitude)) {
-          setDriverTelemetry((prev) => ({
-            ...prev,
-            lat: parseFloat(latestLoc.latitude),
-            lng: parseFloat(latestLoc.longitude),
-            speed: latestLoc.speed ? Math.round(latestLoc.speed) : 42,
-            heading: latestLoc.heading || 120,
-          }));
-        } else if (orderData.address?.latitude && orderData.address?.longitude) {
-          // Offset driver slightly north-west for route rendering
-          const destLat = parseFloat(orderData.address.latitude);
-          const destLng = parseFloat(orderData.address.longitude);
-          setDriverTelemetry((prev) => ({
-            ...prev,
-            lat: destLat + 0.0185,
-            lng: destLng - 0.0162,
-          }));
+        // Extract latest driver coordinates & sensor temperature only if order is OUT_FOR_DELIVERY or ARRIVED (Requirements 1, 6, 9)
+        const isLiveTrackingActive = ['OUT_FOR_DELIVERY', 'ARRIVED'].includes(orderData.order_status) && orderData.can_track_driver !== false;
+
+        if (isLiveTrackingActive) {
+          const latestLoc = orderData.delivery?.locations?.[0];
+          const initialTemp = latestLoc?.temperature || orderData.delivery?.sensor_temperature || null;
+          if (latestLoc && parseFloat(latestLoc.latitude) && parseFloat(latestLoc.longitude)) {
+            setDriverTelemetry((prev) => ({
+              ...prev,
+              lat: parseFloat(latestLoc.latitude),
+              lng: parseFloat(latestLoc.longitude),
+              speed: latestLoc.speed ? Math.round(latestLoc.speed) : 0,
+              heading: latestLoc.heading || 120,
+              temp: initialTemp,
+            }));
+            setGpsStatusState('LIVE');
+          } else if (orderData.address?.latitude && orderData.address?.longitude) {
+            // Offset driver slightly north-west for route rendering
+            const destLat = parseFloat(orderData.address.latitude);
+            const destLng = parseFloat(orderData.address.longitude);
+            setDriverTelemetry((prev) => ({
+              ...prev,
+              lat: destLat + 0.0185,
+              lng: destLng - 0.0162,
+              temp: initialTemp,
+            }));
+            setGpsStatusState('LIVE');
+          } else if (initialTemp) {
+            setDriverTelemetry((prev) => ({
+              ...prev,
+              temp: initialTemp,
+            }));
+          }
+        } else {
+          // Requirement 9: Never expose the driver's location before allowed status
+          setDriverTelemetry({
+            lat: null,
+            lng: null,
+            speed: 0,
+            heading: 0,
+            temp: null,
+            updatedAt: null,
+          });
+          setGpsStatusState('DISCONNECTED');
         }
       } else {
         setError(res?.message || (locale === 'ar' ? 'لم يتم العثور على الطلب' : `Order "${cleanId}" not found`));
@@ -179,38 +208,41 @@ function TrackOrderContent() {
     }
 
     const handleLocationUpdate = (data) => {
+      // Only process and display live location if allowed status (Requirements 1, 6, 9)
+      if (order?.order_status !== 'OUT_FOR_DELIVERY' && order?.order_status !== 'ARRIVED') {
+        return;
+      }
+
       if (data && (data.latitude || data.lat) && (data.longitude || data.lng)) {
-        setDriverTelemetry({
+        setDriverTelemetry((prev) => ({
           lat: parseFloat(data.latitude || data.lat),
           lng: parseFloat(data.longitude || data.lng),
-          speed: data.speed !== undefined && data.speed !== null ? Math.round(data.speed) : 42,
-          heading: data.heading || 120,
-          temp: data.temp || '3.5°C',
+          speed: data.speed !== undefined && data.speed !== null ? Math.round(data.speed) : prev.speed,
+          heading: data.heading || prev.heading,
+          temp: data.temp || data.temperature || prev.temp || null,
           updatedAt: new Date().toISOString(),
-        });
+        }));
         setGpsStatusState('LIVE');
       }
     };
 
     const handleStatusUpdate = (data) => {
       if (data && (data.orderId === order.id || data.deliveryId === order.delivery?.id)) {
-        setOrder((prev) =>
-          prev
-            ? {
-              ...prev,
-              order_status: data.status,
-              delivery: {
-                ...prev.delivery,
-                status: data.status,
-                failure_reason: data.data?.failureReason || prev.delivery?.failure_reason,
-                otp_verified_at: data.data?.otpVerified ? new Date().toISOString() : prev.delivery?.otp_verified_at,
-              },
-            }
-            : prev
-        );
+        // Re-fetch order dynamically so status, delivery, or reassigned driver info updates instantly
+        loadOrder(order.order_number || order.id);
         showToast(
           locale === 'ar' ? `تحديث حالة الطلب: ${data.status}` : `Order Status Updated: ${data.status}`,
           'info'
+        );
+      }
+    };
+
+    const handleOrderAssigned = (data) => {
+      if (data && (data.orderId === order.id || data.deliveryId === order.delivery?.id)) {
+        loadOrder(order.order_number || order.id);
+        showToast(
+          locale === 'ar' ? 'تم إسناد مندوب توصيل للطلب' : 'Delivery Driver Assigned to Order',
+          'success'
         );
       }
     };
@@ -226,12 +258,14 @@ function TrackOrderContent() {
     socket.on('driver_location_update', handleLocationUpdate);
     socket.on('location_updated', handleLocationUpdate);
     socket.on('order_status_update', handleStatusUpdate);
+    socket.on('order_assigned', handleOrderAssigned);
     socket.on('driver_gps_status', handleGpsStatus);
 
     return () => {
       socket.off('driver_location_update', handleLocationUpdate);
       socket.off('location_updated', handleLocationUpdate);
       socket.off('order_status_update', handleStatusUpdate);
+      socket.off('order_assigned', handleOrderAssigned);
       socket.off('driver_gps_status', handleGpsStatus);
       if (order.id) leaveOrderRoom(order.id);
       if (order.delivery?.id) leaveDeliveryRoom(order.delivery.id);
@@ -357,65 +391,28 @@ function TrackOrderContent() {
   const destLat = parseFloat(order?.address?.latitude) || DEFAULT_RIYADH_DEST_LAT;
   const destLng = parseFloat(order?.address?.longitude) || DEFAULT_RIYADH_DEST_LNG;
 
-  const driverInfo = order?.delivery?.driver || {
-    name: 'Tariq Al-Harbi',
-    vehicle: 'Toyota HiAce Chill Van #782',
-    phone: '+966 50 123 4567',
-    rating: 4.95,
-    deliveries_count: 1420,
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
-    current_temp: '3.5°C (Chilled Optimal)',
-    role: 'Master Cold-Chain Courier',
-  };
+  // Dynamic Assigned Driver Extraction from Backend (Requirement 1, 2, 3, 10)
+  const assignedDriver = order?.delivery?.driver || null;
+  const driverName = assignedDriver?.name || (assignedDriver?.user?.email ? assignedDriver.user.email.split('@')[0] : (assignedDriver ? 'Assigned Driver' : ''));
+  const driverAvatar = assignedDriver?.profile_image || (driverName ? `https://ui-avatars.com/api/?name=${encodeURIComponent(driverName)}&background=043927&color=05A764&bold=true` : '');
+  const driverType = assignedDriver?.driver_type || null;
+  const vehicleText = assignedDriver ? (
+    [
+      assignedDriver.vehicle_type || (assignedDriver.vehicle_details ? assignedDriver.vehicle_details.split('-')[0].trim() : null),
+      assignedDriver.vehicle_number ? `#${String(assignedDriver.vehicle_number).replace(/^#/, '')}` : (assignedDriver.vehicle_details && assignedDriver.vehicle_details.includes('-') ? assignedDriver.vehicle_details.split('-')[1].replace(/License Plate/i, '').trim() : null)
+    ].filter(Boolean).join(' ') || assignedDriver.vehicle_details || null
+  ) : null;
 
-  // Dynamic 5-Step Stepper Timeline Calculation
-  const isDelivered = status === 'DELIVERED' || status === 'COMPLETED';
-  const isOutForDelivery = status === 'OUT_FOR_DELIVERY' || isDelivered;
-  const isProcessing = ['PROCESSING', 'PACKED', 'DRIVER_ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED'].includes(status);
-  const isConfirmed = !['CANCELLED', 'RETURNED'].includes(status);
+  const driverRating = assignedDriver?.average_rating !== undefined && assignedDriver?.average_rating !== null
+    ? Number(assignedDriver.average_rating).toFixed(2)
+    : (assignedDriver?.rating ? Number(assignedDriver.rating).toFixed(2) : null);
 
-  const timelineSteps = [
-    {
-      step: 1,
-      title: locale === 'ar' ? 'تم استلام وتأكيد الطلب' : 'Order Received & Confirmed',
-      desc: locale === 'ar' ? `تم تأكيد الطلب #${order?.order_number || ''} في مركز فالكون المركزي.` : `Order #${order?.order_number || ''} verified & reserved at Falcon Express Hub.`,
-      time: formatPlacedTime(order?.createdAt),
-      completed: isConfirmed,
-      active: status === 'CONFIRMED' || status === 'PENDING_PAYMENT',
-    },
-    {
-      step: 2,
-      title: locale === 'ar' ? 'تم الحصاد والتجهيز' : 'Harvested & Packing Completed',
-      desc: locale === 'ar' ? 'تم قطف المنتجات الطازجة وتعبئتها في أكياس حرارية مبردة.' : 'Fresh groceries picked & packed into thermal insulated bags.',
-      time: isProcessing ? 'Completed' : 'Pending',
-      completed: isProcessing,
-      active: status === 'PROCESSING' || status === 'PACKED',
-    },
-    {
-      step: 3,
-      title: locale === 'ar' ? 'فحص الجودة والتبريد' : 'Thermal Cold-Chain QC Verified',
-      desc: locale === 'ar' ? 'تم فحص درجات الحرارة لضمان بقائها تحت 4 درجات مئوية.' : 'Chilled box sealed with active cold-chain temperature telemetry at 3.5°C.',
-      time: isProcessing ? 'Verified' : 'Pending',
-      completed: isProcessing,
-      active: status === 'PACKED' || status === 'DRIVER_ASSIGNED',
-    },
-    {
-      step: 4,
-      title: locale === 'ar' ? 'السائق في الطريق إليك' : 'Courier In Transit – Live GPS',
-      desc: locale === 'ar' ? `الكابتن ${driverInfo.name || 'طارق'} في الطريق لتسليم طلبك.` : `Courier ${driverInfo.name || 'Tariq'} is en route with your chilled grocery order.`,
-      time: isOutForDelivery ? (isDelivered ? 'Delivered' : 'En Route Now') : 'Scheduled',
-      completed: isDelivered,
-      active: status === 'OUT_FOR_DELIVERY',
-    },
-    {
-      step: 5,
-      title: locale === 'ar' ? 'تم التوصيل بنجاح' : 'Arrived & Handed Over',
-      desc: locale === 'ar' ? 'تم استلام الطلب وتأكيد التوصيل عند باب المنزل.' : 'Doorstep drop & verified delivery confirmation.',
-      time: isDelivered ? 'Delivered' : `Est. ${order?.delivery_slot || 'Convenient Slot'}`,
-      completed: isDelivered,
-      active: isDelivered,
-    },
-  ];
+  const completedDrops = assignedDriver?.completed_deliveries !== undefined && assignedDriver?.completed_deliveries !== null
+    ? assignedDriver.completed_deliveries
+    : (assignedDriver?.deliveries_count !== undefined ? assignedDriver.deliveries_count : null);
+
+  const driverPhone = assignedDriver?.user?.mobile || assignedDriver?.mobile || assignedDriver?.phone || null;
+  const actualTemp = order?.delivery?.sensor_temperature || driverTelemetry?.temp || null;
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] font-sans text-slate-900 pb-28 select-none">
@@ -504,14 +501,19 @@ function TrackOrderContent() {
               {locale === 'ar' ? 'تعذر العثور على الطلب' : 'Unable to Locate Order'}
             </h3>
             <p className="text-xs text-slate-500">{error}</p>
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => loadOrder('ORD-20261009-9815')}
+            <div className="pt-2 flex items-center justify-center gap-2">
+              <Link
+                href="/auth/login?redirect=/track-order"
                 className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white text-xs font-black transition-colors"
               >
-                {locale === 'ar' ? 'عرض طلب تجريبي نشط' : 'Load Active Demo Delivery'}
-              </button>
+                {locale === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
+              </Link>
+              <Link
+                href="/orders"
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-colors"
+              >
+                {locale === 'ar' ? 'عرض طلباتي' : 'View My Orders'}
+              </Link>
             </div>
           </div>
         ) : (
@@ -794,179 +796,286 @@ function TrackOrderContent() {
             {/* ================= RIGHT MAIN LIVE TRACKING PANEL (8 Cols) ================= */}
             <div className="lg:col-span-8 space-y-6">
 
-              {/* ================= 1. INTERACTIVE GOOGLE MAPS ENGINE ================= */}
+              {/* ================= 1. CONDITIONAL LIVE DRIVER TRACKING OR STATUS NOTICE ================= */}
               <div className="bg-white rounded-3xl border border-slate-200/90 shadow-md overflow-hidden space-y-0">
-                {/* Top Live GPS Status Header Bar */}
-                <div className="px-5 py-3 bg-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <Navigation className="w-4 h-4 text-[#05A764]" />
-                    <span className="text-xs font-black text-slate-800">
-                      {locale === 'ar' ? 'نظام الملاحة الفضائي المباشر (Google Maps)' : 'Live Google Maps Navigation & Tracking'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {gpsStatusState === 'LIVE' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>{locale === 'ar' ? 'إشارة GPS متصلة ونشطة' : 'Live GPS Active'}</span>
-                      </span>
-                    )}
-                    {gpsStatusState === 'DELAYED' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-300">
-                        <Clock className="w-3.5 h-3.5 text-amber-600" />
-                        <span>{locale === 'ar' ? 'تحديث الإشارة متأخر' : 'GPS Signal Delayed'}</span>
-                      </span>
-                    )}
-                    {gpsStatusState === 'DISCONNECTED' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300">
-                        <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                        <span>{locale === 'ar' ? 'انقطاع إشارة GPS' : 'Driver GPS Reconnecting'}</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <GoogleLiveTrackingMap
-                  driverLat={driverTelemetry.lat}
-                  driverLng={driverTelemetry.lng}
-                  destLat={destLat}
-                  destLng={destLng}
-                  driverName={driverInfo.name || 'Tariq Al-Harbi'}
-                  vehicle={driverInfo.vehicle || 'Toyota HiAce Chill Van #782'}
-                  customerName={customerName}
-                  destinationAddress={destinationAddress}
-                  orderNumber={order?.order_number || ''}
-                  status={status}
-                  speed={driverTelemetry.speed}
-                  temp={driverTelemetry.temp}
-                  height="450px"
-                />
-
-                {/* Courier Profile Bar Beneath Google Map */}
-                <div className="p-5 sm:p-6 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-
-                    <div className="flex items-center gap-3.5">
-                      <div className="relative">
-                        <img
-                          src={driverInfo.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200'}
-                          alt={driverInfo.name || 'Courier'}
-                          className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-xs"
-                        />
-                        <span className="absolute -bottom-1 -right-1 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md border border-white">
-                          ✓ {driverInfo.rating || 4.9}★
+                {((status === 'OUT_FOR_DELIVERY' || status === 'ARRIVED') && order?.can_track_driver !== false) ? (
+                  <>
+                    {/* Top Live GPS Status Header Bar */}
+                    <div className="px-5 py-3 bg-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Navigation className="w-4 h-4 text-[#05A764]" />
+                        <span className="text-xs font-black text-slate-800">
+                          {locale === 'ar' ? 'نظام الملاحة الفضائي المباشر (Google Maps)' : 'Live Google Maps Navigation & Tracking'}
                         </span>
                       </div>
 
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-black text-slate-900 text-base">{driverInfo.name || 'Tariq Al-Harbi'}</h3>
-                          <span className="bg-emerald-100 text-emerald-900 font-black text-[10px] px-2 py-0.5 rounded-md uppercase">
-                            {driverInfo.role || 'Cold-Chain Courier'}
+                      <div className="flex items-center gap-2">
+                        {gpsStatusState === 'LIVE' && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>{locale === 'ar' ? 'إشارة GPS متصلة ونشطة' : 'Live GPS Active'}</span>
+                          </span>
+                        )}
+                        {gpsStatusState === 'DELAYED' && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-300">
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                            <span>{locale === 'ar' ? 'تحديث الإشارة متأخر' : 'GPS Signal Delayed'}</span>
+                          </span>
+                        )}
+                        {gpsStatusState === 'DISCONNECTED' && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300">
+                            <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                            <span>{locale === 'ar' ? 'انقطاع إشارة GPS' : 'Driver GPS Reconnecting'}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <GoogleLiveTrackingMap
+                      driverLat={driverTelemetry.lat}
+                      driverLng={driverTelemetry.lng}
+                      destLat={destLat}
+                      destLng={destLng}
+                      driverName={driverName || (locale === 'ar' ? 'مندوب التوصيل' : 'Delivery Driver')}
+                      vehicle={vehicleText || ''}
+                      customerName={customerName}
+                      destinationAddress={destinationAddress}
+                      orderNumber={order?.order_number || ''}
+                      status={status}
+                      speed={driverTelemetry.speed}
+                      temp={actualTemp}
+                      height="450px"
+                    />
+
+                    {/* Assigned Courier Profile Bar Beneath Google Map */}
+                    {assignedDriver ? (
+                      <div className="p-5 sm:p-6 space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+
+                          <div className="flex items-center gap-3.5">
+                            <div className="relative shrink-0">
+                              <img
+                                src={driverAvatar}
+                                alt={driverName || 'Courier'}
+                                className="w-14 h-14 rounded-2xl object-cover border-2 border-[#05A764] shadow-xs bg-slate-100"
+                                onError={(e) => {
+                                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(driverName || 'Driver')}&background=043927&color=05A764&bold=true`;
+                                }}
+                              />
+                              {driverRating && (
+                                <span className="absolute -bottom-1 -left-1 bg-[#05A764] text-white text-[9px] font-black px-1.5 py-0.5 rounded-md border border-white shadow-xs">
+                                  ✓ {driverRating}★
+                                </span>
+                              )}
+                            </div>
+
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="font-black text-slate-900 text-base">{driverName}</h3>
+                                {driverType && (
+                                  <span className="bg-[#D1F7E8] text-[#043927] font-black text-[10px] px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+                                    {driverType}
+                                  </span>
+                                )}
+                              </div>
+
+                              {(vehicleText || completedDrops !== null) && (
+                                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                                  {vehicleText && <span>{vehicleText}</span>}
+                                  {vehicleText && completedDrops !== null && <span> • </span>}
+                                  {completedDrops !== null && <span>{completedDrops} drops</span>}
+                                </p>
+                              )}
+
+                              {actualTemp && (
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-[#05A764] mt-0.5">
+                                  <Thermometer className="w-3.5 h-3.5 text-[#05A764] shrink-0" />
+                                  <span>Cargo Bay Temperature: {actualTemp}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {driverPhone ? (
+                              <a
+                                href={`tel:${driverPhone}`}
+                                className="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 font-extrabold text-xs transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                              >
+                                <PhoneCall className="w-4 h-4 text-emerald-600" />
+                                <span>{locale === 'ar' ? 'اتصال بالمندوب' : 'Call Driver'}</span>
+                              </a>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => showToast(locale === 'ar' ? 'رقم هاتف المندوب غير متاح حالياً' : 'Driver contact number is currently private or unavailable', 'info')}
+                                className="px-4 py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-400 font-extrabold text-xs flex items-center gap-1.5 cursor-not-allowed"
+                                title="Phone number unavailable"
+                              >
+                                <PhoneCall className="w-4 h-4 text-slate-400" />
+                                <span>{locale === 'ar' ? 'اتصال بالمندوب' : 'Call Driver'}</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              disabled
+                              className="px-4 py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-400 font-extrabold text-xs flex items-center gap-1.5 cursor-not-allowed opacity-80"
+                              title={locale === 'ar' ? 'المراسلة المباشرة غير مفعلة لهذا التوصيل' : 'Direct in-app messaging is unavailable for this delivery'}
+                            >
+                              <MessageSquare className="w-4 h-4 text-slate-400" />
+                              <span>{locale === 'ar' ? 'مراسلة المندوب' : 'Message Driver'}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Status Banner */}
+                        <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                              ⚡
+                            </div>
+                            <p className="text-emerald-950 font-bold">
+                              {status === 'OUT_FOR_DELIVERY'
+                                ? (locale === 'ar' ? `الكابتن في الطريق لتسليم طلبك إلى ${destinationAddress.split(',')[0] || 'عنوانك'}.` : `Courier is en route to ${destinationAddress.split(',')[0] || 'your address'}.`)
+                                : (locale === 'ar' ? 'الكابتن وصل إلى موقعك للتسليم.' : 'Courier has arrived at your destination.')}
+                            </p>
+                          </div>
+
+                          <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider bg-white/80 px-2.5 py-1 rounded-xl self-start sm:self-auto shrink-0 border border-emerald-200">
+                            SAMA Verified
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 font-medium mt-0.5">
-                          {driverInfo.vehicle || 'Toyota HiAce Chill Van #782'} • {driverInfo.deliveries_count || '1,420+'} drops
-                        </p>
-                        <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-700 mt-0.5">
-                          <Thermometer className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Cargo Bay Temperature: {driverTelemetry.temp}</span>
-                        </div>
                       </div>
+                    ) : null}
+                  </>
+                ) : status === 'DELIVERED' ? (
+                  /* ================= DELIVERED CONFIRMATION (Requirement 6) ================= */
+                  <div className="p-8 sm:p-10 text-center space-y-4">
+                    <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
+                      <CheckCircle2 className="w-8 h-8 stroke-[2.5]" />
                     </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <a
-                        href={`tel:${driverInfo.phone || '+966501234567'}`}
-                        className="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 font-extrabold text-xs transition-colors flex items-center gap-1.5 shadow-2xs"
-                      >
-                        <PhoneCall className="w-4 h-4 text-emerald-600" />
-                        <span>Call Courier</span>
-                      </a>
-
-                      <button
-                        type="button"
-                        onClick={() => setChatOpen(!chatOpen)}
-                        className="px-4 py-2.5 rounded-2xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs transition-colors flex items-center gap-1.5 shadow-md cursor-pointer"
-                      >
-                        <MessageSquare className="w-4 h-4 text-[#05A764]" />
-                        <span>Message Courier</span>
-                      </button>
-                    </div>
-
-                  </div>
-
-                  {/* Status Banner */}
-                  <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
-                        ⚡
-                      </div>
-                      <p className="text-emerald-950 font-bold">
-                        {status === 'DELIVERED'
-                          ? 'Order delivered successfully to your doorstep. Thank you for choosing Falcon Fresh!'
-                          : status === 'OUT_FOR_DELIVERY'
-                            ? `Courier is en route to ${destinationAddress.split(',')[0] || 'your address'} with chilled storage active.`
-                            : 'Your order is confirmed and undergoing cold-chain preparation.'}
+                    <div className="space-y-1.5 max-w-md mx-auto">
+                      <h3 className="text-xl font-black text-slate-900 font-sans">
+                        {locale === 'ar' ? 'تم توصيل الطلب بنجاح' : 'Order Delivered Successfully'}
+                      </h3>
+                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                        {locale === 'ar'
+                          ? 'تم تسليم شحنتك المبردة بنجاح إلى باب منزلك. تم إنهاء جلسة التتبع المباشر.'
+                          : 'Your fresh grocery shipment has been safely handed over. Live GPS tracking has concluded.'}
                       </p>
                     </div>
-
-                    <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider bg-white/80 px-2.5 py-1 rounded-xl self-start sm:self-auto shrink-0 border border-emerald-200">
-                      SAMA Verified
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* ================= 2. 5-STEP DISPATCH PROGRESS TIMELINE ================= */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-2xs space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#05A764] animate-ping" />
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                      {locale === 'ar' ? 'مراحل تجهيز وتوصيل الطلب' : 'Cold-Chain Dispatch Progress'}
-                    </h3>
-                  </div>
-                  <span className="text-xs font-bold text-slate-500">
-                    Step {isDelivered ? 5 : isOutForDelivery ? 4 : isProcessing ? 2 : 1} of 5
-                  </span>
-                </div>
-
-                <div className="space-y-6 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200 before:pointer-events-none">
-                  {timelineSteps.map((step) => (
-                    <div key={step.step} className="flex items-start gap-4 relative">
-                      {/* Step Circle Marker */}
-                      <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 shadow-xs z-10 ${step.completed
-                            ? 'bg-[#05A764] text-white ring-4 ring-emerald-50'
-                            : step.active
-                              ? 'bg-slate-900 text-white ring-4 ring-slate-100 animate-pulse'
-                              : 'bg-white border-2 border-slate-300 text-slate-400'
-                          }`}
-                      >
-                        {step.completed ? <Check className="w-4 h-4 stroke-[3]" /> : step.step}
+                    {order?.delivery?.end_time && (
+                      <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-4 py-2 rounded-2xl text-xs font-bold font-mono">
+                        <span>✓ {locale === 'ar' ? 'وقت التسليم:' : 'Delivered at:'} {formatPlacedTime(order.delivery.end_time)}</span>
                       </div>
-
-                      {/* Step Info */}
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <h4 className={`text-sm font-extrabold ${step.completed || step.active ? 'text-slate-900' : 'text-slate-400'}`}>
-                            {step.title}
-                          </h4>
-                          <span className={`text-[11px] font-mono font-bold ${step.active ? 'text-[#05A764]' : 'text-slate-400'}`}>
-                            {step.time}
-                          </span>
-                        </div>
-                        <p className={`text-xs mt-0.5 ${step.completed || step.active ? 'text-slate-600' : 'text-slate-400'}`}>
-                          {step.desc}
+                    )}
+                  </div>
+                ) : status === 'CANCELLED' || status === 'DELIVERY_FAILED' ? (
+                  /* ================= CANCELLED / FAILED (Requirement 6) ================= */
+                  <div className="p-8 sm:p-10 text-center space-y-4">
+                    <div className="w-16 h-16 rounded-3xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto shadow-sm">
+                      <AlertCircle className="w-8 h-8 stroke-[2.5]" />
+                    </div>
+                    <div className="space-y-1.5 max-w-md mx-auto">
+                      <h3 className="text-xl font-black text-slate-900 font-sans">
+                        {status === 'CANCELLED'
+                          ? (locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled')
+                          : (locale === 'ar' ? 'تعذر التوصيل' : 'Delivery Attempt Unsuccessful')}
+                      </h3>
+                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                        {status === 'CANCELLED'
+                          ? (locale === 'ar' ? 'تم إلغاء هذا الطلب وتوقف التتبع المباشر.' : 'This order has been cancelled. Live tracking is disabled.')
+                          : (order?.delivery?.failure_reason || (locale === 'ar' ? 'تعذر إتمام التوصيل. يعمل فريق الدعم على المتابعة.' : 'Unable to complete delivery. Our dispatch team is rescheduling.'))}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  /* ================= PRE-DELIVERY NOTICE CARD (Requirements 1, 2, 3, 9) ================= */
+                  <div className="p-6 sm:p-8 space-y-6">
+                    {/* Requirement 3 Exact Message Banner */}
+                    <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex items-start sm:items-center gap-3.5 shadow-2xs">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <Clock className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <h4 className="text-sm font-black text-amber-950 font-sans">
+                          {locale === 'ar' ? 'التتبع المباشر غير نشط حالياً' : 'Live Tracking Not Yet Active'}
+                        </h4>
+                        <p className="text-xs font-bold text-amber-800 leading-relaxed">
+                          {locale === 'ar'
+                            ? 'سيتوفر التتبع المباشر فور خروج طلبك للتوصيل.'
+                            : 'Live tracking will be available once your order is out for delivery.'}
                         </p>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    {/* Informational Fulfillment Preparation Block */}
+                    <div className="bg-slate-50 rounded-2xl p-5 sm:p-6 border border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-13 h-13 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 shadow-xs shrink-0">
+                          <Truck className="w-6 h-6 text-[#043927]" />
+                        </div>
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-black text-slate-900 font-sans">
+                            {status === 'PACKED' || status === 'DRIVER_ASSIGNED' || status === 'DRIVER_ACCEPTED'
+                              ? (locale === 'ar' ? 'الطلب مجهز ومعبأ وبانتظار الانطلاق' : 'Order Packed & Awaiting Courier Departure')
+                              : (locale === 'ar' ? 'الطلب قيد التجهيز في المركز اللوجستي' : 'Order Being Prepared at Fulfillment Center')}
+                          </h4>
+                          <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-lg">
+                            {locale === 'ar'
+                              ? 'يتم قطف وتعبئة المنتجات الطازجة داخل الصناديق الحرارية المبردة. بمجرد خروج المندوب في الطريق إليكم، سيتم تفعيل خريطة الملاحة الفضائية وموقع السائق المباشر تلقائياً هنا.'
+                              : 'Your fresh groceries are being inspected and packed in temperature-controlled bags. As soon as the courier departs for delivery, interactive GPS tracking and the live vehicle map will automatically activate here.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 self-stretch sm:self-auto flex sm:flex-col justify-between sm:justify-center items-end text-right border-t sm:border-t-0 sm:border-l border-slate-200 pt-3 sm:pt-0 sm:pl-5">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          {locale === 'ar' ? 'الحالة الحالية' : 'Current Status'}
+                        </span>
+                        <span className="text-xs font-black text-[#043927] bg-white px-3 py-1 rounded-xl border border-slate-200 mt-1 shadow-2xs">
+                          {status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Driver Preview (without GPS coordinates) if courier is already assigned */}
+                    {assignedDriver && (
+                      <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={driverAvatar}
+                            alt={driverName || 'Courier'}
+                            className="w-11 h-11 rounded-xl object-cover border border-[#05A764] bg-slate-100"
+                            onError={(e) => {
+                              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(driverName || 'Driver')}&background=043927&color=05A764&bold=true`;
+                            }}
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black text-slate-900">{driverName}</span>
+                              <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
+                                {locale === 'ar' ? 'المندوب المسند' : 'Assigned Courier'}
+                              </span>
+                            </div>
+                            {vehicleText && (
+                              <p className="text-[11px] text-slate-500 font-medium mt-0.5">{vehicleText}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                          {locale === 'ar' ? 'بانتظار الانطلاق' : 'Ready to Dispatch'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
+
+              {/* ================= 2. 4-STEP ORDER TRACKING TIMELINE ================= */}
+              <OrderTrackingTimeline order={order} />
 
             </div>
 

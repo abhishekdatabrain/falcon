@@ -45,13 +45,29 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const logout = async () => {
+  const logout = async (roleOverride) => {
+    const isClient = typeof window !== 'undefined';
+    const path = isClient ? window.location.pathname : '';
+    const targetRole = roleOverride || (path.startsWith('/admin') ? 'ADMIN' : (path.startsWith('/driver') ? 'DRIVER' : 'CUSTOMER'));
+
     try {
-      await fetchApi('/auth/logout', { method: 'POST' });
+      await fetchApi('/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({ role: targetRole }),
+      });
     } catch (e) {
-      // Ignore
+      console.error('Logout error:', e);
     } finally {
       setUser(null);
+      if (isClient) {
+        if (targetRole === 'ADMIN' || path.startsWith('/admin')) {
+          window.location.href = '/admin/login';
+        } else if (targetRole === 'DRIVER' || path.startsWith('/driver')) {
+          window.location.href = '/driver/login';
+        } else {
+          window.location.href = '/';
+        }
+      }
     }
   };
 

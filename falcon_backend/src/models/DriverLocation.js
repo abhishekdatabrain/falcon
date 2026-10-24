@@ -40,6 +40,10 @@ const DriverLocation = sequelize.define('DriverLocation', {
     type: DataTypes.FLOAT,
     allowNull: true,
   },
+  temperature: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   recorded_at: {
     type: DataTypes.DATE,
     allowNull: false,

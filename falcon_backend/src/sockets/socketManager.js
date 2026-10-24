@@ -110,7 +110,7 @@ const initSocketServer = (server) => {
     });
 
     // Driver GPS Location Update Broadcast Event
-    socket.on('driver_location_update', (data) => {
+    socket.on('driver_location_update', async (data) => {
       const { deliveryId, orderId, latitude, longitude, speed, heading, temp } = data || {};
       if (!latitude || !longitude) return;
 
@@ -134,19 +134,36 @@ const initSocketServer = (server) => {
         timestamp: new Date().toISOString(),
       };
 
-      // Broadcast to delivery room
-      if (deliveryId) {
+      // Verify order status before broadcasting to customer rooms (Requirements 1, 6, 9)
+      let canBroadcastToCustomer = true;
+      try {
+        const { Order, Delivery } = require('../models');
+        if (orderId) {
+          const ord = await Order.findByPk(orderId, { attributes: ['order_status'] });
+          canBroadcastToCustomer = ord && ['OUT_FOR_DELIVERY', 'ARRIVED'].includes(ord.order_status);
+        } else if (deliveryId) {
+          const del = await Delivery.findByPk(deliveryId, {
+            include: [{ model: Order, as: 'order', attributes: ['order_status'] }],
+          });
+          canBroadcastToCustomer = del && del.order && ['OUT_FOR_DELIVERY', 'ARRIVED'].includes(del.order.order_status);
+        }
+      } catch (e) {
+        canBroadcastToCustomer = false;
+      }
+
+      // Broadcast to delivery room only if active delivery
+      if (canBroadcastToCustomer && deliveryId) {
         io.to(`delivery:${deliveryId}`).emit('location_updated', payload);
         io.to(`delivery:${deliveryId}`).emit('driver_location_update', payload);
       }
 
-      // Broadcast to order room
-      if (orderId) {
+      // Broadcast to order room only if active delivery
+      if (canBroadcastToCustomer && orderId) {
         io.to(`order:${orderId}`).emit('location_updated', payload);
         io.to(`order:${orderId}`).emit('driver_location_update', payload);
       }
 
-      // Broadcast to admin room
+      // Always broadcast to admin room
       io.to('admin_room').emit('location_updated', payload);
       io.to('admin_room').emit('driver_location_update', payload);
     });

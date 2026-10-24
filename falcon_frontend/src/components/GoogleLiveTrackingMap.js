@@ -58,14 +58,14 @@ export default function GoogleLiveTrackingMap({
   driverLng = 46.6135,
   destLat = 24.7742,
   destLng = 46.6385,
-  driverName = 'Tariq K. (Cold-Chain Courier)',
-  vehicle = 'Toyota HiAce Chill Van #782',
+  driverName = '',
+  vehicle = '',
   customerName = 'Customer',
   destinationAddress = 'Al Malqa, Riyadh',
-  orderNumber = 'FM-98421',
+  orderNumber = '',
   status = 'OUT_FOR_DELIVERY',
-  speed = 42,
-  temp = '3.5°C',
+  speed = 0,
+  temp = null,
   height = '420px',
 }) {
   const [mapMode, setMapMode] = useState('google'); // 'google' | 'satellite' | 'radar'
@@ -291,9 +291,13 @@ export default function GoogleLiveTrackingMap({
           </div>
 
           <div className="bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200 text-slate-800 shadow-xl flex items-center gap-2 text-xs font-bold self-end sm:self-auto pointer-events-auto">
-            <span className="text-slate-500">Speed: <strong className="text-slate-900">{speed} km/h</strong></span>
-            <span className="text-slate-300">•</span>
-            <span className="text-emerald-700">Cold-Chain: <strong className="text-emerald-800">{temp}</strong></span>
+            <span className="text-slate-500">Speed: <strong className="text-slate-900">{speed || 0} km/h</strong></span>
+            {temp && (
+              <>
+                <span className="text-slate-300">•</span>
+                <span className="text-emerald-700">Cold-Chain: <strong className="text-emerald-800">{temp}</strong></span>
+              </>
+            )}
           </div>
         </div>
 

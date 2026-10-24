@@ -281,7 +281,7 @@ class OrderService {
     return order;
   }
 
-  async trackOrder(identifier) {
+  async trackOrder(identifier, user = null) {
     if (!identifier) {
       throw new Error('Order identifier is required');
     }
@@ -319,10 +319,117 @@ class OrderService {
 
     const order = await Order.findOne(options);
     if (!order) {
-      throw new Error(`Order "${cleanIdentifier}" not found`);
+      const notFoundErr = new Error(`Order "${cleanIdentifier}" not found`);
+      notFoundErr.statusCode = 404;
+      throw notFoundErr;
     }
 
-    return order;
+    // REQUIREMENT 7 & 8: Validate tracking access on backend - only customer who owns the order can access
+    if (!user) {
+      const authErr = new Error('Authentication required to track this order. Please log in.');
+      authErr.statusCode = 401;
+      throw authErr;
+    }
+
+    if (user.role === ROLES.CUSTOMER) {
+      const customer = await Customer.findOne({
+        where: {
+          [Op.or]: [
+            { id: user.id },
+            { user_id: user.id },
+          ],
+        },
+      });
+      if (!customer || order.customer_id !== customer.id) {
+        const forbiddenErr = new Error('Access denied. You can only track your own orders.');
+        forbiddenErr.statusCode = 403;
+        throw forbiddenErr;
+      }
+    } else if (user.role === ROLES.DRIVER) {
+      const driver = await Driver.findOne({
+        where: {
+          [Op.or]: [
+            { id: user.id },
+            { user_id: user.id },
+          ],
+        },
+      });
+      if (!driver || !order.delivery || order.delivery.driver_id !== driver.id) {
+        const forbiddenErr = new Error('Access denied. You are not assigned to this delivery.');
+        forbiddenErr.statusCode = 403;
+        throw forbiddenErr;
+      }
+    }
+    // Admins have access
+
+    const orderJson = order.toJSON();
+
+    // REQUIREMENT 1, 6, 9: Enable Live Driver Tracking only when order status is OUT_FOR_DELIVERY or ARRIVED.
+    // Never expose driver location before allowed status. Disable once DELIVERED, CANCELLED, or DELIVERY_FAILED.
+    const allowedLiveStatuses = ['OUT_FOR_DELIVERY', 'ARRIVED'];
+    const canTrackDriver = allowedLiveStatuses.includes(orderJson.order_status);
+
+    orderJson.can_track_driver = canTrackDriver;
+
+    if (!canTrackDriver) {
+      if (orderJson.delivery) {
+        orderJson.delivery.locations = [];
+        orderJson.delivery.sensor_temperature = null;
+      }
+      orderJson.tracking_message = "Live tracking will be available once your order is out for delivery.";
+    } else {
+      orderJson.tracking_message = null;
+    }
+
+    if (orderJson.delivery && orderJson.delivery.driver) {
+      const driver = orderJson.delivery.driver;
+      const driverId = driver.id;
+
+      // Real completed deliveries count from deliveries table
+      const realCompletedCount = await Delivery.count({
+        where: { driver_id: driverId, status: 'DELIVERED' },
+      });
+
+      // Calculate dynamic average rating from delivered order feedbacks
+      const deliveredDeliveries = await Delivery.findAll({
+        where: { driver_id: driverId, status: 'DELIVERED' },
+        attributes: ['order_id'],
+      });
+      const deliveredOrderIds = deliveredDeliveries.map((d) => d.order_id).filter(Boolean);
+
+      let calculatedRating = null;
+      let totalFeedbacks = 0;
+      if (deliveredOrderIds.length > 0) {
+        const feedbacks = await Feedback.findAll({
+          where: { order_id: deliveredOrderIds },
+          attributes: ['rating'],
+        });
+        if (feedbacks.length > 0) {
+          const sum = feedbacks.reduce((acc, f) => acc + Number(f.rating || 0), 0);
+          calculatedRating = parseFloat((sum / feedbacks.length).toFixed(2));
+          totalFeedbacks = feedbacks.length;
+        }
+      }
+
+      driver.completed_deliveries = driver.completed_deliveries || realCompletedCount || null;
+      driver.average_rating = driver.average_rating ? parseFloat(Number(driver.average_rating).toFixed(2)) : calculatedRating;
+      driver.total_ratings = driver.total_ratings || totalFeedbacks || 0;
+
+      // Extract phone from driver's user
+      if (!driver.phone && driver.user?.mobile) {
+        driver.phone = driver.user.mobile;
+      }
+
+      // Check if temperature sensor reading is available strictly when live tracking is allowed
+      if (canTrackDriver) {
+        const latestLocation = orderJson.delivery.locations && orderJson.delivery.locations[0];
+        orderJson.delivery.sensor_temperature = latestLocation?.temperature || orderJson.delivery.sensor_temperature || null;
+      } else {
+        orderJson.delivery.sensor_temperature = null;
+      }
+    }
+
+    return orderJson;
   }
 
   async getOrderById(orderId, userId = null, role = null, transaction = null) {
@@ -414,6 +521,14 @@ class OrderService {
       });
       if (!driver || !order.delivery || order.delivery.driver_id !== driver.id) {
         throw new Error('Access denied. You are not the assigned driver for this order');
+      }
+    }
+
+    if (role === ROLES.CUSTOMER && order.delivery) {
+      const allowedLiveStatuses = ['OUT_FOR_DELIVERY', 'ARRIVED'];
+      if (!allowedLiveStatuses.includes(order.order_status)) {
+        order.delivery.setDataValue('locations', []);
+        order.delivery.setDataValue('sensor_temperature', null);
       }
     }
 
@@ -623,7 +738,7 @@ class OrderService {
           ],
         },
       ],
-      order: [[safeSortBy, safeSortOrder]],
+      order: [[safeSortBy, safeSortOrder], ['id', 'DESC']],
       limit: pageSize,
       offset,
       distinct: true,
@@ -649,14 +764,13 @@ class OrderService {
       completedPayments: allOrders.filter(o => o.payment && ['PAID', 'VERIFIED'].includes(o.payment.status)).length,
     };
 
+    const { buildPaginationResponse } = require('../utils/pagination');
+    const pagination = buildPaginationResponse(count, pageNum, pageSize);
+
     return {
       orders,
-      pagination: {
-        total: count,
-        page: pageNum,
-        limit: pageSize,
-        totalPages: Math.ceil(count / pageSize) || 1,
-      },
+      records: orders,
+      pagination,
       stats,
     };
   }

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 
 import { fetchApi } from '../services/api';
+import { getCategoryUrl } from '../services/categoryHierarchy';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -43,8 +44,20 @@ export default function Navbar() {
       .then((res) => {
         if (res.success) {
           const rawCats = res.data?.categories || res.data || [];
-          const parentsOnly = rawCats.filter(c => !c.parent_id);
-          setDbCategories(parentsOnly);
+          // Strictly show ONLY parent categories (Level 1)
+          const parentsOnly = rawCats.filter((c) => !c.parent_id);
+
+          // Deduplicate by slug or ID to prevent duplicate category links
+          const seen = new Set();
+          const uniqueCats = [];
+          for (const c of parentsOnly) {
+            const key = (c.slug || c.name_en || c.id || '').toLowerCase();
+            if (key && !seen.has(key)) {
+              seen.add(key);
+              uniqueCats.push(c);
+            }
+          }
+          setDbCategories(uniqueCats);
         }
       })
       .catch(() => { });
@@ -62,29 +75,15 @@ export default function Navbar() {
     }
   };
 
-  const defaultNavCategories = [
+  const navCategories = [
     { name_en: 'Deals & Offers', name_ar: 'العروض والخصومات', href: '/products?deals=true' },
-    { name_en: 'Groceries', name_ar: 'البقالة والمنتجات الطازجة', href: '/products?category=groceries' },
-    { name_en: 'Snacks', name_ar: 'المسليات والوجبات الخفيفة', href: '/products?category=snacks' },
-    { name_en: 'Personal Care', name_ar: 'العناية الشخصية', href: '/products?category=personal-care' },
-    { name_en: 'Household', name_ar: 'المستلزمات المنزلية', href: '/products?category=household' },
-    { name_en: 'Frozen', name_ar: 'المجمدات', href: '/products?category=frozen' },
-    { name_en: 'New Arrivals', name_ar: 'وصل حديثاً', href: '/products?sort=newest' },
+    ...(dbCategories || []).map((c) => ({
+      name_en: c.name_en,
+      name_ar: c.name_ar,
+      href: getCategoryUrl(c),
+    })),
     { name_en: 'Help', name_ar: 'المساعدة', href: '/contact' },
   ];
-
-  const navCategories = dbCategories && dbCategories.length > 0
-    ? [
-      { name_en: 'Deals & Offers', name_ar: 'العروض والخصومات', href: '/products?deals=true' },
-      ...dbCategories.map(c => ({
-        name_en: c.name_en,
-        name_ar: c.name_ar,
-        href: `/products?category=${encodeURIComponent(c.slug || c.name_en.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}`
-      })),
-      { name_en: 'New Arrivals', name_ar: 'وصل حديثاً', href: '/products?sort=newest' },
-      { name_en: 'Help', name_ar: 'المساعدة', href: '/contact' },
-    ]
-    : defaultNavCategories;
 
   return (
     <header className="sticky top-0 z-50 font-sans shadow-md">

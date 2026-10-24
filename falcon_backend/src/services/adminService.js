@@ -118,8 +118,10 @@ class AdminService {
   }
 
   async getAllDrivers(options = {}) {
-    const { search, availability, status, accountStatus } = options;
+    const { search, availability, status, accountStatus, page, limit, sortBy, sortOrder } = options;
     const { Op } = require('sequelize');
+    const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
+    const paginationConfig = parsePagination({ page, limit, sortBy, sortOrder }, 10, 100);
 
     const driverWhere = {};
     const userWhere = {};
@@ -144,7 +146,7 @@ class AdminService {
       ];
     }
 
-    const drivers = await Driver.findAll({
+    const { count, rows: drivers } = await Driver.findAndCountAll({
       where: driverWhere,
       include: [
         {
@@ -154,7 +156,10 @@ class AdminService {
           attributes: ['id', 'email', 'mobile', 'status', 'createdAt'],
         },
       ],
-      order: [['createdAt', 'DESC']],
+      order: [['createdAt', 'DESC'], ['id', 'DESC']],
+      limit: paginationConfig.limit,
+      offset: paginationConfig.offset,
+      distinct: true,
     });
 
     const allDrivers = await Driver.findAll({
@@ -169,7 +174,14 @@ class AdminService {
       activeAccount: allDrivers.filter((d) => d.user?.status === 'ACTIVE').length,
     };
 
-    return { drivers, stats };
+    const pagination = buildPaginationResponse(count, paginationConfig.page, paginationConfig.limit);
+
+    return {
+      drivers,
+      records: drivers,
+      stats,
+      pagination,
+    };
   }
 
   async updateDriverStatus(driverId, driverStatus, availabilityStatus) {
@@ -406,7 +418,7 @@ class AdminService {
   }
 
   async getAllCustomers(options = {}) {
-    const { search, status } = options;
+    const { search, status, page = 1, limit = 10 } = options;
     const { Op } = require('sequelize');
 
     const customerWhere = {};
@@ -426,7 +438,10 @@ class AdminService {
       ];
     }
 
-    return await Customer.findAll({
+    const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
+    const paginationConfig = parsePagination({ page, limit }, 10, 100);
+
+    const { count, rows: customers } = await Customer.findAndCountAll({
       where: customerWhere,
       include: [
         {
@@ -437,8 +452,34 @@ class AdminService {
         },
         'addresses',
       ],
-      order: [['createdAt', 'DESC']],
+      order: [['createdAt', 'DESC'], ['id', 'DESC']],
+      limit: paginationConfig.limit,
+      offset: paginationConfig.offset,
+      distinct: true,
     });
+
+    const [totalRegistered, activeCount, inactiveCount] = await Promise.all([
+      Customer.count(),
+      Customer.count({
+        include: [{ model: User, as: 'user', where: { status: 'ACTIVE' }, required: true }],
+      }),
+      Customer.count({
+        include: [{ model: User, as: 'user', where: { status: 'INACTIVE' }, required: true }],
+      }),
+    ]);
+
+    const pagination = buildPaginationResponse(count, paginationConfig.page, paginationConfig.limit);
+
+    return {
+      customers,
+      records: customers,
+      pagination,
+      stats: {
+        total: totalRegistered,
+        active: activeCount,
+        inactive: inactiveCount,
+      },
+    };
   }
 
   async toggleCustomerStatus(customerId, status) {
@@ -502,6 +543,13 @@ class AdminService {
   async getDeliveries(options = {}) {
     const { status, search } = options;
     const { Op } = require('sequelize');
+    const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
+    const paginationConfig = parsePagination({
+      page: options.page,
+      limit: options.limit,
+      sortBy: options.sortBy,
+      sortOrder: options.sortOrder,
+    }, 10, 100);
 
     const deliveryWhere = {};
     if (status && status !== 'ALL') {
@@ -529,7 +577,7 @@ class AdminService {
       ];
     }
 
-    const deliveries = await Delivery.findAll({
+    const { count, rows: deliveries } = await Delivery.findAndCountAll({
       where: deliveryWhere,
       include: [
         {
@@ -555,7 +603,10 @@ class AdminService {
           order: [['recorded_at', 'DESC']],
         },
       ],
-      order: [['updatedAt', 'DESC']],
+      distinct: true,
+      limit: paginationConfig.limit,
+      offset: paginationConfig.offset,
+      order: [['updatedAt', 'DESC'], ['id', 'DESC']],
     });
 
     // Unassigned orders awaiting driver assignment
@@ -598,14 +649,18 @@ class AdminService {
       where: { status: ORDER_STATUS.DELIVERED },
     });
 
+    const pagination = buildPaginationResponse(count, paginationConfig.page, paginationConfig.limit);
+
     return {
       deliveries,
+      records: deliveries,
+      pagination,
       unassignedOrders,
       stats: {
         activeCount,
         completedCount,
         unassignedCount: unassignedOrders.length,
-        totalCount: deliveries.length,
+        totalCount: count,
       },
     };
   }

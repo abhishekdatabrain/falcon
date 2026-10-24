@@ -4,6 +4,7 @@ import { fetchApi } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import { useAuth } from '../../../src/contexts/AuthContext';
+import AdminPagination from '../../../src/components/AdminPagination';
 import {
   Users,
   UserPlus,
@@ -35,10 +36,14 @@ export default function AdminEmployeesPage() {
   const [roles, setRoles] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Filters
+  // Filters & Pagination
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   // Modals
   const [showModal, setShowModal] = useState(false);
@@ -52,16 +57,35 @@ export default function AdminEmployeesPage() {
     roleId: '',
   });
 
-  const loadData = async () => {
+  const loadData = async (page = currentPage, limit = pageSize) => {
     try {
       setLoading(true);
+      const params = new URLSearchParams();
+      if (search.trim()) params.append('search', search.trim());
+      if (roleFilter !== 'ALL') params.append('roleId', roleFilter);
+      if (statusFilter !== 'ALL') params.append('status', statusFilter);
+      params.append('page', page);
+      params.append('limit', limit);
+
       const [subAdminsRes, rolesRes] = await Promise.all([
-        fetchApi('/admin/rbac/sub-admins'),
+        fetchApi(`/admin/rbac/sub-admins?${params.toString()}`),
         fetchApi('/admin/rbac/roles'),
       ]);
 
-      if (subAdminsRes.success && subAdminsRes.data?.subAdmins) {
-        setSubAdmins(subAdminsRes.data.subAdmins);
+      if (subAdminsRes.success && subAdminsRes.data) {
+        setSubAdmins(subAdminsRes.data.subAdmins || subAdminsRes.data.records || []);
+        if (subAdminsRes.data.pagination) {
+          setTotalPages(subAdminsRes.data.pagination.totalPages || 1);
+          setTotalRecords(
+            subAdminsRes.data.pagination.totalRecords !== undefined
+              ? subAdminsRes.data.pagination.totalRecords
+              : (subAdminsRes.data.pagination.total || 0)
+          );
+          setCurrentPage(subAdminsRes.data.pagination.currentPage || subAdminsRes.data.pagination.page || page);
+        } else {
+          setTotalPages(1);
+          setTotalRecords((subAdminsRes.data.subAdmins || []).length);
+        }
       }
       if (rolesRes.success && rolesRes.data?.roles) {
         setRoles(rolesRes.data.roles);
@@ -74,8 +98,23 @@ export default function AdminEmployeesPage() {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    const timer = setTimeout(() => {
+      loadData(1, pageSize);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, roleFilter, statusFilter]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      loadData(newPage, pageSize);
+    }
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+    loadData(1, newPageSize);
+  };
 
   const openCreateModal = () => {
     setEditingSubAdmin(null);
@@ -203,28 +242,8 @@ export default function AdminEmployeesPage() {
     }
   };
 
-  // Filtered employees list
-  const filteredSubAdmins = subAdmins.filter((admin) => {
-    const adminName = admin.name || admin.admin_profile?.name || '';
-    const adminDept = admin.department || admin.admin_profile?.department || '';
-    const adminRoleId = admin.assigned_role?.id || admin.roles?.[0]?.id || '';
-
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      const matchEmail = admin.email?.toLowerCase().includes(q);
-      const matchName = adminName.toLowerCase().includes(q);
-      const matchMobile = admin.mobile?.toLowerCase().includes(q);
-      const matchDept = adminDept.toLowerCase().includes(q);
-      if (!matchEmail && !matchName && !matchMobile && !matchDept) return false;
-    }
-    if (roleFilter !== 'ALL') {
-      if (adminRoleId !== roleFilter) return false;
-    }
-    if (statusFilter !== 'ALL') {
-      if (admin.status !== statusFilter) return false;
-    }
-    return true;
-  });
+  // SubAdmins list rendered directly from server
+  const filteredSubAdmins = subAdmins;
 
   return (
     <div className="space-y-6">
@@ -446,6 +465,14 @@ export default function AdminEmployeesPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Server-Side Pagination */}
+        <AdminPagination
+          pagination={{ currentPage, pageSize, totalRecords, totalPages }}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          loading={loading}
+        />
       </div>
 
       {/* 4. Create / Edit Employee Modal */}

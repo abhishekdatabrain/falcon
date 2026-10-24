@@ -35,6 +35,7 @@ import {
   X,
   Check
 } from 'lucide-react';
+import AdminPagination from '../../../../src/components/AdminPagination';
 
 const LiveTrackingMap = dynamic(
   () => import('../../../../src/components/LiveTrackingMap'),
@@ -60,6 +61,12 @@ export default function AdminDeliveriesTrackingPage() {
   const [deliveries, setDeliveries] = useState([]);
   const [unassignedOrders, setUnassignedOrders] = useState([]);
   const [stats, setStats] = useState({ activeCount: 0, completedCount: 0, unassignedCount: 0, totalCount: 0 });
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [showMapModal, setShowMapModal] = useState(false);
 
@@ -97,20 +104,36 @@ export default function AdminDeliveriesTrackingPage() {
   const loadDeliveriesData = async () => {
     try {
       setLoading(true);
-      const res = await fetchApi(`/admin/deliveries?status=${statusFilter}&search=${encodeURIComponent(searchQuery)}`);
+      const effectiveStatus = activeTab === 'ACTIVE' ? 'ACTIVE' : activeTab === 'COMPLETED' ? 'COMPLETED' : statusFilter;
+      const params = new URLSearchParams();
+      params.append('status', effectiveStatus);
+      params.append('page', currentPage);
+      params.append('limit', pageSize);
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
+
+      const res = await fetchApi(`/admin/deliveries?${params.toString()}`);
       if (res.success && res.data) {
-        setDeliveries(res.data.deliveries || []);
+        const fetchedDeliveries = res.data.deliveries || res.data.records || [];
+        setDeliveries(fetchedDeliveries);
         setUnassignedOrders(res.data.unassignedOrders || []);
+        if (res.data.pagination) {
+          setTotalPages(res.data.pagination.totalPages || 1);
+          setTotalRecords(res.data.pagination.totalRecords || 0);
+        } else {
+          setTotalRecords(fetchedDeliveries.length);
+        }
         if (res.data.stats) {
           setStats(res.data.stats);
         }
 
         // Auto-select first active delivery or update current selection
-        if (res.data.deliveries && res.data.deliveries.length > 0) {
+        if (fetchedDeliveries.length > 0) {
           if (!selectedDelivery) {
-            setSelectedDelivery(res.data.deliveries[0]);
+            setSelectedDelivery(fetchedDeliveries[0]);
           } else {
-            const updatedMatch = res.data.deliveries.find((d) => d.id === selectedDelivery.id);
+            const updatedMatch = fetchedDeliveries.find((d) => d.id === selectedDelivery.id);
             if (updatedMatch) {
               setSelectedDelivery(updatedMatch);
             }
@@ -144,11 +167,26 @@ export default function AdminDeliveriesTrackingPage() {
   }, []);
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, statusFilter, searchQuery]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       loadDeliveriesData();
     }, 250);
     return () => clearTimeout(timer);
-  }, [statusFilter, searchQuery]);
+  }, [activeTab, statusFilter, searchQuery, currentPage, pageSize]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
 
   // Handle Socket Room Connection for Selected Active Delivery
   useEffect(() => {
@@ -378,11 +416,15 @@ export default function AdminDeliveriesTrackingPage() {
     }
   };
 
-  const activeDeliveries = deliveries.filter((del) =>
-    ['DRIVER_ASSIGNED', 'DRIVER_ACCEPTED', 'OUT_FOR_DELIVERY', 'ARRIVED'].includes(del.status)
-  );
+  const activeDeliveries = activeTab === 'ACTIVE'
+    ? deliveries
+    : deliveries.filter((del) =>
+        ['DRIVER_ASSIGNED', 'DRIVER_ACCEPTED', 'OUT_FOR_DELIVERY', 'ARRIVED'].includes(del.status)
+      );
 
-  const completedDeliveries = deliveries.filter((del) => del.status === 'DELIVERED');
+  const completedDeliveries = activeTab === 'COMPLETED'
+    ? deliveries
+    : deliveries.filter((del) => del.status === 'DELIVERED');
 
   const filteredDeliveries = deliveries.filter((del) => {
     if (activeTab === 'ACTIVE') {
@@ -816,6 +858,18 @@ export default function AdminDeliveriesTrackingPage() {
               </table>
             </div>
           )}
+
+          {activeTab === 'ACTIVE' && (
+            <AdminPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalRecords={totalRecords}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              locale={locale}
+            />
+          )}
         </div>
       )}
 
@@ -1118,6 +1172,18 @@ export default function AdminDeliveriesTrackingPage() {
               </table>
             </div>
           )}
+
+          {activeTab === 'COMPLETED' && (
+            <AdminPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalRecords={totalRecords}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              locale={locale}
+            />
+          )}
         </div>
       )}
 
@@ -1254,6 +1320,18 @@ export default function AdminDeliveriesTrackingPage() {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {activeTab === 'HISTORY' && (
+            <AdminPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalRecords={totalRecords}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              locale={locale}
+            />
           )}
         </div>
       )}

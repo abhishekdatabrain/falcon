@@ -28,10 +28,27 @@ class RbacService {
   }
 
   /**
-   * Get all roles with permission count and assigned user count
+   * Get roles with permission count, assigned user count, and optional server-side pagination
    */
-  async getRoles() {
-    const roles = await Role.findAll({
+  async getRoles(options = {}) {
+    const { search, page, limit, sortBy, sortOrder } = options;
+    const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
+
+    const where = {};
+    if (search && search.trim()) {
+      const q = `%${search.trim()}%`;
+      where[Op.or] = [
+        { name: { [Op.iLike]: q } },
+        { slug: { [Op.iLike]: q } },
+        { description: { [Op.iLike]: q } },
+      ];
+    }
+
+    const shouldPaginate = page !== undefined || limit !== undefined;
+    const paginationConfig = parsePagination({ page, limit, sortBy, sortOrder }, 10, 100);
+
+    const findOptions = {
+      where,
       include: [
         {
           model: Permission,
@@ -45,10 +62,18 @@ class RbacService {
           attributes: ['id', 'email', 'status'],
         },
       ],
-      order: [['is_system', 'DESC'], ['name', 'ASC']],
-    });
+      order: [['is_system', 'DESC'], ['name', 'ASC'], ['id', 'ASC']],
+      distinct: true,
+    };
 
-    return roles.map((role) => {
+    if (shouldPaginate) {
+      findOptions.limit = paginationConfig.limit;
+      findOptions.offset = paginationConfig.offset;
+    }
+
+    const { count, rows } = await Role.findAndCountAll(findOptions);
+
+    const formattedRoles = rows.map((role) => {
       const r = role.toJSON();
       return {
         ...r,
@@ -56,6 +81,18 @@ class RbacService {
         usersCount: r.users ? r.users.length : 0,
       };
     });
+
+    const pagination = buildPaginationResponse(
+      count,
+      paginationConfig.page,
+      shouldPaginate ? paginationConfig.limit : count || 1
+    );
+
+    return {
+      roles: formattedRoles,
+      records: formattedRoles,
+      pagination,
+    };
   }
 
   /**
@@ -292,8 +329,13 @@ class RbacService {
   /**
    * Get all Sub-Admin users
    */
+  /**
+   * Get Sub-Admin users with server-side pagination
+   */
   async getSubAdmins(options = {}) {
-    const { search, roleId, status } = options;
+    const { search, roleId, status, page, limit, sortBy, sortOrder } = options;
+    const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
+    const paginationConfig = parsePagination({ page, limit, sortBy, sortOrder }, 10, 100);
 
     const where = { role: 'ADMIN' };
     if (status && status !== 'ALL') {
@@ -320,16 +362,19 @@ class RbacService {
       roleInclude.required = true;
     }
 
-    const users = await User.findAll({
+    const { count, rows: users } = await User.findAndCountAll({
       where,
       include: [
         { model: Admin, as: 'admin' },
         roleInclude,
       ],
-      order: [['createdAt', 'DESC']],
+      order: [['createdAt', 'DESC'], ['id', 'DESC']],
+      limit: paginationConfig.limit,
+      offset: paginationConfig.offset,
+      distinct: true,
     });
 
-    return users.map((u) => {
+    const subAdmins = users.map((u) => {
       const json = u.toJSON();
       const isSuper = Boolean(
         json.assigned_roles && json.assigned_roles.some((r) => r.slug === 'super_admin')
@@ -352,6 +397,14 @@ class RbacService {
         createdAt: json.createdAt,
       };
     });
+
+    const pagination = buildPaginationResponse(count, paginationConfig.page, paginationConfig.limit);
+
+    return {
+      subAdmins,
+      records: subAdmins,
+      pagination,
+    };
   }
 
   /**

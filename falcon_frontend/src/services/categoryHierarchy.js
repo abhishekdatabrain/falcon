@@ -1231,3 +1231,34 @@ export function extractBreadcrumbTrailFromApiCategory(apiCategory) {
   };
 }
 
+/**
+ * Canonical URL generator for Category navigation.
+ * Used uniformly across Home Page category cards, Header Navigation, and subcategory listings.
+ * 
+ * @param {Object|string} category - Category object or slug/id string
+ * @param {string} [parentPath] - Optional parent path for nested subcategories
+ * @returns {string} The canonical category route URL (e.g., '/category/frozen-items')
+ */
+export function getCategoryUrl(category, parentPath = '') {
+  if (!category) return '/category';
+
+  if (typeof category === 'string') {
+    const clean = category.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+    return parentPath ? `${parentPath}/${clean}` : `/category/${encodeURIComponent(clean)}`;
+  }
+
+  const slug = (
+    category.slug ||
+    (category.name_en ? category.name_en.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-') : '') ||
+    category.id ||
+    ''
+  ).trim();
+
+  if (!slug) return '/category';
+
+  if (parentPath) {
+    return `${parentPath}/${encodeURIComponent(slug)}`;
+  }
+
+  return `/category/${encodeURIComponent(slug)}`;
+}

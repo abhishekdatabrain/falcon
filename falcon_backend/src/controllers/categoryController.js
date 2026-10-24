@@ -6,15 +6,24 @@ class CategoryController {
     try {
       const isAdmin = req.user && req.user.role === 'ADMIN';
       const onlyActive = req.query.all === 'true' || isAdmin ? false : (req.query.is_active === 'false' ? false : true);
-      const { search, parent_id, type } = req.query;
+      const { search, parent_id, type, page, limit, sortBy, sortOrder, all } = req.query;
 
-      const categories = await categoryService.getAllCategories({
+      const result = await categoryService.getAllCategories({
         onlyActive,
         search,
         parent_id,
         type,
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        all,
       });
-      return sendSuccess(res, 'Categories retrieved', { categories });
+
+      if (result && result.pagination) {
+        return sendSuccess(res, 'Categories retrieved', result);
+      }
+      return sendSuccess(res, 'Categories retrieved', { categories: result, records: result });
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }

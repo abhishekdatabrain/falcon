@@ -31,6 +31,55 @@ class CategoryService {
       where.parent_id = { [Op.ne]: null };
     }
 
+    const shouldPaginate = (options.page !== undefined || options.limit !== undefined) && options.all !== 'true' && options.all !== true;
+
+    if (shouldPaginate) {
+      const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
+      const paginationConfig = parsePagination(options, 10, 100);
+
+      const { count, rows } = await Category.findAndCountAll({
+        where,
+        include: [
+          {
+            model: Category,
+            as: 'subcategories',
+            include: [
+              {
+                model: Category,
+                as: 'subcategories',
+                include: [
+                  { model: Category, as: 'subcategories' }
+                ]
+              }
+            ]
+          },
+          {
+            model: Category,
+            as: 'parentCategory',
+            include: [
+              {
+                model: Category,
+                as: 'parentCategory',
+                include: [
+                  { model: Category, as: 'parentCategory' }
+                ]
+              }
+            ]
+          },
+        ],
+        distinct: true,
+        limit: paginationConfig.limit,
+        offset: paginationConfig.offset,
+        order: [['name_en', 'ASC'], ['id', 'ASC']],
+      });
+
+      return {
+        categories: rows,
+        records: rows,
+        pagination: buildPaginationResponse(count, paginationConfig.page, paginationConfig.limit),
+      };
+    }
+
     return await Category.findAll({
       where,
       include: [
@@ -61,7 +110,7 @@ class CategoryService {
           ]
         },
       ],
-      order: [['name_en', 'ASC']],
+      order: [['name_en', 'ASC'], ['id', 'ASC']],
     });
   }
 

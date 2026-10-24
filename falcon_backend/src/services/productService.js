@@ -268,14 +268,13 @@ class ProductService {
       console.warn('Brand aggregation error:', bErr.message);
     }
 
+    const { buildPaginationResponse } = require('../utils/pagination');
+    const pagination = buildPaginationResponse(total, pageNum, limitNum);
+
     return {
       products,
-      pagination: {
-        total,
-        page: pageNum,
-        limit: limitNum,
-        totalPages: Math.ceil(total / limitNum),
-      },
+      records: products,
+      pagination,
       brands: brandFacets,
     };
   }

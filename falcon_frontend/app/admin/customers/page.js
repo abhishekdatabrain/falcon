@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { fetchApi } from '../../../src/services/api';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
+import AdminPagination from '../../../src/components/AdminPagination';
 import {
   Users,
   Search,
@@ -24,6 +25,8 @@ import {
   Eye,
   MapPin,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 export default function AdminCustomersPage() {
@@ -34,6 +37,11 @@ export default function AdminCustomersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'INACTIVE'
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 });
+  const [pageSize, setPageSize] = useState(10);
 
   // Modals & Form States
   const [showAddModal, setShowAddModal] = useState(false);
@@ -48,7 +56,7 @@ export default function AdminCustomersPage() {
     password: '',
   });
 
-  const loadCustomers = async (search = searchQuery, status = statusFilter) => {
+  const loadCustomers = async (search = searchQuery, status = statusFilter, page = currentPage, limit = pageSize) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -58,13 +66,26 @@ export default function AdminCustomersPage() {
       if (status && status !== 'ALL') {
         params.append('status', status);
       }
+      params.append('page', page);
+      params.append('limit', limit);
 
       const queryString = params.toString();
-      const endpoint = queryString ? `/admin/customers?${queryString}` : '/admin/customers';
+      const endpoint = `/admin/customers?${queryString}`;
 
       const res = await fetchApi(endpoint);
       if (res.success) {
-        setCustomers(res.data.customers || []);
+        setCustomers(res.data.customers || res.data.records || []);
+        if (res.data.pagination) {
+          setTotalPages(res.data.pagination.totalPages || 1);
+          setTotalRecords(res.data.pagination.totalRecords !== undefined ? res.data.pagination.totalRecords : (res.data.pagination.total || 0));
+          setCurrentPage(res.data.pagination.currentPage || res.data.pagination.page || page);
+        } else {
+          setTotalPages(1);
+          setTotalRecords((res.data.customers || []).length);
+        }
+        if (res.data.stats) {
+          setStats(res.data.stats);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -77,10 +98,22 @@ export default function AdminCustomersPage() {
   // Debounced server-side fetch trigger
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadCustomers(searchQuery, statusFilter);
+      loadCustomers(searchQuery, statusFilter, 1, pageSize);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, statusFilter]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      loadCustomers(searchQuery, statusFilter, newPage, pageSize);
+    }
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+    loadCustomers(searchQuery, statusFilter, 1, newPageSize);
+  };
 
   const handleCreateCustomer = async (e) => {
     e.preventDefault();
@@ -94,7 +127,7 @@ export default function AdminCustomersPage() {
         showToast(locale === 'ar' ? 'تم إضافة العميل بنجاح!' : 'Customer created successfully!', 'success');
         setShowAddModal(false);
         setCustomerForm({ id: '', first_name: '', last_name: '', email: '', mobile: '', password: '' });
-        await loadCustomers();
+        await loadCustomers(searchQuery, statusFilter, 1);
       }
     } catch (err) {
       showToast(err.message, 'error');
@@ -114,7 +147,7 @@ export default function AdminCustomersPage() {
       if (res.success) {
         showToast(locale === 'ar' ? 'تم تحديث بيانات العميل بنجاح!' : 'Customer updated successfully!', 'success');
         setShowEditModal(false);
-        await loadCustomers();
+        await loadCustomers(searchQuery, statusFilter, currentPage);
       }
     } catch (err) {
       showToast(err.message, 'error');
@@ -135,7 +168,7 @@ export default function AdminCustomersPage() {
           locale === 'ar' ? `تم تغيير حالة العميل إلى ${newStatus}` : `Customer status updated to ${newStatus}`,
           'info'
         );
-        await loadCustomers();
+        await loadCustomers(searchQuery, statusFilter, currentPage);
       }
     } catch (err) {
       showToast(err.message, 'error');
@@ -154,10 +187,9 @@ export default function AdminCustomersPage() {
     setShowEditModal(true);
   };
 
-  const filtered = customers;
-
-  const activeCount = customers.filter((c) => c.user?.status === 'ACTIVE').length;
-  const inactiveCount = customers.filter((c) => c.user?.status === 'INACTIVE').length;
+  const activeCount = stats.active ?? customers.filter((c) => c.user?.status === 'ACTIVE').length;
+  const inactiveCount = stats.inactive ?? customers.filter((c) => c.user?.status === 'INACTIVE').length;
+  const totalDisplay = stats.total ?? totalRecords ?? customers.length;
 
   return (
     <div className="space-y-6">
@@ -173,7 +205,7 @@ export default function AdminCustomersPage() {
                 {locale === 'ar' ? 'إدارة العملاء المسجلين' : 'Customer Management'}
               </h1>
               <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                {customers.length} {locale === 'ar' ? 'عميل' : 'Total'}
+                {totalDisplay} {locale === 'ar' ? 'عميل' : 'Total'}
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -194,7 +226,7 @@ export default function AdminCustomersPage() {
           </Link>
 
           <button
-            onClick={() => loadCustomers(searchQuery, statusFilter)}
+            onClick={() => loadCustomers(searchQuery, statusFilter, currentPage)}
             className="p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 transition-all border border-slate-200 shadow-xs cursor-pointer"
             title={locale === 'ar' ? 'تحديث البيانات' : 'Refresh Customers'}
           >
@@ -208,7 +240,7 @@ export default function AdminCustomersPage() {
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Registered'}</div>
-            <div className="text-2xl font-black text-slate-900 mt-1">{customers.length}</div>
+            <div className="text-2xl font-black text-slate-900 mt-1">{totalDisplay}</div>
             <div className="text-[11px] text-slate-500 font-medium mt-0.5">Customer Shoppers</div>
           </div>
           <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
@@ -287,7 +319,7 @@ export default function AdminCustomersPage() {
           <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-xs font-bold text-slate-500">{locale === 'ar' ? 'جاري تحميل العملاء المسجلين...' : 'Loading registered customers...'}</p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : customers.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center text-slate-500 border border-slate-200 shadow-xs space-y-3">
           <AlertCircle className="w-10 h-10 text-slate-300 mx-auto" />
           <p className="text-sm font-bold text-slate-700">
@@ -311,7 +343,7 @@ export default function AdminCustomersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((c) => (
+                {customers.map((c) => (
                   <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
                     {/* Customer Identity */}
                     <td className="px-5 py-3.5 whitespace-nowrap">
@@ -427,6 +459,14 @@ export default function AdminCustomersPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          <AdminPagination
+            pagination={{ currentPage, pageSize, totalRecords, totalPages }}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            loading={loading}
+          />
         </div>
       )}
 

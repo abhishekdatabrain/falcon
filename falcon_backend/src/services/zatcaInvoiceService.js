@@ -729,10 +729,12 @@ class ZatcaInvoiceService {
       status = 'ALL',
       type = 'ALL',
       page = 1,
-      limit = 20,
+      limit = 10,
     } = queryParams;
 
-    const offset = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
+    const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
+    const paginationConfig = parsePagination({ page, limit }, 10, 100);
+    const offset = paginationConfig.offset;
     const where = {};
 
     if (status && status !== 'ALL') {
@@ -775,8 +777,8 @@ class ZatcaInvoiceService {
           required: false,
         },
       ],
-      order: [['createdAt', 'DESC']],
-      limit: parseInt(limit, 10),
+      order: [['createdAt', 'DESC'], ['id', 'DESC']],
+      limit: paginationConfig.limit,
       offset,
       distinct: true,
     });
@@ -817,15 +819,13 @@ class ZatcaInvoiceService {
 
     const eligibleOrders = candidateOrders.filter(ord => !ord.invoice);
 
+    const pagination = buildPaginationResponse(count, paginationConfig.page, paginationConfig.limit);
+
     return {
       invoices,
+      records: invoices,
       eligibleOrders,
-      pagination: {
-        total: count,
-        page: parseInt(page, 10),
-        limit: parseInt(limit, 10),
-        totalPages: Math.ceil(count / parseInt(limit, 10)),
-      },
+      pagination,
       stats: {
         totalInvoices: totalCount,
         totalVat: parseFloat(totalVatResult || 0).toFixed(2),
