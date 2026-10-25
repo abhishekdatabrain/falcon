@@ -454,6 +454,7 @@ class ProductService {
       is_new_arrival,
       is_best_seller,
       is_best_deal,
+      show_on_store,
       is_popular_pick,
       has_variants,
       variants,
@@ -541,8 +542,8 @@ class ProductService {
         show_on_store: show_on_store !== undefined ? Boolean(show_on_store) : false,
         is_popular_pick: is_popular_pick !== undefined ? Boolean(is_popular_pick) : false,
         has_variants: hasVariantsBool,
-        rating: rating !== undefined && rating !== '' ? parseFloat(rating) : 4.8,
-        reviews_count: (reviews_count !== undefined && reviews_count !== '') ? parseInt(reviews_count, 10) : ((reviews !== undefined && reviews !== '') ? parseInt(reviews, 10) : 120),
+        rating: rating !== undefined && rating !== '' ? parseFloat(rating) : null,
+        reviews_count: (reviews_count !== undefined && reviews_count !== 0) ? parseInt(reviews_count, 10) : ((reviews !== undefined && reviews !== '') ? parseInt(reviews, 10) : 0),
       }, { transaction: t });
 
       if (hasVariantsBool && Array.isArray(variants) && variants.length > 0) {
@@ -681,6 +682,9 @@ class ProductService {
 
       if (cleanData.is_available !== undefined) {
         cleanData.is_available = Boolean(cleanData.is_available);
+      }
+      if (cleanData.show_on_store !== undefined) {
+        cleanData.show_on_store = Boolean(cleanData.show_on_store);
       }
 
       // Remove variants array from cleanData before calling product.update

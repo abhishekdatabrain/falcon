@@ -225,7 +225,8 @@ export default function AdminProductsPage() {
     vat_percentage: '15',
     price_includes_vat: true,
     stock_quantity: '',
-    is_available: false,
+    is_available: true,
+    show_on_store: false,
     is_active: true,
     is_featured: false,
     is_new_arrival: false,
@@ -382,7 +383,8 @@ export default function AdminProductsPage() {
       vat_percentage: '15',
       price_includes_vat: true,
       stock_quantity: '',
-      is_available: false,
+      is_available: true,
+      show_on_store: false,
       is_active: true,
       is_featured: false,
       is_new_arrival: false,
@@ -550,7 +552,8 @@ export default function AdminProductsPage() {
       vat_percentage: targetProd.vat_percentage !== undefined ? String(targetProd.vat_percentage) : '15',
       price_includes_vat: targetProd.price_includes_vat !== undefined ? targetProd.price_includes_vat : true,
       stock_quantity: targetProd.stock_quantity || '',
-      is_available: targetProd.is_available !== undefined ? targetProd.is_available : true,
+      is_available: targetProd.is_available !== undefined ? Boolean(targetProd.is_available) : true,
+      show_on_store: targetProd.show_on_store !== undefined ? Boolean(targetProd.show_on_store) : false,
       is_active: targetProd.is_active !== undefined ? targetProd.is_active : true,
       is_featured: targetProd.is_featured !== undefined ? targetProd.is_featured : false,
       is_new_arrival: targetProd.is_new_arrival !== undefined ? targetProd.is_new_arrival : true,
@@ -558,8 +561,8 @@ export default function AdminProductsPage() {
       is_best_deal: targetProd.is_best_deal !== undefined ? targetProd.is_best_deal : false,
       is_popular_pick: targetProd.is_popular_pick !== undefined ? targetProd.is_popular_pick : false,
       has_variants: Boolean(targetProd.has_variants),
-      rating: targetProd.rating !== undefined && targetProd.rating !== null ? String(targetProd.rating) : '4.8',
-      reviews_count: targetProd.reviews_count !== undefined && targetProd.reviews_count !== null ? String(targetProd.reviews_count) : (targetProd.reviews ? String(targetProd.reviews) : '120'),
+      rating: targetProd.rating !== undefined && targetProd.rating !== null ? String(targetProd.rating) : '',
+      reviews_count: targetProd.reviews_count !== undefined && targetProd.reviews_count !== null ? String(targetProd.reviews_count) : (targetProd.reviews ? String(targetProd.reviews) : ''),
       variants: loadedVariants,
       images: initialImgs,
     });
@@ -922,8 +925,10 @@ export default function AdminProductsPage() {
 
       const payload = {
         ...productForm,
-        rating: productForm.rating !== '' && productForm.rating !== null ? parseFloat(productForm.rating) : 4.8,
-        reviews_count: productForm.reviews_count !== '' && productForm.reviews_count !== null ? parseInt(productForm.reviews_count, 10) : 120,
+        show_on_store: Boolean(productForm.show_on_store),
+        is_available: Boolean(productForm.is_available),
+        rating: productForm.rating !== '' && productForm.rating !== null ? parseFloat(productForm.rating) : '',
+        reviews_count: productForm.reviews_count !== '' && productForm.reviews_count !== null ? parseInt(productForm.reviews_count, 10) : 0,
         price: finalPrice,
         stock_quantity: finalStock,
         category_id: productForm.category_id || null,
@@ -1269,6 +1274,11 @@ export default function AdminProductsPage() {
                                   {prod.name_ar}
                                 </p>
                                 <div className="flex flex-wrap gap-1 mt-1">
+                                  {prod.show_on_store && (
+                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      🏪 {locale === 'ar' ? 'معروض في المتجر' : 'Show on Store'}
+                                    </span>
+                                  )}
                                   {prod.is_popular_pick && (
                                     <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-200">
                                       ⭐ Popular Pick
@@ -1296,7 +1306,7 @@ export default function AdminProductsPage() {
                                   )}
                                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
                                     <span className="text-amber-500 font-bold">★</span>
-                                    <span>{prod.rating ? Number(prod.rating).toFixed(1) : '4.8'}</span>
+                                    <span>{prod.rating ? Number(prod.rating).toFixed(1) : ''}</span>
                                     <span className="text-slate-400 font-normal">({Number(prod.reviews_count ?? prod.reviews ?? 0).toLocaleString()})</span>
                                   </span>
                                 </div>
@@ -2921,11 +2931,36 @@ export default function AdminProductsPage() {
                   </h3>
 
                   <div className="space-y-3">
-                    {/* Show on Website */}
+                    {/* Show on Store */}
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
                       <div className="space-y-0.5 pr-2">
-                        <span className="text-xs font-extrabold text-slate-900 block">Show on Store</span>
-                        <span className="text-[10px] text-slate-500 font-medium block">Visible on app & website</span>
+                        <span className="text-xs font-extrabold text-slate-900 block">
+                          {locale === 'ar' ? 'عرض في المتجر' : 'Show on Store'}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium block">
+                          {locale === 'ar' ? 'ظهور المنتج في المتجر وقسم العروض' : 'Display in store and deals section'}
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(productForm.show_on_store)}
+                          onChange={(e) => setProductForm({ ...productForm, show_on_store: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#043927]"></div>
+                      </label>
+                    </div>
+
+                    {/* Available for Purchase */}
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
+                      <div className="space-y-0.5 pr-2">
+                        <span className="text-xs font-extrabold text-slate-900 block">
+                          {locale === 'ar' ? 'متاح للشراء' : 'Available for Purchase'}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium block">
+                          {locale === 'ar' ? 'متوفر وجاهز للطلب' : 'In stock & purchasable by customers'}
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
