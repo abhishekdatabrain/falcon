@@ -16,6 +16,7 @@ import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { fetchApi, getImageUrl } from '../services/api';
+import VariantSelectionModal from './VariantSelectionModal';
 
 const FALLBACK_RECOMMENDED_PRODUCTS = [];
 
@@ -28,6 +29,7 @@ export default function RecommendedProducts() {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [addingIds, setAddingIds] = useState({});
+  const [variantModalProduct, setVariantModalProduct] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -369,15 +371,20 @@ export default function RecommendedProducts() {
                     </div>
                   </div>
 
-                  {/* Green Select Options Button (Full Width) */}
+                  {/* Green Add to Cart Button (Full Width) */}
                   <div className="mt-auto pt-1">
-                    <Link
-                      href={`/products/${item.id}`}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setVariantModalProduct(item);
+                      }}
                       className="w-full py-2.5 rounded-2xl bg-[#006E2D] hover:bg-[#008938] text-white font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98 font-sans"
                     >
-                      <Zap className="w-4 h-4 text-amber-300 fill-amber-300 shrink-0" />
-                      <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
-                    </Link>
+                      <Plus className="w-4 h-4 stroke-[2.5] shrink-0" />
+                      <span>{locale === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
+                    </button>
                   </div>
                 </div>
               );
@@ -569,6 +576,15 @@ export default function RecommendedProducts() {
           })}
         </div>
       </div>
+
+      {/* Multi-Variant Add to Cart Selection Modal */}
+      {variantModalProduct && (
+        <VariantSelectionModal
+          product={variantModalProduct}
+          isOpen={Boolean(variantModalProduct)}
+          onClose={() => setVariantModalProduct(null)}
+        />
+      )}
     </section>
   );
 }

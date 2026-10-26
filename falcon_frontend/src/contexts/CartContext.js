@@ -126,7 +126,7 @@ export const CartProvider = ({ children }) => {
     fetchCart();
   }, [user]);
 
-  const addToCart = async (productId, quantity = 1, productData = null) => {
+  const addToCart = async (productId, quantity = 1, productData = null, options = {}) => {
     let pData = productData;
     if (!pData && (!user || user.role !== 'CUSTOMER')) {
       try {
@@ -209,12 +209,14 @@ export const CartProvider = ({ children }) => {
       const updatedCart = calculateGuestCart(guestItems);
       setCart(updatedCart);
 
-      showToast(
-        locale === 'ar' ? 'تمت إضافة المنتج إلى السلة 🛒' : 'Added to cart successfully 🛒',
-        'success',
-        null,
-        name || finalImg ? { name, image: finalImg } : null
-      );
+      if (!options?.silent) {
+        showToast(
+          locale === 'ar' ? 'تمت إضافة المنتج إلى السلة 🛒' : 'Added to cart successfully 🛒',
+          'success',
+          null,
+          name || finalImg ? { name, image: finalImg } : null
+        );
+      }
       return { success: true, data: updatedCart };
     }
 
@@ -226,12 +228,14 @@ export const CartProvider = ({ children }) => {
       });
       if (res.success && res.data) {
         setCart(res.data);
-        showToast(
-          locale === 'ar' ? 'تمت إضافة المنتج إلى السلة 🛒' : 'Added to cart successfully 🛒',
-          'success',
-          null,
-          name || finalImg ? { name, image: finalImg } : null
-        );
+        if (!options?.silent) {
+          showToast(
+            locale === 'ar' ? 'تمت إضافة المنتج إلى السلة 🛒' : 'Added to cart successfully 🛒',
+            'success',
+            null,
+            name || finalImg ? { name, image: finalImg } : null
+          );
+        }
       } else {
         showToast(res.message || (locale === 'ar' ? 'فشل إضافة المنتج' : 'Failed to add to cart'), 'error');
       }

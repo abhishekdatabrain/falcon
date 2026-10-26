@@ -6,6 +6,7 @@ import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useCart } from '../../../src/contexts/CartContext';
 import { useWishlist } from '../../../src/contexts/WishlistContext';
 import { fetchApi, getImageUrl } from '../../../src/services/api';
+import VariantSelectionModal from '../../../src/components/VariantSelectionModal';
 import {
   ShoppingBag,
   Heart,
@@ -32,6 +33,8 @@ import {
   Clock,
   Droplets,
   Package,
+  Plus,
+  Minus,
 } from 'lucide-react';
 
 const renderProductIcon = (iconName, className = 'w-4 h-4') => {
@@ -107,6 +110,7 @@ export default function ProductDetailPage() {
   const relatedScrollRef = useRef(null);
   const [canScrollRelLeft, setCanScrollRelLeft] = useState(false);
   const [canScrollRelRight, setCanScrollRelRight] = useState(true);
+  const [variantModalProduct, setVariantModalProduct] = useState(null);
 
   const checkRelatedScroll = () => {
     if (relatedScrollRef.current) {
@@ -1176,12 +1180,12 @@ export default function ProductDetailPage() {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          router.push(`/products/${item.id}`);
+                          setVariantModalProduct(item);
                         }}
                         className="w-full mt-2 py-2 rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-extrabold text-xs shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5"
                       >
-                        <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-                        <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
+                        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>{locale === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
                       </button>
                     ) : (
                       <button
@@ -1219,6 +1223,14 @@ export default function ProductDetailPage() {
         </div>
       )}
 
+      {/* Multi-Variant Add to Cart Selection Modal */}
+      {variantModalProduct && (
+        <VariantSelectionModal
+          product={variantModalProduct}
+          isOpen={Boolean(variantModalProduct)}
+          onClose={() => setVariantModalProduct(null)}
+        />
+      )}
     </div>
   );
 }

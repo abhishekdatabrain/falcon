@@ -7,6 +7,7 @@ import { useCart } from '../../src/contexts/CartContext';
 import { useWishlist } from '../../src/contexts/WishlistContext';
 import { fetchApi, getImageUrl } from '../../src/services/api';
 import ProductFilterSidebar from '../../src/components/ProductFilterSidebar';
+import VariantSelectionModal from '../../src/components/VariantSelectionModal';
 import {
   Search,
   ShoppingBag,
@@ -42,6 +43,7 @@ function ProductsCatalogContent() {
   const subcategoryIdParam = searchParams.get('subcategoryId') || searchParams.get('sub') || '';
   const subSubcategoryIdParam = searchParams.get('subSubcategoryId') || searchParams.get('subSub') || '';
   const subSubSubcategoryIdParam = searchParams.get('subSubSubcategoryId') || searchParams.get('subSubSub') || '';
+  const isBestDealParam = searchParams.get('is_best_deal') || searchParams.get('deals') || '';
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -95,6 +97,7 @@ function ProductsCatalogContent() {
   };
 
   const [expandedCats, setExpandedCats] = useState(new Set());
+  const [variantModalProduct, setVariantModalProduct] = useState(null);
   const [addingId, setAddingId] = useState(null);
   const [actionId, setActionId] = useState(null);
   const [activeFilterChip, setActiveFilterChip] = useState('ALL');
@@ -180,6 +183,10 @@ function ProductsCatalogContent() {
 
       if (selectedBrands.length > 0) {
         query += `&brands=${encodeURIComponent(selectedBrands.join(','))}`;
+      }
+
+      if (isBestDealParam === 'true') {
+        query += '&best_deals_or_store=true';
       }
 
       query += `&sort=${encodeURIComponent(sortOption)}`;
@@ -954,12 +961,12 @@ function ProductsCatalogContent() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                router.push(`/products/${prod.id}`);
+                                setVariantModalProduct(prod);
                               }}
-                              className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#00B074] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                              className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#008938] active:scale-95 text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                             >
-                              <Zap className="w-3.5 h-3.5 text-amber-300" />
-                              <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
+                              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                              <span>{locale === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
                             </button>
                           );
                         }
@@ -1153,6 +1160,15 @@ function ProductsCatalogContent() {
         </main>
 
       </div>
+
+      {/* Multi-Variant Add to Cart Selection Modal */}
+      {variantModalProduct && (
+        <VariantSelectionModal
+          product={variantModalProduct}
+          isOpen={Boolean(variantModalProduct)}
+          onClose={() => setVariantModalProduct(null)}
+        />
+      )}
     </div>
   );
 }

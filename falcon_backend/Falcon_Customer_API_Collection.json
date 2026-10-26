@@ -1,0 +1,1764 @@
+{
+  "info": {
+    "name": "Falcon E-Commerce Customer Mobile App APIs",
+    "description": "# Falcon E-Commerce Customer Mobile Application API Collection\n\nThis collection contains **ONLY Customer/Shopper APIs** tailored for Mobile Application Developers (Flutter / React Native / iOS / Android).\n\n### Quick Start Guide:\n1. **Environment Variables**:\n   - `baseUrl`: Default `http://localhost:5001` (change to your staging or production server URL)\n   - `customerToken`: Auto-populated when you call **Login** or **Register Customer**.\n2. **Payload Structure**:\n   - Every POST / PUT request body includes **both REQUIRED and OPTIONAL** fields.\n   - Each request description provides a full field specification table.\n3. **Language Support**:\n   - Pass `Accept-Language: ar` or `Accept-Language: en` header if needed.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5001",
+      "type": "string",
+      "description": "Backend API base URL (e.g. http://localhost:5001 or https://api.yourdomain.com)"
+    },
+    {
+      "key": "customerToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT Bearer access token (automatically populated after calling Login or Register)"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication & Onboarding",
+      "description": "Customer registration, login, phone/email OTP verification, token refresh, and profile check.",
+      "item": [
+        {
+          "name": "Register Customer (With Mobile/Email & Full Fields)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.data && json.data.token) {",
+                  "        pm.collectionVariables.set('customerToken', json.data.token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "### Register Customer Account\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `username` | **REQUIRED** | String | Unique username (e.g., `ahmed_saudi`) |\n| `email` | **REQUIRED** | String | Valid email address |\n| `mobile` | **REQUIRED** | String | Saudi mobile with country code (e.g., `+966501234567`) |\n| `password` | **REQUIRED** | String | Password (min 6 characters) |\n| `first_name` | **OPTIONAL** | String | First name (auto-derived from username if omitted) |\n| `last_name` | **OPTIONAL** | String | Last name |\n| `verificationCode` | **OPTIONAL** | String | OTP code if pre-verified via send-code |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ahmed_customer\",\n  \"email\": \"ahmed.customer@example.com\",\n  \"mobile\": \"+966501234567\",\n  \"password\": \"Password123@\",\n  \"first_name\": \"Ahmed\",\n  \"last_name\": \"Al-Mansour\",\n  \"verificationCode\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login Customer (Email / Mobile / Username)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.data && json.data.token) {",
+                  "        pm.collectionVariables.set('customerToken', json.data.token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "### Customer Sign In\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `loginInput` | **REQUIRED** | String | Email, mobile number (+96650...), or username |\n| `password` | **REQUIRED** | String | User's password |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"loginInput\": \"ahmed.customer@example.com\",\n  \"password\": \"Password123@\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Send Verification Code (OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/send-code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "send-code"
+              ]
+            },
+            "description": "### Send Verification Code (Mobile OTP or Email OTP)\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `identifier` | **REQUIRED** | String | Mobile number (e.g. `+966501234567`) or email address |\n| `type` | **OPTIONAL** | String | `'mobile'` (default) or `'email'` |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"+966501234567\",\n  \"type\": \"mobile\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Verify Verification Code (OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/verify-code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-code"
+              ]
+            },
+            "description": "### Verify 6-digit Code\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `identifier` | **REQUIRED** | String | Mobile number or email address |\n| `code` | **REQUIRED** | String | 6-digit verification code |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"+966501234567\",\n  \"code\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Check Username Availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/check-username?username=ahmed_customer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "check-username"
+              ],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "ahmed_customer",
+                  "description": "[REQUIRED] Username to check"
+                }
+              ]
+            },
+            "description": "Check if a username is available in real-time during registration. Returns suggestions if taken."
+          }
+        },
+        {
+          "name": "Check Mobile Availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/check-mobile?mobile=%2B966501234567",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "check-mobile"
+              ],
+              "query": [
+                {
+                  "key": "mobile",
+                  "value": "+966501234567",
+                  "description": "[REQUIRED] Mobile number to check"
+                }
+              ]
+            },
+            "description": "Check if mobile number is already registered before signup."
+          }
+        },
+        {
+          "name": "Get Current Logged-in Customer (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Fetch basic session and user info of currently logged-in customer."
+          }
+        },
+        {
+          "name": "Refresh Access Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "### Refresh Access Token\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `refreshToken` | **OPTIONAL** | String | Refresh token if not using HTTP-only cookies |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"YOUR_REFRESH_TOKEN_HERE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Logout Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "### Log out and invalidate customer session\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `role` | **OPTIONAL** | String | Value `'CUSTOMER'` |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"CUSTOMER\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Customer Profile & Addresses",
+      "description": "Manage customer profile info, stats, membership tier, and delivery addresses.",
+      "item": [
+        {
+          "name": "Get Customer Full Profile & Loyalty Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customer/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customer",
+                "profile"
+              ]
+            },
+            "description": "Fetches full customer profile including loyalty points (martPoints), tier (Bronze/Silver/Gold), total orders, active orders, and addresses count."
+          }
+        },
+        {
+          "name": "Update Customer Profile (Full Body Required & Optional)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customer/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customer",
+                "profile"
+              ]
+            },
+            "description": "### Update Profile Details\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `first_name` | **OPTIONAL** | String | First name |\n| `last_name` | **OPTIONAL** | String | Last name |\n| `email` | **OPTIONAL** | String | Email address |\n| `mobile` | **OPTIONAL** | String | Mobile number |\n| `dob` | **OPTIONAL** | String | Date of birth (YYYY-MM-DD) |\n| `gender` | **OPTIONAL** | String | `'MALE'` or `'FEMALE'` |\n| `national_id` | **OPTIONAL** | String | Saudi National ID / Iqama |\n| `avatar_url` | **OPTIONAL** | String | URL of uploaded avatar image |\n| `preferences` | **OPTIONAL** | Object | App preferences (language, notification settings) |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Ahmed\",\n  \"last_name\": \"Al-Mansour\",\n  \"email\": \"ahmed.customer@example.com\",\n  \"mobile\": \"+966501234567\",\n  \"dob\": \"1994-06-15\",\n  \"gender\": \"MALE\",\n  \"national_id\": \"1098765432\",\n  \"avatar_url\": \"/uploads/customer-avatar-123.jpg\",\n  \"preferences\": {\n    \"language\": \"ar\",\n    \"notifications_enabled\": true,\n    \"sms_alerts\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List Delivery Addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customer/addresses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customer",
+                "addresses"
+              ]
+            },
+            "description": "Returns all saved delivery addresses for the logged-in customer."
+          }
+        },
+        {
+          "name": "Add Delivery Address (Full Body Required & Optional)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customer/addresses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customer",
+                "addresses"
+              ]
+            },
+            "description": "### Add New Delivery Address\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `full_name` | **REQUIRED** | String | Recipient full name |\n| `mobile` | **REQUIRED** | String | Recipient contact mobile number |\n| `city` | **REQUIRED** | String | City (e.g. Riyadh, Jeddah, Dammam) |\n| `area` | **REQUIRED** | String | Neighborhood / District (e.g. Al Olaya) |\n| `address_line` | **REQUIRED** | String | Street name, Building number, Apartment/Villa |\n| `address_type` | **OPTIONAL** | String | `'HOME'` (default), `'WORK'`, or `'OTHER'` |\n| `is_default` | **OPTIONAL** | Boolean | Set as primary default address (default: `false`) |\n| `postal_code` | **OPTIONAL** | String | Postal / ZIP Code |\n| `landmark` | **OPTIONAL** | String | Nearby landmark for driver delivery |\n| `latitude` | **OPTIONAL** | Number | GPS Latitude coordinates |\n| `longitude` | **OPTIONAL** | Number | GPS Longitude coordinates |\n| `country` | **OPTIONAL** | String | Default `'Saudi Arabia'` |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Ahmed Al-Mansour\",\n  \"mobile\": \"+966501234567\",\n  \"city\": \"Riyadh\",\n  \"area\": \"Al Olaya\",\n  \"address_line\": \"Building 42, Floor 3, Apt 12, King Fahd Road\",\n  \"address_type\": \"HOME\",\n  \"is_default\": true,\n  \"postal_code\": \"12211\",\n  \"landmark\": \"Opposite Kingdom Tower\",\n  \"latitude\": 24.7136,\n  \"longitude\": 46.6753,\n  \"country\": \"Saudi Arabia\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Delivery Address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customer/addresses/:addressId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customer",
+                "addresses",
+                ":addressId"
+              ],
+              "variable": [
+                {
+                  "key": "addressId",
+                  "value": "1",
+                  "description": "Address ID to update"
+                }
+              ]
+            },
+            "description": "### Update Existing Address\n\nAll fields from Add Address can be updated.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Ahmed Al-Mansour\",\n  \"mobile\": \"+966501234567\",\n  \"city\": \"Riyadh\",\n  \"area\": \"Al Yasmin\",\n  \"address_line\": \"Villa 15, Anas Ibn Malik St\",\n  \"address_type\": \"HOME\",\n  \"is_default\": true,\n  \"postal_code\": \"13322\",\n  \"landmark\": \"Near Al Yasmin Park\",\n  \"latitude\": 24.8194,\n  \"longitude\": 46.6432\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Delivery Address",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customer/addresses/:addressId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customer",
+                "addresses",
+                ":addressId"
+              ],
+              "variable": [
+                {
+                  "key": "addressId",
+                  "value": "1",
+                  "description": "Address ID to delete"
+                }
+              ]
+            },
+            "description": "Delete an address from customer address book."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Home & Browsing",
+      "description": "Public homepage layout, dynamic promotional banners, and category sections.",
+      "item": [
+        {
+          "name": "Get Public Homepage CMS Layout (Published Sections)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/homepage-cms/public",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "homepage-cms",
+                "public"
+              ]
+            },
+            "description": "Fetches complete published homepage structure, including banner sliders, promotional product sections, deals of the day, and category carousels."
+          }
+        },
+        {
+          "name": "Get Hero Slider Banners (Active)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/hero-banners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hero-banners"
+              ]
+            },
+            "description": "Returns top hero slider banners with image URLs, click redirect links, and titles."
+          }
+        },
+        {
+          "name": "Get Promotional Banners (Active)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/promo-banners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "promo-banners"
+              ]
+            },
+            "description": "Returns middle and promotional grid banners for mobile homepage feed."
+          }
+        },
+        {
+          "name": "Get Category Sections with Featured Items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/category-sections/active",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "category-sections",
+                "active"
+              ]
+            },
+            "description": "Returns active category sections with their sub-items and banners for the home feed."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Categories",
+      "description": "Product categories catalog and hierarchy.",
+      "item": [
+        {
+          "name": "List All Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories?includeProducts=false&featured=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "includeProducts",
+                  "value": "false",
+                  "description": "[OPTIONAL] Set true to embed top products per category"
+                },
+                {
+                  "key": "featured",
+                  "value": "false",
+                  "description": "[OPTIONAL] Filter featured categories only"
+                }
+              ]
+            },
+            "description": "Returns list of all active categories with image icons, slugs, and bilingual names."
+          }
+        },
+        {
+          "name": "Get Category By Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/:slug",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                ":slug"
+              ],
+              "variable": [
+                {
+                  "key": "slug",
+                  "value": "dairy-eggs",
+                  "description": "Category slug (e.g. dairy-eggs, bakery, fresh-produce)"
+                }
+              ]
+            },
+            "description": "Get category details with banner and subcategories by slug."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Products & Multi-Variant Images",
+      "description": "Product catalog browsing, search, multi-variant images gallery, prices, and stock.",
+      "item": [
+        {
+          "name": "List Products (Search, Filter & Pagination)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?page=1&limit=12&search=&categoryId=&minPrice=&maxPrice=&inStock=true&sortBy=createdAt&sortOrder=DESC",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "[OPTIONAL] Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "12",
+                  "description": "[OPTIONAL] Page size (default: 12)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "[OPTIONAL] Search query keyword in title or description"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "",
+                  "description": "[OPTIONAL] Filter by Category ID"
+                },
+                {
+                  "key": "categorySlug",
+                  "value": "",
+                  "description": "[OPTIONAL] Filter by Category Slug"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "",
+                  "description": "[OPTIONAL] Minimum price filter"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "",
+                  "description": "[OPTIONAL] Maximum price filter"
+                },
+                {
+                  "key": "inStock",
+                  "value": "true",
+                  "description": "[OPTIONAL] Show only in-stock products"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt",
+                  "description": "[OPTIONAL] 'price' | 'createdAt' | 'name' | 'sales_count'"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "DESC",
+                  "description": "[OPTIONAL] 'ASC' or 'DESC'"
+                }
+              ]
+            },
+            "description": "Search and filter products catalog. Each product includes main images, pricing, and variants array."
+          }
+        },
+        {
+          "name": "Get Product Detail By ID (With Multi-Images per Variant)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "Product ID"
+                }
+              ]
+            },
+            "description": "Fetches full product details including:\n- `product_images`: Main product images gallery\n- `variants`: Array of variants (e.g. 1L, 2L, 500g)\n- `variants[].images`: Up to 5 images per variant with `is_primary` flag and `sort_order`\n- `price`, `special_price`, `sku`, `stock_quantity` per variant."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Cart Management",
+      "description": "Customer shopping cart: add items (standard or variant), update quantities, totals calculation.",
+      "item": [
+        {
+          "name": "Get Cart & Calculated Totals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cart",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cart"
+              ]
+            },
+            "description": "Returns cart items, subtotal, discount, VAT, delivery fee, and grand total."
+          }
+        },
+        {
+          "name": "Add Item to Cart (Single Product OR Variant Product)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cart/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cart",
+                "items"
+              ]
+            },
+            "description": "### Add Product to Cart\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `productId` | **REQUIRED** | Number | Product ID to add |\n| `quantity` | **OPTIONAL** | Number | Quantity to add (default: `1`) |\n| `variantId` | **OPTIONAL** | Number | Variant ID (REQUIRED if product has variants e.g. 1L, 2L) |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"quantity\": 2,\n  \"variantId\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Cart Item Quantity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cart/items/:itemId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cart",
+                "items",
+                ":itemId"
+              ],
+              "variable": [
+                {
+                  "key": "itemId",
+                  "value": "1",
+                  "description": "Cart Item ID"
+                }
+              ]
+            },
+            "description": "### Update Quantity\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `quantity` | **REQUIRED** | Number | New quantity (integer >= 1) |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove Item from Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cart/items/:itemId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cart",
+                "items",
+                ":itemId"
+              ],
+              "variable": [
+                {
+                  "key": "itemId",
+                  "value": "1",
+                  "description": "Cart Item ID to delete"
+                }
+              ]
+            },
+            "description": "Removes specific line item from customer cart."
+          }
+        },
+        {
+          "name": "Clear Entire Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cart",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cart"
+              ]
+            },
+            "description": "Removes all items from the customer cart."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Coupons & Delivery Slots",
+      "description": "Discount vouchers and delivery schedule selection for checkout.",
+      "item": [
+        {
+          "name": "Get Active Coupons (Public / Shopper)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/coupons/active",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "coupons",
+                "active"
+              ]
+            },
+            "description": "Returns list of active promo coupons customer can apply at checkout."
+          }
+        },
+        {
+          "name": "Validate Coupon Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/coupons/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "coupons",
+                "validate"
+              ]
+            },
+            "description": "### Validate Coupon\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `code` | **REQUIRED** | String | Coupon code (e.g. `WELCOME10`, `RAMADAN25`) |\n| `subtotal` | **REQUIRED** | Number | Cart subtotal amount |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"WELCOME10\",\n  \"subtotal\": 150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Available Delivery Slots Schedule",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/delivery-slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "delivery-slots"
+              ]
+            },
+            "description": "Returns available delivery slots (e.g. Morning 09:00 AM - 12:00 PM, Evening 05:00 PM - 09:00 PM) and express delivery availability."
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Orders & Checkout",
+      "description": "Place order from cart, view order history, track order status, cancel, and reorder.",
+      "item": [
+        {
+          "name": "Create Order (Place Order - Full Body Required & Optional)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "description": "### Place Order from Cart\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `addressId` | **REQUIRED** | Number | Selected delivery address ID |\n| `paymentMethod` | **REQUIRED** | String | `'CASH_ON_DELIVERY'` \\| `'BANK_TRANSFER'` \\| `'ONLINE'` |\n| `deliverySpeed` | **OPTIONAL** | String | `'STANDARD'` (default) or `'EXPRESS'` |\n| `deliveryDate` | **OPTIONAL** | String | Scheduled delivery date (YYYY-MM-DD) |\n| `deliverySlot` | **OPTIONAL** | String | Selected slot (e.g. `'09:00 AM - 12:00 PM'`) |\n| `couponCode` | **OPTIONAL** | String | Promo coupon code to apply |\n| `notes` | **OPTIONAL** | String | Delivery instructions or special notes |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"addressId\": 1,\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"deliverySpeed\": \"EXPRESS\",\n  \"deliveryDate\": \"2026-10-27\",\n  \"deliverySlot\": \"09:00 AM - 12:00 PM\",\n  \"couponCode\": \"WELCOME10\",\n  \"notes\": \"Please call upon arrival. Ring the blue doorbell.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get My Orders (Customer Order History)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/my-orders?page=1&limit=10&status=ALL",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "my-orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "[OPTIONAL] Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "[OPTIONAL] Page size"
+                },
+                {
+                  "key": "status",
+                  "value": "ALL",
+                  "description": "[OPTIONAL] 'ALL' | 'PENDING' | 'CONFIRMED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED'"
+                }
+              ]
+            },
+            "description": "Returns customer's order history with items, prices, status, and tracking numbers."
+          }
+        },
+        {
+          "name": "Get Order Detail By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "Order ID"
+                }
+              ]
+            },
+            "description": "Returns complete details for a specific order (items, addresses, delivery info, invoices)."
+          }
+        },
+        {
+          "name": "Get Order Confirmation Details (Public UUID)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/confirmation/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "confirmation",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "ORDER_UUID_OR_ID",
+                  "description": "Order ID or tracking UUID"
+                }
+              ]
+            },
+            "description": "Fetches order confirmation summary right after successful checkout."
+          }
+        },
+        {
+          "name": "Live Order Tracking By Identifier",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/track/:identifier",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "track",
+                ":identifier"
+              ],
+              "variable": [
+                {
+                  "key": "identifier",
+                  "value": "ORD-20261026-0001",
+                  "description": "Order Number (ORD-...) or Order ID"
+                }
+              ]
+            },
+            "description": "Real-time tracking of order milestones: Order Placed -> Confirmed -> Packed -> Driver Assigned -> Out for Delivery -> Delivered."
+          }
+        },
+        {
+          "name": "Cancel Order (Customer Cancellation)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/:id/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                ":id",
+                "cancel"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "Order ID to cancel"
+                }
+              ]
+            },
+            "description": "### Cancel Order\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `reason` | **REQUIRED** | String | Reason for cancellation (e.g. `'Changed my mind'`, `'Found a better price'`, `'Delivery delayed'`) |\n| `remarks` | **OPTIONAL** | String | Detailed remarks or notes |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Changed my mind\",\n  \"remarks\": \"Need to re-order with different items\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reorder / Order Again",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/:id/reorder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                ":id",
+                "reorder"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "Previous Order ID to reorder"
+                }
+              ]
+            },
+            "description": "### Reorder Items\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `preview` | **OPTIONAL** | Boolean | Set `true` to check current prices & stock availability without modifying cart. Set `false` to add items to cart. |\n| `allowAnyStatus` | **OPTIONAL** | Boolean | Allow reordering regardless of original order status (default: `false`) |\n| `customSelections` | **OPTIONAL** | Array | Optional subset of product IDs to reorder |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preview\": false,\n  \"allowAnyStatus\": true,\n  \"customSelections\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Payments",
+      "description": "Payment confirmation for bank transfers and online gateway verification.",
+      "item": [
+        {
+          "name": "Submit Bank Transfer Slip Proof (Multipart)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "submit"
+              ]
+            },
+            "description": "### Submit Bank Transfer Payment Proof\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `orderId` | **REQUIRED** | Text | Order ID |\n| `bankName` | **REQUIRED** | Text | Name of bank (e.g. Al Rajhi Bank, SNB, Riyad Bank) |\n| `paymentReference` | **REQUIRED** | Text | Bank transaction reference / transfer number |\n| `proofFile` | **REQUIRED** | File | Image or PDF slip file (JPG, PNG, PDF max 5MB) |",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "orderId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "bankName",
+                  "value": "Al Rajhi Bank",
+                  "type": "text"
+                },
+                {
+                  "key": "paymentReference",
+                  "value": "TXN-9876543210",
+                  "type": "text"
+                },
+                {
+                  "key": "proofFile",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Verify Online Gateway Payment (Razorpay / Cashfree / Mada / Apple Pay)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/verify-gateway",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "verify-gateway"
+              ]
+            },
+            "description": "### Verify Payment Gateway Response\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `orderId` | **REQUIRED** | Number | Order ID |\n| `gateway` | **REQUIRED** | String | Gateway identifier: `'RAZORPAY'` or `'CASHFREE'` |\n| `razorpay_payment_id` | **REQUIRED (if Razorpay)** | String | Payment ID from Razorpay SDK |\n| `razorpay_order_id` | **REQUIRED (if Razorpay)** | String | Order ID from Razorpay SDK |\n| `razorpay_signature` | **REQUIRED (if Razorpay)** | String | HMAC SHA256 signature |\n| `cashfree_order_id` | **OPTIONAL (if Cashfree)** | String | Order ID from Cashfree |\n| `cashfree_payment_id` | **OPTIONAL (if Cashfree)** | String | Payment ID from Cashfree |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": 1,\n  \"gateway\": \"RAZORPAY\",\n  \"razorpay_payment_id\": \"pay_Nabcdef123456\",\n  \"razorpay_order_id\": \"order_Nabcdef123456\",\n  \"razorpay_signature\": \"9ef83472098d7fa98712398abcdf1234567890abcdef1234567890abcdef\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Wishlist",
+      "description": "Manage customer saved favorite products.",
+      "item": [
+        {
+          "name": "Get Customer Wishlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/wishlist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "wishlist"
+              ]
+            },
+            "description": "Returns all products saved to customer's wishlist with prices and images."
+          }
+        },
+        {
+          "name": "Toggle Wishlist (Add or Remove)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/wishlist/toggle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "wishlist",
+                "toggle"
+              ]
+            },
+            "description": "### Toggle Item in Wishlist\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `productId` | **REQUIRED** | Number | Product ID to add or remove |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove From Wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/wishlist/:productId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "wishlist",
+                ":productId"
+              ],
+              "variable": [
+                {
+                  "key": "productId",
+                  "value": "1",
+                  "description": "Product ID to remove"
+                }
+              ]
+            },
+            "description": "Removes specific product from wishlist."
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. In-App Notifications",
+      "description": "Customer notifications (order updates, promotions, discounts).",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications"
+              ]
+            },
+            "description": "Returns list of in-app notifications with read status and timestamp."
+          }
+        },
+        {
+          "name": "Mark Notification As Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/:id/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                ":id",
+                "read"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "Notification ID"
+                }
+              ]
+            },
+            "description": "Marks a single notification as read."
+          }
+        },
+        {
+          "name": "Mark All Notifications As Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "read-all"
+              ]
+            },
+            "description": "Marks all notifications for current customer as read."
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Order Feedback & Ratings",
+      "description": "Customer reviews and 1-5 star ratings for orders and products.",
+      "item": [
+        {
+          "name": "Submit Order Rating & Feedback (Full Body Required & Optional)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/feedback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "feedback"
+              ]
+            },
+            "description": "### Submit Feedback\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `orderId` | **REQUIRED** | Number | Order ID being rated |\n| `rating` | **REQUIRED** | Number | Rating score from 1 to 5 |\n| `comment` | **OPTIONAL** | String | Customer review text |\n| `productId` | **OPTIONAL** | Number | Specific product ID being reviewed |\n| `orderItemId` | **OPTIONAL** | Number | Specific order item ID |",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": 1,\n  \"rating\": 5,\n  \"comment\": \"Fresh items and very prompt delivery! Excellent packaging.\",\n  \"productId\": 1,\n  \"orderItemId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Feedback for Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/feedback/order/:orderId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "feedback",
+                "order",
+                ":orderId"
+              ],
+              "variable": [
+                {
+                  "key": "orderId",
+                  "value": "1",
+                  "description": "Order ID"
+                }
+              ]
+            },
+            "description": "Returns feedback previously submitted for an order."
+          }
+        }
+      ]
+    },
+    {
+      "name": "13. File Uploads",
+      "description": "Upload customer profile picture, payment slip, or documents.",
+      "item": [
+        {
+          "name": "Upload Single File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "upload"
+              ]
+            },
+            "description": "### Upload Single File (Image / Document)\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `file` | **REQUIRED** | File | Binary file (JPG, PNG, WebP, PDF max 10MB) |",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload Multiple Files",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/upload/multiple",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "upload",
+                "multiple"
+              ]
+            },
+            "description": "### Upload Multiple Files\n\n| Field | Status | Type | Description |\n|---|---|---|---|\n| `files` | **REQUIRED** | Files | Up to 10 binary files at once |",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

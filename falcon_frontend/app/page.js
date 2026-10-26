@@ -9,6 +9,7 @@ import { fetchApi, getImageUrl } from '../src/services/api';
 import { getCategoryUrl } from '../src/services/categoryHierarchy';
 import { ShoppingBag, Truck, ShieldCheck, FileCheck, ArrowRight, Star, Sparkles, CheckCircle2, Leaf, Tag, ChevronRight, ChevronLeft, Gift, Headphones, Shield, Smartphone, Heart, Flame, TrendingUp, Plus, Minus, Trash2, Loader2, Zap, Ban } from 'lucide-react';
 import WaveDivider from '../src/components/WaveDivider';
+import VariantSelectionModal from '../src/components/VariantSelectionModal';
 
 const SAFE_DEFAULT_CATEGORIES = [];
 
@@ -363,6 +364,7 @@ export default function HomePage() {
   const [canScrollPopularRight, setCanScrollPopularRight] = useState(true);
   const [products, setProducts] = useState([]);
   const [bestDealsProducts, setBestDealsProducts] = useState([]);
+  const [bestDealsTotal, setBestDealsTotal] = useState(0);
   const [heroBanners, setHeroBanners] = useState([]);
   const [heroLoaded, setHeroLoaded] = useState(false);
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
@@ -376,6 +378,7 @@ export default function HomePage() {
   const [productSlideIndex, setProductSlideIndex] = useState(0);
   const [categorySlideIndex, setCategorySlideIndex] = useState(0);
   const [trendingSlideIndex, setTrendingSlideIndex] = useState(0);
+  const [variantModalProduct, setVariantModalProduct] = useState(null);
 
   const checkCategoryScroll = () => {
     if (categoryScrollRef.current) {
@@ -401,20 +404,29 @@ export default function HomePage() {
 
   const checkBestDealsScroll = () => {
     if (bestDealsScrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = bestDealsScrollRef.current;
-      const maxScroll = scrollWidth - clientWidth;
+      const container = bestDealsScrollRef.current;
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      const maxScroll = Math.max(0, scrollWidth - clientWidth);
+      if (maxScroll <= 5) {
+        setCanScrollDealsLeft(false);
+        setCanScrollDealsRight(false);
+        return;
+      }
       const current = Math.abs(scrollLeft);
-      setCanScrollDealsLeft(current > 10);
-      setCanScrollDealsRight(current < maxScroll - 10);
+      setCanScrollDealsLeft(current > 5);
+      setCanScrollDealsRight(current < maxScroll - 5);
     }
   };
 
   const scrollBestDeals = (direction) => {
     if (bestDealsScrollRef.current) {
       const container = bestDealsScrollRef.current;
-      const scrollAmount = Math.max(container.clientWidth * 0.8, 300);
+      const firstCard = container.querySelector('[data-deal-card]');
+      const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : (container.clientWidth / 5);
+      const gap = 16;
+      const step = cardWidth + gap;
       const isRtl = locale === 'ar';
-      let offset = direction === 'next' ? scrollAmount : -scrollAmount;
+      let offset = direction === 'next' ? step : -step;
       if (isRtl) offset = -offset;
       container.scrollBy({ left: offset, behavior: 'smooth' });
       setTimeout(checkBestDealsScroll, 350);
@@ -450,7 +462,11 @@ export default function HomePage() {
   useEffect(() => {
     checkBestDealsScroll();
     const timer = setTimeout(checkBestDealsScroll, 300);
-    return () => clearTimeout(timer);
+    window.addEventListener('resize', checkBestDealsScroll);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', checkBestDealsScroll);
+    };
   }, [bestDealsProducts, products, locale]);
 
   useEffect(() => {
@@ -508,7 +524,7 @@ export default function HomePage() {
         const [catRes, prodRes, dealsRes, promoRes, sectionsRes, cmsRes] = await Promise.all([
           fetchApi('/categories?type=parent'),
           fetchApi('/products?limit=30'),
-          fetchApi('/products?best_deals_or_store=true&limit=30'),
+          fetchApi('/products?best_deals_or_store=true&limit=50'),
           fetchApi('/promo-banners').catch(() => ({ success: false })),
           fetchApi('/category-sections/active').catch(() => ({ success: false })),
           fetchApi('/homepage-cms/public').catch(() => ({ success: false })),
@@ -524,6 +540,8 @@ export default function HomePage() {
         if (dealsRes.success) {
           const dealsArr = dealsRes.data?.products?.products || dealsRes.data?.products || (Array.isArray(dealsRes.data) ? dealsRes.data : []);
           setBestDealsProducts(dealsArr);
+          const total = dealsRes.data?.total ?? dealsRes.data?.count ?? dealsArr.length;
+          setBestDealsTotal(total);
         }
         if (promoRes && promoRes.success && promoRes.data?.banners?.length > 0) {
           setPromoBanners(promoRes.data.banners);
@@ -918,24 +936,14 @@ export default function HomePage() {
         <section className="space-y-5 pt-2 select-none">
           {(() => {
             // Product Filtering Logic:
-            // Display products when ANY ONE of these conditions is true:
-            // - is_best_deal = true
-            // - show_on_store = true
-            // Use OR condition, not AND.
-            // Examples:
-            // true + true → Show product
-            // true + false → Show product
-            // false + true → Show product
-            // false + false → Hide product
-            // 7. Display each product only once, even when both flags are true.
-            // 8. Include only active, non-deleted products.
+            // Filter products by is_best_deal = true, active, non-deleted, and avoid duplicates
             const allCandidates = [
               ...(Array.isArray(bestDealsProducts) ? bestDealsProducts : []),
               ...(Array.isArray(products) ? products : []),
             ];
 
             const seenIds = new Set();
-            const displayDeals = [];
+            const allDeals = [];
 
             for (const prod of allCandidates) {
               if (!prod) continue;
@@ -944,47 +952,80 @@ export default function HomePage() {
               if (!isActive || !notDeleted) continue;
 
               const isBestDeal = prod.is_best_deal === true || String(prod.is_best_deal) === 'true';
-              const isShowOnStore = prod.show_on_store === true || String(prod.show_on_store) === 'true';
+              const isShowOnStore = prod.show_on_store === true || String(prod.show_on_store) === 'true' || prod.is_show_front === true || String(prod.is_show_front) === 'true';
 
               if (isBestDeal || isShowOnStore) {
                 const idKey = String(prod.id || prod._id || prod.sku || prod.name_en || '');
                 if (idKey && !seenIds.has(idKey)) {
                   seenIds.add(idKey);
-                  displayDeals.push(prod);
+                  allDeals.push(prod);
                 }
               }
             }
 
-            if (displayDeals.length === 0) return null;
+            if (allDeals.length === 0) return null;
+
+            // In the slider: all matching products are rendered so user sees first ones and slides through the rest
+            const displayDeals = allDeals;
+            const hasMoreThan10 = allDeals.length > 10 || bestDealsTotal > 10;
 
             return (
               <>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl sm:text-[32px] font-extrabold text-slate-900 tracking-tight font-sans flex items-center gap-2">
-                    <span>{locale === 'ar' ? 'أفضل عروض اليوم' : "Best Deals"}</span>
-                  </h2>
+                {/* Best Deals Heading & Navigation Arrows */}
+                <div className="flex items-center justify-between gap-3 mb-1">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <h2 className="text-2xl sm:text-[32px] font-extrabold text-slate-900 tracking-tight font-sans truncate">
+                      {locale === 'ar' ? 'أفضل عروض اليوم' : 'Best Deals'}
+                    </h2>
 
-                  {displayDeals.length > 10 && (
-                    <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200/80">
-                      {locale === 'ar' ? `${displayDeals.length} منتج` : `${displayDeals.length} Products`}
-                    </span>
-                  )}
+                    {/* {hasMoreThan10 && (
+                      <Link
+                        href="/products?is_best_deal=true"
+                        className="text-xs sm:text-sm font-bold text-[#006E2D] hover:text-[#008938] hover:underline flex items-center gap-1 transition-colors shrink-0"
+                      >
+                        <span>{locale === 'ar' ? 'عرض الكل' : 'View All'}</span>
+                        <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+                      </Link>
+                    )} */}
+                  </div>
+
+                  {/* Left & Right Navigation Arrows beside heading */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => scrollBestDeals('prev')}
+                      disabled={!canScrollDealsLeft}
+                      aria-label={locale === 'ar' ? 'السابق' : 'Previous'}
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
+                        canScrollDealsLeft
+                          ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
+                          : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-40'
+                      }`}
+                    >
+                      <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollBestDeals('next')}
+                      disabled={!canScrollDealsRight}
+                      aria-label={locale === 'ar' ? 'التالي' : 'Next'}
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
+                        canScrollDealsRight
+                          ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
+                          : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-40'
+                      }`}
+                    >
+                      <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Responsive Grid with Vertical Scrolling if > 10 Products:
-                    1. Show a maximum of 10 products initially.
-                    2. Desktop: 5 products per row, 2 rows visible.
-                    3. If more than 10 products exist, enable vertical scrolling within the Best Deals section.
-                    4. Tablet: 3 products per row.
-                    5. Mobile: 2 products per row.
-                    6. Maintain equal card dimensions and automatically fit uploaded product images.
-                */}
+                {/* Horizontal Product Carousel Slider */}
                 <div
-                  className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 md:gap-5 p-1 ${displayDeals.length > 10
-                    ? 'max-h-[620px] sm:max-h-[650px] lg:max-h-[670px] overflow-y-auto pr-1.5 sm:pr-2 [scrollbar-width:thin] [scrollbar-color:#04392733_transparent]'
-                    : ''
-                    }`}
-                  style={displayDeals.length > 10 ? { scrollbarGutter: 'stable' } : {}}
+                  ref={bestDealsScrollRef}
+                  onScroll={checkBestDealsScroll}
+                  className="flex items-stretch gap-3.5 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden w-full max-w-full"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
                 >
                   {displayDeals.map((prod, idx) => {
                     const titleEn = prod.name_en || prod.title_en;
@@ -1059,7 +1100,8 @@ export default function HomePage() {
                       <Link
                         key={prod.id ? `deal-${prod.id}` : `deal-${idx}`}
                         href={prod.id ? `/products/${prod.id}` : '/products'}
-                        className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-2.5 sm:p-3 flex flex-col justify-between relative font-sans cursor-pointer h-full min-w-0"
+                        data-deal-card="true"
+                        className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-2.5 sm:p-3 flex flex-col justify-between relative font-sans cursor-pointer shrink-0 snap-start w-[calc((100%-14px)/1.6)] min-w-[calc((100%-14px)/1.6)] max-w-[calc((100%-14px)/1.6)] min-[460px]:w-[calc((100%-14px)/2)] min-[460px]:min-w-[calc((100%-14px)/2)] min-[460px]:max-w-[calc((100%-14px)/2)] sm:w-[calc((100%-32px)/3)] sm:min-w-[calc((100%-32px)/3)] sm:max-w-[calc((100%-32px)/3)] lg:w-[calc((100%-64px)/5)] lg:min-w-[calc((100%-64px)/5)] lg:max-w-[calc((100%-64px)/5)] select-none"
                       >
                         {/* Top Badges & Wishlist */}
                         <div className="flex items-center justify-between z-10 mb-0.5 h-5">
@@ -1193,10 +1235,18 @@ export default function HomePage() {
 
                               if (hasVariants) {
                                 return (
-                                  <div className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#00B074] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5">
-                                    <Zap className="w-3.5 h-3.5 text-amber-300" />
-                                    <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
-                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setVariantModalProduct(prod);
+                                    }}
+                                    className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#008938] active:scale-95 text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                  >
+                                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                                    <span>{locale === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
+                                  </button>
                                 );
                               }
 
@@ -1845,10 +1895,18 @@ export default function HomePage() {
 
                                 if (hasVariants) {
                                   return (
-                                    <div className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#00B074] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5">
-                                      <Zap className="w-3.5 h-3.5 text-amber-300" />
-                                      <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
-                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setVariantModalProduct(prod);
+                                      }}
+                                      className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#008938] active:scale-95 text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                    >
+                                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                                      <span>{locale === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
+                                    </button>
                                   );
                                 }
 
@@ -1953,6 +2011,15 @@ export default function HomePage() {
 
 
 
+
+        {/* Multi-Variant Add to Cart Selection Modal */}
+        {variantModalProduct && (
+          <VariantSelectionModal
+            product={variantModalProduct}
+            isOpen={Boolean(variantModalProduct)}
+            onClose={() => setVariantModalProduct(null)}
+          />
+        )}
 
       </div>
     </div>

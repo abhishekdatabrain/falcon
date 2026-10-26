@@ -15,6 +15,7 @@ import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getImageUrl } from '../services/api';
+import VariantSelectionModal from './VariantSelectionModal';
 
 const DEFAULT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&auto=format&fit=crop';
 
@@ -24,6 +25,7 @@ export default function ProductCard({ product, categoryTitle = '' }) {
   const { toggleWishlist, isInWishlist } = useWishlist ? useWishlist() : { toggleWishlist: () => {}, isInWishlist: () => false };
 
   const [isBusy, setIsBusy] = useState(false);
+  const [isVariantModalOpen, setIsVariantModalOpen] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState(() => {
     if (product.has_variants && Array.isArray(product.variants) && product.variants.length > 0) {
       const activeVars = product.variants.filter((v) => v.is_active !== false);
@@ -321,13 +323,18 @@ export default function ProductCard({ product, categoryTitle = '' }) {
 
             if (hasVariants) {
               return (
-                <Link
-                  href={`/products/${product.id}`}
-                  className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#00B074] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsVariantModalOpen(true);
+                  }}
+                  className="h-8 w-full rounded-xl bg-[#043927] hover:bg-[#006E2D] active:scale-95 text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <Zap className="w-3.5 h-3.5 text-amber-300" />
-                  <span>{locale === 'ar' ? 'اختر الخيارات' : 'Select Options'}</span>
-                </Link>
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>{locale === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
+                </button>
               );
             }
 
@@ -397,6 +404,15 @@ export default function ProductCard({ product, categoryTitle = '' }) {
           })()}
         </div>
       </div>
+
+      {/* Multi-Variant Add to Cart Selection Modal */}
+      {hasVariants && (
+        <VariantSelectionModal
+          product={product}
+          isOpen={isVariantModalOpen}
+          onClose={() => setIsVariantModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
