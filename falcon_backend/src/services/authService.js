@@ -70,8 +70,8 @@ class AuthService {
 
       const customer = await Customer.create({
         user_id: user.id,
-        first_name,
-        last_name,
+        first_name: first_name || cleanUsername || 'User',
+        last_name: last_name || 'Customer',
       }, { transaction: t });
 
       return { user, customer };
