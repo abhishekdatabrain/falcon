@@ -1003,7 +1003,19 @@ export default function HomePage() {
                     } else if (prod.img) {
                       imgRaw = prod.img;
                     }
-                    const finalImg = imgRaw ? getImageUrl(imgRaw) : '';
+
+                    if (!imgRaw && Array.isArray(prod.variants) && prod.variants.length > 0) {
+                      for (const v of prod.variants) {
+                        const vPrimary = (Array.isArray(v.images) && v.images.length > 0)
+                          ? (v.images.find((i) => i.is_primary)?.image_url || v.images[0]?.image_url || (typeof v.images[0] === 'string' ? v.images[0] : null))
+                          : v.image_url;
+                        if (vPrimary) {
+                          imgRaw = vPrimary;
+                          break;
+                        }
+                      }
+                    }
+                    const finalImg = imgRaw ? getImageUrl(imgRaw) : 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
 
                     const hasVariants = Boolean(prod.has_variants && prod.variants && prod.variants.length > 0);
                     const currentPrice = parseFloat(prod.price || 0);
@@ -1139,7 +1151,7 @@ export default function HomePage() {
                                   </>
                                 ) : (
                                   <span className="text-slate-400 font-medium text-[10px]">
-                                    {locale === 'ar' ? 'لا توجد تقييمات بعد' : 'No ratings yet'}
+                                    {locale === 'ar' ? 'لا توجد تقييمات بعد' : ''}
                                   </span>
                                 )}
                               </div>
@@ -1644,7 +1656,19 @@ export default function HomePage() {
                       } else if (prod.img) {
                         imgRaw = prod.img;
                       }
-                      const finalImg = imgRaw ? getImageUrl(imgRaw) : '';
+
+                      if (!imgRaw && Array.isArray(prod.variants) && prod.variants.length > 0) {
+                        for (const v of prod.variants) {
+                          const vPrimary = (Array.isArray(v.images) && v.images.length > 0)
+                            ? (v.images.find((i) => i.is_primary)?.image_url || v.images[0]?.image_url || (typeof v.images[0] === 'string' ? v.images[0] : null))
+                            : v.image_url;
+                          if (vPrimary) {
+                            imgRaw = vPrimary;
+                            break;
+                          }
+                        }
+                      }
+                      const finalImg = imgRaw ? getImageUrl(imgRaw) : 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
 
                       const hasVariants = Boolean(prod.has_variants && prod.variants && prod.variants.length > 0);
                       const currentPrice = parseFloat(prod.price || 0);

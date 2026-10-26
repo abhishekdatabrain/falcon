@@ -1,5 +1,22 @@
-const { Product, ProductVariant, ProductImage, Category, Feedback, StockLog, sequelize } = require('../models');
+const { Product, ProductVariant, ProductVariantImage, ProductImage, Category, Feedback, StockLog, sequelize } = require('../models');
 const { Op } = require('sequelize');
+const fs = require('fs');
+const path = require('path');
+
+const safeDeleteUploadedFile = (url) => {
+  if (!url || typeof url !== 'string' || !url.startsWith('/uploads/')) return;
+  try {
+    const filename = url.replace(/^\/?uploads\//, '');
+    const uploadDir = process.env.UPLOAD_DIR || 'uploads';
+    const filePath = path.resolve(__dirname, '../../', uploadDir, filename);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  } catch (e) {
+    // Silently ignore if file doesn't exist or is locked
+  }
+};
+
 
 class ProductService {
   async getProducts(query = {}) {
@@ -228,7 +245,17 @@ class ProductService {
           model: ProductImage, as: 'images', attributes: ['id', 'image_url', 'is_primary', 'display_order'], separate: true, order: [['display_order', 'ASC']]
         },
         {
-          model: ProductVariant, as: 'variants', separate: true, order: [['price', 'ASC']]
+          model: ProductVariant,
+          as: 'variants',
+          separate: true,
+          order: [['price', 'ASC']],
+          include: [
+            {
+              model: ProductVariantImage,
+              as: 'images',
+              order: [['is_primary', 'DESC'], ['sort_order', 'ASC']],
+            },
+          ],
         },
         {
           model: Feedback, as: 'feedbacks', attributes: ['id', 'rating', 'comment'], separate: true
@@ -287,7 +314,19 @@ class ProductService {
         { model: Category, as: 'sub_subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         { model: Category, as: 'sub_sub_subcategory', attributes: ['id', 'name_en', 'name_ar', 'slug'] },
         { model: ProductImage, as: 'images' },
-        { model: ProductVariant, as: 'variants', separate: true, order: [['price', 'ASC']] },
+        {
+          model: ProductVariant,
+          as: 'variants',
+          separate: true,
+          order: [['price', 'ASC']],
+          include: [
+            {
+              model: ProductVariantImage,
+              as: 'images',
+              order: [['is_primary', 'DESC'], ['sort_order', 'ASC']],
+            },
+          ],
+        },
         { model: Feedback, as: 'feedbacks', attributes: ['id', 'rating', 'comment'], separate: true },
       ],
     });
@@ -547,19 +586,52 @@ class ProductService {
       }, { transaction: t });
 
       if (hasVariantsBool && Array.isArray(variants) && variants.length > 0) {
-        const variantRecords = variants.map((v) => ({
-          product_id: product.id,
-          sku: v.sku.trim(),
-          unit_value: v.unit_value || null,
-          unit_type: v.unit_type || null,
-          pack_size: v.pack_size || null,
-          price: parseFloat(v.price),
-          discount_price: v.discount_price !== undefined && v.discount_price !== null && v.discount_price !== '' ? parseFloat(v.discount_price) : null,
-          stock_quantity: parseInt(v.stock_quantity || 0, 10),
-          image_url: v.image_url || null,
-          is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
-        }));
-        await ProductVariant.bulkCreate(variantRecords, { transaction: t });
+        for (const v of variants) {
+          let varImgs = [];
+          if (Array.isArray(v.images) && v.images.length > 0) {
+            varImgs = v.images.map((img, idx) => {
+              if (typeof img === 'string') {
+                return { image_url: img, is_primary: idx === 0, sort_order: idx };
+              }
+              return {
+                image_url: img.image_url || img.url,
+                is_primary: Boolean(img.is_primary),
+                sort_order: img.sort_order !== undefined ? Number(img.sort_order) : idx,
+              };
+            }).filter(img => img.image_url);
+          } else if (v.image_url) {
+            varImgs = [{ image_url: v.image_url, is_primary: true, sort_order: 0 }];
+          }
+
+          varImgs = varImgs.slice(0, 5);
+          if (varImgs.length > 0 && !varImgs.some(i => i.is_primary)) {
+            varImgs[0].is_primary = true;
+          }
+          const primaryImageUrl = varImgs.find(i => i.is_primary)?.image_url || varImgs[0]?.image_url || v.image_url || null;
+
+          const createdVariant = await ProductVariant.create({
+            product_id: product.id,
+            sku: v.sku.trim(),
+            unit_value: v.unit_value || null,
+            unit_type: v.unit_type || null,
+            pack_size: v.pack_size || null,
+            price: parseFloat(v.price),
+            discount_price: v.discount_price !== undefined && v.discount_price !== null && v.discount_price !== '' ? parseFloat(v.discount_price) : null,
+            stock_quantity: parseInt(v.stock_quantity || 0, 10),
+            image_url: primaryImageUrl,
+            is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+          }, { transaction: t });
+
+          if (varImgs.length > 0) {
+            const imgRecords = varImgs.map((img, idx) => ({
+              variant_id: createdVariant.id,
+              image_url: img.image_url,
+              is_primary: img.is_primary,
+              sort_order: idx,
+            }));
+            await ProductVariantImage.bulkCreate(imgRecords, { transaction: t });
+          }
+        }
       }
 
       if (images && Array.isArray(images) && images.length > 0) {
@@ -579,7 +651,19 @@ class ProductService {
           { model: Category, as: 'sub_subcategory' },
           { model: Category, as: 'sub_sub_subcategory' },
           { model: ProductImage, as: 'images' },
-          { model: ProductVariant, as: 'variants', separate: true, order: [['price', 'ASC']] },
+          {
+            model: ProductVariant,
+            as: 'variants',
+            separate: true,
+            order: [['price', 'ASC']],
+            include: [
+              {
+                model: ProductVariantImage,
+                as: 'images',
+                order: [['is_primary', 'DESC'], ['sort_order', 'ASC']],
+              },
+            ],
+          },
         ],
         transaction: t,
       });
@@ -636,18 +720,53 @@ class ProductService {
 
     return await sequelize.transaction(async (t) => {
       if (hasVariantsBool && cleanData.variants && cleanData.variants.length > 0) {
-        const existingVariants = await ProductVariant.findAll({ where: { product_id: id }, transaction: t });
+        const existingVariants = await ProductVariant.findAll({
+          where: { product_id: id },
+          include: [{ model: ProductVariantImage, as: 'images' }],
+          transaction: t,
+        });
         const existingIds = existingVariants.map(ev => ev.id);
         const incomingIds = cleanData.variants.map(v => v.id).filter(Boolean);
 
         // Delete variants that were removed
         const toDeleteIds = existingIds.filter(eId => !incomingIds.includes(eId));
         if (toDeleteIds.length > 0) {
+          const toDeleteVariants = existingVariants.filter(ev => toDeleteIds.includes(ev.id));
+          for (const dv of toDeleteVariants) {
+            if (Array.isArray(dv.images)) {
+              for (const img of dv.images) {
+                safeDeleteUploadedFile(img.image_url);
+              }
+            }
+          }
           await ProductVariant.destroy({ where: { id: { [Op.in]: toDeleteIds } }, transaction: t });
         }
 
         // Upsert variants
         for (const v of cleanData.variants) {
+          let varImgs = [];
+          if (Array.isArray(v.images) && v.images.length > 0) {
+            varImgs = v.images.map((img, idx) => {
+              if (typeof img === 'string') {
+                return { image_url: img, is_primary: idx === 0, sort_order: idx };
+              }
+              return {
+                id: img.id,
+                image_url: img.image_url || img.url,
+                is_primary: Boolean(img.is_primary),
+                sort_order: img.sort_order !== undefined ? Number(img.sort_order) : idx,
+              };
+            }).filter(img => img.image_url);
+          } else if (v.image_url) {
+            varImgs = [{ image_url: v.image_url, is_primary: true, sort_order: 0 }];
+          }
+
+          varImgs = varImgs.slice(0, 5);
+          if (varImgs.length > 0 && !varImgs.some(i => i.is_primary)) {
+            varImgs[0].is_primary = true;
+          }
+          const primaryImageUrl = varImgs.find(i => i.is_primary)?.image_url || varImgs[0]?.image_url || v.image_url || null;
+
           const varPayload = {
             product_id: id,
             sku: v.sku.trim(),
@@ -657,14 +776,40 @@ class ProductService {
             price: parseFloat(v.price),
             discount_price: v.discount_price !== undefined && v.discount_price !== null && v.discount_price !== '' ? parseFloat(v.discount_price) : null,
             stock_quantity: parseInt(v.stock_quantity || 0, 10),
-            image_url: v.image_url || null,
+            image_url: primaryImageUrl,
             is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
           };
 
+          let variantId;
           if (v.id && existingIds.includes(v.id)) {
             await ProductVariant.update(varPayload, { where: { id: v.id }, transaction: t });
+            variantId = v.id;
           } else {
-            await ProductVariant.create(varPayload, { transaction: t });
+            const created = await ProductVariant.create(varPayload, { transaction: t });
+            variantId = created.id;
+          }
+
+          if (variantId) {
+            const currentVar = existingVariants.find(ev => ev.id === variantId);
+            if (currentVar && Array.isArray(currentVar.images)) {
+              const incomingUrls = new Set(varImgs.map(vi => vi.image_url));
+              for (const oldImg of currentVar.images) {
+                if (!incomingUrls.has(oldImg.image_url)) {
+                  safeDeleteUploadedFile(oldImg.image_url);
+                }
+              }
+            }
+
+            await ProductVariantImage.destroy({ where: { variant_id: variantId }, transaction: t });
+            if (varImgs.length > 0) {
+              const imgRecords = varImgs.map((img, idx) => ({
+                variant_id: variantId,
+                image_url: img.image_url,
+                is_primary: img.is_primary,
+                sort_order: idx,
+              }));
+              await ProductVariantImage.bulkCreate(imgRecords, { transaction: t });
+            }
           }
         }
 
@@ -710,7 +855,19 @@ class ProductService {
           { model: Category, as: 'sub_subcategory' },
           { model: Category, as: 'sub_sub_subcategory' },
           { model: ProductImage, as: 'images' },
-          { model: ProductVariant, as: 'variants', separate: true, order: [['price', 'ASC']] },
+          {
+            model: ProductVariant,
+            as: 'variants',
+            separate: true,
+            order: [['price', 'ASC']],
+            include: [
+              {
+                model: ProductVariantImage,
+                as: 'images',
+                order: [['is_primary', 'DESC'], ['sort_order', 'ASC']],
+              },
+            ],
+          },
         ],
         transaction: t,
       });
@@ -718,9 +875,31 @@ class ProductService {
   }
 
   async deleteProduct(id) {
-    const product = await Product.findByPk(id);
+    const product = await Product.findByPk(id, {
+      include: [
+        {
+          model: ProductVariant,
+          as: 'variants',
+          include: [{ model: ProductVariantImage, as: 'images' }],
+        },
+        {
+          model: ProductImage,
+          as: 'images',
+        },
+      ],
+    });
     if (!product) {
       throw new Error('Product not found');
+    }
+    // Clean up variant image files
+    if (Array.isArray(product.variants)) {
+      for (const v of product.variants) {
+        if (Array.isArray(v.images)) {
+          for (const vi of v.images) {
+            safeDeleteUploadedFile(vi.image_url);
+          }
+        }
+      }
     }
     await product.destroy();
     return true;

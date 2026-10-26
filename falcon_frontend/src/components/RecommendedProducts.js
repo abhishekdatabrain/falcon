@@ -236,7 +236,11 @@ export default function RecommendedProducts() {
             const isWishlisted = isInWishlist ? isInWishlist(item.id) : false;
             const isAdding = !!addingIds[item.id];
 
-            const itemImage = item.image || item.image_url || (Array.isArray(item.images) && item.images[0]?.image_url);
+            const vFirst = Array.isArray(item.variants) && item.variants.length > 0 ? item.variants[0] : null;
+            const vImage = vFirst ? ((Array.isArray(vFirst.images) && vFirst.images.length > 0)
+              ? (vFirst.images.find((i) => i.is_primary)?.image_url || vFirst.images[0]?.image_url || (typeof vFirst.images[0] === 'string' ? vFirst.images[0] : null))
+              : vFirst.image_url) : null;
+            const itemImage = item.image || item.image_url || (Array.isArray(item.images) && (typeof item.images[0] === 'string' ? item.images[0] : item.images[0]?.image_url)) || vImage;
             const itemName = locale === 'ar' ? (item.name_ar || item.name_en || item.title || item.name) : (item.name_en || item.name_ar || item.title || item.name);
             const brandName = item.brand || (locale === 'ar' ? 'فالكون فريش' : 'Falcon Fresh');
             const itemPrice = parseFloat(item.discount_price || item.price || 0);

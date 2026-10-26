@@ -9,8 +9,8 @@ import { fetchApi } from '../../../src/services/api';
 import { Mail, Phone, ChevronDown, Check, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 
 const COUNTRY_CODES = [
-  { code: '+966',  flag: '🇸🇦' },
- 
+  { code: '+966', flag: '🇸🇦' },
+
 ];
 
 export default function RegisterPage() {
@@ -198,11 +198,11 @@ export default function RegisterPage() {
         showToast(
           !isMobile
             ? (locale === 'ar'
-                ? `تم إرسال رمز التحقق إلى بريدك الإلكتروني (${identifier}). يرجى مراجعة صندوق الوارد.`
-                : `Verification code sent to your email (${identifier}). Please check your inbox.`)
+              ? `تم إرسال رمز التحقق إلى بريدك الإلكتروني (${identifier}). يرجى مراجعة صندوق الوارد.`
+              : `Verification code sent to your email (${identifier}). Please check your inbox.`)
             : res.data?.code
-            ? `${locale === 'ar' ? 'تم إرسال رمز التحقق:' : 'Verification code sent:'} ${res.data.code}`
-            : (res.message || (locale === 'ar' ? 'تم إرسال رمز التحقق بنجاح' : 'Verification code sent successfully')),
+              ? `${locale === 'ar' ? 'تم إرسال رمز التحقق:' : 'Verification code sent:'} ${res.data.code}`
+              : (res.message || (locale === 'ar' ? 'تم إرسال رمز التحقق بنجاح' : 'Verification code sent successfully')),
           'success'
         );
       }
@@ -335,7 +335,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 font-sans bg-[#f9fafb]">
       <div className="max-w-[460px] w-full bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/70 shadow-sm space-y-6">
-        
+
         {/* Title */}
         <div>
           <h1 className="text-2xl sm:text-[26px] font-bold text-slate-900 tracking-tight text-left rtl:text-right">
@@ -359,7 +359,7 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          
+
           {/* Username */}
           <div className="space-y-1.5 text-left rtl:text-right">
             <div className="flex items-center justify-between">
@@ -403,13 +403,12 @@ export default function RegisterPage() {
                   if (error) setError('');
                 }}
                 placeholder={locale === 'ar' ? 'أدخل اسم المستخدم' : 'Enter username'}
-                className={`w-full px-4 py-3 rounded-xl bg-[#f5f6f8] border text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all ${
-                  fieldErrors.username || usernameStatus === 'taken'
+                className={`w-full px-4 py-3 rounded-xl bg-[#f5f6f8] border text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all ${fieldErrors.username || usernameStatus === 'taken'
                     ? 'border-rose-400 focus:ring-rose-500 bg-rose-50/20'
                     : usernameStatus === 'available'
-                    ? 'border-[#00c269] focus:ring-[#00c269] focus:border-transparent'
-                    : 'border-slate-200/80 focus:ring-[#00c269] focus:border-transparent'
-                }`}
+                      ? 'border-[#00c269] focus:ring-[#00c269] focus:border-transparent'
+                      : 'border-slate-200/80 focus:ring-[#00c269] focus:border-transparent'
+                  }`}
               />
 
               <div className="absolute right-3.5 top-3.5 rtl:right-auto rtl:left-3.5 pointer-events-none">
@@ -436,11 +435,10 @@ export default function RegisterPage() {
                       key={sug}
                       type="button"
                       onClick={() => handleSelectSuggestion(sug)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 ${
-                        username === sug
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 ${username === sug
                           ? 'bg-[#00c269] text-white border-[#00c269] shadow-sm'
                           : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200/90'
-                      }`}
+                        }`}
                     >
                       <span>{sug}</span>
                       {username === sug && <Check className="w-3 h-3" />}
@@ -469,11 +467,10 @@ export default function RegisterPage() {
                 if (error) setError('');
               }}
               placeholder={locale === 'ar' ? 'أدخل كلمة المرور' : 'Enter password'}
-              className={`w-full px-4 py-3 rounded-xl bg-[#f5f6f8] border text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all ${
-                fieldErrors.password
+              className={`w-full px-4 py-3 rounded-xl bg-[#f5f6f8] border text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all ${fieldErrors.password
                   ? 'border-rose-300 focus:ring-rose-500 bg-rose-50/20'
                   : 'border-slate-200/80 focus:ring-[#00c269] focus:border-transparent'
-              }`}
+                }`}
             />
             {fieldErrors.password && (
               <p className="text-xs font-medium text-rose-600 mt-1">{fieldErrors.password}</p>
@@ -508,13 +505,12 @@ export default function RegisterPage() {
                 if (error) setError('');
               }}
               placeholder={locale === 'ar' ? 'أعد إدخال كلمة المرور' : 'Re-enter new password'}
-              className={`w-full px-4 py-3 rounded-xl bg-[#f5f6f8] border text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all ${
-                fieldErrors.confirmPassword || (confirmPassword.length > 0 && password.length > 0 && confirmPassword !== password)
+              className={`w-full px-4 py-3 rounded-xl bg-[#f5f6f8] border text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all ${fieldErrors.confirmPassword || (confirmPassword.length > 0 && password.length > 0 && confirmPassword !== password)
                   ? 'border-rose-400 focus:ring-rose-500 bg-rose-50/20'
                   : confirmPassword.length > 0 && confirmPassword === password
-                  ? 'border-[#00c269] focus:ring-[#00c269] focus:border-transparent'
-                  : 'border-slate-200/80 focus:ring-[#00c269] focus:border-transparent'
-              }`}
+                    ? 'border-[#00c269] focus:ring-[#00c269] focus:border-transparent'
+                    : 'border-slate-200/80 focus:ring-[#00c269] focus:border-transparent'
+                }`}
             />
             {fieldErrors.confirmPassword && (
               <p className="text-xs font-medium text-rose-600 mt-1">{fieldErrors.confirmPassword}</p>
@@ -578,11 +574,10 @@ export default function RegisterPage() {
                   if (error) setError('');
                 }}
                 placeholder={locale === 'ar' ? 'أدخل البريد الإلكتروني' : 'Enter email address'}
-                className={`w-full px-4 py-3 rounded-xl bg-[#f5f6f8] border text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all ${
-                  fieldErrors.email
+                className={`w-full px-4 py-3 rounded-xl bg-[#f5f6f8] border text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all ${fieldErrors.email
                     ? 'border-rose-300 focus:ring-rose-500 bg-rose-50/20'
                     : 'border-slate-200/80 focus:ring-[#00c269] focus:border-transparent'
-                }`}
+                  }`}
               />
               {fieldErrors.email && (
                 <p className="text-xs font-medium text-rose-600 mt-1">{fieldErrors.email}</p>

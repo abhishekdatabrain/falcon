@@ -840,11 +840,24 @@ function ProductsCatalogContent() {
                         </span>
                       </div>
                     )}
-                    <img
-                      src={getImageUrl(prod.img || (prod.images && (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.image_url)) || prod.image_url)}
-                      alt={locale === 'ar' ? prod.name_ar || prod.title_ar : prod.name_en || prod.title_en}
-                      className={`w-full h-full object-contain transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
-                    />
+                    {(() => {
+                      const vFirst = Array.isArray(prod.variants) && prod.variants.length > 0 ? prod.variants[0] : null;
+                      const vImage = vFirst ? ((Array.isArray(vFirst.images) && vFirst.images.length > 0)
+                        ? (vFirst.images.find((i) => i.is_primary)?.image_url || vFirst.images[0]?.image_url || (typeof vFirst.images[0] === 'string' ? vFirst.images[0] : null))
+                        : vFirst.image_url) : null;
+                      const rawProdImg = prod.img || (prod.images && (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.image_url)) || prod.image_url || vImage;
+                      return (
+                        <img
+                          src={getImageUrl(rawProdImg) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400'}
+                          alt={locale === 'ar' ? prod.name_ar || prod.title_ar : prod.name_en || prod.title_en}
+                          className={`w-full h-full object-contain transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+                          }}
+                        />
+                      );
+                    })()}
                   </div>
 
                   {/* Info Content */}

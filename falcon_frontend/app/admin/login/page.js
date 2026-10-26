@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
@@ -7,13 +7,27 @@ import { ShieldCheck, AlertCircle } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const { t } = useLanguage();
-  const { login } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && user && user.role === 'ADMIN') {
+      router.replace('/admin/dashboard');
+    }
+  }, [user, authLoading, router]);
 
   const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  if (authLoading || (user && user.role === 'ADMIN')) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

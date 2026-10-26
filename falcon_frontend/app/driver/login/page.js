@@ -21,14 +21,28 @@ import {
 
 export default function DriverLoginPage() {
   const { locale, toggleLanguage } = useLanguage();
-  const { login, logout } = useAuth();
+  const { user, loading: authLoading, login, logout } = useAuth();
   const router = useRouter();
+
+  React.useEffect(() => {
+    if (!authLoading && user && user.role === 'DRIVER') {
+      router.replace('/driver/dashboard');
+    }
+  }, [user, authLoading, router]);
 
   const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  if (authLoading || (user && user.role === 'DRIVER')) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

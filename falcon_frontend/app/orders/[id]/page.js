@@ -825,12 +825,15 @@ export default function OrderDetailsPage() {
                       : (it.product_name_en || it.product_name_ar || it.product?.name_en || 'Fresh Grocery Item');
 
                     let imgUrl = '';
-                    if (it.product?.images && it.product.images.length > 0) {
+                    const vPrimary = it.variant?.images?.find(i => i.is_primary)?.image_url || it.variant?.images?.[0]?.image_url || it.variant?.image_url;
+                    if (vPrimary) {
+                      imgUrl = vPrimary;
+                    } else if (it.image) {
+                      imgUrl = it.image;
+                    } else if (it.product?.images && it.product.images.length > 0) {
                       imgUrl = it.product.images[0].image_url;
                     } else if (it.product?.main_image) {
                       imgUrl = it.product.main_image;
-                    } else if (it.image) {
-                      imgUrl = it.image;
                     }
 
                     const qty = it.quantity || 1;

@@ -79,7 +79,13 @@ export default function ProductCard({ product, categoryTitle = '' }) {
   const brandName = product.brand || categoryTitle;
 
   // Image resolution
-  const rawImage = product.img || (product.images && (typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.image_url)) || product.image_url;
+  let rawImage = product.img || (product.images && (typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.image_url)) || product.image_url;
+  if (!rawImage && hasVariants) {
+    const vTarget = chosenVariant || product.variants[0];
+    rawImage = (Array.isArray(vTarget?.images) && vTarget.images.length > 0)
+      ? (vTarget.images.find((i) => i.is_primary)?.image_url || vTarget.images[0]?.image_url || (typeof vTarget.images[0] === 'string' ? vTarget.images[0] : null))
+      : vTarget?.image_url;
+  }
   const resolvedImage = rawImage ? (rawImage.startsWith('http') ? rawImage : getImageUrl(rawImage)) : DEFAULT_FALLBACK_IMAGE;
 
   // Cart matching

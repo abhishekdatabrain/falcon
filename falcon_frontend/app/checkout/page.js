@@ -1036,26 +1036,33 @@ export default function CheckoutPage() {
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden relative">
-                            {item.image ? (
-                              <img
-                                src={getImageUrl(item.image)}
-                                alt={itemName}
-                                className="w-full h-full object-contain"
-                                onError={(e) => {
-                                  e.currentTarget.onerror = null;
-                                  e.currentTarget.style.display = 'none';
-                                  if (e.currentTarget.nextSibling) {
-                                    e.currentTarget.nextSibling.style.display = 'flex';
-                                  }
-                                }}
-                              />
-                            ) : null}
-                            <div
-                              className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#05A764] rounded-lg"
-                              style={{ display: item.image ? 'none' : 'flex' }}
-                            >
-                              <ShoppingBag className="w-5 h-5 stroke-[2]" />
-                            </div>
+                          {(() => {
+                            const itemImg = item.variant?.images?.find(i => i.is_primary)?.image_url || item.variant?.image_url || item.image;
+                            return (
+                              <>
+                                {itemImg ? (
+                                  <img
+                                    src={getImageUrl(itemImg)}
+                                    alt={itemName}
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.style.display = 'none';
+                                      if (e.currentTarget.nextSibling) {
+                                        e.currentTarget.nextSibling.style.display = 'flex';
+                                      }
+                                    }}
+                                  />
+                                ) : null}
+                                <div
+                                  className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#05A764] rounded-lg"
+                                  style={{ display: itemImg ? 'none' : 'flex' }}
+                                >
+                                  <ShoppingBag className="w-5 h-5 stroke-[2]" />
+                                </div>
+                              </>
+                            );
+                          })()}
                           </div>
                           <div className="min-w-0">
                             <h4 className="font-extrabold text-xs text-slate-900 truncate font-sans">

@@ -6,6 +6,7 @@ const {
   PaymentConfirmation,
   Product,
   ProductVariant,
+  ProductVariantImage,
   ProductImage,
   Address,
   Customer,
@@ -254,7 +255,14 @@ class OrderService {
       include: [
         { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] },
         { model: Address, as: 'address' },
-        { model: OrderItem, as: 'items', include: [{ model: Product, as: 'product', include: [{ model: ProductImage, as: 'images' }] }] },
+        {
+          model: OrderItem,
+          as: 'items',
+          include: [
+            { model: Product, as: 'product', include: [{ model: ProductImage, as: 'images' }] },
+            { model: ProductVariant, as: 'variant', include: [{ model: ProductVariantImage, as: 'images' }] },
+          ],
+        },
         { model: OrderStatusHistory, as: 'status_history', include: [{ model: User, as: 'changed_by', attributes: ['id', 'email', 'role'] }] },
         { model: Payment, as: 'payment', include: ['confirmation'] },
         { model: Delivery, as: 'delivery', include: [{ model: Driver, as: 'driver', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] }] },
@@ -298,7 +306,14 @@ class OrderService {
       include: [
         { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] },
         { model: Address, as: 'address' },
-        { model: OrderItem, as: 'items', include: [{ model: Product, as: 'product', include: [{ model: ProductImage, as: 'images' }] }] },
+        {
+          model: OrderItem,
+          as: 'items',
+          include: [
+            { model: Product, as: 'product', include: [{ model: ProductImage, as: 'images' }] },
+            { model: ProductVariant, as: 'variant', include: [{ model: ProductVariantImage, as: 'images' }] },
+          ],
+        },
         { model: OrderStatusHistory, as: 'status_history', include: [{ model: User, as: 'changed_by', attributes: ['id', 'email', 'role'] }] },
         { model: Payment, as: 'payment', include: ['confirmation'] },
         {
@@ -444,7 +459,10 @@ class OrderService {
         {
           model: OrderItem,
           as: 'items',
-          include: [{ model: Product, as: 'product', include: [{ model: ProductImage, as: 'images' }] }],
+          include: [
+            { model: Product, as: 'product', include: [{ model: ProductImage, as: 'images' }] },
+            { model: ProductVariant, as: 'variant', include: [{ model: ProductVariantImage, as: 'images' }] },
+          ],
         },
         {
           model: OrderStatusHistory,
@@ -554,6 +572,11 @@ class OrderService {
                   attributes: ['id', 'image_url', 'is_primary']
                 }
               ]
+            },
+            {
+              model: ProductVariant,
+              as: 'variant',
+              include: [{ model: ProductVariantImage, as: 'images' }],
             }
           ]
         },

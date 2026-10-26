@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../src/contexts/AuthContext';
@@ -18,8 +18,22 @@ import {
 
 export default function LoginPage() {
   const { locale } = useLanguage();
-  const { login, logout } = useAuth();
+  const { user, loading: authLoading, login, logout } = useAuth();
   const router = useRouter();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (user.role === 'ADMIN') {
+        router.replace('/admin/dashboard');
+      } else {
+        const redirectParam = typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('redirect')
+          : null;
+        router.replace(redirectParam || '/');
+      }
+    }
+  }, [user, authLoading, router]);
 
   const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +41,14 @@ export default function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState({ loginInput: '', password: '' });
   const [generalError, setGeneralError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  if (authLoading || user) {
+    return (
+      <div className="min-h-screen bg-[#F0FDF4] flex items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-[#043927] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // Clear specific field error as user types
   const handleInputChange = (field, value) => {

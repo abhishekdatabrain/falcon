@@ -247,11 +247,26 @@ export default function CartPage() {
                             {discountPercent}% OFF
                           </span>
                         )} */}
-                        <img
-                          src={getImageUrl(item.image)}
-                          alt={itemName}
-                          className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-200"
-                        />
+                        {(() => {
+                          const cartImg = item.variant?.images?.find(i => i.is_primary)?.image_url
+                            || item.variant?.images?.[0]?.image_url
+                            || item.variant?.image_url
+                            || item.image
+                            || item.img
+                            || item.product?.images?.[0]?.image_url
+                            || item.product?.image_url;
+                          return (
+                            <img
+                              src={getImageUrl(cartImg) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400'}
+                              alt={itemName}
+                              className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-200"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+                              }}
+                            />
+                          );
+                        })()}
                       </div>
 
                       {/* Main Info Column */}

@@ -7,6 +7,7 @@ const Address = require('./Address');
 const Category = require('./Category');
 const Product = require('./Product');
 const ProductVariant = require('./ProductVariant');
+const ProductVariantImage = require('./ProductVariantImage');
 const ProductImage = require('./ProductImage');
 const Cart = require('./Cart');
 const CartItem = require('./CartItem');
@@ -92,6 +93,9 @@ ProductImage.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 
 Product.hasMany(ProductVariant, { foreignKey: 'product_id', as: 'variants', onDelete: 'CASCADE' });
 ProductVariant.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
+
+ProductVariant.hasMany(ProductVariantImage, { foreignKey: 'variant_id', as: 'images', onDelete: 'CASCADE' });
+ProductVariantImage.belongsTo(ProductVariant, { foreignKey: 'variant_id', as: 'variant' });
 
 Product.hasMany(StockLog, { foreignKey: 'product_id', as: 'stock_logs', onDelete: 'CASCADE' });
 StockLog.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
@@ -223,6 +227,7 @@ module.exports = {
   Category,
   Product,
   ProductVariant,
+  ProductVariantImage,
   ProductImage,
   StockLog,
   Cart,

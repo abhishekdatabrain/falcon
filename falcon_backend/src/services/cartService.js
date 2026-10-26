@@ -1,4 +1,4 @@
-const { Cart, CartItem, Product, ProductVariant, ProductImage, Customer } = require('../models');
+const { Cart, CartItem, Product, ProductVariant, ProductVariantImage, ProductImage, Customer } = require('../models');
 
 class CartService {
   async getOrCreateCart(customerId) {
@@ -17,6 +17,7 @@ class CartService {
             {
               model: ProductVariant,
               as: 'variant',
+              include: [{ model: ProductVariantImage, as: 'images' }],
             },
           ],
         },
@@ -150,8 +151,9 @@ class CartService {
       const unitType = v ? v.unit_type : p.unit_type;
       const packSize = v ? v.pack_size : p.pack_size;
       const stockAvailable = v ? v.stock_quantity : p.stock_quantity;
-      const image = (v && v.image_url)
-        ? v.image_url
+      const vPrimaryImg = v?.images?.find(i => i.is_primary)?.image_url || v?.images?.[0]?.image_url || v?.image_url;
+      const image = vPrimaryImg
+        ? vPrimaryImg
         : (p.images && p.images.length > 0 ? p.images[0].image_url : null);
 
       return {

@@ -128,6 +128,8 @@ export default function AdminProductsPage() {
   // Gallery Images Upload & Metadata State
   const [uploadingProductImages, setUploadingProductImages] = useState(false);
   const [productFileMetas, setProductFileMetas] = useState({}); // { [imgUrl]: { size, type, name } }
+  const [uploadingVariantIdx, setUploadingVariantIdx] = useState(null);
+  const [draggedVariantImg, setDraggedVariantImg] = useState(null); // { vIdx, imgIdx }
 
   const fetchStockLogs = async (productId) => {
     try {
@@ -429,18 +431,37 @@ export default function AdminProductsPage() {
     setUrlInput('');
 
     const loadedVariants = Array.isArray(targetProd.variants)
-      ? targetProd.variants.map((v) => ({
-          id: v.id,
-          sku: v.sku || '',
-          unit_value: v.unit_value || '',
-          unit_type: v.unit_type || 'kg',
-          pack_size: v.pack_size || '',
-          price: v.price !== undefined ? String(v.price) : '',
-          discount_price: v.discount_price !== undefined && v.discount_price !== null ? String(v.discount_price) : '',
-          stock_quantity: v.stock_quantity !== undefined ? String(v.stock_quantity) : '0',
-          image_url: v.image_url || '',
-          is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
-        }))
+      ? targetProd.variants.map((v) => {
+          let vImgs = [];
+          if (Array.isArray(v.images) && v.images.length > 0) {
+            vImgs = v.images.map((img, idx) => ({
+              id: img.id || null,
+              image_url: img.image_url || (typeof img === 'string' ? img : ''),
+              is_primary: Boolean(img.is_primary),
+              sort_order: img.sort_order !== undefined ? Number(img.sort_order) : idx,
+            })).filter((i) => i.image_url);
+          } else if (v.image_url) {
+            vImgs = [{ id: null, image_url: v.image_url, is_primary: true, sort_order: 0 }];
+          }
+          if (vImgs.length > 0 && !vImgs.some((i) => i.is_primary)) {
+            vImgs[0].is_primary = true;
+          }
+          const primaryUrl = vImgs.find((i) => i.is_primary)?.image_url || vImgs[0]?.image_url || v.image_url || '';
+
+          return {
+            id: v.id,
+            sku: v.sku || '',
+            unit_value: v.unit_value || '',
+            unit_type: v.unit_type || 'kg',
+            pack_size: v.pack_size || '',
+            price: v.price !== undefined ? String(v.price) : '',
+            discount_price: v.discount_price !== undefined && v.discount_price !== null ? String(v.discount_price) : '',
+            stock_quantity: v.stock_quantity !== undefined ? String(v.stock_quantity) : '0',
+            image_url: primaryUrl,
+            images: vImgs,
+            is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+          };
+        })
       : [];
 
     let loadedHighlights = [];
@@ -583,6 +604,7 @@ export default function AdminProductsPage() {
       discount_price: '',
       stock_quantity: '',
       image_url: '',
+      images: [],
       is_active: true,
     };
     setProductForm((prev) => ({
@@ -696,6 +718,204 @@ export default function AdminProductsPage() {
     setProductForm((prev) => {
       const nextVars = [...prev.variants];
       nextVars[index] = { ...nextVars[index], [field]: value };
+      return { ...prev, variants: nextVars };
+    });
+  };
+
+  const MAX_VARIANT_IMAGES = 5;
+
+  const handleVariantImagesUpload = async (vIdx, e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const currentVariant = productForm.variants?.[vIdx];
+    const existingImages = currentVariant?.images || (currentVariant?.image_url ? [{ image_url: currentVariant.image_url, is_primary: true, sort_order: 0 }] : []);
+    const availableSlots = MAX_VARIANT_IMAGES - existingImages.length;
+
+    if (availableSlots <= 0) {
+      showToast(
+        locale === 'ar'
+          ? `الحد الأقصى للصور هو ${MAX_VARIANT_IMAGES} صور لكل متغير`
+          : `Maximum ${MAX_VARIANT_IMAGES} images allowed per variant`,
+        'error'
+      );
+      e.target.value = '';
+      return;
+    }
+
+    if (files.length > availableSlots) {
+      showToast(
+        locale === 'ar'
+          ? `يمكنك رفع ${availableSlots} صورة إضافية فقط (الحد الأقصى ${MAX_VARIANT_IMAGES})`
+          : `You can only upload ${availableSlots} more image(s) (maximum ${MAX_VARIANT_IMAGES})`,
+        'error'
+      );
+      e.target.value = '';
+      return;
+    }
+
+    // Check size limit: 5MB per file
+    const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+    const oversizedFiles = files.filter((f) => f.size > MAX_SIZE_BYTES);
+    if (oversizedFiles.length > 0) {
+      showToast(
+        locale === 'ar'
+          ? `حجم الملف يجب ألا يتجاوز 5 ميجابايت (${oversizedFiles[0].name})`
+          : `File size must not exceed 5MB (${oversizedFiles[0].name})`,
+        'error'
+      );
+      e.target.value = '';
+      return;
+    }
+
+    // Check accepted file types: jpg, jpeg, png, webp
+    const acceptedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const invalidFiles = files.filter((f) => !acceptedTypes.includes(f.type));
+    if (invalidFiles.length > 0) {
+      showToast(
+        locale === 'ar'
+          ? 'نوع الملف غير مدعوم. يرجى اختيار ملفات JPG أو PNG أو WebP'
+          : 'Unsupported file type. Please choose JPG, PNG, or WebP images',
+        'error'
+      );
+      e.target.value = '';
+      return;
+    }
+
+    try {
+      setUploadingVariantIdx(vIdx);
+      const newUploadedUrls = [];
+
+      if (files.length === 1) {
+        const formData = new FormData();
+        formData.append('file', files[0]);
+        const res = await fetchApi('/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        if (res.success && res.data?.url) {
+          newUploadedUrls.push(res.data.url);
+        } else {
+          throw new Error(res.message || 'Upload failed');
+        }
+      } else {
+        const formData = new FormData();
+        files.forEach((f) => formData.append('files', f));
+        const res = await fetchApi('/upload/multiple', {
+          method: 'POST',
+          body: formData,
+        });
+        if (res.success && Array.isArray(res.data?.files)) {
+          res.data.files.forEach((f) => {
+            if (f.url) newUploadedUrls.push(f.url);
+          });
+        } else {
+          throw new Error(res.message || 'Multiple upload failed');
+        }
+      }
+
+      if (newUploadedUrls.length > 0) {
+        setProductForm((prev) => {
+          const nextVars = [...(prev.variants || [])];
+          const targetVar = { ...nextVars[vIdx] };
+          const curImgs = [...(targetVar.images || (targetVar.image_url ? [{ image_url: targetVar.image_url, is_primary: true, sort_order: 0 }] : []))];
+
+          const newlyAdded = newUploadedUrls.map((url, i) => ({
+            id: null,
+            image_url: url,
+            is_primary: curImgs.length === 0 && i === 0,
+            sort_order: curImgs.length + i,
+          }));
+
+          const updatedImgs = [...curImgs, ...newlyAdded].slice(0, MAX_VARIANT_IMAGES);
+          if (!updatedImgs.some((img) => img.is_primary) && updatedImgs.length > 0) {
+            updatedImgs[0].is_primary = true;
+          }
+          const primaryUrl = updatedImgs.find((img) => img.is_primary)?.image_url || updatedImgs[0]?.image_url || '';
+
+          targetVar.images = updatedImgs;
+          targetVar.image_url = primaryUrl;
+          nextVars[vIdx] = targetVar;
+          return { ...prev, variants: nextVars };
+        });
+
+        showToast(
+          locale === 'ar' ? 'تم رفع صور المتغير بنجاح!' : 'Variant images uploaded successfully!',
+          'success'
+        );
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to upload variant images', 'error');
+    } finally {
+      setUploadingVariantIdx(null);
+      e.target.value = '';
+    }
+  };
+
+  const handleSetVariantPrimaryImage = (vIdx, imgIdx) => {
+    setProductForm((prev) => {
+      const nextVars = [...(prev.variants || [])];
+      const targetVar = { ...nextVars[vIdx] };
+      const curImgs = [...(targetVar.images || [])];
+      if (!curImgs[imgIdx]) return prev;
+
+      const updatedImgs = curImgs.map((img, i) => ({
+        ...img,
+        is_primary: i === imgIdx,
+      }));
+
+      targetVar.images = updatedImgs;
+      targetVar.image_url = updatedImgs[imgIdx].image_url;
+      nextVars[vIdx] = targetVar;
+      return { ...prev, variants: nextVars };
+    });
+  };
+
+  const handleRemoveVariantImage = (vIdx, imgIdx) => {
+    setProductForm((prev) => {
+      const nextVars = [...(prev.variants || [])];
+      const targetVar = { ...nextVars[vIdx] };
+      const curImgs = [...(targetVar.images || [])];
+      if (!curImgs[imgIdx]) return prev;
+
+      const removedWasPrimary = curImgs[imgIdx].is_primary;
+      const updatedImgs = curImgs.filter((_, i) => i !== imgIdx).map((img, idx) => ({
+        ...img,
+        sort_order: idx,
+      }));
+
+      if (removedWasPrimary && updatedImgs.length > 0) {
+        updatedImgs[0].is_primary = true;
+      }
+
+      const primaryUrl = updatedImgs.find((img) => img.is_primary)?.image_url || updatedImgs[0]?.image_url || '';
+      targetVar.images = updatedImgs;
+      targetVar.image_url = primaryUrl;
+      nextVars[vIdx] = targetVar;
+      return { ...prev, variants: nextVars };
+    });
+  };
+
+  const handleReorderVariantImages = (vIdx, fromIdx, toIdx) => {
+    if (fromIdx === toIdx) return;
+    setProductForm((prev) => {
+      const nextVars = [...(prev.variants || [])];
+      const targetVar = { ...nextVars[vIdx] };
+      const curImgs = [...(targetVar.images || [])];
+      if (fromIdx < 0 || fromIdx >= curImgs.length || toIdx < 0 || toIdx >= curImgs.length) return prev;
+
+      const [moved] = curImgs.splice(fromIdx, 1);
+      curImgs.splice(toIdx, 0, moved);
+
+      const reordered = curImgs.map((img, idx) => ({
+        ...img,
+        sort_order: idx,
+      }));
+
+      targetVar.images = reordered;
+      const primaryUrl = reordered.find((img) => img.is_primary)?.image_url || reordered[0]?.image_url || '';
+      targetVar.image_url = primaryUrl;
+      nextVars[vIdx] = targetVar;
       return { ...prev, variants: nextVars };
     });
   };
@@ -970,18 +1190,29 @@ export default function AdminProductsPage() {
         discount_price: productForm.discount_price !== '' && productForm.discount_price !== null ? parseFloat(productForm.discount_price) : null,
         has_variants: Boolean(productForm.has_variants),
         variants: productForm.has_variants && Array.isArray(productForm.variants)
-          ? productForm.variants.map((v) => ({
-              id: v.id || undefined,
-              sku: (v.sku || '').trim(),
-              unit_value: v.unit_value || null,
-              unit_type: v.unit_type || null,
-              pack_size: v.pack_size || null,
-              price: parseFloat(v.price),
-              discount_price: v.discount_price !== '' && v.discount_price !== null ? parseFloat(v.discount_price) : null,
-              stock_quantity: parseInt(v.stock_quantity !== '' ? v.stock_quantity : '0', 10),
-              image_url: v.image_url || null,
-              is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
-            }))
+          ? productForm.variants.map((v) => {
+              const vImgs = Array.isArray(v.images) && v.images.length > 0
+                ? v.images
+                : (v.image_url ? [{ image_url: v.image_url, is_primary: true, sort_order: 0 }] : []);
+              const primaryUrl = vImgs.find((i) => i.is_primary)?.image_url || vImgs[0]?.image_url || v.image_url || null;
+              return {
+                id: v.id || undefined,
+                sku: (v.sku || '').trim(),
+                unit_value: v.unit_value || null,
+                unit_type: v.unit_type || null,
+                pack_size: v.pack_size || null,
+                price: parseFloat(v.price),
+                discount_price: v.discount_price !== '' && v.discount_price !== null ? parseFloat(v.discount_price) : null,
+                stock_quantity: parseInt(v.stock_quantity !== '' ? v.stock_quantity : '0', 10),
+                image_url: primaryUrl,
+                images: vImgs.map((img, idx) => ({
+                  image_url: img.image_url,
+                  is_primary: Boolean(img.is_primary),
+                  sort_order: idx,
+                })),
+                is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+              };
+            })
           : [],
         images: productForm.images.filter(Boolean),
       };
@@ -2421,6 +2652,207 @@ export default function AdminProductsPage() {
                                   </div>
                                 </div>
                               </div>
+
+                              {/* Variant Images Gallery Section */}
+                              <div className="mt-3.5 pt-3.5 border-t border-slate-100 space-y-2.5">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                      <ImageIcon className="w-3.5 h-3.5 text-[#05A764]" />
+                                      {locale === 'ar' ? 'معرض صور المتغير' : 'Variant Images Gallery'}
+                                    </span>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                                      {(v.images || (v.image_url ? [1] : [])).length} / 5
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 hidden sm:inline">
+                                      {locale === 'ar' ? '(حد أقصى 5 صور لكل متغير، JPG/PNG/WebP حتى 5 ميجابايت)' : '(Max 5 images, JPG/PNG/WebP up to 5MB)'}
+                                    </span>
+                                  </div>
+
+                                  {/* Header upload button if slots available */}
+                                  {((v.images?.length || (v.image_url ? 1 : 0)) < 5) && (
+                                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-[#043927] hover:text-[#043927] text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer select-none">
+                                      <input
+                                        type="file"
+                                        multiple
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="sr-only"
+                                        disabled={uploadingVariantIdx === vIdx}
+                                        onChange={(e) => handleVariantImagesUpload(vIdx, e)}
+                                      />
+                                      {uploadingVariantIdx === vIdx ? (
+                                        <>
+                                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#043927]" />
+                                          <span>{locale === 'ar' ? 'جاري الرفع...' : 'Uploading...'}</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Upload className="w-3.5 h-3.5" />
+                                          <span>{locale === 'ar' ? 'إضافة صور' : 'Add Images'}</span>
+                                        </>
+                                      )}
+                                    </label>
+                                  )}
+                                </div>
+
+                                {/* Responsive Thumbnail Grid */}
+                                {((v.images && v.images.length > 0) || v.image_url) ? (
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 pt-1">
+                                    {(v.images && v.images.length > 0 ? v.images : [{ image_url: v.image_url, is_primary: true, sort_order: 0 }]).map((imgObj, imgIdx, allImgs) => {
+                                      const isPrimary = Boolean(imgObj.is_primary);
+                                      return (
+                                        <div
+                                          key={imgIdx}
+                                          draggable
+                                          onDragStart={() => setDraggedVariantImg({ vIdx, imgIdx })}
+                                          onDragOver={(e) => e.preventDefault()}
+                                          onDrop={() => {
+                                            if (draggedVariantImg && draggedVariantImg.vIdx === vIdx) {
+                                              handleReorderVariantImages(vIdx, draggedVariantImg.imgIdx, imgIdx);
+                                              setDraggedVariantImg(null);
+                                            }
+                                          }}
+                                          className={`group relative rounded-2xl p-1.5 transition-all bg-white flex flex-col justify-between overflow-hidden shadow-2xs select-none ${
+                                            isPrimary
+                                              ? 'border-2 border-[#05A764] ring-2 ring-emerald-500/10 shadow-emerald-50'
+                                              : 'border border-slate-200 hover:border-slate-300'
+                                          }`}
+                                        >
+                                          {/* Top Badges / Set Primary / Remove */}
+                                          <div className="flex items-center justify-between gap-1 mb-1">
+                                            {isPrimary ? (
+                                              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-emerald-600 text-white flex items-center gap-1 shadow-2xs">
+                                                <Star className="w-2.5 h-2.5 fill-white" />
+                                                {locale === 'ar' ? 'رئيسية' : 'Primary'}
+                                              </span>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                onClick={() => handleSetVariantPrimaryImage(vIdx, imgIdx)}
+                                                className="text-[9px] font-bold text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 px-1.5 py-0.5 rounded-md transition-colors flex items-center gap-1 cursor-pointer"
+                                                title={locale === 'ar' ? 'تعيين كصورة رئيسية' : 'Set as Primary Image'}
+                                              >
+                                                <Star className="w-2.5 h-2.5 text-slate-400 group-hover:text-amber-500" />
+                                                <span>{locale === 'ar' ? 'تعيين كرئيسية' : 'Set Primary'}</span>
+                                              </button>
+                                            )}
+
+                                            {/* Remove Image Button */}
+                                            <button
+                                              type="button"
+                                              onClick={() => handleRemoveVariantImage(vIdx, imgIdx)}
+                                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                              title={locale === 'ar' ? 'حذف الصورة' : 'Remove Image'}
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+
+                                          {/* Thumbnail Preview */}
+                                          <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
+                                            <img
+                                              src={getImageUrl(imgObj.image_url)}
+                                              alt={`Variant ${vIdx + 1} Image ${imgIdx + 1}`}
+                                              className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-200"
+                                              onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = '/placeholder.png';
+                                              }}
+                                            />
+                                          </div>
+
+                                          {/* Reorder Controls (Move Left / Right) */}
+                                          <div className="flex items-center justify-between pt-1 mt-1 border-t border-slate-100 text-[10px] text-slate-400 font-mono">
+                                            <button
+                                              type="button"
+                                              disabled={imgIdx === 0}
+                                              onClick={() => handleReorderVariantImages(vIdx, imgIdx, imgIdx - 1)}
+                                              className="p-0.5 hover:text-slate-900 disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                                              title="Move Left"
+                                            >
+                                              ◀
+                                            </button>
+                                            <span className="text-[9px] font-bold text-slate-400 select-none">
+                                              #{imgIdx + 1}
+                                            </span>
+                                            <button
+                                              type="button"
+                                              disabled={imgIdx === allImgs.length - 1}
+                                              onClick={() => handleReorderVariantImages(vIdx, imgIdx, imgIdx + 1)}
+                                              className="p-0.5 hover:text-slate-900 disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                                              title="Move Right"
+                                            >
+                                              ▶
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+
+                                    {/* Add More Images Drop Area / Slot in grid if < 5 */}
+                                    {((v.images?.length || (v.image_url ? 1 : 0)) < 5) && (
+                                      <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 hover:border-[#043927] bg-slate-50/60 hover:bg-emerald-50/20 flex flex-col items-center justify-center p-2 text-center transition-all cursor-pointer group">
+                                        <input
+                                          type="file"
+                                          multiple
+                                          accept="image/jpeg,image/png,image/webp"
+                                          className="sr-only"
+                                          disabled={uploadingVariantIdx === vIdx}
+                                          onChange={(e) => handleVariantImagesUpload(vIdx, e)}
+                                        />
+                                        {uploadingVariantIdx === vIdx ? (
+                                          <RefreshCw className="w-5 h-5 text-[#05A764] animate-spin" />
+                                        ) : (
+                                          <>
+                                            <div className="w-7 h-7 rounded-full bg-slate-100 group-hover:bg-emerald-100 text-slate-500 group-hover:text-[#043927] flex items-center justify-center transition-colors mb-1">
+                                              <Plus className="w-4 h-4" />
+                                            </div>
+                                            <span className="text-[10px] font-bold text-slate-600 group-hover:text-[#043927]">
+                                              {locale === 'ar' ? 'إضافة صورة' : 'Add Image'}
+                                            </span>
+                                            <span className="text-[9px] text-slate-400 font-medium">
+                                              {5 - (v.images?.length || (v.image_url ? 1 : 0))} {locale === 'ar' ? 'متبقية' : 'left'}
+                                            </span>
+                                          </>
+                                        )}
+                                      </label>
+                                    )}
+                                  </div>
+                                ) : (
+                                  /* Empty State: Upload Area */
+                                  <label className="p-4 rounded-2xl border-2 border-dashed border-slate-200 hover:border-[#043927] bg-slate-50/50 hover:bg-emerald-50/20 flex flex-col sm:flex-row items-center justify-center gap-3 text-center transition-all cursor-pointer group">
+                                    <input
+                                      type="file"
+                                      multiple
+                                      accept="image/jpeg,image/png,image/webp"
+                                      className="sr-only"
+                                      disabled={uploadingVariantIdx === vIdx}
+                                      onChange={(e) => handleVariantImagesUpload(vIdx, e)}
+                                    />
+                                    {uploadingVariantIdx === vIdx ? (
+                                      <div className="flex items-center gap-2 text-xs font-bold text-[#043927]">
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                        <span>{locale === 'ar' ? 'جاري رفع الصور...' : 'Uploading images...'}</span>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="w-9 h-9 rounded-xl bg-slate-100 group-hover:bg-emerald-100 text-slate-400 group-hover:text-[#043927] flex items-center justify-center transition-colors">
+                                          <Upload className="w-4 h-4" />
+                                        </div>
+                                        <div className="text-left rtl:text-right">
+                                          <span className="text-xs font-bold text-slate-800 block group-hover:text-[#043927]">
+                                            {locale === 'ar' ? 'رفع صور المتغير (حتى 5 صور)' : 'Upload Variant Images (up to 5)'}
+                                          </span>
+                                          <span className="text-[10px] text-slate-500 block">
+                                            {locale === 'ar' ? 'اختر ملفات JPG أو PNG أو WebP (حد أقصى 5 ميجابايت لكل ملف)' : 'Select multiple JPG, PNG, or WebP files (Max 5MB each)'}
+                                          </span>
+                                        </div>
+                                      </>
+                                    )}
+                                  </label>
+                                )}
+                              </div>
+
                             </div>
                           ))}
 

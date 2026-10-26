@@ -26,6 +26,14 @@ const startServer = async () => {
       await sequelize.sync({ alter: true });
       logger.info('Database models synchronized successfully.');
 
+      // Migrate existing variant images into product_variant_images if needed
+      try {
+        const { migrateVariantImages } = require('./src/scripts/migrateVariantImages');
+        await migrateVariantImages();
+      } catch (migErr) {
+        logger.error('Variant images migration error:', migErr);
+      }
+
       // Auto-create default Admin if database is fresh
       const { User, Admin, Driver, HeroBanner, PromoBanner, HomepageCategorySection, HomepageCategoryItem, HomepageSection, HomepageSetting } = require('./src/models');
       const { hashPassword } = require('./src/utils/password');

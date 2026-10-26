@@ -860,7 +860,7 @@ export default function OrdersPage() {
                               </span>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                                 {ord.items.map((item, idx) => {
-                                  const img = item.product?.images?.[0]?.image_url || item.product?.main_image || item.image || item.main_image;
+                                  const img = item.variant?.images?.find(i => i.is_primary)?.image_url || item.variant?.images?.[0]?.image_url || item.variant?.image_url || item.image || item.product?.images?.[0]?.image_url || item.product?.main_image || item.main_image;
                                   const name = item.product_name_en || item.product?.name_en || item.product_name_ar || item.name || 'Grocery Item';
                                   const qty = item.quantity || 1;
                                   const itemPrice = parseFloat(item.total_price || (item.unit_price ? item.unit_price * qty : 0));
@@ -1048,7 +1048,7 @@ export default function OrdersPage() {
                               </span>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                                 {ord.items.map((item, idx) => {
-                                  const img = item.product?.images?.[0]?.image_url || item.product?.main_image || item.image || item.main_image;
+                                  const img = item.variant?.images?.find(i => i.is_primary)?.image_url || item.variant?.images?.[0]?.image_url || item.variant?.image_url || item.image || item.product?.images?.[0]?.image_url || item.product?.main_image || item.main_image;
                                   const name = item.product_name_en || item.product?.name_en || item.product_name_ar || item.name || 'Grocery Item';
                                   const qty = item.quantity || 1;
                                   const itemPrice = parseFloat(item.total_price || (item.unit_price ? item.unit_price * qty : 0));
@@ -1278,7 +1278,7 @@ export default function OrdersPage() {
                               </span>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                                 {ord.items.map((item, idx) => {
-                                  const img = item.product?.images?.[0]?.image_url || item.product?.main_image || item.image || item.main_image;
+                                  const img = item.variant?.images?.find(i => i.is_primary)?.image_url || item.variant?.images?.[0]?.image_url || item.variant?.image_url || item.image || item.product?.images?.[0]?.image_url || item.product?.main_image || item.main_image;
                                   const name = item.product_name_en || item.product?.name_en || item.product_name_ar || item.name || 'Grocery Item';
                                   const qty = item.quantity || 1;
                                   const itemPrice = parseFloat(item.total_price || (item.unit_price ? item.unit_price * qty : 0));
@@ -1492,7 +1492,7 @@ export default function OrdersPage() {
                             </span>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                               {ord.items.map((item, idx) => {
-                                const img = item.product?.images?.[0]?.image_url || item.product?.main_image || item.image || item.main_image;
+                                const img = item.variant?.images?.find(i => i.is_primary)?.image_url || item.variant?.images?.[0]?.image_url || item.variant?.image_url || item.image || item.product?.images?.[0]?.image_url || item.product?.main_image || item.main_image;
                                 const name = item.product_name_en || item.product?.name_en || item.product_name_ar || item.name || 'Grocery Item';
                                 const qty = item.quantity || 1;
                                 const itemPrice = parseFloat(item.total_price || (item.unit_price ? item.unit_price * qty : 0));

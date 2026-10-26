@@ -247,9 +247,13 @@ export default function ProductDetailPage() {
           item.images = imgs;
           setProduct(item);
           if (item.has_variants && Array.isArray(item.variants) && item.variants.length > 0) {
-            setSelectedVariantId(item.variants[0].id);
-            if (item.variants[0].image_url) {
-              setSelectedImg(item.variants[0].image_url);
+            const v0 = item.variants[0];
+            setSelectedVariantId(v0.id);
+            const v0Primary = (Array.isArray(v0.images) && v0.images.length > 0)
+              ? (v0.images.find((i) => i.is_primary)?.image_url || v0.images[0]?.image_url || (typeof v0.images[0] === 'string' ? v0.images[0] : null))
+              : v0.image_url;
+            if (v0Primary) {
+              setSelectedImg(v0Primary);
             } else if (imgs.length > 0) {
               setSelectedImg(imgs[0]);
             }
@@ -293,6 +297,12 @@ export default function ProductDetailPage() {
   const handleAddToCart = async () => {
     try {
       setAdding(true);
+      const activePrimaryImg = activeVariant
+        ? ((Array.isArray(activeVariant.images) && activeVariant.images.length > 0)
+            ? (activeVariant.images.find((i) => i.is_primary)?.image_url || activeVariant.images[0]?.image_url || (typeof activeVariant.images[0] === 'string' ? activeVariant.images[0] : null))
+            : activeVariant.image_url)
+        : null;
+
       await addToCart(product.id, quantity, {
         ...product,
         ...(activeVariant ? {
@@ -304,7 +314,7 @@ export default function ProductDetailPage() {
           unit_value: activeVariant.unit_value,
           unit_type: activeVariant.unit_type,
           pack_size: activeVariant.pack_size,
-          image: activeVariant.image_url || selectedImg,
+          image: activePrimaryImg || selectedImg || product.image || product.image_url,
         } : {
           price: currentUnitPrice,
           discount_price: discountPrice > 0 ? discountPrice : null,
@@ -349,9 +359,15 @@ export default function ProductDetailPage() {
     );
   }
 
-  const galleryImages = Array.isArray(product?.images) && product.images.length > 0
+  const activeVariantImages = (activeVariant && Array.isArray(activeVariant.images) && activeVariant.images.length > 0)
+    ? activeVariant.images.map((img) => (typeof img === 'string' ? img : img.image_url)).filter(Boolean)
+    : (activeVariant?.image_url ? [activeVariant.image_url] : []);
+
+  const fallbackProductGallery = Array.isArray(product?.images) && product.images.length > 0
     ? product.images
     : (product?.image || product?.image_url ? [product.image || product.image_url] : []);
+
+  const galleryImages = activeVariantImages.length > 0 ? activeVariantImages : fallbackProductGallery;
   const isWish = isInWishlist(product.id);
 
   const categoryObj = typeof product?.category === 'object' && product?.category !== null ? product.category : null;
@@ -433,13 +449,14 @@ export default function ProductDetailPage() {
             />
           </div>
 
-          {/* 4 Thumbnails Grid */}
-          <div className="grid grid-cols-4 gap-3">
-            {galleryImages.slice(0, 4).map((imgUrl, idx) => {
+          {/* Thumbnails Grid (Up to 5 thumbnails) */}
+          <div className={`grid gap-3 ${galleryImages.length > 4 ? 'grid-cols-5' : 'grid-cols-4'}`}>
+            {galleryImages.slice(0, 5).map((imgUrl, idx) => {
               const isSelected = (selectedImg || galleryImages[0]) === imgUrl;
               return (
                 <button
                   key={idx}
+                  type="button"
                   onClick={() => setSelectedImg(imgUrl)}
                   className={`aspect-square rounded-2xl p-1 bg-[#F8F9FA] border-2 transition-all cursor-pointer overflow-hidden flex items-center justify-center ${isSelected ? 'border-[#043927] ring-2 ring-emerald-100 shadow-xs scale-95' : 'border-slate-200/80 hover:border-slate-300 opacity-80 hover:opacity-100'
                     }`}
@@ -588,8 +605,18 @@ export default function ProductDetailPage() {
                       disabled={varOutOfStock}
                       onClick={() => {
                         setSelectedVariantId(v.id);
-                        if (v.image_url) {
-                          setSelectedImg(v.image_url);
+                        const vPrimary = (Array.isArray(v.images) && v.images.length > 0)
+                          ? (v.images.find((i) => i.is_primary)?.image_url || v.images[0]?.image_url || (typeof v.images[0] === 'string' ? v.images[0] : null))
+                          : v.image_url;
+                        if (vPrimary) {
+                          setSelectedImg(vPrimary);
+                        } else {
+                          const fallbackImg = (Array.isArray(product?.images) && product.images.length > 0)
+                            ? product.images[0]
+                            : (product?.image || product?.image_url || '');
+                          if (fallbackImg) {
+                            setSelectedImg(fallbackImg);
+                          }
                         }
                       }}
                       className={`p-3.5 rounded-2xl border text-left rtl:text-right transition-all cursor-pointer relative flex flex-col justify-between min-h-[75px] ${varOutOfStock
@@ -600,7 +627,24 @@ export default function ProductDetailPage() {
                         }`}
                     >
                       <div className="flex items-center justify-between text-xs font-bold text-slate-800">
-                        <span>{v.unit_value ? `${v.unit_value} ${v.unit_type || ''}` : v.sku}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          {(() => {
+                            const vThumb = (Array.isArray(v.images) && v.images.length > 0)
+                              ? (v.images.find((i) => i.is_primary)?.image_url || v.images[0]?.image_url || (typeof v.images[0] === 'string' ? v.images[0] : null))
+                              : v.image_url;
+                            return vThumb ? (
+                              <img
+                                src={getImageUrl(vThumb)}
+                                alt={v.sku}
+                                className="w-6 h-6 rounded-md object-cover border border-slate-200 shrink-0"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : null;
+                          })()}
+                          <span className="truncate">{v.unit_value ? `${v.unit_value} ${v.unit_type || ''}` : v.sku}</span>
+                        </div>
                         <div
                           className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? 'border-[#043927] bg-[#043927] text-white' : 'border-slate-300'
                             }`}

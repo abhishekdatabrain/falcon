@@ -1,5 +1,6 @@
 const { Sequelize } = require('sequelize');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const dbName = process.env.DB_NAME || 'singlevendor_ecommerce';
 const dbUser = process.env.DB_USER || 'postgres';
