@@ -6,6 +6,7 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useToast } from '../../src/contexts/ToastContext';
 import { useWishlist } from '../../src/contexts/WishlistContext';
 import { useCart } from '../../src/contexts/CartContext';
+import { useAuth } from '../../src/contexts/AuthContext';
 import { useSocket } from '../../src/contexts/SocketContext';
 import { fetchApi, getImageUrl } from '../../src/services/api';
 import { downloadOrderInvoice } from '../../src/services/invoiceService';
@@ -61,8 +62,15 @@ export default function OrdersPage() {
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
 
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const { fetchCart } = useCart();
   const { socket, joinOrderRoom, leaveOrderRoom } = useSocket();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login?redirect=/orders');
+    }
+  }, [user, authLoading, router]);
 
   // Reorder (Order Again) State
   const [reorderLoadingId, setReorderLoadingId] = useState(null);

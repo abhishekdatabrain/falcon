@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/src/contexts/LanguageContext';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { useWishlist } from '@/src/contexts/WishlistContext';
@@ -48,6 +49,13 @@ export default function ProfilePage() {
   const { user, loading: authLoading, logout, checkUser } = useAuth();
   const { wishlist } = useWishlist();
   const { showToast } = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login?redirect=/profile');
+    }
+  }, [user, authLoading, router]);
 
   // Loading & Action states
   const [initialLoading, setInitialLoading] = useState(true);

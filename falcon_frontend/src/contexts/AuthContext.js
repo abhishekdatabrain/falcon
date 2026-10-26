@@ -1,6 +1,6 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { fetchApi } from '../services/api';
+import { fetchApi, setCsrfToken } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -58,6 +58,7 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.error('Logout error:', e);
     } finally {
+      setCsrfToken('');
       setUser(null);
       if (isClient) {
         if (targetRole === 'ADMIN' || path.startsWith('/admin')) {

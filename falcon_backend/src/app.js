@@ -40,6 +40,10 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
+// CSRF Protection for state-changing customer requests
+const { csrfProtection } = require('./middleware/csrf');
+app.use('/api', csrfProtection);
+
 // Static File Uploads Directory with Cross-Origin headers
 const uploadDir = process.env.UPLOAD_DIR || 'uploads';
 const uploadsPath = path.join(__dirname, '..', uploadDir);

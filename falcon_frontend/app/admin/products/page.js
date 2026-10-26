@@ -18,6 +18,7 @@ import {
   Sparkles,
   ArrowLeft,
   CheckCircle2,
+  Ban,
   Upload,
   ShieldCheck,
   ShieldAlert,
@@ -1031,6 +1032,9 @@ export default function AdminProductsPage() {
 
   const handleToggleStatus = async (productId, currentIsActive) => {
     const newIsActive = !currentIsActive;
+    if (currentIsActive && !confirm(locale === 'ar' ? 'هل أنت متأكد من تعطيل هذا المنتج؟' : 'Are you sure you want to disable this product?')) {
+      return;
+    }
     try {
       const res = await fetchApi(`/products/${productId}`, {
         method: 'PUT',
@@ -1217,14 +1221,14 @@ export default function AdminProductsPage() {
                 <table className="w-full text-left text-sm text-slate-600">
                   <thead className="bg-slate-50 border-b border-slate-200 text-xs font-extrabold text-slate-500 uppercase tracking-wider">
                     <tr>
-                      <th className="px-6 py-4">{locale === 'ar' ? 'المنتج والصور' : 'Product & Images'}</th>
-                      <th className="px-6 py-4">SKU</th>
-                      <th className="px-6 py-4">{locale === 'ar' ? 'التسلسل الهرمي للقسم (٤ مستويات)' : 'Category Hierarchy (4 Levels)'}</th>
-                      <th className="px-6 py-4">{locale === 'ar' ? 'السعر' : 'Price (SAR)'}</th>
-                      <th className="px-6 py-4">{locale === 'ar' ? 'المخزون' : 'Stock'}</th>
-                      <th className="px-6 py-4">{locale === 'ar' ? 'الوحدة والعبوة' : 'Unit & Size'}</th>
-                      <th className="px-6 py-4">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
-                      <th className="px-6 py-4 text-right">{locale === 'ar' ? 'الإجراءات' : 'Actions'}</th>
+                      <th className="px-3.5 py-3 w-[125px] whitespace-nowrap text-left">{locale === 'ar' ? 'الإجراءات' : 'Actions'}</th>
+                      <th className="px-3.5 py-3 min-w-[220px]">{locale === 'ar' ? 'المنتج والصور' : 'Product & Images'}</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">SKU</th>
+                      <th className="px-3.5 py-3 min-w-[160px]">{locale === 'ar' ? 'التسلسل الهرمي للقسم (٤ مستويات)' : 'Category Hierarchy (4 Levels)'}</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">{locale === 'ar' ? 'السعر' : 'Price (SAR)'}</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">{locale === 'ar' ? 'المخزون' : 'Stock'}</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">{locale === 'ar' ? 'الوحدة والعبوة' : 'Unit & Size'}</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1236,14 +1240,55 @@ export default function AdminProductsPage() {
 
                       return (
                         <tr key={prod.id} className={`hover:bg-slate-50/80 transition-all ${prod.is_active === false ? 'bg-slate-50/60 opacity-80' : ''}`}>
-                          <td className="px-6 py-4 min-w-[220px]">
+                          <td className="px-3.5 py-3 w-[125px] whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              {canEdit && (
+                                prod.is_active !== false ? (
+                                  <button
+                                    onClick={() => handleToggleStatus(prod.id, prod.is_active)}
+                                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer shrink-0 shadow-2xs"
+                                    title={locale === 'ar' ? 'تعطيل المنتج' : 'Disable Product'}
+                                  >
+                                    <Ban className="w-4 h-4" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleToggleStatus(prod.id, prod.is_active)}
+                                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-all cursor-pointer shrink-0 shadow-2xs"
+                                    title={locale === 'ar' ? 'تفعيل المنتج' : 'Enable Product'}
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  </button>
+                                )
+                              )}
+                              {canEdit && (
+                                <button
+                                  onClick={() => openEdit(prod)}
+                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-200 transition-all cursor-pointer shrink-0 shadow-2xs"
+                                  title={locale === 'ar' ? 'تعديل المنتج' : 'Edit Product'}
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDelete(prod.id)}
+                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer shrink-0 shadow-2xs"
+                                  title={locale === 'ar' ? 'حذف المنتج' : 'Delete Product'}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3.5 py-3 min-w-[220px]">
                             <div className="flex items-center gap-3">
                               {firstImg ? (
                                 <div className="relative">
                                   <img
                                     src={getImageUrl(firstImg)}
                                     alt={prod.name_en}
-                                    className="w-12 h-12 object-cover rounded-xl border border-slate-200 shrink-0 bg-slate-50"
+                                    className="w-12 h-12 object-contain rounded-xl border border-slate-200 shrink-0 bg-white p-0.5"
                                     onError={(e) => {
                                       e.currentTarget.onerror = null;
                                       e.currentTarget.style.display = 'none';
@@ -1266,14 +1311,16 @@ export default function AdminProductsPage() {
                                   <ImageIcon className="w-5 h-5" />
                                 </div>
                               )}
-                              <div>
+                              <div className="min-w-0">
                                 <h4 className="font-extrabold text-slate-900 text-sm leading-snug font-sans">
                                   {prod.name_en}
                                 </h4>
-                                <p className="text-xs text-emerald-700 font-bold">
-                                  {prod.name_ar}
-                                </p>
-                                <div className="flex flex-wrap gap-1 mt-1">
+                                {prod.name_ar && (
+                                  <p className="text-xs text-emerald-700 font-bold mt-0.5">
+                                    {prod.name_ar}
+                                  </p>
+                                )}
+                                <div className="flex flex-wrap items-center gap-1 mt-1">
                                   {prod.show_on_store && (
                                     <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
                                       🏪 {locale === 'ar' ? 'معروض في المتجر' : 'Show on Store'}
@@ -1300,28 +1347,30 @@ export default function AdminProductsPage() {
                                     </span>
                                   )}
                                   {prod.has_variants && (
-                                    <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-indigo-100 text-indigo-800 border border-indigo-200">
                                       ⚡ {prod.variants?.length || 0} Variants
                                     </span>
                                   )}
-                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
-                                    <span className="text-amber-500 font-bold">★</span>
-                                    <span>{prod.rating ? Number(prod.rating).toFixed(1) : ''}</span>
-                                    <span className="text-slate-400 font-normal">({Number(prod.reviews_count ?? prod.reviews ?? 0).toLocaleString()})</span>
-                                  </span>
+                                  {(prod.rating || prod.reviews_count || prod.reviews) ? (
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
+                                      <span className="text-amber-500 font-bold">★</span>
+                                      <span>{prod.rating ? Number(prod.rating).toFixed(1) : '0.0'}</span>
+                                      <span className="text-slate-400 font-normal">({Number(prod.reviews_count ?? prod.reviews ?? 0).toLocaleString()})</span>
+                                    </span>
+                                  ) : null}
                                 </div>
                               </div>
                             </div>
                           </td>
 
-                          <td className="px-6 py-4 font-mono text-xs whitespace-nowrap">
+                          <td className="px-3.5 py-3 font-mono text-xs whitespace-nowrap">
                             <span className="font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 inline-block font-mono">
                               {prod.sku}
                             </span>
                           </td>
 
                           {/* 4-Level Category Hierarchy Column */}
-                          <td className="px-6 py-4 text-xs font-medium text-slate-700 min-w-[170px]">
+                          <td className="px-3.5 py-3 text-xs font-medium text-slate-700 min-w-[160px]">
                             <span className="font-extrabold text-slate-900 block">{prod.category?.name_en || 'Main Category'}</span>
                             {prod.subcategory && (
                               <span className="text-[11px] text-[#05A764] font-bold flex items-center gap-1 mt-0.5 whitespace-nowrap">
@@ -1340,7 +1389,7 @@ export default function AdminProductsPage() {
                             )}
                           </td>
 
-                          <td className="px-6 py-4 font-black text-slate-900 text-base font-sans whitespace-nowrap">
+                          <td className="px-3.5 py-3 font-black text-slate-900 text-sm sm:text-base font-sans whitespace-nowrap">
                             {prod.has_variants && prod.variants && prod.variants.length > 0 ? (
                               <div>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase block">From</span>
@@ -1355,7 +1404,7 @@ export default function AdminProductsPage() {
                           </td>
 
                           {/* Stock Column */}
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3.5 py-3 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <span className={`inline-flex items-center text-xs font-extrabold px-3 py-1.5 rounded-full border whitespace-nowrap ${prod.stock_quantity > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
                                 {prod.stock_quantity > 0 ? `Stock: ${prod.stock_quantity}` : 'Out of Stock'}
@@ -1371,21 +1420,22 @@ export default function AdminProductsPage() {
                           </td>
 
                           {/* Unit & Size Column */}
-                          <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-700">
+                          <td className="px-3.5 py-3 whitespace-nowrap text-xs font-bold text-slate-700">
                             {prod.has_variants && prod.variants && prod.variants.length > 0 ? (
                               <span className="inline-block bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl text-emerald-900 font-bold font-sans">
                                 {prod.variants.map((v) => `${v.unit_value || ''}${v.unit_type || ''}`).filter(Boolean).join(', ')}
                               </span>
                             ) : prod.unit ? (
                               <span className="inline-block bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-slate-800 font-semibold font-sans">
-                                {prod.unit_value} ({prod.unit_type} {prod.pack_size})
+                                {prod.unit_value} {prod.unit_type} ({prod.pack_size})
                               </span>
                             ) : (
                               <span className="text-slate-400 font-normal text-xs">-</span>
                             )}
                           </td>
 
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          {/* Status Column */}
+                          <td className="px-3.5 py-3 whitespace-nowrap">
                             <span
                               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border ${
                                 prod.is_active !== false
@@ -1403,41 +1453,6 @@ export default function AdminProductsPage() {
                                 </>
                               )}
                             </span>
-                          </td>
-
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              {canEdit && (
-                                <button
-                                  onClick={() => handleToggleStatus(prod.id, prod.is_active)}
-                                  className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap shadow-2xs ${
-                                    prod.is_active !== false
-                                      ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
-                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                  }`}
-                                >
-                                  {prod.is_active !== false ? (locale === 'ar' ? 'تعطيل' : 'Disable') : (locale === 'ar' ? 'تفعيل' : 'Enable')}
-                                </button>
-                              )}
-                              {canEdit && (
-                                <button
-                                  onClick={() => openEdit(prod)}
-                                  className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-200 transition-all cursor-pointer"
-                                  title="Edit Product"
-                                >
-                                  <Edit3 className="w-4 h-4" />
-                                </button>
-                              )}
-                              {canDelete && (
-                                <button
-                                  onClick={() => handleDelete(prod.id)}
-                                  className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
-                                  title="Delete Product"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
                           </td>
                         </tr>
                       );

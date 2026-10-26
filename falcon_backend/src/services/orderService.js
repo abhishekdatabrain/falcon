@@ -51,29 +51,29 @@ class OrderService {
       });
     }
 
-    if (!address) {
-      // Auto-create a default address for the customer if none exists
-      const customer = await Customer.findByPk(customerId, {
-        include: [{ model: User, as: 'user' }],
-      });
-      const customerName = customer
-        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Customer'
-        : 'Customer';
-      const customerMobile = customer?.user?.mobile || '+966 50 123 4567';
+    // if (!address) {
+    //   // Auto-create a default address for the customer if none exists
+    //   const customer = await Customer.findByPk(customerId, {
+    //     include: [{ model: User, as: 'user' }],
+    //   });
+    //   const customerName = customer
+    //     ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Customer'
+    //     : 'Customer';
+    //   const customerMobile = customer?.user?.mobile || '+966 50 123 4567';
 
-      address = await Address.create({
-        customer_id: customerId,
-        full_name: customerName,
-        mobile: customerMobile,
-        country: 'Saudi Arabia',
-        state: 'Riyadh Province',
-        city: 'Riyadh',
-        area: 'Al-Olaya District',
-        address_line: 'Building 42, King Fahd Road, Al-Olaya District',
-        postal_code: '13211',
-        is_default: true,
-      });
-    }
+    //   address = await Address.create({
+    //     customer_id: customerId,
+    //     full_name: customerName,
+    //     mobile: customerMobile,
+    //     country: 'Saudi Arabia',
+    //     state: 'Riyadh Province',
+    //     city: 'Riyadh',
+    //     area: 'Al-Olaya District',
+    //     address_line: 'Building 42, King Fahd Road, Al-Olaya District',
+    //     postal_code: '13211',
+    //     is_default: true,
+    //   });
+    // }
 
     const cartTotals = await cartService.calculateCartTotals(customerId);
     if (!cartTotals.items || cartTotals.items.length === 0) {

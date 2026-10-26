@@ -8,6 +8,11 @@ const User = sequelize.define('User', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
+  username: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true,
+  },
   email: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -42,6 +47,7 @@ const User = sequelize.define('User', {
   indexes: [
     { fields: ['email'] },
     { fields: ['mobile'] },
+    { fields: ['username'] },
     { fields: ['role'] },
   ],
 });

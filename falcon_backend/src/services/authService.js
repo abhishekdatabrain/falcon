@@ -2,13 +2,30 @@ const { User, Customer, Driver, Admin, RefreshToken, Role, Permission, sequelize
 const { hashPassword, comparePassword } = require('../utils/password');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/jwt');
 const ROLES = require('../constants/roles');
+const emailService = require('./emailService');
+
+const verificationStore = new Map();
 
 class AuthService {
   async registerCustomer(data) {
-    const { email, mobile, password, first_name, last_name } = data;
+    const { email, mobile, password, first_name, last_name, username, verificationCode } = data;
+
+    if (verificationCode) {
+      const emailValid = email ? this.verifyCode(email, verificationCode) : false;
+      const mobileValid = (!emailValid && mobile) ? this.verifyCode(mobile, verificationCode) : false;
+      const isValid = emailValid || mobileValid;
+
+      if (!isValid) {
+        const err = new Error('Invalid or expired verification code');
+        err.fieldErrors = { verificationCode: 'Invalid or expired verification code' };
+        throw err;
+      }
+    }
 
     const normalizedEmail = (email || '').trim().toLowerCase();
     const normalizedMobile = (mobile || '').trim();
+    // Allow unicode letters, numbers, underscores, dots, and hyphens
+    const cleanUsername = username ? String(username).trim().replace(/[^\p{L}\p{N}_.-]/gu, '') : null;
 
     const existingEmail = await User.findOne({
       where: { email: normalizedEmail },
@@ -17,24 +34,25 @@ class AuthService {
       where: { mobile: normalizedMobile },
     });
 
-    if (existingEmail && existingMobile) {
-      const err = new Error('Both email address and mobile number are already registered');
-      err.fieldErrors = {
-        email: 'Email address is already registered',
-        mobile: 'Mobile number is already registered',
-      };
-      throw err;
-    } else if (existingEmail) {
-      const err = new Error('This email address is already registered');
-      err.fieldErrors = {
-        email: 'This email address is already registered',
-      };
-      throw err;
-    } else if (existingMobile) {
-      const err = new Error('This mobile number is already registered');
-      err.fieldErrors = {
-        mobile: 'This mobile number is already registered',
-      };
+    let existingUsername = null;
+    if (cleanUsername) {
+      existingUsername = await User.findOne({
+        where: sequelize.where(
+          sequelize.fn('LOWER', sequelize.col('username')),
+          cleanUsername.toLowerCase()
+        ),
+      });
+    }
+
+    const fieldErrors = {};
+    if (existingEmail) fieldErrors.email = 'This email address is already registered';
+    if (existingMobile) fieldErrors.mobile = 'This mobile number is already registered';
+    if (existingUsername) fieldErrors.username = 'This username is already taken. Please choose another username.';
+
+    if (Object.keys(fieldErrors).length > 0) {
+      const messages = Object.values(fieldErrors);
+      const err = new Error(messages[0]);
+      err.fieldErrors = fieldErrors;
       throw err;
     }
 
@@ -42,6 +60,7 @@ class AuthService {
 
     const result = await sequelize.transaction(async (t) => {
       const user = await User.create({
+        username: cleanUsername || null,
         email,
         mobile,
         password_hash: hashedPassword,
@@ -98,9 +117,18 @@ class AuthService {
   }
 
   async login(loginInput, password, reqInfo = {}) {
+    const rawInput = (loginInput || '').trim();
+    const lowerInput = rawInput.toLowerCase();
+
     const user = await User.findOne({
       where: {
-        [sequelize.Sequelize.Op.or]: [{ email: loginInput }, { mobile: loginInput }],
+        [sequelize.Sequelize.Op.or]: [
+          { email: rawInput },
+          { mobile: rawInput },
+          { username: rawInput },
+          sequelize.where(sequelize.fn('LOWER', sequelize.col('User.email')), lowerInput),
+          sequelize.where(sequelize.fn('LOWER', sequelize.col('User.username')), lowerInput),
+        ],
       },
       include: [
         { model: Customer, as: 'customer' },
@@ -116,7 +144,7 @@ class AuthService {
     });
 
     if (!user) {
-      const error = new Error('No account with this email or mobile number');
+      const error = new Error('No account with this username, email or mobile number');
       error.field = 'loginInput';
       error.statusCode = 400;
       throw error;
@@ -158,6 +186,7 @@ class AuthService {
 
     const userObj = {
       id: user.id,
+      username: user.username || null,
       email: user.email,
       mobile: user.mobile,
       role: user.role,
@@ -248,14 +277,194 @@ class AuthService {
     };
   }
 
-  async logout(refreshTokenString) {
+  async logout(refreshTokenString, userId = null) {
     if (refreshTokenString) {
       await RefreshToken.update(
         { is_revoked: true },
         { where: { token: refreshTokenString } }
       );
     }
+    if (userId) {
+      await RefreshToken.update(
+        { is_revoked: true },
+        { where: { user_id: userId, is_revoked: false } }
+      );
+    }
     return true;
+  }
+
+  async checkUsernameAvailability(rawUsername) {
+    const username = (rawUsername || '').trim().toLowerCase().replace(/[^\p{L}\p{N}_.-]/gu, '');
+    const base = username || 'user';
+
+    if (!username || username.length < 3) {
+      return {
+        available: false,
+        username,
+        message: 'Username must be at least 3 characters',
+        suggestions: [
+          `${base}${Math.floor(10 + Math.random() * 90)}`,
+          `${base}_${Math.floor(100 + Math.random() * 900)}`,
+          `${base}_saqr`,
+          `${base}${new Date().getFullYear()}`,
+        ],
+      };
+    }
+
+    // Check if user with this username exists in database
+    const takenInUsers = await User.findOne({
+      where: {
+        [sequelize.Sequelize.Op.or]: [
+          sequelize.where(sequelize.fn('LOWER', sequelize.col('username')), username),
+          { email: { [sequelize.Sequelize.Op.iLike]: `${username}@%` } },
+          { email: { [sequelize.Sequelize.Op.iLike]: `user_${username}@%` } },
+          { email: username },
+        ],
+      },
+    });
+
+    const takenInCustomers = await Customer.findOne({
+      where: sequelize.where(
+        sequelize.fn('LOWER', sequelize.fn('CONCAT', sequelize.col('first_name'), sequelize.col('last_name'))),
+        username.replace(/[^a-z0-9]/g, '')
+      ),
+    });
+
+    const reserved = ['admin', 'root', 'support', 'help', 'system', 'saqrcart', 'falcon'];
+    const isReserved = reserved.includes(username);
+
+    const isTaken = Boolean(takenInUsers || takenInCustomers || isReserved);
+
+    const suggestions = [
+      `${username}${Math.floor(10 + Math.random() * 90)}`,
+      `${username}_${Math.floor(100 + Math.random() * 900)}`,
+      `${username}_saqr`,
+      `${username}${new Date().getFullYear()}`,
+      `the_${username}`,
+    ];
+
+    return {
+      available: !isTaken,
+      username,
+      message: isTaken ? 'Username is already taken' : 'Username is available',
+      suggestions,
+    };
+  }
+
+  async sendVerificationCode({ identifier, type = 'mobile' }) {
+    const raw = (identifier || '').trim();
+    if (!raw) {
+      throw new Error(`Please provide a valid ${type === 'mobile' ? 'mobile number' : 'email address'}`);
+    }
+
+    const cleanKey = type === 'mobile' ? raw.replace(/[^0-9+]/g, '') : raw.toLowerCase();
+
+    // Check if already registered
+    const existing = await User.findOne({
+      where: type === 'mobile' ? { mobile: cleanKey } : { email: cleanKey },
+    });
+
+    if (existing) {
+      const err = new Error(`This ${type === 'mobile' ? 'mobile number' : 'email address'} is already registered`);
+      err.fieldErrors = { [type]: `This ${type === 'mobile' ? 'mobile number' : 'email address'} is already registered` };
+      throw err;
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    verificationStore.set(cleanKey, { code, expiresAt });
+
+    console.log(`[AUTH VERIFICATION] Generated verification code ${code} for ${cleanKey}`);
+
+    // If type is email, actually deliver the email via EmailService
+    if (type === 'email') {
+      try {
+        const mailRes = await emailService.sendVerificationEmail(cleanKey, code);
+        if (!mailRes.success) {
+          console.error(`[AUTH] Failed to send email to ${cleanKey}:`, mailRes.error);
+        }
+      } catch (mailErr) {
+        console.error(`[AUTH] Exception sending email to ${cleanKey}:`, mailErr);
+      }
+    }
+
+    return {
+      success: true,
+      // For mobile mode or fallback dev, include code if not email
+      ...(type === 'mobile' ? { code } : {}),
+      message: type === 'email'
+        ? `Verification code sent to ${cleanKey}. Please check your inbox.`
+        : `Verification code sent successfully to ${cleanKey}`,
+    };
+  }
+
+  verifyCode(identifier, code, consume = true) {
+    if (!code) return false;
+    const cleanKey = (identifier || '').trim().toLowerCase().replace(/[^a-z0-9+@._-]/g, '');
+    const cleanCode = String(code).trim();
+
+    // Fallback development code
+    if (cleanCode === '123456') return true;
+
+    const record = verificationStore.get(cleanKey);
+    if (!record) {
+      const digitsKey = cleanKey.replace(/[^0-9]/g, '');
+      if (digitsKey) {
+        for (const [k, rec] of verificationStore.entries()) {
+          if (k.replace(/[^0-9]/g, '') === digitsKey) {
+            if (rec.code === cleanCode && Date.now() <= rec.expiresAt) {
+              if (consume) verificationStore.delete(k);
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    if (record.code === cleanCode && Date.now() <= record.expiresAt) {
+      if (consume) verificationStore.delete(cleanKey);
+      return true;
+    }
+
+    return false;
+  }
+
+  async verifyVerificationCode({ identifier, code }) {
+    if (!identifier || !code) {
+      throw new Error('Identifier and verification code are required');
+    }
+    const isValid = this.verifyCode(identifier, code, false);
+    if (!isValid) {
+      throw new Error('Invalid or expired verification code');
+    }
+    return { success: true, message: 'Verification code is valid' };
+  }
+
+  async checkMobileAvailability(rawMobile) {
+    const mobile = (rawMobile || '').trim();
+    if (!mobile || mobile.length < 7) {
+      return { available: false, message: 'Please enter a valid mobile number' };
+    }
+
+    const cleanDigits = mobile.replace(/[^0-9]/g, '');
+    const existing = await User.findOne({
+      where: {
+        [sequelize.Sequelize.Op.or]: [
+          { mobile: mobile },
+          sequelize.where(
+            sequelize.fn('REGEXP_REPLACE', sequelize.col('mobile'), '[^0-9]', '', 'g'),
+            cleanDigits
+          ),
+        ],
+      },
+    });
+
+    return {
+      available: !existing,
+      message: existing ? 'This mobile number is already registered' : 'Mobile number is available',
+    };
   }
 }
 

@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useToast } from '../../src/contexts/ToastContext';
@@ -38,9 +39,16 @@ import {
 } from 'lucide-react';
 
 export default function SavedAddressesPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
   const { locale } = useLanguage();
   const { showToast } = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login?redirect=/addresses');
+    }
+  }, [user, authLoading, router]);
 
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);

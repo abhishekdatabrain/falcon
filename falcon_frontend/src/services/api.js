@@ -51,19 +51,47 @@ export const getImageUrl = (url) => {
   return `${backendBase}${cleanPath}`;
 };
 
+let inMemoryCsrfToken = '';
+
+export const setCsrfToken = (token) => {
+  inMemoryCsrfToken = token || '';
+};
+
+export const getCsrfTokenFromCookie = () => {
+  if (typeof document === 'undefined') return '';
+  const match = document.cookie.match(/(?:^|;\s*)customer_csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : '';
+};
+
+export const getCsrfToken = () => {
+  return inMemoryCsrfToken || getCsrfTokenFromCookie();
+};
+
 export const fetchApi = async (endpoint, options = {}) => {
   const defaultHeaders = {
     'Content-Type': 'application/json',
   };
 
+  let reqRole = 'CUSTOMER';
   if (typeof window !== 'undefined') {
     const pathname = window.location.pathname;
     if (pathname.startsWith('/admin')) {
+      reqRole = 'ADMIN';
       defaultHeaders['x-auth-role'] = 'ADMIN';
     } else if (pathname.startsWith('/driver')) {
+      reqRole = 'DRIVER';
       defaultHeaders['x-auth-role'] = 'DRIVER';
     } else {
       defaultHeaders['x-auth-role'] = 'CUSTOMER';
+    }
+  }
+
+  // Attach CSRF token on state-changing customer requests
+  const method = (options.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      defaultHeaders['x-csrf-token'] = csrfToken;
     }
   }
 
@@ -84,7 +112,7 @@ export const fetchApi = async (endpoint, options = {}) => {
       ...defaultHeaders,
       ...options.headers,
     },
-    credentials: 'include', // Automatically sends HTTP-only cookies
+    credentials: 'include', // Automatically sends HTTP-only session cookies
   };
 
   try {
@@ -101,11 +129,39 @@ export const fetchApi = async (endpoint, options = {}) => {
       data = { success: true, message: text };
     }
 
+    if (data?.data?.csrfToken) {
+      setCsrfToken(data.data.csrfToken);
+    } else if (data?.csrfToken) {
+      setCsrfToken(data.csrfToken);
+    }
+
     if (!res.ok) {
       const err = new Error(data.message || 'An error occurred during API request');
+      err.status = res.status;
       err.data = data;
       err.fieldErrors = data.fieldErrors || {};
       err.errors = data.errors || [];
+
+      // Handle expired sessions by redirecting customers to login when authentication is required
+      if (res.status === 401 && typeof window !== 'undefined') {
+        const pathname = window.location.pathname;
+        const isProtectedCustomerRoute =
+          pathname.startsWith('/orders') ||
+          pathname.startsWith('/profile') ||
+          pathname.startsWith('/addresses') ||
+          pathname.startsWith('/saved-addresses') ||
+          pathname.startsWith('/checkout');
+
+        if (
+          isProtectedCustomerRoute &&
+          !pathname.startsWith('/login') &&
+          !pathname.startsWith('/admin') &&
+          !pathname.startsWith('/driver')
+        ) {
+          window.location.href = `/login?redirect=${encodeURIComponent(pathname + window.location.search)}`;
+        }
+      }
+
       throw err;
     }
 

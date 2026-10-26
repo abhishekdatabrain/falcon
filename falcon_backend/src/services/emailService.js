@@ -600,6 +600,84 @@ class EmailService {
       return { success: false, error: err.message };
     }
   }
+
+  /**
+   * Send one-time verification code (OTP) for account registration / verification
+   * @param {string} recipientEmail - Recipient email address
+   * @param {string} code - 6-digit OTP code
+   */
+  async sendVerificationEmail(recipientEmail, code) {
+    try {
+      if (!this.transporter) {
+        this.initTransporter();
+      }
+
+      if (!this.transporter) {
+        logger.error('Email transporter not available for verification email');
+        return { success: false, error: 'Email service transporter not available' };
+      }
+
+      const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Verification Code</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b;">
+  <div style="max-width: 520px; margin: 40px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0;">
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #00c269 0%, #043927 100%); padding: 32px 24px; text-align: center;">
+      <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">Falcon E-Commerce</h1>
+      <p style="color: #a7f3d0; margin: 8px 0 0 0; font-size: 14px;">Email Verification Code</p>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 36px 32px; text-align: center;">
+      <h2 style="margin: 0 0 12px 0; font-size: 20px; color: #0f172a; font-weight: 700;">Verify Your Email Address</h2>
+      <p style="margin: 0 0 28px 0; font-size: 14px; color: #64748b; line-height: 1.6;">
+        Use the following one-time verification code to complete your registration.
+      </p>
+
+      <!-- Code Box -->
+      <div style="background: #f0fdf4; border: 2px dashed #00c269; border-radius: 12px; padding: 20px; margin: 0 auto 28px auto; max-width: 280px;">
+        <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #043927; display: block; font-family: monospace;">${code}</span>
+      </div>
+
+      <p style="margin: 0 0 16px 0; font-size: 13px; color: #64748b;">
+        ⏱️ This code is valid for <strong>10 minutes</strong>.
+      </p>
+      <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 1.5;">
+        If you did not request this verification code, please ignore this email.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 24px; text-align: center; font-size: 12px; color: #94a3b8;">
+      © ${new Date().getFullYear()} Falcon Grocery & E-Commerce. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
+      `;
+
+      const mailOptions = {
+        from: `"Falcon Verification" <${process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@falcon-grocery.com'}>`,
+        to: recipientEmail,
+        subject: `${code} is your Falcon verification code`,
+        text: `Your Falcon verification code is: ${code}\n\nThis code will expire in 10 minutes.\nIf you didn't request this, please ignore this email.`,
+        html: emailHtml,
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      logger.info(`Verification email sent successfully to ${recipientEmail}. MessageId: ${info.messageId}`);
+      return { success: true, messageId: info.messageId };
+    } catch (err) {
+      logger.error(`Error sending verification email to ${recipientEmail}:`, err);
+      return { success: false, error: err.message };
+    }
+  }
 }
 
 module.exports = new EmailService();
