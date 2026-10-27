@@ -16,6 +16,7 @@ const ROUTE_PERMISSIONS = {
   '/admin/customers': 'customers.view',
   '/admin/products': 'products.view',
   '/admin/categories': 'categories.view',
+  '/admin/bulk-upload': 'products.view',
   '/admin/payments': 'payments.view',
   '/admin/orders': 'orders.view',
   '/admin/invoices': 'invoices.view',

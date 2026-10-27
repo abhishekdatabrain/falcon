@@ -90,6 +90,104 @@ const renderProductIcon = (iconName, className = 'w-4 h-4') => {
 
 
 
+function ExpandableDescription({ text, className = '', locale = 'en' }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const textRef = useRef(null);
+
+  useEffect(() => {
+    setIsExpanded(false);
+  }, [text, locale]);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+
+    const measureOverflow = () => {
+      if (!textRef.current) return;
+      const target = textRef.current;
+      const style = window.getComputedStyle(target);
+      let lh = parseFloat(style.lineHeight);
+      if (isNaN(lh) || lh <= 0) {
+        const fs = parseFloat(style.fontSize) || 14;
+        lh = fs * 1.5;
+      }
+      const max3LinesHeight = lh * 3;
+
+      // When collapsed, compare scrollHeight against clientHeight;
+      // when expanded, compare full scrollHeight against calculated 3-line height.
+      const overflows = !isExpanded
+        ? target.scrollHeight > target.clientHeight + 1
+        : target.scrollHeight > max3LinesHeight + 2;
+
+      setHasOverflow(overflows);
+    };
+
+    measureOverflow();
+
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(measureOverflow);
+    }
+
+    let resizeObserver;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        measureOverflow();
+      });
+      resizeObserver.observe(el);
+    } else {
+      window.addEventListener('resize', measureOverflow);
+    }
+
+    return () => {
+      if (resizeObserver) resizeObserver.disconnect();
+      else window.removeEventListener('resize', measureOverflow);
+    };
+  }, [text, locale, isExpanded]);
+
+  if (!text) return null;
+
+  return (
+    <div className="space-y-1.5 w-full">
+      <p
+        ref={textRef}
+        className={`${className} transition-all duration-300 ${
+          !isExpanded ? 'line-clamp-3' : ''
+        }`}
+        style={
+          !isExpanded
+            ? {
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }
+            : {
+                display: 'block',
+              }
+        }
+      >
+        {text}
+      </p>
+
+      {hasOverflow && (
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#043927] hover:text-[#05A764] transition-colors cursor-pointer pt-1 pb-0.5 select-none focus:outline-none"
+          aria-expanded={isExpanded}
+        >
+          <span>
+            {isExpanded
+              ? (locale === 'ar' ? '− قراءة أقل' : '− Read less')
+              : (locale === 'ar' ? '+ قراءة المزيد' : '+ Read more')}
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -558,9 +656,11 @@ export default function ProductDetailPage() {
 
             {/* Short Description */}
             {(product.description_ar || product.description_en) && (
-              <p className="text-slate-600 font-medium text-sm sm:text-base leading-relaxed mt-3">
-                {locale === 'ar' ? product.description_ar : product.description_en}
-              </p>
+              <ExpandableDescription
+                text={locale === 'ar' ? (product.description_ar || product.description_en) : (product.description_en || product.description_ar)}
+                className="text-slate-600 font-medium text-sm sm:text-base leading-relaxed mt-3"
+                locale={locale}
+              />
             )}
           </div>
 
@@ -832,11 +932,15 @@ export default function ProductDetailPage() {
 
               {/* Product Detailed Description */}
               {((locale === 'ar' ? (product?.long_description_ar || product?.description_ar) : (product?.long_description_en || product?.description_en)) || product?.description) ? (
-                <p className="text-slate-600 font-medium text-xs sm:text-sm leading-relaxed whitespace-pre-line">
-                  {locale === 'ar'
-                    ? (product?.long_description_ar || product?.description_ar || product?.description)
-                    : (product?.long_description_en || product?.description_en || product?.description)}
-                </p>
+                <ExpandableDescription
+                  text={
+                    locale === 'ar'
+                      ? (product?.long_description_ar || product?.description_ar || product?.description)
+                      : (product?.long_description_en || product?.description_en || product?.description)
+                  }
+                  className="text-slate-600 font-medium text-xs sm:text-sm leading-relaxed whitespace-pre-line"
+                  locale={locale}
+                />
               ) : (
                 <p className="text-slate-400 font-medium text-xs sm:text-sm italic">
                   {locale === 'ar' ? 'لا يوجد وصف متاح لهذا المنتج حالياً.' : 'No description available for this product yet.'}

@@ -15,6 +15,11 @@ const Category = sequelize.define('Category', {
       key: 'id',
     },
   },
+  code: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true,
+  },
   name_en: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -51,6 +56,7 @@ const Category = sequelize.define('Category', {
   timestamps: true,
   underscored: true,
   indexes: [
+    { fields: ['code'] },
     { fields: ['slug'] },
     { fields: ['is_active'] },
     { fields: ['parent_id'] },

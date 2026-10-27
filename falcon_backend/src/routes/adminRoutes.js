@@ -81,6 +81,8 @@ router.get('/rbac/audit-logs', checkPermission('admin_management.view'), (req, r
 router.get('/rbac/users', (req, res, next) => adminController.getRbacUsers(req, res, next));
 router.post('/rbac/users', (req, res, next) => adminController.createRbacUser(req, res, next));
 router.put('/rbac/users/:userId/role', (req, res, next) => adminController.updateUserRole(req, res, next));
-router.put('/rbac/users/:userId/status', (req, res, next) => adminController.toggleUserStatus(req, res, next));
+// Bulk Upload Management Routes
+const bulkUploadRoutes = require('./bulkUploadRoutes');
+router.use('/bulk-upload', bulkUploadRoutes);
 
 module.exports = router;

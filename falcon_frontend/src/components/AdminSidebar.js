@@ -22,6 +22,9 @@ import {
   Clock,
   ShieldCheck,
   Layers,
+  UploadCloud,
+  FileSpreadsheet,
+  History,
 } from 'lucide-react';
 
 export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPaymentsCount = 0 }) {
@@ -164,6 +167,31 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
           label: locale === 'ar' ? 'إدارة الأقسام والتصنيفات' : 'Category Management',
           icon: FolderTree,
           permission: 'categories.view',
+        },
+      ],
+    },
+    {
+      key: 'bulk_upload',
+      title: locale === 'ar' ? 'الرفع المجمع للبيانات' : 'Bulk Upload',
+      isExpandable: true,
+      items: [
+        {
+          href: '/admin/bulk-upload/categories',
+          label: locale === 'ar' ? 'الرفع المجمع للأقسام' : 'Category Bulk Upload',
+          icon: FolderTree,
+          permission: 'categories.view',
+        },
+        {
+          href: '/admin/bulk-upload/products',
+          label: locale === 'ar' ? 'الرفع المجمع للمنتجات' : 'Product Bulk Upload',
+          icon: ShoppingBag,
+          permission: 'products.view',
+        },
+        {
+          href: '/admin/bulk-upload/history',
+          label: locale === 'ar' ? 'سجل عمليات الرفع' : 'Upload History',
+          icon: History,
+          permission: 'products.view',
         },
       ],
     },

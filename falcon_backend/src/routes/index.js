@@ -22,6 +22,7 @@ const homepageCmsRoutes = require('./homepageCmsRoutes');
 const categoryBannerRoutes = require('./categoryBannerRoutes');
 const couponRoutes = require('./couponRoutes');
 const deliverySlotRoutes = require('./deliverySlotRoutes');
+const bulkUploadRoutes = require('./bulkUploadRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/customers', customerRoutes);
@@ -34,6 +35,7 @@ router.use('/payments', paymentRoutes);
 router.use('/drivers', driverRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/admin', adminRoutes);
+router.use('/bulk-upload', bulkUploadRoutes);
 router.use('/feedback', feedbackRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/wishlist', wishlistRoutes);

@@ -79,24 +79,33 @@ class AdminService {
   }
 
   async createDriver(adminId, driverData) {
-    const { email, mobile, password, license_number, vehicle_details } = driverData;
+    const { name, email, mobile, password, license_number, vehicle_details } = driverData;
+    const cleanName = (name || '').trim();
+    const cleanMobile = (mobile || '').trim();
+    const cleanEmail = email && email.trim() ? email.trim().toLowerCase() : null;
 
-    const existingUser = await User.findOne({
-      where: {
-        [sequelize.Sequelize.Op.or]: [{ email }, { mobile }],
-      },
+    const existingMobile = await User.findOne({
+      where: { mobile: cleanMobile },
     });
+    if (existingMobile) {
+      throw new Error('Mobile number is already registered');
+    }
 
-    if (existingUser) {
-      throw new Error('Email or mobile number is already registered');
+    if (cleanEmail) {
+      const existingEmail = await User.findOne({
+        where: { email: cleanEmail },
+      });
+      if (existingEmail) {
+        throw new Error('Email address is already registered');
+      }
     }
 
     const hashedPassword = await hashPassword(password);
 
     return await sequelize.transaction(async (t) => {
       const user = await User.create({
-        email,
-        mobile,
+        email: cleanEmail,
+        mobile: cleanMobile,
         password_hash: hashedPassword,
         role: ROLES.DRIVER,
         status: 'ACTIVE',
@@ -104,6 +113,7 @@ class AdminService {
 
       const driver = await Driver.create({
         user_id: user.id,
+        name: cleanName,
         license_number,
         vehicle_details,
         driver_status: DRIVER_STATUS.ACTIVE,
@@ -139,6 +149,7 @@ class AdminService {
     if (search && search.trim()) {
       const q = `%${search.trim()}%`;
       driverWhere[Op.or] = [
+        { name: { [Op.iLike]: q } },
         { license_number: { [Op.iLike]: q } },
         { vehicle_details: { [Op.iLike]: q } },
         { '$user.email$': { [Op.iLike]: q } },
@@ -148,6 +159,7 @@ class AdminService {
 
     const { count, rows: drivers } = await Driver.findAndCountAll({
       where: driverWhere,
+      subQuery: false,
       include: [
         {
           model: User,
@@ -199,16 +211,33 @@ class AdminService {
   }
 
   async updateDriver(driverId, data) {
-    const { email, mobile, license_number, vehicle_details, password } = data;
+    const { name, email, mobile, license_number, vehicle_details, password } = data;
     const driver = await Driver.findByPk(driverId, { include: ['user'] });
     if (!driver) {
       throw new Error('Driver not found');
     }
 
+    const cleanEmail = email !== undefined ? (email && email.trim() ? email.trim().toLowerCase() : null) : undefined;
+    const cleanMobile = mobile !== undefined ? (mobile ? mobile.trim() : null) : undefined;
+
+    if (cleanMobile && cleanMobile !== driver.user.mobile) {
+      const existingMobile = await User.findOne({ where: { mobile: cleanMobile } });
+      if (existingMobile && existingMobile.id !== driver.user.id) {
+        throw new Error('Mobile number is already registered to another user');
+      }
+    }
+
+    if (cleanEmail && cleanEmail !== driver.user.email) {
+      const existingEmail = await User.findOne({ where: { email: cleanEmail } });
+      if (existingEmail && existingEmail.id !== driver.user.id) {
+        throw new Error('Email address is already registered to another user');
+      }
+    }
+
     await sequelize.transaction(async (t) => {
       const userUpdate = {};
-      if (email) userUpdate.email = email;
-      if (mobile) userUpdate.mobile = mobile;
+      if (cleanEmail !== undefined) userUpdate.email = cleanEmail;
+      if (cleanMobile !== undefined) userUpdate.mobile = cleanMobile;
       if (password && password.trim()) {
         userUpdate.password_hash = await hashPassword(password.trim());
       }
@@ -217,10 +246,13 @@ class AdminService {
       }
 
       const driverUpdate = {};
+      if (name !== undefined) driverUpdate.name = (name || '').trim();
       if (license_number) driverUpdate.license_number = license_number;
       if (vehicle_details !== undefined) driverUpdate.vehicle_details = vehicle_details;
 
-      await driver.update(driverUpdate, { transaction: t });
+      if (Object.keys(driverUpdate).length > 0) {
+        await driver.update(driverUpdate, { transaction: t });
+      }
     });
 
     return await Driver.findByPk(driverId, {

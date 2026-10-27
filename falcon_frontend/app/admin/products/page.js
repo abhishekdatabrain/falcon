@@ -715,6 +715,9 @@ export default function AdminProductsPage() {
   };
 
   const handleUpdateVariant = (index, field, value) => {
+    if (['price', 'discount_price', 'stock_quantity'].includes(field)) {
+      if (value !== '' && parseFloat(value) < 0) return;
+    }
     setProductForm((prev) => {
       const nextVars = [...prev.variants];
       nextVars[index] = { ...nextVars[index], [field]: value };
@@ -2247,10 +2250,17 @@ export default function AdminProductsPage() {
                           </label>
                           <input
                             type="number"
+                            min="0"
+                            onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                             required={!productForm.has_variants}
                             placeholder="100"
                             value={productForm.stock_quantity}
-                            onChange={(e) => setProductForm({ ...productForm, stock_quantity: e.target.value })}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '' || parseFloat(val) >= 0) {
+                                setProductForm({ ...productForm, stock_quantity: val });
+                              }
+                            }}
                             className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
                           />
                         </div>
@@ -2286,10 +2296,17 @@ export default function AdminProductsPage() {
                             <input
                               type="number"
                               step="0.01"
+                              min="0"
+                              onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                               required={!productForm.has_variants}
                               placeholder="14.50"
                               value={productForm.price}
-                              onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '' || parseFloat(val) >= 0) {
+                                  setProductForm({ ...productForm, price: val });
+                                }
+                              }}
                               className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-black focus:outline-none focus:bg-white focus:border-[#043927]"
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-700">SAR</span>
@@ -2304,9 +2321,16 @@ export default function AdminProductsPage() {
                             <input
                               type="number"
                               step="0.01"
+                              min="0"
+                              onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                               placeholder="e.g. 12.00"
                               value={productForm.discount_price}
-                              onChange={(e) => setProductForm({ ...productForm, discount_price: e.target.value })}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '' || parseFloat(val) >= 0) {
+                                  setProductForm({ ...productForm, discount_price: val });
+                                }
+                              }}
                               className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">SAR</span>
@@ -2321,9 +2345,16 @@ export default function AdminProductsPage() {
                             <input
                               type="number"
                               step="0.1"
+                              min="0"
+                              onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                               placeholder="15"
                               value={productForm.vat_percentage}
-                              onChange={(e) => setProductForm({ ...productForm, vat_percentage: e.target.value })}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '' || parseFloat(val) >= 0) {
+                                  setProductForm({ ...productForm, vat_percentage: val });
+                                }
+                              }}
                               className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
@@ -2379,9 +2410,16 @@ export default function AdminProductsPage() {
                             <input
                               type="number"
                               step="0.1"
+                              min="0"
+                              onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                               placeholder="15"
                               value={productForm.vat_percentage}
-                              onChange={(e) => setProductForm({ ...productForm, vat_percentage: e.target.value })}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '' || parseFloat(val) >= 0) {
+                                  setProductForm({ ...productForm, vat_percentage: val });
+                                }
+                              }}
                               className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
@@ -2599,10 +2637,17 @@ export default function AdminProductsPage() {
                                     <input
                                       type="number"
                                       step="0.01"
+                                      min="0"
+                                      onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                                       required
                                       placeholder="0.00"
                                       value={v.price ?? ''}
-                                      onChange={(e) => handleUpdateVariant(vIdx, 'price', e.target.value)}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '' || parseFloat(val) >= 0) {
+                                          handleUpdateVariant(vIdx, 'price', val);
+                                        }
+                                      }}
                                       className="w-full h-11 pl-3.5 pr-12 rounded-xl bg-slate-50 border border-slate-200 text-xs font-black text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-[#043927]/10 transition-all shadow-2xs"
                                     />
                                     <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
@@ -2614,15 +2659,22 @@ export default function AdminProductsPage() {
                                 {/* Discount Price */}
                                 <div className="lg:col-span-4">
                                   <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
-                                    Discount (SAR)
+                                    Discount Price (SAR)
                                   </label>
                                   <div className="relative">
                                     <input
                                       type="number"
                                       step="0.01"
+                                      min="0"
+                                      onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                                       placeholder="Optional"
                                       value={v.discount_price ?? ''}
-                                      onChange={(e) => handleUpdateVariant(vIdx, 'discount_price', e.target.value)}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '' || parseFloat(val) >= 0) {
+                                          handleUpdateVariant(vIdx, 'discount_price', val);
+                                        }
+                                      }}
                                       className="w-full h-11 pl-3.5 pr-12 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-[#043927]/10 transition-all shadow-2xs"
                                     />
                                     <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
@@ -2641,9 +2693,15 @@ export default function AdminProductsPage() {
                                       type="number"
                                       required
                                       min="0"
+                                      onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                                       placeholder="0"
                                       value={v.stock_quantity ?? ''}
-                                      onChange={(e) => handleUpdateVariant(vIdx, 'stock_quantity', e.target.value)}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '' || parseFloat(val) >= 0) {
+                                          handleUpdateVariant(vIdx, 'stock_quantity', val);
+                                        }
+                                      }}
                                       className="w-full h-11 pl-3.5 pr-14 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-2 focus:ring-[#043927]/10 transition-all shadow-2xs"
                                     />
                                     <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 pointer-events-none">
@@ -3600,10 +3658,16 @@ export default function AdminProductsPage() {
                   <input
                     type="number"
                     min="0"
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                     required
                     placeholder="e.g. 150"
                     value={stockAdjNewTotal}
-                    onChange={(e) => setStockAdjNewTotal(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || parseInt(val, 10) >= 0) {
+                        setStockAdjNewTotal(val);
+                      }
+                    }}
                     className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
                   />
                   <p className="text-[11px] text-slate-500 font-medium mt-1">
@@ -3618,10 +3682,16 @@ export default function AdminProductsPage() {
                   <input
                     type="number"
                     min="1"
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                     required
                     placeholder="e.g. 50"
                     value={stockAdjQty}
-                    onChange={(e) => setStockAdjQty(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || parseInt(val, 10) >= 0) {
+                        setStockAdjQty(val);
+                      }
+                    }}
                     className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
                   />
                   <p className="text-[11px] text-slate-500 font-medium mt-1">

@@ -26,6 +26,21 @@ const startServer = async () => {
       await sequelize.sync({ alter: true });
       logger.info('Database models synchronized successfully.');
 
+      try {
+        const currentSchema = process.env.SCHEMA;
+        const tablePrefix = currentSchema ? `"${currentSchema}".` : '';
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"users" ALTER COLUMN email DROP NOT NULL;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"categories" ADD COLUMN IF NOT EXISTS "code" VARCHAR(255);`);
+        await sequelize.query(`CREATE UNIQUE INDEX IF NOT EXISTS "categories_code_unique_idx" ON ${tablePrefix}"categories" ("code") WHERE "code" IS NOT NULL;`);
+        await sequelize.query(`
+          UPDATE ${tablePrefix}"categories"
+          SET "code" = UPPER(REPLACE("slug", '-', '_'))
+          WHERE "code" IS NULL OR "code" = '';
+        `);
+      } catch (alterErr) {
+        // Table doesn't exist yet or already configured
+      }
+
       // Migrate existing variant images into product_variant_images if needed
       try {
         const { migrateVariantImages } = require('./src/scripts/migrateVariantImages');

@@ -17,10 +17,10 @@ class AdminController {
   async createDriver(req, res, next) {
     try {
       const adminId = req.user.admin.id;
-      const { email, mobile, password, license_number, vehicle_details } = req.body;
+      const { name, email, mobile, password, license_number, vehicle_details } = req.body;
 
-      if (!email || !mobile || !password || !license_number) {
-        return sendError(res, 'Email, mobile, password, and license number are required', [], 400);
+      if (!name || !name.trim() || !mobile || !password || !license_number) {
+        return sendError(res, 'Name, mobile phone, password, and license number are required', [], 400);
       }
 
       const driver = await adminService.createDriver(adminId, req.body);

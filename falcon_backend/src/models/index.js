@@ -39,8 +39,12 @@ const Permission = require('./Permission');
 const RolePermission = require('./RolePermission');
 const AdminUserRole = require('./AdminUserRole');
 const AuditLog = require('./AuditLog');
+const BulkUploadHistory = require('./BulkUploadHistory');
 
 // --- User Associations ---
+User.hasMany(BulkUploadHistory, { foreignKey: 'uploaded_by', as: 'bulk_uploads', onDelete: 'SET NULL' });
+BulkUploadHistory.belongsTo(User, { foreignKey: 'uploaded_by', as: 'uploader' });
+
 User.hasOne(Customer, { foreignKey: 'user_id', as: 'customer', onDelete: 'CASCADE' });
 Customer.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
@@ -259,4 +263,5 @@ module.exports = {
   RolePermission,
   AdminUserRole,
   AuditLog,
+  BulkUploadHistory,
 };
