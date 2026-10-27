@@ -25,7 +25,7 @@ export default function CategoryRootRedirect() {
   }, [router]);
 
   return (
-    <div className="min-h-[50vh] flex items-center justify-center font-sans">
+    <div className="min-h-[50vh] flex items-center justify-center">
       <div className="animate-pulse text-emerald-800 font-bold text-sm">
         Loading Categories...
       </div>

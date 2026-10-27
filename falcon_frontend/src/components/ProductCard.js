@@ -158,20 +158,20 @@ export default function ProductCard({ product, categoryTitle = '' }) {
   };
 
   return (
-    <div className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3 sm:p-3.5 flex flex-col justify-between relative font-sans h-full">
+    <div className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3 sm:p-3.5 flex flex-col justify-between relative h-full">
       
       {/* Top Badges & Wishlist Header */}
       <div className="flex items-center justify-between z-10 mb-1 gap-1">
         <div className="flex items-center gap-1 flex-wrap">
           {isOutOfStock ? (
-            <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+            <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
               <Ban className="w-2.5 h-2.5 text-white" />
               <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
             </span>
           ) : (
             <>
               {Boolean(product.is_best_seller) && (
-                <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
                   <Star className="w-2.5 h-2.5 fill-current text-white" />
                   <span>{locale === 'ar' ? 'الأكثر مبيعاً' : 'BEST SELLER'}</span>
                 </span>
@@ -241,7 +241,7 @@ export default function ProductCard({ product, categoryTitle = '' }) {
           {/* Product Title */}
           <Link
             href={`/products/${product.id}`}
-            className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug font-sans group-hover:text-[#043927] transition-colors mb-1 block"
+            className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug group-hover:text-[#043927] transition-colors mb-1 block"
             title={prodTitle}
           >
             {prodTitle}
@@ -295,7 +295,7 @@ export default function ProductCard({ product, categoryTitle = '' }) {
         {/* Pricing & CTA Controls */}
         <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 mt-auto">
           <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-            <span className="text-sm sm:text-[15px] font-black text-slate-900 font-sans whitespace-nowrap leading-tight">
+            <span className="text-sm sm:text-[15px] font-black text-slate-900 whitespace-nowrap leading-tight">
               <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
               {finalPrice.toFixed(2)}
             </span>
@@ -355,7 +355,7 @@ export default function ProductCard({ product, categoryTitle = '' }) {
                     <Minus className="w-3 h-3 stroke-[2.5]" />
                   </button>
 
-                  <span className="flex-1 text-center text-xs font-black text-slate-900 font-sans select-none">
+                  <span className="flex-1 text-center text-xs font-black text-slate-900 select-none">
                     {isBusy ? (
                       <Loader2 className="w-3 h-3 animate-spin mx-auto text-emerald-600" />
                     ) : (

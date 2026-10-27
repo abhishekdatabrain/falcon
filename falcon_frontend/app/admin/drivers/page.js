@@ -96,7 +96,7 @@ export default function AdminDriversPage() {
 
       const [drvRes, ordRes] = await Promise.all([
         fetchApi(`/admin/drivers${queryString}`),
-        fetchApi('/orders').catch(() => ({ success: false })),
+        fetchApi('/orders?limit=100'),
       ]);
 
       if (drvRes.success) {
@@ -113,7 +113,7 @@ export default function AdminDriversPage() {
       }
 
       if (ordRes.success) {
-        const rawOrders = ordRes.data?.orders?.orders || ordRes.data?.orders || (Array.isArray(ordRes.data) ? ordRes.data : []);
+        const rawOrders = ordRes.data?.orders?.orders || ordRes.data?.orders || ordRes.data?.records || (Array.isArray(ordRes.data) ? ordRes.data : []);
         setAllOrders(rawOrders);
       }
     } catch (err) {
@@ -257,12 +257,47 @@ export default function AdminDriversPage() {
     }
   };
 
-  // 5. Open Assign Order Modal
-  const openAssignModal = (drv) => {
+  // 5. Open Assign Order Modal - Refresh list of pending orders
+  const openAssignModal = async (drv) => {
     setSelectedDriver(drv);
     setAssignForm({ order_id: '', reassignment_reason: '' });
     setShowAssignModal(true);
+    try {
+      const ordRes = await fetchApi('/admin/orders?limit=100').catch(() =>
+        fetchApi('/orders?limit=100').catch(() => ({ success: false }))
+      );
+      if (ordRes.success) {
+        const rawOrders = ordRes.data?.orders?.orders || ordRes.data?.orders || ordRes.data?.records || (Array.isArray(ordRes.data) ? ordRes.data : []);
+        setAllOrders(rawOrders);
+      }
+    } catch (err) {
+      // retain previous orders list
+    }
   };
+
+  // Filter for only unassigned pending orders for driver assignment
+  const PENDING_ASSIGN_STATUSES = [
+    'CONFIRMED',
+    'PROCESSING',
+    'PACKED',
+    'PENDING',
+    'PENDING_PAYMENT',
+    'PAYMENT_SUBMITTED',
+    'PAYMENT_VERIFIED',
+  ];
+  const assignableOrders = allOrders.filter((ord) => {
+    const s = (ord.order_status || '').toUpperCase();
+    if (!PENDING_ASSIGN_STATUSES.includes(s)) return false;
+    // Exclude completed, cancelled, arrived, delivered, etc.
+    if (['DELIVERED', 'CANCELLED', 'RETURNED', 'DELIVERY_FAILED', 'ARRIVED', 'DRIVER_ASSIGNED', 'DRIVER_ACCEPTED', 'OUT_FOR_DELIVERY'].includes(s)) {
+      return false;
+    }
+    // Exclude if already assigned to a driver
+    if (ord.delivery && ord.delivery.driver_id) {
+      return false;
+    }
+    return true;
+  });
 
   const handleAssignOrder = async (e) => {
     e.preventDefault();
@@ -341,7 +376,7 @@ export default function AdminDriversPage() {
               <h1 className="text-2xl font-black text-slate-900">
                 {locale === 'ar' ? 'إدارة أسطول السائقين والتوصيل' : 'Driver Fleet Management'}
               </h1>
-              <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200">
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200">
                 {totalCount} {locale === 'ar' ? 'سائق' : 'Fleet Total'}
               </span>
             </div>
@@ -512,7 +547,7 @@ export default function AdminDriversPage() {
                           {drv.user?.email?.charAt(0).toUpperCase() || 'D'}
                         </div>
                         <div>
-                          <div className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+                          <div className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
                             <Mail className="w-3.5 h-3.5 text-cyan-600" />
                             {drv.user?.email || 'N/A'}
                           </div>
@@ -541,13 +576,12 @@ export default function AdminDriversPage() {
                       <select
                         value={drv.availability_status}
                         onChange={(e) => handleToggleAvailability(drv.id, e.target.value)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-extrabold border cursor-pointer outline-hidden transition-all ${
-                          drv.availability_status === 'AVAILABLE'
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer outline-hidden transition-all ${drv.availability_status === 'AVAILABLE'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                             : drv.availability_status === 'BUSY'
-                            ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                            : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-                        }`}
+                              ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                              : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                          }`}
                       >
                         <option value="AVAILABLE">AVAILABLE (متاح)</option>
                         <option value="BUSY">BUSY (مشغول)</option>
@@ -558,11 +592,10 @@ export default function AdminDriversPage() {
                     {/* Account Status Pill & Toggle */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border ${
-                          drv.user?.status === 'ACTIVE'
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${drv.user?.status === 'ACTIVE'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : 'bg-rose-50 text-rose-700 border-rose-200'
-                        }`}
+                          }`}
                       >
                         {drv.user?.status === 'ACTIVE' ? (
                           <>
@@ -622,11 +655,10 @@ export default function AdminDriversPage() {
                         {/* Activate/Deactivate Account Button */}
                         <button
                           onClick={() => handleToggleAccountStatus(drv.id, drv.user?.status)}
-                          className={`px-3 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap shadow-2xs ${
-                            drv.user?.status === 'ACTIVE'
+                          className={`px-3 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap shadow-2xs ${drv.user?.status === 'ACTIVE'
                               ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
                               : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                          }`}
+                            }`}
                         >
                           {drv.user?.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                         </button>
@@ -660,7 +692,7 @@ export default function AdminDriversPage() {
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">
+                  <h3 className="text-lg font-bold text-slate-900">
                     {locale === 'ar' ? 'إضافة سائق جديد' : 'Create Driver Account'}
                   </h3>
                   <p className="text-xs text-slate-500">Register new fleet driver credentials</p>
@@ -764,7 +796,7 @@ export default function AdminDriversPage() {
                   <Edit3 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">Edit Driver Information</h3>
+                  <h3 className="text-lg font-bold text-slate-900">Edit Driver Information</h3>
                   <p className="text-xs text-slate-500">Update vehicle & license details</p>
                 </div>
               </div>
@@ -850,7 +882,7 @@ export default function AdminDriversPage() {
                   <PackageCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">Assign Order to Driver</h3>
+                  <h3 className="text-lg font-bold text-slate-900">Assign Order to Driver</h3>
                   <p className="text-xs text-slate-500">Driver: {selectedDriver.user?.email}</p>
                 </div>
               </div>
@@ -861,20 +893,35 @@ export default function AdminDriversPage() {
 
             <form id="assignOrderForm" onSubmit={handleAssignOrder} className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar text-xs">
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Select Order *</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                  {locale === 'ar' ? 'اختر الطلب المعلق *' : 'Select Pending Order *'}
+                </label>
                 <select
                   required
                   value={assignForm.order_id}
                   onChange={(e) => setAssignForm({ ...assignForm, order_id: e.target.value })}
                   className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:bg-white focus:border-emerald-500 outline-hidden cursor-pointer"
                 >
-                  <option value="">-- Choose an Order to Assign --</option>
-                  {allOrders.map((ord) => (
-                    <option key={ord.id} value={ord.id}>
-                      Order #{ord.order_number} ({ord.order_status}) - {parseFloat(ord.grand_total || 0).toFixed(2)} SAR
+                  <option value="">
+                    {locale === 'ar' ? '-- اختر طلباً معلقاً للإسناد --' : '-- Choose a Pending Order to Assign --'}
+                  </option>
+                  {assignableOrders.length === 0 ? (
+                    <option value="" disabled>
+                      {locale === 'ar' ? 'لا توجد طلبات معلقة متاحة حالياً' : 'No pending orders available'}
                     </option>
-                  ))}
+                  ) : (
+                    assignableOrders.map((ord) => (
+                      <option key={ord.id} value={ord.id}>
+                        Order #{ord.order_number} ({ord.order_status}) - {parseFloat(ord.grand_total || 0).toFixed(2)} SAR
+                      </option>
+                    ))
+                  )}
                 </select>
+                <p className="text-[11px] text-slate-400 mt-1 font-medium">
+                  {locale === 'ar'
+                    ? `عرض الطلبات المعلقة الجاهزة للإسناد (${assignableOrders.length} طلب)`
+                    : `Showing unassigned pending orders (${assignableOrders.length} available)`}
+                </p>
               </div>
 
               <div>
@@ -923,7 +970,7 @@ export default function AdminDriversPage() {
                   <Navigation className="w-5 h-5 text-cyan-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">Live Driver GPS Location</h3>
+                  <h3 className="text-lg font-bold text-slate-900">Live Driver GPS Location</h3>
                   <p className="text-xs text-slate-500">{selectedDriver.user?.email} ({selectedDriver.vehicle_details || 'Van'})</p>
                 </div>
               </div>
@@ -959,7 +1006,7 @@ export default function AdminDriversPage() {
                       </span>
                     </div>
 
-                    <div className="absolute top-3 right-3 bg-emerald-500/90 text-white px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                    <div className="absolute top-3 right-3 bg-emerald-500/90 text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
                       GPS Signal Active
                     </div>
                   </div>
@@ -968,22 +1015,22 @@ export default function AdminDriversPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-0.5">
                       <span className="text-slate-400 font-bold uppercase text-[10px]">Current Latitude</span>
-                      <p className="font-extrabold text-slate-900 font-mono text-sm">{gpsData?.latitude || 24.7136}</p>
+                      <p className="font-bold text-slate-900 font-mono text-sm">{gpsData?.latitude || 24.7136}</p>
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-0.5">
                       <span className="text-slate-400 font-bold uppercase text-[10px]">Current Longitude</span>
-                      <p className="font-extrabold text-slate-900 font-mono text-sm">{gpsData?.longitude || 46.6753}</p>
+                      <p className="font-bold text-slate-900 font-mono text-sm">{gpsData?.longitude || 46.6753}</p>
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-0.5">
                       <span className="text-slate-400 font-bold uppercase text-[10px]">Movement Speed</span>
-                      <p className="font-extrabold text-slate-900 text-sm">{gpsData?.speed || 35} km/h</p>
+                      <p className="font-bold text-slate-900 text-sm">{gpsData?.speed || 35} km/h</p>
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-0.5">
                       <span className="text-slate-400 font-bold uppercase text-[10px]">Last Signal Ping</span>
-                      <p className="font-extrabold text-slate-900 text-xs">
+                      <p className="font-bold text-slate-900 text-xs">
                         {gpsData?.updatedAt ? new Date(gpsData.updatedAt).toLocaleTimeString() : 'Just now'}
                       </p>
                     </div>

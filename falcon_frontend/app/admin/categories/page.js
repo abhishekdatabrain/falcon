@@ -23,7 +23,9 @@ import {
   Grid,
   GitCommit,
   GitBranch,
-  CornerDownRight
+  CornerDownRight,
+  Power,
+  XCircle,
 } from 'lucide-react';
 
 export default function AdminCategoriesPage() {
@@ -53,6 +55,7 @@ export default function AdminCategoriesPage() {
     name_ar: '',
     slug: '',
     image_url: '',
+    is_active: true,
     parent_main_id: '',   // Level 1 parent
     parent_sub_id: '',    // Level 2 parent
     parent_id: '',        // Level 3 parent or final parent_id saved in backend
@@ -226,6 +229,7 @@ export default function AdminCategoriesPage() {
         slug: form.slug.trim(),
         image_url: form.image_url || '',
         parent_id: finalParentId,
+        is_active: form.is_active !== undefined ? form.is_active : true,
       };
 
       if (editingCategory) {
@@ -244,12 +248,39 @@ export default function AdminCategoriesPage() {
 
       setShowModal(false);
       setEditingCategory(null);
-      setForm({ name_en: '', name_ar: '', slug: '', image_url: '', parent_main_id: '', parent_sub_id: '', parent_id: '' });
+      setForm({ name_en: '', name_ar: '', slug: '', image_url: '', is_active: true, parent_main_id: '', parent_sub_id: '', parent_id: '' });
       await loadCategories();
     } catch (err) {
       showToast(err.message || 'Operation failed', 'error');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleToggleActive = async (cat) => {
+    if (!canEdit) {
+      showToast(locale === 'ar' ? 'ليس لديك صلاحية لتعديل الأقسام' : 'You do not have permission to edit categories', 'error');
+      return;
+    }
+    const newStatus = cat.is_active === false ? true : false;
+    try {
+      const res = await fetchApi(`/categories/${cat.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ is_active: newStatus }),
+      });
+      if (res.success) {
+        showToast(
+          locale === 'ar'
+            ? `تم ${newStatus ? 'تفعيل' : 'تعطيل'} القسم بنجاح!`
+            : `Category ${newStatus ? 'activated' : 'deactivated'} successfully!`,
+          'success'
+        );
+        setCategories((prev) =>
+          prev.map((c) => (c.id === cat.id ? { ...c, is_active: newStatus } : c))
+        );
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to update category status', 'error');
     }
   };
 
@@ -301,6 +332,7 @@ export default function AdminCategoriesPage() {
       name_ar: cat.name_ar || '',
       slug: cat.slug || '',
       image_url: cat.image_url || '',
+      is_active: cat.is_active !== false,
       parent_main_id: mainParentId,
       parent_sub_id: subParentId,
       parent_id: level === 'LEVEL_4' ? subSubParentId : (level === 'LEVEL_3' ? subParentId : mainParentId),
@@ -316,6 +348,7 @@ export default function AdminCategoriesPage() {
       name_ar: '',
       slug: '',
       image_url: '',
+      is_active: true,
       parent_main_id: targetParentMain || mainCategories[0]?.id || '',
       parent_sub_id: targetParentSub || '',
       parent_id: targetParentSubSub || targetParentSub || '',
@@ -335,10 +368,10 @@ export default function AdminCategoriesPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black text-slate-900 font-sans">
+              <h1 className="text-2xl font-black text-slate-900">
                 {locale === 'ar' ? 'إدارة الأقسام (٣ مستويات تنظيمي)' : 'Category & Sub-Category Management'}
               </h1>
-              <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 font-sans">
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                 {categories.length} {locale === 'ar' ? 'قسم' : 'Total Categories'}
               </span>
             </div>
@@ -366,7 +399,7 @@ export default function AdminCategoriesPage() {
               else if (activeTab === 'sub') openAdd('LEVEL_2');
               else openAdd('LEVEL_1');
             }}
-            className="text-xs font-extrabold py-3 px-5 rounded-xl flex items-center gap-2 bg-[#043927] hover:bg-[#02281b] text-white shadow-lg transition-all cursor-pointer font-sans"
+            className="text-xs font-bold py-3 px-5 rounded-xl flex items-center gap-2 bg-[#043927] hover:bg-[#02281b] text-white shadow-lg transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4 text-emerald-400" />
             <span>
@@ -385,7 +418,7 @@ export default function AdminCategoriesPage() {
       {/* KPI Stats Summary Cards (3-Level Stats) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {/* Main Categories */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3 font-sans">
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
             <FolderTree className="w-5 h-5" />
           </div>
@@ -396,7 +429,7 @@ export default function AdminCategoriesPage() {
         </div>
 
         {/* Sub-Categories */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3 font-sans">
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
             <Layers className="w-5 h-5" />
           </div>
@@ -407,7 +440,7 @@ export default function AdminCategoriesPage() {
         </div>
 
         {/* Sub-Subcategories */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3 font-sans">
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
             <CornerDownRight className="w-5 h-5" />
           </div>
@@ -418,7 +451,7 @@ export default function AdminCategoriesPage() {
         </div>
 
         {/* With Images */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3 font-sans">
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
             <ImageIcon className="w-5 h-5" />
           </div>
@@ -430,7 +463,7 @@ export default function AdminCategoriesPage() {
       </div>
 
       {/* Control Bar: Tabs & Search Filters */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3 font-sans">
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
         
         {/* Top Row: 4 Tabs */}
         <div className="flex bg-slate-100 p-1 rounded-xl w-full flex-wrap sm:flex-nowrap">
@@ -438,10 +471,10 @@ export default function AdminCategoriesPage() {
           <button
             onClick={() => { setActiveTab('parent'); setSelectedParentFilter(''); setSelectedSubFilter(''); setSelectedSubSubFilter(''); }}
             className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === 'parent'
-                ? 'bg-white text-emerald-800 shadow-xs font-black'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+ activeTab === 'parent'
+ ? 'bg-white text-emerald-800 shadow-xs font-black'
+ : 'text-slate-600 hover:text-slate-900'
+ }`}
           >
             <FolderTree className="w-4 h-4" />
             <span>{locale === 'ar' ? 'الرئيسية (مستوى ١)' : 'Main Categories'}</span>
@@ -454,10 +487,10 @@ export default function AdminCategoriesPage() {
           <button
             onClick={() => { setActiveTab('sub'); setSelectedSubFilter(''); setSelectedSubSubFilter(''); }}
             className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === 'sub'
-                ? 'bg-white text-blue-800 shadow-xs font-black'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+ activeTab === 'sub'
+ ? 'bg-white text-blue-800 shadow-xs font-black'
+ : 'text-slate-600 hover:text-slate-900'
+ }`}
           >
             <Layers className="w-4 h-4" />
             <span>{locale === 'ar' ? 'الفرعية (مستوى ٢)' : 'Sub-Categories'}</span>
@@ -470,10 +503,10 @@ export default function AdminCategoriesPage() {
           <button
             onClick={() => { setActiveTab('subsub'); setSelectedSubSubFilter(''); }}
             className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === 'subsub'
-                ? 'bg-white text-purple-800 shadow-xs font-black'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+ activeTab === 'subsub'
+ ? 'bg-white text-purple-800 shadow-xs font-black'
+ : 'text-slate-600 hover:text-slate-900'
+ }`}
           >
             <CornerDownRight className="w-4 h-4" />
             <span>{locale === 'ar' ? 'فرعية فرعية (مستوى ٣)' : 'Sub-Subcategories'}</span>
@@ -486,10 +519,10 @@ export default function AdminCategoriesPage() {
           <button
             onClick={() => setActiveTab('subsubsub')}
             className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === 'subsubsub'
-                ? 'bg-white text-rose-800 shadow-xs font-black'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+ activeTab === 'subsubsub'
+ ? 'bg-white text-rose-800 shadow-xs font-black'
+ : 'text-slate-600 hover:text-slate-900'
+ }`}
           >
             <CornerDownRight className="w-4 h-4 text-rose-600" />
             <span>{locale === 'ar' ? 'فرعية فرعية فرعية (مستوى ٤)' : 'Sub-Sub-Subcategories'}</span>
@@ -570,30 +603,30 @@ export default function AdminCategoriesPage() {
           {loading ? (
             <div className="bg-white rounded-3xl p-16 text-center space-y-3 border border-slate-200 shadow-xs">
               <div className="w-8 h-8 border-4 border-[#043927] border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-xs font-bold text-slate-500 font-sans">{locale === 'ar' ? 'جاري تحميل الأقسام الرئيسية...' : 'Loading main categories...'}</p>
+              <p className="text-xs font-bold text-slate-500">{locale === 'ar' ? 'جاري تحميل الأقسام الرئيسية...' : 'Loading main categories...'}</p>
             </div>
           ) : filteredParents.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200 shadow-xs space-y-3 font-sans">
+            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200 shadow-xs space-y-3">
               <AlertCircle className="w-10 h-10 text-slate-300 mx-auto" />
               <p className="text-sm font-bold text-slate-700">
                 {searchQuery ? (locale === 'ar' ? 'لم يتم العثور على أقسام تطابق البحث' : 'No main categories match your search') : (locale === 'ar' ? 'لا توجد أقسام رئيسية بعد' : 'No main categories created yet')}
               </p>
               <button
                 onClick={() => { setSearchQuery(''); openAdd('LEVEL_1'); }}
-                className="text-xs font-extrabold px-4 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 transition-all cursor-pointer"
+                className="text-xs font-bold px-4 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 transition-all cursor-pointer"
               >
                 + {locale === 'ar' ? 'إضافة قسم رئيسي' : 'Add Main Category'}
               </button>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden font-sans">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-slate-600">
                   <thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
                     <tr>
                       <th className="px-6 py-4">{locale === 'ar' ? 'الصورة' : 'Image'}</th>
-                      <th className="px-6 py-4">{locale === 'ar' ? 'القسم الرئيسي' : 'Main Category (EN)'}</th>
-                      <th className="px-6 py-4">{locale === 'ar' ? 'الاسم بالعربية' : 'Arabic Name'}</th>
+                      <th className="px-6 py-4">{locale === 'ar' ? 'القسم الرئيسي' : 'Main Category'}</th>
+                      <th className="px-6 py-4">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
                       <th className="px-6 py-4">Slug</th>
                       <th className="px-6 py-4">{locale === 'ar' ? 'الأقسام الفرعية (مستوى ٢)' : 'Sub-Categories (L2)'}</th>
                       <th className="px-6 py-4 text-right">{locale === 'ar' ? 'الإجراءات' : 'Actions'}</th>
@@ -603,7 +636,7 @@ export default function AdminCategoriesPage() {
                     {filteredParents.map((cat) => {
                       const childSubs = subCategories.filter((s) => String(s.parent_id) === String(cat.id));
                       return (
-                        <tr key={cat.id} className="hover:bg-slate-50/80 transition-all">
+                        <tr key={cat.id} className={`hover:bg-slate-50/80 transition-all ${cat.is_active === false ? 'bg-slate-50/60 opacity-75' : ''}`}>
                           {/* Image */}
                           <td className="px-6 py-3.5">
                             {cat.image_url ? (
@@ -631,17 +664,43 @@ export default function AdminCategoriesPage() {
                             )}
                           </td>
 
-                          {/* English Name */}
-                          <td className="px-6 py-3.5 font-extrabold text-slate-900">
+                          {/* Category Name (English & Arabic) */}
+                          <td className="px-6 py-3.5">
                             <div className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-[#05A764] shrink-0" />
-                              <span>{cat.name_en}</span>
+                              <span className={`w-2 h-2 rounded-full ${cat.is_active !== false ? 'bg-[#05A764]' : 'bg-slate-300'} shrink-0`} />
+                              <span className="font-bold text-slate-900">{cat.name_en}</span>
                             </div>
+                            {cat.name_ar && (
+                              <span className="text-xs text-emerald-800 font-bold block pt-0.5" dir="rtl">
+                                {cat.name_ar}
+                              </span>
+                            )}
                           </td>
 
-                          {/* Arabic Name */}
-                          <td className="px-6 py-3.5 font-extrabold text-emerald-800" dir="rtl">
-                            {cat.name_ar}
+                          {/* Status */}
+                          <td className="px-6 py-3.5">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(cat)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
+                                cat.is_active !== false
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                              }`}
+                              title={cat.is_active !== false ? (locale === 'ar' ? 'انقر للتعطيل' : 'Click to Deactivate') : (locale === 'ar' ? 'انقر للتفعيل' : 'Click to Activate')}
+                            >
+                              {cat.is_active !== false ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>{locale === 'ar' ? 'نشط' : 'Active'}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                                  <span>{locale === 'ar' ? 'معطل' : 'Inactive'}</span>
+                                </>
+                              )}
+                            </button>
                           </td>
 
                           {/* Slug */}
@@ -653,7 +712,7 @@ export default function AdminCategoriesPage() {
 
                           {/* Sub Categories count */}
                           <td className="px-6 py-3.5">
-                            <span className="text-xs font-extrabold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 inline-flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 inline-flex items-center gap-1.5">
                               <Layers className="w-3.5 h-3.5 text-blue-500" />
                               {childSubs.length} {locale === 'ar' ? 'أقسام فرعية' : 'Sub-Categories'}
                             </span>
@@ -662,9 +721,23 @@ export default function AdminCategoriesPage() {
                           {/* Actions */}
                           <td className="px-6 py-3.5 text-right">
                             <div className="flex items-center justify-end gap-2">
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleToggleActive(cat)}
+                                  className={`p-2 rounded-xl border transition-all cursor-pointer shadow-2xs ${
+                                    cat.is_active !== false
+                                      ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-emerald-200'
+                                      : 'bg-rose-50 text-rose-600 hover:bg-rose-100 border-rose-200'
+                                  }`}
+                                  title={cat.is_active !== false ? (locale === 'ar' ? 'تعطيل القسم' : 'Deactivate Category') : (locale === 'ar' ? 'تفعيل القسم' : 'Activate Category')}
+                                >
+                                  <Power className="w-4 h-4" />
+                                </button>
+                              )}
+
                               <button
                                 onClick={() => openAdd('LEVEL_2', cat.id)}
-                                className="text-xs text-blue-700 hover:text-blue-800 font-extrabold bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer font-sans"
+                                className="text-xs text-blue-700 hover:text-blue-800 font-bold bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer"
                               >
                                 <Plus className="w-3.5 h-3.5" /> {locale === 'ar' ? 'إضافة فرعي' : '+ Sub'}
                               </button>
@@ -703,10 +776,10 @@ export default function AdminCategoriesPage() {
           {loading ? (
             <div className="bg-white rounded-3xl p-16 text-center space-y-3 border border-slate-200 shadow-xs">
               <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-xs font-bold text-slate-500 font-sans">{locale === 'ar' ? 'جاري تحميل الأقسام الفرعية...' : 'Loading sub-categories...'}</p>
+              <p className="text-xs font-bold text-slate-500">{locale === 'ar' ? 'جاري تحميل الأقسام الفرعية...' : 'Loading sub-categories...'}</p>
             </div>
           ) : filteredSubs.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200 shadow-xs space-y-3 font-sans">
+            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200 shadow-xs space-y-3">
               <AlertCircle className="w-10 h-10 text-slate-300 mx-auto" />
               <p className="text-sm font-bold text-slate-700">
                 {searchQuery || selectedParentFilter
@@ -715,13 +788,13 @@ export default function AdminCategoriesPage() {
               </p>
               <button
                 onClick={() => { setSearchQuery(''); setSelectedParentFilter(''); openAdd('LEVEL_2'); }}
-                className="text-xs font-extrabold px-4 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all cursor-pointer"
+                className="text-xs font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all cursor-pointer"
               >
                 + {locale === 'ar' ? 'إضافة قسم فرعي' : 'Add Sub-Category'}
               </button>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden font-sans">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-slate-600">
                   <thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -729,6 +802,7 @@ export default function AdminCategoriesPage() {
                       <th className="px-6 py-4">{locale === 'ar' ? 'الصورة' : 'Image'}</th>
                       <th className="px-6 py-4">{locale === 'ar' ? 'القسم الفرعي' : 'Sub-Category (L2)'}</th>
                       <th className="px-6 py-4">{locale === 'ar' ? 'القسم الرئيسي التابع له' : 'Parent Main Category (L1)'}</th>
+                      <th className="px-6 py-4">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
                       <th className="px-6 py-4">Slug</th>
                       <th className="px-6 py-4">{locale === 'ar' ? 'الأقسام الفرعية الدقيقة (مستوى ٣)' : 'Sub-Subcategories (L3)'}</th>
                       <th className="px-6 py-4 text-right">{locale === 'ar' ? 'الإجراءات' : 'Actions'}</th>
@@ -740,7 +814,7 @@ export default function AdminCategoriesPage() {
                       const childSubSubs = subSubCategories.filter((ss) => String(ss.parent_id) === String(cat.id));
 
                       return (
-                        <tr key={cat.id} className="hover:bg-slate-50/80 transition-all">
+                        <tr key={cat.id} className={`hover:bg-slate-50/80 transition-all ${cat.is_active === false ? 'bg-slate-50/60 opacity-75' : ''}`}>
                           {/* Image */}
                           <td className="px-6 py-3.5">
                             {cat.image_url ? (
@@ -759,8 +833,8 @@ export default function AdminCategoriesPage() {
                           {/* English Name & Arabic Name */}
                           <td className="px-6 py-3.5">
                             <div className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-                              <span className="font-extrabold text-slate-900">{cat.name_en}</span>
+                              <span className={`w-2 h-2 rounded-full ${cat.is_active !== false ? 'bg-blue-500' : 'bg-slate-300'} shrink-0`} />
+                              <span className="font-bold text-slate-900">{cat.name_en}</span>
                             </div>
                             <span className="text-xs text-emerald-800 font-bold block pt-0.5" dir="rtl">
                               {cat.name_ar}
@@ -775,6 +849,32 @@ export default function AdminCategoriesPage() {
                             </span>
                           </td>
 
+                          {/* Status */}
+                          <td className="px-6 py-3.5">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(cat)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
+                                cat.is_active !== false
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                              }`}
+                              title={cat.is_active !== false ? (locale === 'ar' ? 'انقر للتعطيل' : 'Click to Deactivate') : (locale === 'ar' ? 'انقر للتفعيل' : 'Click to Activate')}
+                            >
+                              {cat.is_active !== false ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>{locale === 'ar' ? 'نشط' : 'Active'}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                                  <span>{locale === 'ar' ? 'معطل' : 'Inactive'}</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
+
                           {/* Slug */}
                           <td className="px-6 py-3.5 font-mono text-xs font-semibold text-slate-500">
                             <span className="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
@@ -784,7 +884,7 @@ export default function AdminCategoriesPage() {
 
                           {/* Level 3 Sub-Subcategories Count */}
                           <td className="px-6 py-3.5">
-                            <span className="text-xs font-extrabold text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-200 inline-flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-200 inline-flex items-center gap-1.5">
                               <CornerDownRight className="w-3.5 h-3.5 text-purple-600" />
                               {childSubSubs.length} {locale === 'ar' ? 'فرعي فرعي' : 'Sub-Subcategories'}
                             </span>
@@ -793,9 +893,23 @@ export default function AdminCategoriesPage() {
                           {/* Actions */}
                           <td className="px-6 py-3.5 text-right">
                             <div className="flex items-center justify-end gap-2">
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleToggleActive(cat)}
+                                  className={`p-2 rounded-xl border transition-all cursor-pointer shadow-2xs ${
+                                    cat.is_active !== false
+                                      ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-emerald-200'
+                                      : 'bg-rose-50 text-rose-600 hover:bg-rose-100 border-rose-200'
+                                  }`}
+                                  title={cat.is_active !== false ? (locale === 'ar' ? 'تعطيل القسم' : 'Deactivate Category') : (locale === 'ar' ? 'تفعيل القسم' : 'Activate Category')}
+                                >
+                                  <Power className="w-4 h-4" />
+                                </button>
+                              )}
+
                               <button
                                 onClick={() => openAdd('LEVEL_3', parentMain?.id || '', cat.id)}
-                                className="text-xs text-purple-700 hover:text-purple-800 font-extrabold bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer font-sans"
+                                className="text-xs text-purple-700 hover:text-purple-800 font-bold bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer"
                               >
                                 <Plus className="w-3.5 h-3.5" /> {locale === 'ar' ? '+ فرعي فرعي' : '+ Sub-Sub'}
                               </button>
@@ -834,10 +948,10 @@ export default function AdminCategoriesPage() {
           {loading ? (
             <div className="bg-white rounded-3xl p-16 text-center space-y-3 border border-slate-200 shadow-xs">
               <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-xs font-bold text-slate-500 font-sans">{locale === 'ar' ? 'جاري تحميل الأقسام الفرعية الفرعية...' : 'Loading sub-subcategories...'}</p>
+              <p className="text-xs font-bold text-slate-500">{locale === 'ar' ? 'جاري تحميل الأقسام الفرعية الفرعية...' : 'Loading sub-subcategories...'}</p>
             </div>
           ) : filteredSubSubs.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200 shadow-xs space-y-3 font-sans">
+            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200 shadow-xs space-y-3">
               <AlertCircle className="w-10 h-10 text-slate-300 mx-auto" />
               <p className="text-sm font-bold text-slate-700">
                 {searchQuery || selectedParentFilter || selectedSubFilter
@@ -846,13 +960,13 @@ export default function AdminCategoriesPage() {
               </p>
               <button
                 onClick={() => { setSearchQuery(''); setSelectedParentFilter(''); setSelectedSubFilter(''); openAdd('LEVEL_3'); }}
-                className="text-xs font-extrabold px-4 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-all cursor-pointer"
+                className="text-xs font-bold px-4 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-all cursor-pointer"
               >
                 + {locale === 'ar' ? 'إضافة قسم فرعي فرعي' : 'Add Sub-Subcategory'}
               </button>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden font-sans">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-slate-600">
                   <thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -860,6 +974,7 @@ export default function AdminCategoriesPage() {
                       <th className="px-6 py-4">{locale === 'ar' ? 'الصورة' : 'Image'}</th>
                       <th className="px-6 py-4">{locale === 'ar' ? 'القسم الفرعي الفرعي' : 'Sub-Subcategory (L3)'}</th>
                       <th className="px-6 py-4">{locale === 'ar' ? 'مسار التسلسل الهرمي' : 'Hierarchy Path'}</th>
+                      <th className="px-6 py-4">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
                       <th className="px-6 py-4">Slug</th>
                       <th className="px-6 py-4 text-right">{locale === 'ar' ? 'الإجراءات' : 'Actions'}</th>
                     </tr>
@@ -870,7 +985,7 @@ export default function AdminCategoriesPage() {
                       const parentMain = parentSub ? mainCategories.find((p) => String(p.id) === String(parentSub.parent_id)) : null;
 
                       return (
-                        <tr key={cat.id} className="hover:bg-slate-50/80 transition-all">
+                        <tr key={cat.id} className={`hover:bg-slate-50/80 transition-all ${cat.is_active === false ? 'bg-slate-50/60 opacity-75' : ''}`}>
                           {/* Image */}
                           <td className="px-6 py-3.5">
                             {cat.image_url ? (
@@ -889,8 +1004,8 @@ export default function AdminCategoriesPage() {
                           {/* English & Arabic Name */}
                           <td className="px-6 py-3.5">
                             <div className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0" />
-                              <span className="font-extrabold text-slate-900">{cat.name_en}</span>
+                              <span className={`w-2 h-2 rounded-full ${cat.is_active !== false ? 'bg-purple-600' : 'bg-slate-300'} shrink-0`} />
+                              <span className="font-bold text-slate-900">{cat.name_en}</span>
                             </div>
                             <span className="text-xs text-emerald-800 font-bold block pt-0.5" dir="rtl">
                               {cat.name_ar}
@@ -914,6 +1029,32 @@ export default function AdminCategoriesPage() {
                             </div>
                           </td>
 
+                          {/* Status */}
+                          <td className="px-6 py-3.5">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(cat)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
+                                cat.is_active !== false
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                              }`}
+                              title={cat.is_active !== false ? (locale === 'ar' ? 'انقر للتعطيل' : 'Click to Deactivate') : (locale === 'ar' ? 'انقر للتفعيل' : 'Click to Activate')}
+                            >
+                              {cat.is_active !== false ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>{locale === 'ar' ? 'نشط' : 'Active'}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                                  <span>{locale === 'ar' ? 'معطل' : 'Inactive'}</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
+
                           {/* Slug */}
                           <td className="px-6 py-3.5 font-mono text-xs font-semibold text-slate-500">
                             <span className="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
@@ -924,6 +1065,20 @@ export default function AdminCategoriesPage() {
                           {/* Actions */}
                           <td className="px-6 py-3.5 text-right">
                             <div className="flex items-center justify-end gap-2">
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleToggleActive(cat)}
+                                  className={`p-2 rounded-xl border transition-all cursor-pointer shadow-2xs ${
+                                    cat.is_active !== false
+                                      ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-emerald-200'
+                                      : 'bg-rose-50 text-rose-600 hover:bg-rose-100 border-rose-200'
+                                  }`}
+                                  title={cat.is_active !== false ? (locale === 'ar' ? 'تعطيل القسم' : 'Deactivate Category') : (locale === 'ar' ? 'تفعيل القسم' : 'Activate Category')}
+                                >
+                                  <Power className="w-4 h-4" />
+                                </button>
+                              )}
+
                               <button
                                 onClick={() => openEdit(cat)}
                                 className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-200 transition-all cursor-pointer"
@@ -958,10 +1113,10 @@ export default function AdminCategoriesPage() {
           {loading ? (
             <div className="bg-white rounded-3xl p-16 text-center space-y-3 border border-slate-200 shadow-xs">
               <div className="w-8 h-8 border-4 border-rose-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-xs font-bold text-slate-500 font-sans">{locale === 'ar' ? 'جاري تحميل الأقسام مستوى ٤...' : 'Loading level 4 categories...'}</p>
+              <p className="text-xs font-bold text-slate-500">{locale === 'ar' ? 'جاري تحميل الأقسام مستوى ٤...' : 'Loading level 4 categories...'}</p>
             </div>
           ) : filteredSubSubSubs.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200 shadow-xs space-y-3 font-sans">
+            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200 shadow-xs space-y-3">
               <AlertCircle className="w-10 h-10 text-slate-300 mx-auto" />
               <p className="text-sm font-bold text-slate-700">
                 {searchQuery || selectedParentFilter || selectedSubFilter || selectedSubSubFilter
@@ -970,13 +1125,13 @@ export default function AdminCategoriesPage() {
               </p>
               <button
                 onClick={() => { setSearchQuery(''); setSelectedParentFilter(''); setSelectedSubFilter(''); setSelectedSubSubFilter(''); openAdd('LEVEL_4'); }}
-                className="text-xs font-extrabold px-4 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
+                className="text-xs font-bold px-4 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
               >
                 + {locale === 'ar' ? 'إضافة قسم مستوى ٤' : 'Add Level 4 Category'}
               </button>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden font-sans">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-slate-600">
                   <thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -984,6 +1139,7 @@ export default function AdminCategoriesPage() {
                       <th className="px-6 py-4">{locale === 'ar' ? 'الصورة' : 'Image'}</th>
                       <th className="px-6 py-4">{locale === 'ar' ? 'القسم الفرعي ٤' : 'Sub-Sub-Subcategory (L4)'}</th>
                       <th className="px-6 py-4">{locale === 'ar' ? 'مسار التسلسل الهرمي (٤ مستويات)' : 'Hierarchy Path (4 Levels)'}</th>
+                      <th className="px-6 py-4">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
                       <th className="px-6 py-4">Slug</th>
                       <th className="px-6 py-4 text-right">{locale === 'ar' ? 'الإجراءات' : 'Actions'}</th>
                     </tr>
@@ -995,7 +1151,7 @@ export default function AdminCategoriesPage() {
                       const parentMain = parentSub ? mainCategories.find((p) => String(p.id) === String(parentSub.parent_id)) : null;
 
                       return (
-                        <tr key={cat.id} className="hover:bg-slate-50/80 transition-all">
+                        <tr key={cat.id} className={`hover:bg-slate-50/80 transition-all ${cat.is_active === false ? 'bg-slate-50/60 opacity-75' : ''}`}>
                           {/* Image */}
                           <td className="px-6 py-3.5">
                             {cat.image_url ? (
@@ -1014,8 +1170,8 @@ export default function AdminCategoriesPage() {
                           {/* English & Arabic Name */}
                           <td className="px-6 py-3.5">
                             <div className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
-                              <span className="font-extrabold text-slate-900">{cat.name_en}</span>
+                              <span className={`w-2 h-2 rounded-full ${cat.is_active !== false ? 'bg-rose-600' : 'bg-slate-300'} shrink-0`} />
+                              <span className="font-bold text-slate-900">{cat.name_en}</span>
                             </div>
                             <span className="text-xs text-emerald-800 font-bold block pt-0.5" dir="rtl">
                               {cat.name_ar}
@@ -1043,6 +1199,32 @@ export default function AdminCategoriesPage() {
                             </div>
                           </td>
 
+                          {/* Status */}
+                          <td className="px-6 py-3.5">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(cat)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
+                                cat.is_active !== false
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                              }`}
+                              title={cat.is_active !== false ? (locale === 'ar' ? 'انقر للتعطيل' : 'Click to Deactivate') : (locale === 'ar' ? 'انقر للتفعيل' : 'Click to Activate')}
+                            >
+                              {cat.is_active !== false ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>{locale === 'ar' ? 'نشط' : 'Active'}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                                  <span>{locale === 'ar' ? 'معطل' : 'Inactive'}</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
+
                           {/* Slug */}
                           <td className="px-6 py-3.5 font-mono text-xs font-semibold text-slate-500">
                             <span className="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
@@ -1053,6 +1235,20 @@ export default function AdminCategoriesPage() {
                           {/* Actions */}
                           <td className="px-6 py-3.5 text-right">
                             <div className="flex items-center justify-end gap-2">
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleToggleActive(cat)}
+                                  className={`p-2 rounded-xl border transition-all cursor-pointer shadow-2xs ${
+                                    cat.is_active !== false
+                                      ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-emerald-200'
+                                      : 'bg-rose-50 text-rose-600 hover:bg-rose-100 border-rose-200'
+                                  }`}
+                                  title={cat.is_active !== false ? (locale === 'ar' ? 'تعطيل القسم' : 'Deactivate Category') : (locale === 'ar' ? 'تفعيل القسم' : 'Activate Category')}
+                                >
+                                  <Power className="w-4 h-4" />
+                                </button>
+                              )}
+
                               <button
                                 onClick={() => openEdit(cat)}
                                 className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-200 transition-all cursor-pointer"
@@ -1083,7 +1279,7 @@ export default function AdminCategoriesPage() {
 
       {/* CREATE / EDIT MODAL FOR ALL 3 LEVELS */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200 font-sans">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-lg w-full border border-slate-200 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto">
             
             {/* Modal Header */}
@@ -1171,7 +1367,7 @@ export default function AdminCategoriesPage() {
               {/* LEVEL 2: Select Main Category */}
               {formLevel === 'LEVEL_2' && (
                 <div className="bg-blue-50/60 p-3.5 rounded-2xl border border-blue-200 space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-600 uppercase tracking-wider">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
                     Select Parent Main Category (Level 1) *
                   </label>
                   <select
@@ -1226,7 +1422,7 @@ export default function AdminCategoriesPage() {
                       required
                       value={form.parent_id}
                       onChange={(e) => setForm({ ...form, parent_id: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-purple-300 text-slate-900 text-xs font-extrabold outline-hidden cursor-pointer text-purple-900"
+                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-purple-300 text-slate-900 text-xs font-bold outline-hidden cursor-pointer text-purple-900"
                     >
                       <option value="">-- Select Sub-Category --</option>
                       {subCategories
@@ -1306,7 +1502,7 @@ export default function AdminCategoriesPage() {
                       required
                       value={form.parent_id}
                       onChange={(e) => setForm({ ...form, parent_id: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-rose-300 text-slate-900 text-xs font-extrabold outline-hidden cursor-pointer text-rose-900"
+                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-rose-300 text-slate-900 text-xs font-bold outline-hidden cursor-pointer text-rose-900"
                     >
                       <option value="">-- Select Sub-Subcategory --</option>
                       {subSubCategories
@@ -1361,7 +1557,7 @@ export default function AdminCategoriesPage() {
               </div>
 
               {/* Image Upload & Preview */}
-              <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 font-sans">
+              <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                     <ImageIcon className="w-4 h-4 text-emerald-600" />
@@ -1387,7 +1583,7 @@ export default function AdminCategoriesPage() {
                       <label className="block text-[11px] text-slate-600 font-bold">
                         Upload File
                       </label>
-                      <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200">
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200">
                         Types: JPG, PNG, WEBP, PDF • Max Size: 5MB
                       </span>
                     </div>
@@ -1402,14 +1598,14 @@ export default function AdminCategoriesPage() {
                   {/* File Metadata Info Pill (Name, Size, Type) */}
                   {fileMeta && (
                     <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-emerald-200 text-xs font-semibold text-slate-700 shadow-2xs">
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase border border-emerald-200">
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase border border-emerald-200">
                         {fileMeta.type}
                       </span>
                       <span className="font-bold text-slate-900 truncate max-w-[150px]" title={fileMeta.name}>
                         {fileMeta.name}
                       </span>
                       <span className="text-slate-300">|</span>
-                      <span className="text-emerald-700 font-extrabold">
+                      <span className="text-emerald-700 font-bold">
                         Size: {fileMeta.size}
                       </span>
                     </div>
@@ -1417,7 +1613,7 @@ export default function AdminCategoriesPage() {
                 </div>
 
                 {uploadingImage ? (
-                  <div className="py-3 text-center text-xs font-extrabold text-emerald-700 animate-pulse flex items-center justify-center gap-2">
+                  <div className="py-3 text-center text-xs font-bold text-emerald-700 animate-pulse flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-[#043927] border-t-transparent rounded-full animate-spin"></div>
                     Uploading image to server...
                   </div>
@@ -1463,6 +1659,33 @@ export default function AdminCategoriesPage() {
                 />
               </div>
 
+              {/* Status Toggle */}
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                    {locale === 'ar' ? 'حالة القسم' : 'Category Status'}
+                  </label>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {form.is_active
+                      ? (locale === 'ar' ? 'القسم مفعل وسيظهر في المتجر' : 'Category is active and visible in catalog')
+                      : (locale === 'ar' ? 'القسم معطل ولن يظهر للعملاء' : 'Category is hidden from customers')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, is_active: !form.is_active })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                    form.is_active ? 'bg-[#043927]' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      form.is_active ? 'translate-x-6 rtl:-translate-x-6' : 'translate-x-1 rtl:-translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
             </form>
 
             {/* Modal Footer */}
@@ -1470,7 +1693,7 @@ export default function AdminCategoriesPage() {
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 transition-all cursor-pointer font-sans"
+                className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -1479,7 +1702,7 @@ export default function AdminCategoriesPage() {
                 type="submit"
                 form="categoryModalForm"
                 disabled={submitting}
-                className="px-6 py-2.5 text-sm font-extrabold rounded-xl bg-[#043927] hover:bg-[#02281b] text-white shadow-lg transition-all cursor-pointer disabled:opacity-60 font-sans"
+                className="px-6 py-2.5 text-sm font-bold rounded-xl bg-[#043927] hover:bg-[#02281b] text-white shadow-lg transition-all cursor-pointer disabled:opacity-60"
               >
                 {submitting ? 'Saving...' : editingCategory ? 'Update Category' : 'Create Category'}
               </button>

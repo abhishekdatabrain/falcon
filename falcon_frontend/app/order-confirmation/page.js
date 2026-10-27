@@ -137,7 +137,7 @@ function OrderConfirmationContent() {
 
     if (!order) {
         return (
-            <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center py-24 px-4 font-sans">
+            <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center py-24 px-4">
                 <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center border border-slate-200 shadow-sm space-y-4">
                     <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
                         <AlertCircle className="w-8 h-8" />
@@ -230,7 +230,7 @@ function OrderConfirmationContent() {
     const status = (order?.order_status || 'CONFIRMED').toUpperCase();
 
     return (
-        <div className="min-h-screen bg-[#F7F8FA] font-sans text-slate-900 pb-24 select-none">
+        <div className="min-h-screen bg-[#F7F8FA] text-slate-900 pb-24 select-none">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-5">
 
                 {/* TOP HEADER TITLE ROW */}
@@ -256,7 +256,7 @@ function OrderConfirmationContent() {
                                 <span>Placed {formatPlacedTime(order?.createdAt || order?.created_at)}</span>
                             </div>
 
-                            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-sans">
+                            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                                 {locale === 'ar' ? `شكراً لك، ${greetingFirstName}!` : `Thank You, ${greetingFirstName}!`}
                             </h1>
 
@@ -283,7 +283,7 @@ function OrderConfirmationContent() {
                             type="button"
                             onClick={handleDownloadInvoice}
                             disabled={downloadingInvoice}
-                            className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-extrabold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer font-sans border border-slate-200/80 disabled:opacity-50"
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200/80 disabled:opacity-50"
                         >
                             <FileCheck className="w-4 h-4 text-slate-600" />
                             <span>{locale === 'ar' ? 'الفاتورة الضريبية' : 'Tax Invoice'}</span>
@@ -292,7 +292,7 @@ function OrderConfirmationContent() {
                         <button
                             type="button"
                             onClick={handleShareStatus}
-                            className="bg-[#05A764] hover:bg-[#048b53] text-white text-xs font-extrabold px-4 py-2 rounded-full flex items-center gap-1.5 transition-all cursor-pointer shadow-md font-sans"
+                            className="bg-[#05A764] hover:bg-[#048b53] text-white text-xs font-bold px-4 py-2 rounded-full flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
                         >
                             <Share2 className="w-4 h-4" />
                             <span>{locale === 'ar' ? 'مشاركة الحالة' : 'Share Status'}</span>
@@ -311,14 +311,14 @@ function OrderConfirmationContent() {
                             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                                 <div className="flex items-center gap-2">
                                     <MapPin className="w-4 h-4 text-[#05A764]" />
-                                    <h2 className="font-extrabold text-sm sm:text-base text-slate-900 font-sans">
+                                    <h2 className="font-bold text-sm sm:text-base text-slate-900">
                                         {locale === 'ar' ? 'وجهة التوصيل' : 'Delivery Destination'}
                                     </h2>
                                 </div>
 
                                 <Link
                                     href="/orders"
-                                    className="text-xs font-extrabold text-[#05A764] hover:underline cursor-pointer font-sans"
+                                    className="text-xs font-bold text-[#05A764] hover:underline cursor-pointer"
                                 >
                                     {locale === 'ar' ? 'عرض طلباتي' : 'View All Orders'}
                                 </Link>
@@ -327,10 +327,10 @@ function OrderConfirmationContent() {
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                                 {/* Left Details */}
                                 <div className="md:col-span-6 space-y-1.5">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block font-sans">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
                                         {locale === 'ar' ? 'العميل والعنوان' : 'CUSTOMER & ADDRESS'}
                                     </span>
-                                    <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
+                                    <h3 className="font-bold text-xs sm:text-sm text-slate-900">
                                         {customerName}
                                     </h3>
                                     <p className="text-xs text-slate-600 font-medium leading-relaxed">
@@ -349,7 +349,7 @@ function OrderConfirmationContent() {
 
                                 {/* Right Driver Access Note Box */}
                                 <div className="md:col-span-6 bg-[#FFF9E6] border border-[#FFE8A3] rounded-2xl p-4 space-y-1.5">
-                                    <div className="flex items-center gap-1.5 text-amber-800 font-extrabold text-xs font-sans">
+                                    <div className="flex items-center gap-1.5 text-amber-800 font-bold text-xs">
                                         <Key className="w-3.5 h-3.5" />
                                         <span>{locale === 'ar' ? 'ملاحظات التوصيل للسائق:' : 'Driver Access Note:'}</span>
                                     </div>
@@ -370,12 +370,12 @@ function OrderConfirmationContent() {
                             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                                 <div className="flex items-center gap-2">
                                     <ShoppingBag className="w-4 h-4 text-slate-900" />
-                                    <h2 className="font-extrabold text-base text-slate-900 font-sans">
+                                    <h2 className="font-bold text-base text-slate-900">
                                         {locale === 'ar' ? 'المنتجات في هذا الطلب' : 'Items in this Delivery'}
                                     </h2>
                                 </div>
 
-                                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full font-sans">
+                                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
                                     {itemsList.length} {itemsList.length === 1 ? 'Item' : 'Items'}
                                 </span>
                             </div>
@@ -408,14 +408,14 @@ function OrderConfirmationContent() {
                                                     )}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <h4 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                                                    <h4 className="font-bold text-xs text-slate-900 truncate">
                                                         {item.name}
                                                     </h4>
                                                     <p className="text-[10px] text-slate-400 font-medium truncate">
                                                         {item.subtitle}
                                                     </p>
                                                     {/* {item.tag && (
-                                                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded inline-block mt-0.5 font-sans bg-emerald-50 text-emerald-700">
+                                                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded inline-block mt-0.5 bg-emerald-50 text-emerald-700">
                                                             {item.tag}
                                                         </span>
                                                     )} */}
@@ -423,7 +423,7 @@ function OrderConfirmationContent() {
                                             </div>
 
                                             <div className="text-right shrink-0">
-                                                <span className="font-black text-xs sm:text-sm text-slate-900 font-sans block">
+                                                <span className="font-black text-xs sm:text-sm text-slate-900 block">
                                                     SAR {item.price}
                                                 </span>
                                             </div>
@@ -435,7 +435,7 @@ function OrderConfirmationContent() {
                             {/* Bundling Offer Widget */}
                             <div className="bg-[#F5F6F8] rounded-2xl p-3.5 flex items-center justify-between border border-slate-200/60">
                                 <div className="space-y-0.5">
-                                    <h4 className="font-extrabold text-xs text-slate-900 flex items-center gap-1 font-sans">
+                                    <h4 className="font-bold text-xs text-slate-900 flex items-center gap-1">
                                         <Clock className="w-3.5 h-3.5 text-amber-600" />
                                         <span>{locale === 'ar' ? 'نسيت شيئاً؟' : 'Forgot something?'}</span>
                                     </h4>
@@ -446,7 +446,7 @@ function OrderConfirmationContent() {
 
                                 <Link
                                     href="/products"
-                                    className="bg-amber-300 hover:bg-amber-400 text-slate-900 text-xs font-black px-3 py-1.5 rounded-xl cursor-pointer transition-colors shadow-2xs font-sans"
+                                    className="bg-amber-300 hover:bg-amber-400 text-slate-900 text-xs font-black px-3 py-1.5 rounded-xl cursor-pointer transition-colors shadow-2xs"
                                 >
                                     {locale === 'ar' ? 'تصفح' : 'Add Items'}
                                 </Link>
@@ -455,19 +455,19 @@ function OrderConfirmationContent() {
 
                         {/* PAYMENT & BILLING CARD */}
                         <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
-                            <h2 className="font-extrabold text-base text-slate-900 font-sans border-b border-slate-100 pb-3">
+                            <h2 className="font-bold text-base text-slate-900 border-b border-slate-100 pb-3">
                                 {locale === 'ar' ? 'الدفع والفاتورة' : 'Payment & Billing'}
                             </h2>
 
-                            <div className="space-y-2.5 text-xs font-semibold text-slate-600 font-sans">
+                            <div className="space-y-2.5 text-xs font-semibold text-slate-600">
                                 <div className="flex justify-between">
                                     <span>{locale === 'ar' ? 'المجموع الفرعي للمنتجات' : 'Items Subtotal'}</span>
-                                    <span className="font-extrabold text-slate-900">SAR {subtotalVal.toFixed(2)}</span>
+                                    <span className="font-bold text-slate-900">SAR {subtotalVal.toFixed(2)}</span>
                                 </div>
 
                                 <div className="flex justify-between">
                                     <span>{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-                                    <span className="font-extrabold text-slate-900">
+                                    <span className="font-bold text-slate-900">
                                         {deliveryFeeVal === 0 ? (locale === 'ar' ? 'مجاني' : 'Free') : `SAR ${deliveryFeeVal.toFixed(2)}`}
                                     </span>
                                 </div>
@@ -475,7 +475,7 @@ function OrderConfirmationContent() {
                                 {discountVal > 0 && (
                                     <div className="flex justify-between text-emerald-600">
                                         <span>{locale === 'ar' ? 'الخصم' : 'Discount'} ({order?.coupon_code || ''})</span>
-                                        <span className="font-extrabold">- SAR {discountVal.toFixed(2)}</span>
+                                        <span className="font-bold">- SAR {discountVal.toFixed(2)}</span>
                                     </div>
                                 )}
 
@@ -488,7 +488,7 @@ function OrderConfirmationContent() {
 
                                 <div className="flex items-baseline justify-between pt-1">
                                     <div>
-                                        <span className="text-sm font-extrabold text-slate-900 block">
+                                        <span className="text-sm font-bold text-slate-900 block">
                                             {locale === 'ar' ? 'الإجمالي المدفوع' : 'Total Paid'}
                                         </span>
                                         <span className="text-[10px] text-slate-400 font-medium">
@@ -496,7 +496,7 @@ function OrderConfirmationContent() {
                                         </span>
                                     </div>
 
-                                    <div className="text-xl sm:text-2xl font-black text-slate-900 font-sans tracking-tight flex items-baseline gap-1">
+                                    <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-baseline gap-1">
                                         <span className="text-xs font-bold text-slate-700">SAR</span>
                                         <span>{grandTotalVal.toFixed(2)}</span>
                                     </div>
@@ -506,7 +506,7 @@ function OrderConfirmationContent() {
                             {/* ZATCA e-Invoice Verified Footer Box */}
                             <div className="bg-[#E8F8F0] border border-emerald-200/80 p-3.5 rounded-2xl flex items-center justify-between mt-3">
                                 <div className="space-y-0.5">
-                                    <div className="flex items-center gap-1.5 text-xs font-extrabold text-[#05A764] font-sans">
+                                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#05A764]">
                                         <FileCheck className="w-4 h-4" />
                                         <span>{locale === 'ar' ? 'فاتورة ضريبية إلكترونية معتمدة' : 'ZATCA e-Invoice Verified'}</span>
                                     </div>
@@ -519,7 +519,7 @@ function OrderConfirmationContent() {
                                     type="button"
                                     onClick={handleDownloadInvoice}
                                     disabled={downloadingInvoice}
-                                    className="text-xs font-extrabold text-[#05A764] hover:underline cursor-pointer font-sans shrink-0 ml-2 disabled:opacity-50"
+                                    className="text-xs font-bold text-[#05A764] hover:underline cursor-pointer shrink-0 ml-2 disabled:opacity-50"
                                 >
                                     {locale === 'ar' ? 'تحميل PDF' : 'Download PDF'}
                                 </button>

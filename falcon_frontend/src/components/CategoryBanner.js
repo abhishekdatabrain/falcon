@@ -61,7 +61,7 @@ export default function CategoryBanner({ category, level = 1 }) {
   const levelText = locale === 'ar' ? levelLabels[level]?.ar : levelLabels[level]?.en;
 
   return (
-    <section className="relative rounded-3xl overflow-hidden bg-[#043927] text-white shadow-lg border border-emerald-900/50 font-sans transition-all duration-300">
+    <section className="relative rounded-3xl overflow-hidden bg-[#043927] text-white shadow-lg border border-emerald-900/50 transition-all duration-300">
       
       {/* Background Graphic Accents */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -82,24 +82,24 @@ export default function CategoryBanner({ category, level = 1 }) {
               </span>
             )}
             {tagText && (
-              <span className="bg-[#05A764] text-white text-[9px] sm:text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
+              <span className="bg-[#05A764] text-white text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
                 {tagText}
               </span>
             )}
             {badgeText && (
-              <span className="bg-[#ea580c] text-white text-[9px] sm:text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
+              <span className="bg-[#ea580c] text-white text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
                 {badgeText}
               </span>
             )}
           </div>
 
           {/* Dynamic Category Heading */}
-          <h1 className="text-xl sm:text-2xl lg:text-[28px] font-black tracking-tight leading-tight font-heading text-white">
+          <h1 className="text-xl sm:text-2xl lg:text-[28px] font-black tracking-tight leading-tight text-white">
             {heading}
           </h1>
 
           {/* Dynamic Category Description */}
-          <p className="text-emerald-100/90 font-medium text-xs sm:text-[13px] leading-relaxed max-w-2xl font-sans line-clamp-2">
+          <p className="text-emerald-100/90 font-medium text-xs sm:text-[13px] leading-relaxed max-w-2xl line-clamp-2">
             {description}
           </p>
 

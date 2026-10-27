@@ -327,8 +327,8 @@ export default function AdminEmployeesPage() {
       {/* 3. Employees Table */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-sans">
-            <thead className="bg-slate-50/80 text-slate-600 border-b border-slate-200 uppercase text-[10px] tracking-wider font-extrabold">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50/80 text-slate-600 border-b border-slate-200 uppercase text-[10px] tracking-wider font-bold">
               <tr>
                 <th className="py-3.5 px-6">Employee / Staff</th>
                 <th className="py-3.5 px-6">Contact Info</th>
@@ -367,10 +367,10 @@ export default function AdminEmployeesPage() {
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 ${
-                              isSuper
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-emerald-100 text-emerald-800'
-                            }`}
+ isSuper
+ ? 'bg-purple-100 text-purple-800'
+ : 'bg-emerald-100 text-emerald-800'
+ }`}
                           >
                             {displayName[0].toUpperCase()}
                           </div>
@@ -428,10 +428,10 @@ export default function AdminEmployeesPage() {
                           onClick={() => handleToggleStatus(admin)}
                           disabled={admin.id === currentAdmin?.id || isSuper}
                           className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                            isActive
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200'
-                              : 'bg-red-100 text-red-800 border border-red-200 hover:bg-red-200'
-                          }`}
+ isActive
+ ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200'
+ : 'bg-red-100 text-red-800 border border-red-200 hover:bg-red-200'
+ }`}
                         >
                           {isActive ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
                           <span>{isActive ? 'Active' : 'Suspended'}</span>

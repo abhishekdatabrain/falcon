@@ -16,7 +16,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="relative bg-[#043927] text-slate-200 font-sans overflow-hidden">
+    <footer className="relative bg-[#043927] text-slate-200 overflow-hidden">
       
       {/* Top Decorative Wave Divider */}
       <div className="w-full bg-white leading-none relative z-10 pointer-events-none -mb-1">
@@ -43,7 +43,7 @@ export default function Footer() {
             </Link>
 
             {/* Tagline */}
-            <p className="text-[#DA9628] font-semibold text-base sm:text-lg leading-snug font-sans">
+            <p className="text-[#DA9628] font-semibold text-base sm:text-lg leading-snug">
               {locale === 'ar' ? 'المستلزمات اليومية، تصلك بكل بساطة.' : 'Everyday essentials, delivered simply.'}
             </p>
 
@@ -87,7 +87,7 @@ export default function Footer() {
 
             {/* Download Our App */}
             <div className="space-y-3 pt-3">
-              <div className="flex items-center gap-2 text-white font-extrabold text-xs sm:text-sm tracking-wide font-sans">
+              <div className="flex items-center gap-2 text-white font-bold text-xs sm:text-sm tracking-wide">
                 <span className="w-0.5 h-4 bg-[#DA9628] inline-block"></span>
                 <span>{locale === 'ar' ? 'تنزيل تطبيقنا' : 'Download Our App'}</span>
               </div>
@@ -127,7 +127,7 @@ export default function Footer() {
 
           {/* Col 2: Shop */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-base font-extrabold text-white tracking-tight font-heading">
+            <h4 className="text-base font-bold text-white tracking-tight">
               {locale === 'ar' ? 'التسوق' : 'Shop'}
             </h4>
             <div className="w-7 h-0.5 bg-[#DA9628] -mt-1 mb-4"></div>
@@ -143,7 +143,7 @@ export default function Footer() {
 
           {/* Col 3: Customer Care */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-base font-extrabold text-white tracking-tight font-heading">
+            <h4 className="text-base font-bold text-white tracking-tight">
               {locale === 'ar' ? 'خدمة العملاء' : 'Customer Care'}
             </h4>
             <div className="w-7 h-0.5 bg-[#DA9628] -mt-1 mb-4"></div>
@@ -158,7 +158,7 @@ export default function Footer() {
 
           {/* Col 4: My Account */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-base font-extrabold text-white tracking-tight font-heading">
+            <h4 className="text-base font-bold text-white tracking-tight">
               {locale === 'ar' ? 'حسابي' : 'My Account'}
             </h4>
             <div className="w-7 h-0.5 bg-[#DA9628] -mt-1 mb-4"></div>
@@ -172,7 +172,7 @@ export default function Footer() {
 
           {/* Col 5: Quick Links */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-base font-extrabold text-white tracking-tight font-heading">
+            <h4 className="text-base font-bold text-white tracking-tight">
               {locale === 'ar' ? 'روابط سريعة' : 'Quick Links'}
             </h4>
             <div className="w-7 h-0.5 bg-[#DA9628] -mt-1 mb-4"></div>
@@ -187,7 +187,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Copyright & Language Switcher Bar */}
-        <div className="pt-8 mt-12 border-t border-emerald-900/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-300 font-sans">
+        <div className="pt-8 mt-12 border-t border-emerald-900/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-300">
           <p className="text-center sm:text-left rtl:sm:text-right">
             © 2026 saqrcart. All rights reserved.
           </p>

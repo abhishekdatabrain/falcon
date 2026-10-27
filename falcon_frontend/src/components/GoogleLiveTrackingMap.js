@@ -142,7 +142,7 @@ export default function GoogleLiveTrackingMap({
   }, []);
 
   return (
-    <div className="relative w-full rounded-3xl overflow-hidden border border-slate-200/90 shadow-lg bg-slate-950 font-sans">
+    <div className="relative w-full rounded-3xl overflow-hidden border border-slate-200/90 shadow-lg bg-slate-950">
       
       {/* MAP ENGINE CONTAINER */}
       <div style={{ height }} className="relative w-full overflow-hidden">
@@ -172,7 +172,7 @@ export default function GoogleLiveTrackingMap({
             {/* Courier Marker */}
             <Marker position={[validDriverLat, validDriverLng]} icon={customIcons.driverIcon || undefined}>
               <Popup>
-                <div className="p-1 font-sans text-xs">
+                <div className="p-1 text-xs">
                   <strong className="text-emerald-700 block">🚚 Courier Live: {driverName}</strong>
                   <span className="text-slate-600 block">{vehicle}</span>
                   <span className="text-slate-400 text-[10px]">Speed: {speed} km/h • Temp: {temp}</span>
@@ -182,7 +182,7 @@ export default function GoogleLiveTrackingMap({
             {/* Destination Marker */}
             <Marker position={[validDestLat, validDestLng]} icon={customIcons.destIcon || undefined}>
               <Popup>
-                <div className="p-1 font-sans text-xs">
+                <div className="p-1 text-xs">
                   <strong className="text-rose-600 block">📍 Delivery Destination</strong>
                   <span className="text-slate-700 block font-semibold">{customerName}</span>
                   <span className="text-slate-500 text-[10px]">{destinationAddress}</span>
@@ -211,7 +211,7 @@ export default function GoogleLiveTrackingMap({
             </span>
             <span>Google Maps GPS Active</span>
             <span className="text-slate-400">•</span>
-            <span className="text-emerald-400 font-extrabold">{distanceKm} km away</span>
+            <span className="text-emerald-400 font-bold">{distanceKm} km away</span>
           </div>
 
           <div className="hidden md:flex items-center gap-1.5 bg-[#043927]/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-emerald-500/30 text-emerald-300 text-xs font-bold">
@@ -228,10 +228,10 @@ export default function GoogleLiveTrackingMap({
               type="button"
               onClick={() => setMapMode('google')}
               className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                mapMode === 'google'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'hover:bg-slate-100 text-slate-600'
-              }`}
+ mapMode === 'google'
+ ? 'bg-slate-900 text-white shadow-sm'
+ : 'hover:bg-slate-100 text-slate-600'
+ }`}
             >
               Google Map
             </button>
@@ -239,10 +239,10 @@ export default function GoogleLiveTrackingMap({
               type="button"
               onClick={() => setMapMode('satellite')}
               className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                mapMode === 'satellite'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'hover:bg-slate-100 text-slate-600'
-              }`}
+ mapMode === 'satellite'
+ ? 'bg-slate-900 text-white shadow-sm'
+ : 'hover:bg-slate-100 text-slate-600'
+ }`}
             >
               Satellite
             </button>
@@ -250,10 +250,10 @@ export default function GoogleLiveTrackingMap({
               type="button"
               onClick={() => setMapMode('radar')}
               className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
-                mapMode === 'radar'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'hover:bg-slate-100 text-slate-600'
-              }`}
+ mapMode === 'radar'
+ ? 'bg-emerald-600 text-white shadow-sm'
+ : 'hover:bg-slate-100 text-slate-600'
+ }`}
             >
               <Compass className="w-3 h-3" />
               <span>GPS Radar</span>
@@ -284,7 +284,7 @@ export default function GoogleLiveTrackingMap({
               <div className="text-[10px] text-slate-400 uppercase font-black tracking-wider">
                 Delivering to:
               </div>
-              <div className="font-extrabold text-slate-100 truncate">
+              <div className="font-bold text-slate-100 truncate">
                 {destinationAddress}
               </div>
             </div>

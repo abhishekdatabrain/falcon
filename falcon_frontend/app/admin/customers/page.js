@@ -334,6 +334,7 @@ export default function AdminCustomersPage() {
             <table className="w-full text-left text-xs text-slate-600 rtl:text-right border-collapse border border-gray-400">
               <thead className="bg-slate-50/80 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 <tr>
+                  <th className="px-3.5 py-3.5 border border-gray-300 text-center whitespace-nowrap w-14">{locale === 'ar' ? 'م' : 'Sr. No'}</th>
                   <th className="px-5 py-3.5 border border-gray-300 whitespace-nowrap">{locale === 'ar' ? 'العميل والهوية' : 'Customer Identity'}</th>
                   <th className="px-5 py-3.5 border border-gray-300 whitespace-nowrap">{locale === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}</th>
                   <th className="px-5 py-3.5 border border-gray-300 whitespace-nowrap">{locale === 'ar' ? 'رقم الجوال' : 'Mobile Phone'}</th>
@@ -343,10 +344,15 @@ export default function AdminCustomersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {customers.map((c) => (
+                {customers.map((c, index) => (
                   <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
+                    {/* Sr. No */}
+                    <td className="px-3.5 py-3.5 whitespace-nowrap text-center font-bold text-xs text-slate-500 border border-gray-300">
+                      {((currentPage || 1) - 1) * (pageSize || 10) + index + 1}
+                    </td>
+
                     {/* Customer Identity */}
-                    <td className="px-5 py-3.5 whitespace-nowrap">
+                    <td className="px-5 py-3.5 whitespace-nowrap border border-gray-300">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white font-black flex items-center justify-center text-xs shadow-xs shrink-0">
                           {c.first_name?.charAt(0) || 'C'}
@@ -401,10 +407,10 @@ export default function AdminCustomersPage() {
                     <td className="px-5 py-3.5 whitespace-nowrap border border-gray-300">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-2xs ${
-                          c.user?.status === 'ACTIVE'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-rose-50 text-rose-700 border-rose-200'
-                        }`}
+ c.user?.status === 'ACTIVE'
+ ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+ : 'bg-rose-50 text-rose-700 border-rose-200'
+ }`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${c.user?.status === 'ACTIVE' ? 'bg-emerald-600 animate-pulse' : 'bg-rose-500'}`} />
                         <span>{c.user?.status === 'ACTIVE' ? (locale === 'ar' ? 'نشط' : 'Active') : (locale === 'ar' ? 'معطل' : 'Disabled')}</span>
@@ -441,10 +447,10 @@ export default function AdminCustomersPage() {
                               : locale === 'ar' ? 'تفعيل الحساب' : 'Activate Account'
                           }
                           className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-2xs transition-all hover:scale-105 active:scale-95 border cursor-pointer ${
-                            c.user?.status === 'ACTIVE'
-                              ? 'bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border-rose-200'
-                              : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border-emerald-200'
-                          }`}
+ c.user?.status === 'ACTIVE'
+ ? 'bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border-rose-200'
+ : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border-emerald-200'
+ }`}
                         >
                           {c.user?.status === 'ACTIVE' ? (
                             <UserX className="w-3.5 h-3.5" />
@@ -481,7 +487,7 @@ export default function AdminCustomersPage() {
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">
+                  <h3 className="text-lg font-bold text-slate-900">
                     {locale === 'ar' ? 'إضافة عميل جديد' : 'Create New Customer Account'}
                   </h3>
                   <p className="text-xs text-slate-500">Register new customer login details</p>
@@ -596,7 +602,7 @@ export default function AdminCustomersPage() {
                   <Edit3 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">Edit Customer Profile</h3>
+                  <h3 className="text-lg font-bold text-slate-900">Edit Customer Profile</h3>
                   <p className="text-xs text-slate-500">Update account personal details</p>
                 </div>
               </div>

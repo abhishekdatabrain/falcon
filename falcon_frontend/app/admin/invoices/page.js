@@ -245,15 +245,15 @@ export default function AdminInvoicesPage() {
   }, [invoices, activeTab]);
 
   return (
-    <div className="space-y-6 font-sans pb-16">
+    <div className="space-y-6 pb-16">
       
       {/* Toast Notification Alert */}
       {toastMsg && (
         <div className={`fixed top-5 right-5 z-50 px-5 py-3.5 rounded-2xl shadow-xl border font-bold text-xs flex items-center gap-2.5 animate-in fade-in slide-in-from-top-4 duration-300 ${
-          toastMsg.type === 'error'
-            ? 'bg-rose-50 text-rose-900 border-rose-200'
-            : 'bg-emerald-50 text-emerald-900 border-emerald-200'
-        }`}>
+ toastMsg.type === 'error'
+ ? 'bg-rose-50 text-rose-900 border-rose-200'
+ : 'bg-emerald-50 text-emerald-900 border-emerald-200'
+ }`}>
           {toastMsg.type === 'error' ? <AlertCircle className="w-4 h-4 text-rose-600" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
           <span>{toastMsg.text}</span>
         </div>
@@ -286,7 +286,7 @@ export default function AdminInvoicesPage() {
         <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
           <button
             onClick={() => setShowGenerateModal(true)}
-            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-extrabold text-xs hover:opacity-95 transition-all shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer"
+            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-bold text-xs hover:opacity-95 transition-all shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>{isAr ? 'إصدار فاتورة جديدة' : 'Generate E-Invoice'}</span>
@@ -312,10 +312,10 @@ export default function AdminInvoicesPage() {
         <div
           onClick={() => setActiveTab('ALL')}
           className={`p-5 rounded-3xl border transition-all cursor-pointer ${
-            activeTab === 'ALL'
-              ? 'bg-gradient-to-br from-emerald-600 to-teal-700 text-white border-emerald-400 shadow-md shadow-emerald-600/20'
-              : 'bg-white border-slate-200 hover:border-slate-300'
-          }`}
+ activeTab === 'ALL'
+ ? 'bg-gradient-to-br from-emerald-600 to-teal-700 text-white border-emerald-400 shadow-md shadow-emerald-600/20'
+ : 'bg-white border-slate-200 hover:border-slate-300'
+ }`}
         >
           <div className="flex justify-between items-center">
             <span className={`text-xs font-bold uppercase tracking-wider ${activeTab === 'ALL' ? 'text-emerald-100' : 'text-slate-500'}`}>
@@ -351,10 +351,10 @@ export default function AdminInvoicesPage() {
         <div
           onClick={() => setActiveTab('ELIGIBLE')}
           className={`p-5 rounded-3xl border transition-all cursor-pointer ${
-            activeTab === 'ELIGIBLE'
-              ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white border-amber-400 shadow-md shadow-amber-500/20'
-              : 'bg-white border-slate-200 hover:border-slate-300'
-          }`}
+ activeTab === 'ELIGIBLE'
+ ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white border-amber-400 shadow-md shadow-amber-500/20'
+ : 'bg-white border-slate-200 hover:border-slate-300'
+ }`}
         >
           <div className="flex justify-between items-center">
             <span className={`text-xs font-bold uppercase tracking-wider ${activeTab === 'ELIGIBLE' ? 'text-amber-100' : 'text-slate-500'}`}>
@@ -374,10 +374,10 @@ export default function AdminInvoicesPage() {
         <div
           onClick={() => setActiveTab('CREDIT_NOTES')}
           className={`p-5 rounded-3xl border transition-all cursor-pointer ${
-            activeTab === 'CREDIT_NOTES'
-              ? 'bg-gradient-to-br from-rose-600 to-pink-700 text-white border-rose-400 shadow-md shadow-rose-500/20'
-              : 'bg-white border-slate-200 hover:border-slate-300'
-          }`}
+ activeTab === 'CREDIT_NOTES'
+ ? 'bg-gradient-to-br from-rose-600 to-pink-700 text-white border-rose-400 shadow-md shadow-rose-500/20'
+ : 'bg-white border-slate-200 hover:border-slate-300'
+ }`}
         >
           <div className="flex justify-between items-center">
             <span className={`text-xs font-bold uppercase tracking-wider ${activeTab === 'CREDIT_NOTES' ? 'text-rose-100' : 'text-slate-500'}`}>
@@ -401,10 +401,10 @@ export default function AdminInvoicesPage() {
           <button
             onClick={() => setActiveTab('ALL')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-2 ${
-              activeTab === 'ALL'
-                ? 'bg-emerald-700 text-white shadow-xs'
-                : 'bg-transparent text-slate-600 hover:bg-slate-100'
-            }`}
+ activeTab === 'ALL'
+ ? 'bg-emerald-700 text-white shadow-xs'
+ : 'bg-transparent text-slate-600 hover:bg-slate-100'
+ }`}
           >
             <FileText className="w-4 h-4" />
             <span>{isAr ? 'كافة الفواتير' : 'All Tax Invoices'} ({stats.totalInvoices})</span>
@@ -413,10 +413,10 @@ export default function AdminInvoicesPage() {
           <button
             onClick={() => setActiveTab('ELIGIBLE')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-2 ${
-              activeTab === 'ELIGIBLE'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-transparent text-slate-600 hover:bg-slate-100'
-            }`}
+ activeTab === 'ELIGIBLE'
+ ? 'bg-amber-600 text-white shadow-xs'
+ : 'bg-transparent text-slate-600 hover:bg-slate-100'
+ }`}
           >
             <Receipt className="w-4 h-4" />
             <span>{isAr ? 'طلبات بانتظار الفاتورة' : 'Awaiting Invoices'} ({stats.eligibleOrdersCount})</span>
@@ -425,10 +425,10 @@ export default function AdminInvoicesPage() {
           <button
             onClick={() => setActiveTab('CREDIT_NOTES')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-2 ${
-              activeTab === 'CREDIT_NOTES'
-                ? 'bg-rose-600 text-white shadow-xs'
-                : 'bg-transparent text-slate-600 hover:bg-slate-100'
-            }`}
+ activeTab === 'CREDIT_NOTES'
+ ? 'bg-rose-600 text-white shadow-xs'
+ : 'bg-transparent text-slate-600 hover:bg-slate-100'
+ }`}
           >
             <RotateCcw className="w-4 h-4" />
             <span>{isAr ? 'الإشعارات الدائنة' : 'Credit Notes'} ({stats.creditNotesCount})</span>
@@ -437,10 +437,10 @@ export default function AdminInvoicesPage() {
           <button
             onClick={() => setActiveTab('COMPLIANCE')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-2 ${
-              activeTab === 'COMPLIANCE'
-                ? 'bg-indigo-700 text-white shadow-xs'
-                : 'bg-transparent text-slate-600 hover:bg-slate-100'
-            }`}
+ activeTab === 'COMPLIANCE'
+ ? 'bg-indigo-700 text-white shadow-xs'
+ : 'bg-transparent text-slate-600 hover:bg-slate-100'
+ }`}
           >
             <ShieldCheck className="w-4 h-4" />
             <span>{isAr ? 'شهادات واعتماد ZATCA' : 'ZATCA Compliance Info'}</span>
@@ -552,10 +552,10 @@ export default function AdminInvoicesPage() {
                               {inv.invoice_number}
                             </span>
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${
-                              isCn
-                                ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            }`}>
+ isCn
+ ? 'bg-rose-50 text-rose-700 border-rose-200'
+ : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+ }`}>
                               {isCn ? 'CREDIT NOTE' : 'SIMPLIFIED'}
                             </span>
                           </div>
@@ -586,7 +586,7 @@ export default function AdminInvoicesPage() {
 
                         {/* Customer Info */}
                         <td className="py-3.5 px-4">
-                          <p className="font-extrabold text-slate-900">{customerName}</p>
+                          <p className="font-bold text-slate-900">{customerName}</p>
                           <p className="text-[11px] text-slate-500">{inv.order?.customer?.user?.mobile || 'N/A'}</p>
                         </td>
 
@@ -596,7 +596,7 @@ export default function AdminInvoicesPage() {
                         </td>
 
                         {/* VAT (15%) */}
-                        <td className="py-3.5 px-4 font-mono font-extrabold text-indigo-700">
+                        <td className="py-3.5 px-4 font-mono font-bold text-indigo-700">
                           {parseFloat(inv.vat_total || 0).toFixed(2)}
                         </td>
 
@@ -608,12 +608,12 @@ export default function AdminInvoicesPage() {
                         {/* ZATCA Status */}
                         <td className="py-3.5 px-4">
                           <span className={`px-2.5 py-1 rounded-full text-[10px] font-black border flex items-center gap-1 w-fit ${
-                            inv.zatca_status === 'CLEARED'
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                              : inv.zatca_status === 'REPORTED'
-                              ? 'bg-teal-50 text-teal-800 border-teal-300'
-                              : 'bg-amber-50 text-amber-800 border-amber-300'
-                          }`}>
+ inv.zatca_status === 'CLEARED'
+ ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+ : inv.zatca_status === 'REPORTED'
+ ? 'bg-teal-50 text-teal-800 border-teal-300'
+ : 'bg-amber-50 text-amber-800 border-amber-300'
+ }`}>
                             <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                             <span>{inv.zatca_status || 'REPORTED'}</span>
                           </span>
@@ -729,7 +729,7 @@ export default function AdminInvoicesPage() {
                         <span className="text-base font-black text-slate-900 block">Order #{ord.order_number}</span>
                         <span className="text-xs text-slate-400 font-semibold">{new Date(ord.createdAt).toLocaleString()}</span>
                       </div>
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold border border-emerald-200">
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
                         {ord.order_status}
                       </span>
                     </div>
@@ -750,7 +750,7 @@ export default function AdminInvoicesPage() {
                   <button
                     disabled={generating}
                     onClick={() => handleGenerateInvoice(ord.id)}
-                    className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-extrabold text-xs hover:opacity-95 transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-bold text-xs hover:opacity-95 transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     <FileText className="w-4 h-4" />
                     <span>{generating ? 'Generating ZATCA Invoice...' : 'Generate Official ZATCA Invoice'}</span>
@@ -784,7 +784,7 @@ export default function AdminInvoicesPage() {
               <div className="space-y-3 text-xs">
                 <div className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-500 font-bold">Taxpayer Trade Name:</span>
-                  <span className="font-extrabold text-slate-900">{stats.zatcaSellerName}</span>
+                  <span className="font-bold text-slate-900">{stats.zatcaSellerName}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-500 font-bold">VAT Registration Number:</span>
@@ -792,7 +792,7 @@ export default function AdminInvoicesPage() {
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-500 font-bold">Commercial Registration (CR):</span>
-                  <span className="font-mono font-extrabold text-slate-900">1010892341</span>
+                  <span className="font-mono font-bold text-slate-900">1010892341</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-500 font-bold">Registered Office Location:</span>
@@ -820,7 +820,7 @@ export default function AdminInvoicesPage() {
               <div className="space-y-3 text-xs">
                 <div className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-500 font-bold">Compliance Status:</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-extrabold text-[10px] border border-emerald-200">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200">
                     CERTIFIED PHASE 2 ACTIVE
                   </span>
                 </div>
@@ -862,10 +862,10 @@ export default function AdminInvoicesPage() {
                     {selectedInvoice.invoice_type === 'CREDIT_NOTE' ? 'Credit Note' : 'Tax Invoice'} #{selectedInvoice.invoice_number}
                   </h3>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${
-                    selectedInvoice.invoice_type === 'CREDIT_NOTE'
-                      ? 'bg-rose-50 text-rose-700 border-rose-200'
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  }`}>
+ selectedInvoice.invoice_type === 'CREDIT_NOTE'
+ ? 'bg-rose-50 text-rose-700 border-rose-200'
+ : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+ }`}>
                     {selectedInvoice.invoice_type}
                   </span>
                 </div>
@@ -888,7 +888,7 @@ export default function AdminInvoicesPage() {
                 href={getImageUrl(`/api/v1/invoices/${selectedInvoice.id}/pdf`)}
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
               >
                 <Download className="w-4 h-4" />
                 <span>Download Official PDF</span>
@@ -898,7 +898,7 @@ export default function AdminInvoicesPage() {
                 href={getImageUrl(`/api/v1/invoices/${selectedInvoice.id}/xml`)}
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
               >
                 <FileCode className="w-4 h-4" />
                 <span>Download UBL 2.1 XML</span>
@@ -906,7 +906,7 @@ export default function AdminInvoicesPage() {
 
               <button
                 onClick={() => handleReportToZatca(selectedInvoice.id)}
-                className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs flex items-center gap-1.5 cursor-pointer"
+                className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
               >
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 <span>Verify with ZATCA</span>
@@ -950,7 +950,7 @@ export default function AdminInvoicesPage() {
               {/* Seller details */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Seller / Taxpayer</span>
-                <p className="font-extrabold text-slate-900 text-sm">{selectedInvoice.seller_name}</p>
+                <p className="font-bold text-slate-900 text-sm">{selectedInvoice.seller_name}</p>
                 <p className="text-slate-600 font-medium">VAT Reg: <strong className="font-mono text-emerald-700">{selectedInvoice.seller_vat_number}</strong></p>
                 <p className="text-slate-500">King Fahd Rd, Riyadh, KSA</p>
               </div>
@@ -958,7 +958,7 @@ export default function AdminInvoicesPage() {
               {/* Buyer details */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Customer / Buyer</span>
-                <p className="font-extrabold text-slate-900 text-sm">{selectedInvoice.buyer_name}</p>
+                <p className="font-bold text-slate-900 text-sm">{selectedInvoice.buyer_name}</p>
                 <p className="text-slate-600 font-medium">Order: <strong className="font-mono text-cyan-700">#{selectedInvoice.order?.order_number}</strong></p>
                 <p className="text-slate-500">Destination: {selectedInvoice.order?.address?.city || 'Riyadh Province, KSA'}</p>
               </div>
@@ -1072,7 +1072,7 @@ export default function AdminInvoicesPage() {
                 <button
                   type="submit"
                   disabled={submittingCn || !cnReason}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-700 hover:opacity-95 text-white font-extrabold text-xs shadow-md shadow-rose-600/20 cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-700 hover:opacity-95 text-white font-bold text-xs shadow-md shadow-rose-600/20 cursor-pointer disabled:opacity-50"
                 >
                   {submittingCn ? 'Issuing Credit Note...' : 'Confirm Credit Note Issuance'}
                 </button>
@@ -1115,7 +1115,7 @@ export default function AdminInvoicesPage() {
                     className="p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer flex justify-between items-center"
                   >
                     <div>
-                      <p className="font-extrabold text-slate-900 text-xs">Order #{ord.order_number}</p>
+                      <p className="font-bold text-slate-900 text-xs">Order #{ord.order_number}</p>
                       <p className="text-[11px] text-slate-500">
                         {ord.customer?.first_name ? `${ord.customer.first_name} ${ord.customer.last_name}` : ord.customer?.user?.email} • {ord.order_status}
                       </p>

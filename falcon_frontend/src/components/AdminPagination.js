@@ -130,10 +130,10 @@ export default function AdminPagination({
                 onClick={() => handlePageClick(page)}
                 disabled={loading}
                 className={`min-w-8 h-8 px-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                }`}
+ isActive
+ ? 'bg-emerald-600 text-white shadow-xs'
+ : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+ }`}
               >
                 {page}
               </button>

@@ -182,7 +182,7 @@ export default function RecommendedProducts() {
     <section className="mt-12 mb-5 select-none">
       {/* Header Row */}
       <div className="flex items-center justify-between mb-5 px-1">
-        <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-sans">
+        <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
           {locale === 'ar' ? 'موصى به لك' : 'Recommended for you'}
         </h2>
 
@@ -277,7 +277,7 @@ export default function RecommendedProducts() {
                   {/* Top Header: Optional Badge & Heart */}
                   <div className="flex items-center justify-between mb-2">
                     {item.is_best_seller ? (
-                      <span className="bg-[#FFA800] text-white text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs font-sans uppercase tracking-wider">
+                      <span className="bg-[#FFA800] text-white text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs uppercase tracking-wider">
                         <span>★</span>
                         <span>{locale === 'ar' ? 'الأكثر مبيعاً' : 'BEST SELLER'}</span>
                       </span>
@@ -293,9 +293,9 @@ export default function RecommendedProducts() {
                     >
                       <Heart
                         className={`w-5 h-5 transition-colors ${isWishlisted
-                            ? 'text-[#FF1E56] fill-[#FF1E56]'
-                            : 'text-slate-300 hover:text-[#FF1E56] stroke-[1.8]'
-                          }`}
+ ? 'text-[#FF1E56] fill-[#FF1E56]'
+ : 'text-slate-300 hover:text-[#FF1E56] stroke-[1.8]'
+ }`}
                       />
                     </button>
                   </div>
@@ -316,7 +316,7 @@ export default function RecommendedProducts() {
                           src={getImageUrl(itemImage)}
                           alt={itemName}
                           className={`max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover/card:scale-105'
-                            }`}
+ }`}
                           onError={(e) => {
                             e.target.onerror = null;
                             e.target.src = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400';
@@ -327,14 +327,14 @@ export default function RecommendedProducts() {
 
                     {/* Multi-Variant Text Label (Top Right) */}
                     <div className="flex items-center justify-end mb-1">
-                      <span className="text-[#00B074] font-bold text-xs sm:text-[13px] font-sans">
+                      <span className="text-[#00B074] font-bold text-xs sm:text-[13px]">
                         {locale === 'ar' ? 'متوفر بخيارات' : 'Multi-Variant'}
                       </span>
                     </div>
 
                     {/* Product Title */}
                     <Link href={`/products/${item.id}`}>
-                      <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-1 mb-0.5 font-sans hover:text-[#043927] transition-colors">
+                      <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-1 mb-0.5 hover:text-[#043927] transition-colors">
                         {itemName}
                       </h3>
                     </Link>
@@ -365,7 +365,7 @@ export default function RecommendedProducts() {
                     <div className="border-t border-slate-100 my-2" />
 
                     {/* Price */}
-                    <div className="text-lg sm:text-xl font-black text-slate-900 mb-2.5 font-sans tracking-tight">
+                    <div className="text-lg sm:text-xl font-black text-slate-900 mb-2.5 tracking-tight">
                       <span className="text-xs font-bold text-slate-500 mr-1">SAR</span>
                       {itemPrice.toFixed(2)}
                     </div>
@@ -380,7 +380,7 @@ export default function RecommendedProducts() {
                         e.stopPropagation();
                         setVariantModalProduct(item);
                       }}
-                      className="w-full py-2.5 rounded-2xl bg-[#006E2D] hover:bg-[#008938] text-white font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98 font-sans"
+                      className="w-full py-2.5 rounded-2xl bg-[#006E2D] hover:bg-[#008938] text-white font-bold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98"
                     >
                       <Plus className="w-4 h-4 stroke-[2.5] shrink-0" />
                       <span>{locale === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
@@ -407,7 +407,7 @@ export default function RecommendedProducts() {
                   <div className="flex items-center justify-between mb-2">
                     {/* Best Seller Badge */}
                     {item.is_best_seller ? (
-                      <span className="bg-[#FFA800] text-white text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs font-sans uppercase tracking-wider">
+                      <span className="bg-[#FFA800] text-white text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs uppercase tracking-wider">
                         <span>★</span>
                         <span>{locale === 'ar' ? 'الأكثر مبيعاً' : 'BEST SELLER'}</span>
                       </span>
@@ -424,9 +424,9 @@ export default function RecommendedProducts() {
                     >
                       <Heart
                         className={`w-5 h-5 transition-colors ${isWishlisted
-                            ? 'text-[#FF1E56] fill-[#FF1E56]'
-                            : 'text-slate-300 hover:text-[#FF1E56] stroke-[1.8]'
-                          }`}
+ ? 'text-[#FF1E56] fill-[#FF1E56]'
+ : 'text-slate-300 hover:text-[#FF1E56] stroke-[1.8]'
+ }`}
                       />
                     </button>
                   </div>
@@ -445,7 +445,7 @@ export default function RecommendedProducts() {
                         src={getImageUrl(itemImage)}
                         alt={itemName}
                         className={`max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover/card:scale-105'
-                          }`}
+ }`}
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400';
@@ -455,13 +455,13 @@ export default function RecommendedProducts() {
                   </div>
 
                   {/* Brand & Stock Status Row */}
-                  <div className="flex items-center justify-between text-xs mb-1 font-sans">
+                  <div className="flex items-center justify-between text-xs mb-1">
                     <span className="text-slate-400 font-medium truncate max-w-[125px]">
                       {brandName}
                     </span>
                     <span
                       className={`font-bold shrink-0 text-xs ${isOutOfStock ? 'text-rose-600' : 'text-[#00B074]'
-                        }`}
+ }`}
                     >
                       {isOutOfStock
                         ? (locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock')
@@ -471,7 +471,7 @@ export default function RecommendedProducts() {
 
                   {/* Product Title */}
                   <Link href={`/products/${item.id}`}>
-                    <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-1 mb-1 font-sans hover:text-[#043927] transition-colors">
+                    <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-1 mb-1 hover:text-[#043927] transition-colors">
                       {itemName}
                     </h3>
                     <span className="text-xs font-medium text-slate-500">{item.unit_value} {item.unit_type}</span>
@@ -496,8 +496,8 @@ export default function RecommendedProducts() {
                   <div className="border-t border-slate-100 my-2" />
 
                   {/* Price Row: SAR 40.00 + SAR 50.00 (strikethrough) */}
-                  <div className="flex items-baseline gap-2 font-inter flex-wrap">
-                    <span className="text-sm sm:text-xl font-black text-slate-800 font-sans tracking-tight">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-sm sm:text-xl font-black text-slate-800 tracking-tight">
                       <span className="text-xs font-bold text-slate-500 mr-0.5">SAR</span>
                       {itemPrice.toFixed(2)}
                     </span>
@@ -512,7 +512,7 @@ export default function RecommendedProducts() {
                 {/* Bottom Full-Width Action Button: Add to Cart (or Quantity Stepper if in Cart) */}
                 <div className="mt-auto pt-1">
                   {inCart ? (
-                    <div className="w-full py-1.5 px-3 rounded-2xl bg-[#006E2D] text-white font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-between font-sans">
+                    <div className="w-full py-1.5 px-3 rounded-2xl bg-[#006E2D] text-white font-bold text-xs sm:text-sm shadow-xs flex items-center justify-between">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -550,10 +550,10 @@ export default function RecommendedProducts() {
                       type="button"
                       onClick={(e) => !isOutOfStock && handleAddToCart(e, item)}
                       disabled={isAdding || isOutOfStock}
-                      className={`w-full py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition-all font-sans ${isOutOfStock
-                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                          : 'bg-[#006E2D] hover:bg-[#008938] text-white cursor-pointer active:scale-98 shadow-sm hover:shadow'
-                        }`}
+                      className={`w-full py-2 rounded-2xl font-bold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition-all ${isOutOfStock
+ ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+ : 'bg-[#006E2D] hover:bg-[#008938] text-white cursor-pointer active:scale-98 shadow-sm hover:shadow'
+ }`}
                     >
                       {isAdding ? (
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

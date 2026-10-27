@@ -254,7 +254,7 @@ export default function AdminDeliverySlotsPage() {
   const activeSlots = slots.filter((s) => s.is_active);
 
   return (
-    <div className="space-y-8 font-sans pb-16">
+    <div className="space-y-8 pb-16">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -267,7 +267,7 @@ export default function AdminDeliverySlotsPage() {
               {locale === 'ar' ? 'مواعيد وفترات التوصيل' : 'Delivery Slots & Schedule'}
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
             {locale === 'ar' ? 'إدارة فترات ومواعيد التوصيل' : 'Delivery Slots & Schedule Management'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
@@ -291,7 +291,7 @@ export default function AdminDeliverySlotsPage() {
           <button
             type="button"
             onClick={openCreateModal}
-            className="bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xl shadow-2xs hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            className="bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xl shadow-2xs hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>{locale === 'ar' ? 'إضافة فترة توصيل جديدة' : 'Add Delivery Slot'}</span>
@@ -304,7 +304,7 @@ export default function AdminDeliverySlotsPage() {
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <Eye className="w-4 h-4 text-[#05A764]" />
-            <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide">
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
               {locale === 'ar' ? 'معاينة حية كما تظهر للعميل في صفحة الدفع (Checkout Preview)' : 'Live Storefront Checkout Preview'}
             </h2>
           </div>
@@ -315,7 +315,7 @@ export default function AdminDeliverySlotsPage() {
 
         {/* The exact Checkout Delivery Schedule visual component */}
         <div className="bg-[#FAFBFD] p-5 rounded-2xl border border-slate-200/80 space-y-3.5">
-          <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block font-sans">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
             {locale === 'ar' ? 'المواعيد المتاحة للتوصيل:' : 'SCHEDULED WINDOWS AVAILABLE:'}
           </span>
 
@@ -326,11 +326,11 @@ export default function AdminDeliverySlotsPage() {
                 key={idx}
                 type="button"
                 onClick={() => setPreviewDateIdx(idx)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer font-sans ${
-                  previewDateIdx === idx
-                    ? 'bg-slate-900 text-white shadow-2xs'
-                    : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
-                }`}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+ previewDateIdx === idx
+ ? 'bg-slate-900 text-white shadow-2xs'
+ : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
+ }`}
               >
                 {locale === 'ar' ? d.labelAr : d.labelEn}
               </button>
@@ -349,20 +349,20 @@ export default function AdminDeliverySlotsPage() {
                   key={s.id}
                   onClick={() => setPreviewSlotId(s.id)}
                   className={`p-3 rounded-xl cursor-pointer text-center transition-all bg-white border ${
-                    previewSlotId === s.id
-                      ? 'border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs'
-                      : 'border-slate-200/80 hover:border-slate-300'
-                  }`}
+ previewSlotId === s.id
+ ? 'border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs'
+ : 'border-slate-200/80 hover:border-slate-300'
+ }`}
                 >
-                  <span className="font-extrabold text-xs text-slate-900 block font-sans">
+                  <span className="font-bold text-xs text-slate-900 block">
                     {locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : s.slot_label_en}
                   </span>
                   <span
-                    className={`text-[10px] font-extrabold mt-1 inline-block px-2.5 py-0.5 rounded-full font-sans ${
-                      s.is_express
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'bg-slate-100 text-slate-600'
-                    }`}
+                    className={`text-[10px] font-bold mt-1 inline-block px-2.5 py-0.5 rounded-full ${
+ s.is_express
+ ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+ : 'bg-slate-100 text-slate-600'
+ }`}
                   >
                     {locale === 'ar' ? (s.tag_ar || s.tag_en) : s.tag_en}
                   </span>
@@ -379,7 +379,7 @@ export default function AdminDeliverySlotsPage() {
         <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-slate-200/90 shadow-2xs space-y-5">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
             <Sliders className="w-4 h-4 text-emerald-700" />
-            <h3 className="text-base font-extrabold text-slate-900">
+            <h3 className="text-base font-bold text-slate-900">
               {locale === 'ar' ? 'إعدادات الجدولة' : 'Schedule Settings'}
             </h3>
           </div>
@@ -404,7 +404,7 @@ export default function AdminDeliverySlotsPage() {
 
             <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200">
               <div>
-                <span className="text-xs font-extrabold text-slate-900 block">
+                <span className="text-xs font-bold text-slate-900 block">
                   {locale === 'ar' ? 'توصيل في نفس اليوم' : 'Same-Day Delivery'}
                 </span>
                 <span className="text-[10px] text-slate-500">
@@ -437,7 +437,7 @@ export default function AdminDeliverySlotsPage() {
             <button
               type="submit"
               disabled={savingSettings}
-              className="w-full py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {savingSettings ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               <span>{locale === 'ar' ? 'حفظ إعدادات الجدولة' : 'Save Schedule Settings'}</span>
@@ -450,7 +450,7 @@ export default function AdminDeliverySlotsPage() {
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-emerald-700" />
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900">
                 {locale === 'ar' ? 'قائمة فترات التوصيل' : 'Configured Delivery Windows'}
               </h3>
             </div>
@@ -471,7 +471,7 @@ export default function AdminDeliverySlotsPage() {
               </p>
               <button
                 onClick={openCreateModal}
-                className="text-xs font-extrabold text-[#05A764] hover:underline cursor-pointer"
+                className="text-xs font-bold text-[#05A764] hover:underline cursor-pointer"
               >
                 + {locale === 'ar' ? 'إضافة أول فترة' : 'Add First Slot'}
               </button>
@@ -482,23 +482,23 @@ export default function AdminDeliverySlotsPage() {
                 <div
                   key={s.id}
                   className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                    s.is_active
-                      ? 'bg-white border-slate-200/90 hover:border-slate-300 shadow-2xs'
-                      : 'bg-slate-50/80 border-slate-200 opacity-60'
-                  }`}
+ s.is_active
+ ? 'bg-white border-slate-200/90 hover:border-slate-300 shadow-2xs'
+ : 'bg-slate-50/80 border-slate-200 opacity-60'
+ }`}
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-sm text-slate-900 font-sans">
+                      <span className="font-bold text-sm text-slate-900">
                         {s.slot_label_en}
                       </span>
                       {s.slot_label_ar && s.slot_label_ar !== s.slot_label_en && (
-                        <span className="text-xs font-medium text-slate-400 font-sans">
+                        <span className="text-xs font-medium text-slate-400">
                           ({s.slot_label_ar})
                         </span>
                       )}
                       {s.is_express && (
-                        <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
                           <Zap className="w-2.5 h-2.5 fill-current text-amber-500" />
                           <span>Express</span>
                         </span>
@@ -526,11 +526,11 @@ export default function AdminDeliverySlotsPage() {
                     <button
                       type="button"
                       onClick={() => handleToggleActive(s)}
-                      className={`text-xs font-extrabold px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
-                        s.is_active
-                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100'
-                          : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'
-                      }`}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+ s.is_active
+ ? 'bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100'
+ : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'
+ }`}
                     >
                       {s.is_active ? <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> : <XCircle className="w-3.5 h-3.5" />}
                       <span>{s.is_active ? (locale === 'ar' ? 'مفعلة' : 'Active') : (locale === 'ar' ? 'معطلة' : 'Inactive')}</span>
@@ -570,7 +570,7 @@ export default function AdminDeliverySlotsPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-[#05A764]" />
-                <h3 className="text-lg font-extrabold text-slate-900">
+                <h3 className="text-lg font-bold text-slate-900">
                   {editingSlot
                     ? locale === 'ar'
                       ? 'تعديل فترة التوصيل'
@@ -713,7 +713,7 @@ export default function AdminDeliverySlotsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                   <span>{editingSlot ? (locale === 'ar' ? 'تحديث' : 'Update Slot') : (locale === 'ar' ? 'إنشاء' : 'Create Slot')}</span>

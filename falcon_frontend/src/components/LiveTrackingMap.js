@@ -142,7 +142,7 @@ export default function LiveTrackingMap({
             icon={customIcons.driverIcon || undefined}
           >
             <Popup>
-              <div className="p-1 text-slate-900 font-sans space-y-1">
+              <div className="p-1 text-slate-900 space-y-1">
                 <div className="flex items-center gap-1.5 font-bold text-cyan-700 text-sm">
                   <span>🚚 Driver Position</span>
                 </div>
@@ -163,7 +163,7 @@ export default function LiveTrackingMap({
             icon={customIcons.destIcon || undefined}
           >
             <Popup>
-              <div className="p-1 text-slate-900 font-sans space-y-1">
+              <div className="p-1 text-slate-900 space-y-1">
                 <div className="flex items-center gap-1.5 font-bold text-emerald-700 text-sm">
                   <span>📍 Customer Location</span>
                 </div>

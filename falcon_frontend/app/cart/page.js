@@ -120,7 +120,7 @@ export default function CartPage() {
 
   if (itemsToDisplay.length === 0) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <div className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center gap-3 sm:gap-4">
@@ -161,7 +161,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 pb-24" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 pb-24" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
 
       {/* Top Header Section */}
       <div className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs">
@@ -314,10 +314,10 @@ export default function CartPage() {
                                 }
                               }}
                               className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-                                item.quantity <= 1
-                                  ? 'hover:bg-rose-100 text-rose-600'
-                                  : 'hover:bg-slate-200 text-slate-700'
-                              }`}
+ item.quantity <= 1
+ ? 'hover:bg-rose-100 text-rose-600'
+ : 'hover:bg-slate-200 text-slate-700'
+ }`}
                               title={item.quantity <= 1 ? 'Remove' : 'Decrease'}
                             >
                               {item.quantity <= 1 ? (
@@ -327,7 +327,7 @@ export default function CartPage() {
                               )}
                             </button>
 
-                            <span className="w-9 text-center font-extrabold text-sm text-slate-900 select-none">
+                            <span className="w-9 text-center font-bold text-sm text-slate-900 select-none">
                               {item.quantity}
                             </span>
 
@@ -409,7 +409,7 @@ export default function CartPage() {
                         SAR {(subtotal + totalSavings).toFixed(2)}
                       </span>
                     )}
-                    <span className="font-extrabold text-slate-900">
+                    <span className="font-bold text-slate-900">
                       SAR {subtotal.toFixed(2)}
                     </span>
                   </div>
@@ -463,7 +463,7 @@ export default function CartPage() {
               {/* Checkout Button */}
               <Link
                 href={user && user.role === 'CUSTOMER' ? '/checkout' : '/login?redirect=/checkout'}
-                className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-base transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2.5 cursor-pointer text-center group"
+                className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-base transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2.5 cursor-pointer text-center group"
               >
                 <span>{locale === 'ar' ? 'المتابعة للشراء' : 'Proceed to Checkout'}</span>
                 <ArrowRight className="w-5 h-5 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />

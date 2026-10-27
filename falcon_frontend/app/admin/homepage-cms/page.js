@@ -384,7 +384,7 @@ export default function AdminHomepageCmsPage() {
   };
 
   return (
-    <div className="space-y-8 pb-16 font-sans">
+    <div className="space-y-8 pb-16">
       {/* 1. Header Banner & Publishing Bar */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -398,7 +398,7 @@ export default function AdminHomepageCmsPage() {
                   {locale === 'ar' ? 'إدارة الصفحة الرئيسية (CMS)' : 'Homepage CMS Management'}
                 </h1>
                 {hasUnpublished && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-800 border border-amber-300/80 flex items-center gap-1 animate-pulse">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300/80 flex items-center gap-1 animate-pulse">
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>{locale === 'ar' ? 'تعديلات غير منشورة' : 'Unpublished Changes'}</span>
                   </span>
@@ -430,9 +430,9 @@ export default function AdminHomepageCmsPage() {
           <button
             onClick={() => setActiveTab('layout')}
             className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${activeTab === 'layout'
-                ? 'bg-[#043927] text-white shadow-2xs'
-                : 'text-slate-600 hover:bg-slate-100'
-              }`}
+ ? 'bg-[#043927] text-white shadow-2xs'
+ : 'text-slate-600 hover:bg-slate-100'
+ }`}
           >
             <Layers className="w-4 h-4" />
             <span>{locale === 'ar' ? 'مخطط وترتيب الأقسام' : 'Layout & Sections Builder'}</span>
@@ -444,9 +444,9 @@ export default function AdminHomepageCmsPage() {
           <button
             onClick={() => setActiveTab('header_footer')}
             className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${activeTab === 'header_footer'
-                ? 'bg-[#043927] text-white shadow-2xs'
-                : 'text-slate-600 hover:bg-slate-100'
-              }`}
+ ? 'bg-[#043927] text-white shadow-2xs'
+ : 'text-slate-600 hover:bg-slate-100'
+ }`}
           >
             <Globe className="w-4 h-4" />
             <span>{locale === 'ar' ? 'إعدادات الهيدر والفوتر' : 'Header & Footer CMS'}</span>
@@ -469,7 +469,7 @@ export default function AdminHomepageCmsPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <div className="space-y-0.5">
-              <h2 className="text-base font-extrabold text-slate-900">
+              <h2 className="text-base font-bold text-slate-900">
                 {locale === 'ar' ? 'ترتيب وتخصيص أقسام الصفحة الرئيسية' : 'Active Storefront Section Pipeline'}
               </h2>
               <p className="text-xs text-slate-500">
@@ -501,7 +501,7 @@ export default function AdminHomepageCmsPage() {
                 <div
                   key={sec.id}
                   className={`bg-white rounded-2xl border transition-all duration-200 shadow-2xs hover:shadow-md p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 ${!isActiveInDraft ? 'opacity-65 bg-slate-50/80 border-slate-200' : 'border-slate-200/90'
-                    }`}
+ }`}
                 >
                   <div className="flex items-center gap-4">
                     {/* Order buttons */}
@@ -532,17 +532,17 @@ export default function AdminHomepageCmsPage() {
                     {/* Section Details */}
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-md border ${typeBadge.color}`}>
+                        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md border ${typeBadge.color}`}>
                           {typeBadge.label}
                         </span>
-                        <h3 className="text-base font-extrabold text-slate-900 font-sans">
+                        <h3 className="text-base font-bold text-slate-900">
                           {sec.title_en}
                         </h3>
                         <span className="text-xs text-slate-400 font-bold">/</span>
-                        <span className="text-sm font-bold text-slate-700 font-sans">{sec.title_ar}</span>
+                        <span className="text-sm font-bold text-slate-700">{sec.title_ar}</span>
 
                         {sec.has_unpublished_changes && (
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
                             Draft
                           </span>
                         )}
@@ -561,9 +561,9 @@ export default function AdminHomepageCmsPage() {
                     <button
                       onClick={() => handleToggleDraft(sec.id)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${isActiveInDraft
-                          ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                          : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                        }`}
+ ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+ : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+ }`}
                     >
                       {isActiveInDraft
                         ? locale === 'ar'
@@ -595,7 +595,7 @@ export default function AdminHomepageCmsPage() {
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-base font-extrabold text-slate-900">
+                <h3 className="text-base font-bold text-slate-900">
                   {locale === 'ar' ? 'شريط الإعلانات العلوي (Announcement Bar)' : 'Top Announcement Bar'}
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -641,7 +641,7 @@ export default function AdminHomepageCmsPage() {
                   value={announcementForm.text_ar}
                   onChange={(e) => setAnnouncementForm({ ...announcementForm, text_ar: e.target.value })}
                   placeholder="مثال: توصيل مجاني للطلبات فوق 150 ريال!"
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white text-right font-sans"
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white text-right"
                 />
               </div>
             </div>
@@ -665,7 +665,7 @@ export default function AdminHomepageCmsPage() {
           {/* Footer Configuration */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
             <div className="border-b border-slate-100 pb-4">
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900">
                 {locale === 'ar' ? 'إعدادات الفوتر ومعلومات التواصل' : 'Footer & Contact Information'}
               </h3>
               <p className="text-xs text-slate-500">
@@ -734,7 +734,7 @@ export default function AdminHomepageCmsPage() {
                   type="text"
                   value={footerForm.address_ar}
                   onChange={(e) => setFooterForm({ ...footerForm, address_ar: e.target.value })}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white text-right font-sans"
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white text-right"
                 />
               </div>
             </div>
@@ -812,10 +812,10 @@ export default function AdminHomepageCmsPage() {
         <div className="flex items-center gap-3">
           <div
             className={`w-10 h-10 rounded-2xl flex items-center justify-center border shrink-0 ${
-              hasUnpublished
-                ? 'bg-amber-50 text-amber-800 border-amber-200/70'
-                : 'bg-emerald-50 text-emerald-800 border-emerald-200/70'
-            }`}
+ hasUnpublished
+ ? 'bg-amber-50 text-amber-800 border-amber-200/70'
+ : 'bg-emerald-50 text-emerald-800 border-emerald-200/70'
+ }`}
           >
             {hasUnpublished ? (
               <Sparkles className="w-5 h-5 text-amber-600 animate-pulse" />
@@ -854,11 +854,11 @@ export default function AdminHomepageCmsPage() {
             type="button"
             onClick={handlePublishAll}
             disabled={publishing || !hasUnpublished}
-            className={`flex items-center gap-2 px-6 py-3 text-xs sm:text-sm font-extrabold rounded-xl shadow-lg transition-all cursor-pointer ${
-              hasUnpublished
-                ? 'bg-[#043927] hover:bg-[#03291c] text-white ring-2 ring-emerald-500/30 hover:scale-[1.02] active:scale-[0.98]'
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-            }`}
+            className={`flex items-center gap-2 px-6 py-3 text-xs sm:text-sm font-bold rounded-xl shadow-lg transition-all cursor-pointer ${
+ hasUnpublished
+ ? 'bg-[#043927] hover:bg-[#03291c] text-white ring-2 ring-emerald-500/30 hover:scale-[1.02] active:scale-[0.98]'
+ : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+ }`}
           >
             {publishing ? (
               <>
@@ -924,7 +924,7 @@ export default function AdminHomepageCmsPage() {
                     type="text"
                     value={sectionFormData.title_ar}
                     onChange={(e) => setSectionFormData({ ...sectionFormData, title_ar: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white text-right font-sans"
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white text-right"
                   />
                 </div>
               </div>
@@ -950,7 +950,7 @@ export default function AdminHomepageCmsPage() {
                     type="text"
                     value={sectionFormData.subtitle_ar}
                     onChange={(e) => setSectionFormData({ ...sectionFormData, subtitle_ar: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white text-right font-sans"
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white text-right"
                   />
                 </div>
               </div>
@@ -964,7 +964,7 @@ export default function AdminHomepageCmsPage() {
                         <ImageIcon className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-extrabold text-slate-900">
+                        <h4 className="text-sm font-bold text-slate-900">
                           {locale === 'ar' ? 'تخصيص البانر والنصوص والصورة' : 'Household Banner Content & Image Management'}
                         </h4>
                         <p className="text-[11px] text-slate-500 font-medium">
@@ -996,9 +996,9 @@ export default function AdminHomepageCmsPage() {
                             })
                           }
                           className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${sectionFormData.config?.banner_mode !== 'full_banner'
-                              ? 'bg-white text-[#043927] shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                            }`}
+ ? 'bg-white text-[#043927] shadow-xs'
+ : 'text-slate-600 hover:text-slate-900'
+ }`}
                         >
                           {locale === 'ar' ? 'تصميم ديناميكي (نص + صورة)' : 'Dynamic Layout'}
                         </button>
@@ -1011,9 +1011,9 @@ export default function AdminHomepageCmsPage() {
                             })
                           }
                           className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${sectionFormData.config?.banner_mode === 'full_banner'
-                              ? 'bg-white text-[#043927] shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                            }`}
+ ? 'bg-white text-[#043927] shadow-xs'
+ : 'text-slate-600 hover:text-slate-900'
+ }`}
                         >
                           {locale === 'ar' ? 'بانر كامل (صورة مدمجة)' : 'Full Banner Image'}
                         </button>
@@ -1023,7 +1023,7 @@ export default function AdminHomepageCmsPage() {
 
                   {/* 1. Image Upload & Selection Card */}
                   <div className="p-4 bg-white rounded-xl border border-slate-200/80 space-y-3">
-                    <label className="text-xs font-extrabold text-slate-800 flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
                       <span>
                         {sectionFormData.config?.banner_mode === 'full_banner'
                           ? (locale === 'ar' ? 'صورة البانر الكامل (عرض 1024 × 315)' : 'Full Master Banner Image (1024x315)')
@@ -1148,7 +1148,7 @@ export default function AdminHomepageCmsPage() {
                                 config: { ...sectionFormData.config, category_tag_ar: e.target.value },
                               })
                             }
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-right font-sans"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-right"
                           />
                         </div>
                       </div>
@@ -1180,7 +1180,7 @@ export default function AdminHomepageCmsPage() {
                                 config: { ...sectionFormData.config, headline_ar_1: e.target.value },
                               })
                             }
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-[#043927] text-right font-sans"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-[#043927] text-right"
                           />
                         </div>
                       </div>
@@ -1212,7 +1212,7 @@ export default function AdminHomepageCmsPage() {
                                 config: { ...sectionFormData.config, headline_ar_2: e.target.value },
                               })
                             }
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-[#C68A27] text-right font-sans"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-[#C68A27] text-right"
                           />
                         </div>
                       </div>
@@ -1244,7 +1244,7 @@ export default function AdminHomepageCmsPage() {
                                 config: { ...sectionFormData.config, desc_ar: e.target.value },
                               })
                             }
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs leading-relaxed text-right font-sans"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs leading-relaxed text-right"
                           />
                         </div>
                       </div>
@@ -1254,7 +1254,7 @@ export default function AdminHomepageCmsPage() {
                         <label className="text-xs font-bold text-slate-800 block">Trust Badges Labels</label>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           <div className="space-y-1">
-                            <span className="text-[10px] font-extrabold text-slate-500 uppercase">Badge 1 (Shield)</span>
+                            <span className="text-[10px] font-bold text-slate-500 uppercase">Badge 1 (Shield)</span>
                             <input
                               type="text"
                               value={sectionFormData.config?.badge_1_en || 'Trusted Brands'}
@@ -1277,12 +1277,12 @@ export default function AdminHomepageCmsPage() {
                                 })
                               }
                               placeholder="علامات موثوقة"
-                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-right font-sans"
+                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-right"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <span className="text-[10px] font-extrabold text-slate-500 uppercase">Badge 2 (Truck)</span>
+                            <span className="text-[10px] font-bold text-slate-500 uppercase">Badge 2 (Truck)</span>
                             <input
                               type="text"
                               value={sectionFormData.config?.badge_2_en || 'Fast & Reliable Delivery'}
@@ -1305,12 +1305,12 @@ export default function AdminHomepageCmsPage() {
                                 })
                               }
                               placeholder="توصيل سريع وموثوق"
-                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-right font-sans"
+                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-right"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <span className="text-[10px] font-extrabold text-slate-500 uppercase">Badge 3 (Leaf)</span>
+                            <span className="text-[10px] font-bold text-slate-500 uppercase">Badge 3 (Leaf)</span>
                             <input
                               type="text"
                               value={sectionFormData.config?.badge_3_en || 'Everyday Value'}
@@ -1333,7 +1333,7 @@ export default function AdminHomepageCmsPage() {
                                 })
                               }
                               placeholder="قيمة يومية"
-                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-right font-sans"
+                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-right"
                             />
                           </div>
                         </div>
@@ -1368,7 +1368,7 @@ export default function AdminHomepageCmsPage() {
                             config: { ...sectionFormData.config, btn_text_ar: e.target.value },
                           })
                         }
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-right font-sans"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-right"
                       />
                     </div>
                     <div>
@@ -1462,7 +1462,7 @@ export default function AdminHomepageCmsPage() {
                         <span className="text-xs text-slate-400">/</span>
                         <span className="text-xs font-bold text-slate-600">{sec.title_ar}</span>
                       </div>
-                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
                         {sec.section_type}
                       </span>
                     </div>

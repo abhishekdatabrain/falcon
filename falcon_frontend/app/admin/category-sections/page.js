@@ -397,7 +397,7 @@ export default function AdminCategorySectionsPage() {
               <FolderTree className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight font-sans">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
                 {locale === 'ar' ? 'أقسام الفئات بالصفحة الرئيسية' : 'Homepage Category Showcase'}
               </h1>
               <p className="text-sm font-medium text-slate-500">
@@ -531,27 +531,27 @@ export default function AdminCategorySectionsPage() {
 
                   <div>
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="text-xs font-extrabold px-2 py-0.5 rounded-md bg-slate-200 text-slate-700">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-200 text-slate-700">
                         #{sec.display_order || secIdx + 1}
                       </span>
-                      <h2 className="text-xl font-black text-slate-900 tracking-tight font-sans">
+                      <h2 className="text-xl font-black text-slate-900 tracking-tight">
                         {sec.title_en}
                       </h2>
-                      <span className="text-sm font-bold text-slate-400 font-sans">/</span>
-                      <span className="text-lg font-bold text-slate-700 font-sans">{sec.title_ar}</span>
+                      <span className="text-sm font-bold text-slate-400">/</span>
+                      <span className="text-lg font-bold text-slate-700">{sec.title_ar}</span>
 
                       {/* Status Badge */}
                       <span
                         className={`text-xs font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                          sec.is_active
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-slate-100 text-slate-500'
-                        }`}
+ sec.is_active
+ ? 'bg-emerald-100 text-emerald-800'
+ : 'bg-slate-100 text-slate-500'
+ }`}
                       >
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            sec.is_active ? 'bg-emerald-600' : 'bg-slate-400'
-                          }`}
+ sec.is_active ? 'bg-emerald-600' : 'bg-slate-400'
+ }`}
                         />
                         {sec.is_active
                           ? locale === 'ar'
@@ -589,10 +589,10 @@ export default function AdminCategorySectionsPage() {
                   <button
                     onClick={() => handleToggleSectionStatus(sec.id)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      sec.is_active
-                        ? 'bg-slate-200/80 hover:bg-slate-300 text-slate-700'
-                        : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800'
-                    }`}
+ sec.is_active
+ ? 'bg-slate-200/80 hover:bg-slate-300 text-slate-700'
+ : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800'
+ }`}
                   >
                     {sec.is_active
                       ? locale === 'ar'
@@ -705,7 +705,7 @@ export default function AdminCategorySectionsPage() {
                   <FolderTree className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 font-sans">
+                  <h3 className="text-lg font-black text-slate-900">
                     {editingSection
                       ? locale === 'ar'
                         ? 'تعديل قسم الفئات'
@@ -736,10 +736,10 @@ export default function AdminCategorySectionsPage() {
                 type="button"
                 onClick={() => setActiveModalTab('settings')}
                 className={`py-3 text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-                  activeModalTab === 'settings'
-                    ? 'border-[#043927] text-[#043927]'
-                    : 'border-transparent text-slate-500 hover:text-slate-900'
-                }`}
+ activeModalTab === 'settings'
+ ? 'border-[#043927] text-[#043927]'
+ : 'border-transparent text-slate-500 hover:text-slate-900'
+ }`}
               >
                 <Sliders className="w-4 h-4" />
                 <span>{locale === 'ar' ? 'إعدادات القسم' : 'Section Settings'}</span>
@@ -749,10 +749,10 @@ export default function AdminCategorySectionsPage() {
                 type="button"
                 onClick={() => setActiveModalTab('items')}
                 className={`py-3 text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-                  activeModalTab === 'items'
-                    ? 'border-[#043927] text-[#043927]'
-                    : 'border-transparent text-slate-500 hover:text-slate-900'
-                }`}
+ activeModalTab === 'items'
+ ? 'border-[#043927] text-[#043927]'
+ : 'border-transparent text-slate-500 hover:text-slate-900'
+ }`}
               >
                 <Layers className="w-4 h-4" />
                 <span>
@@ -764,10 +764,10 @@ export default function AdminCategorySectionsPage() {
                 type="button"
                 onClick={() => setActiveModalTab('preview')}
                 className={`py-3 text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-                  activeModalTab === 'preview'
-                    ? 'border-[#043927] text-[#043927]'
-                    : 'border-transparent text-slate-500 hover:text-slate-900'
-                }`}
+ activeModalTab === 'preview'
+ ? 'border-[#043927] text-[#043927]'
+ : 'border-transparent text-slate-500 hover:text-slate-900'
+ }`}
               >
                 <Eye className="w-4 h-4" />
                 <span>{locale === 'ar' ? 'معاينة حية' : 'Live Preview'}</span>
@@ -805,7 +805,7 @@ export default function AdminCategorySectionsPage() {
                         placeholder="مثال: المستلزمات المنزلية"
                         value={formData.title_ar}
                         onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-emerald-600 transition-all text-right font-sans"
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-emerald-600 transition-all text-right"
                       />
                     </div>
                   </div>
@@ -824,10 +824,10 @@ export default function AdminCategorySectionsPage() {
                           type="button"
                           onClick={() => setFormData({ ...formData, bg_color: col.hex })}
                           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                            formData.bg_color === col.hex
-                              ? 'border-emerald-600 ring-2 ring-emerald-600/20 bg-emerald-50/50'
-                              : 'border-slate-200 bg-white hover:bg-slate-50'
-                          }`}
+ formData.bg_color === col.hex
+ ? 'border-emerald-600 ring-2 ring-emerald-600/20 bg-emerald-50/50'
+ : 'border-slate-200 bg-white hover:bg-slate-50'
+ }`}
                         >
                           <span
                             className="w-4 h-4 rounded-full border border-slate-300 shrink-0"
@@ -906,7 +906,7 @@ export default function AdminCategorySectionsPage() {
 
                   {/* "View More" Configuration */}
                   <div className="space-y-4 pt-4 border-t border-slate-100">
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                       {locale === 'ar' ? 'إعدادات رابط عرض المزيد' : '"View More" Link Configuration'}
                     </h4>
 
@@ -944,7 +944,7 @@ export default function AdminCategorySectionsPage() {
                           type="text"
                           value={formData.view_more_text_ar}
                           onChange={(e) => setFormData({ ...formData, view_more_text_ar: e.target.value })}
-                          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white text-right font-sans"
+                          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white text-right"
                         />
                       </div>
                     </div>
@@ -1010,7 +1010,7 @@ export default function AdminCategorySectionsPage() {
                                 {item.title_en || 'Untitled'}
                               </span>
                               <span className="text-xs text-slate-400">/</span>
-                              <span className="text-xs font-bold text-slate-600 font-sans">
+                              <span className="text-xs font-bold text-slate-600">
                                 {item.title_ar}
                               </span>
                             </div>
@@ -1074,10 +1074,10 @@ export default function AdminCategorySectionsPage() {
                                   type="button"
                                   onClick={() => handleUpdateItemInForm(idx, 'image_url', preset.url)}
                                   className={`px-2 py-0.5 rounded text-[10px] font-semibold border transition-all cursor-pointer ${
-                                    item.image_url === preset.url
-                                      ? 'bg-emerald-100 border-emerald-500 text-emerald-800'
-                                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                                  }`}
+ item.image_url === preset.url
+ ? 'bg-emerald-100 border-emerald-500 text-emerald-800'
+ : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+ }`}
                                 >
                                   {preset.label.split('(')[0]}
                                 </button>
@@ -1131,7 +1131,7 @@ export default function AdminCategorySectionsPage() {
                                 placeholder="العنوان (AR)"
                                 value={item.title_ar}
                                 onChange={(e) => handleUpdateItemInForm(idx, 'title_ar', e.target.value)}
-                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-emerald-600 text-right font-sans"
+                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-emerald-600 text-right"
                               />
                             </div>
 
@@ -1170,7 +1170,7 @@ export default function AdminCategorySectionsPage() {
                     className="rounded-[28px] p-6 sm:p-10 space-y-6 border border-slate-200/50 shadow-inner"
                   >
                     <div className="flex items-center justify-between">
-                      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+                      <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                         {locale === 'ar' ? (formData.title_ar || formData.title_en) : (formData.title_en || 'Section Title')}
                       </h2>
                     </div>

@@ -240,12 +240,12 @@ export default function AdminPromoBannersPage() {
   };
 
   return (
-    <div className="space-y-6 font-sans">
+    <div className="space-y-6">
       {/* 1. Header & Quick Navigation Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight font-heading">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
               {locale === 'ar' ? 'إدارة البطاقات الترويجية (٣ بطاقات)' : 'Promotional Cards Banner Management'}
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
@@ -287,7 +287,7 @@ export default function AdminPromoBannersPage() {
         >
           {locale === 'ar' ? 'سلايدر الهيرو الرئيسي' : 'Hero Carousel Banners'}
         </Link>
-        <span className="flex-1 py-2 text-center text-xs font-extrabold bg-white text-slate-900 rounded-xl shadow-xs border border-slate-200/80">
+        <span className="flex-1 py-2 text-center text-xs font-bold bg-white text-slate-900 rounded-xl shadow-xs border border-slate-200/80">
           {locale === 'ar' ? 'البطاقات الترويجية الثلاثية' : 'Promotional Cards (3 Grid)'}
         </span>
       </div>
@@ -323,7 +323,7 @@ export default function AdminPromoBannersPage() {
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">
+            <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
               {locale === 'ar' ? 'معاينة البطاقات الحالية' : 'Current Promotional Cards'} ({banners.length})
             </h2>
             <span className="text-xs text-slate-400">
@@ -354,10 +354,10 @@ export default function AdminPromoBannersPage() {
                       <button
                         onClick={() => handleToggleActive(card)}
                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold cursor-pointer transition-all ${
-                          card.is_active
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            : 'bg-slate-200 text-slate-600 border border-slate-300'
-                        }`}
+ card.is_active
+ ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+ : 'bg-slate-200 text-slate-600 border border-slate-300'
+ }`}
                       >
                         {card.is_active ? (
                           <>
@@ -378,12 +378,12 @@ export default function AdminPromoBannersPage() {
                   <div className="p-4 flex-1">
                     <div
                       style={bgStyle}
-                      className="rounded-[24px] relative overflow-hidden flex justify-between min-h-[190px] shadow-xs group font-sans"
+                      className="rounded-[24px] relative overflow-hidden flex justify-between min-h-[190px] shadow-xs group"
                     >
                       {/* Left Text Content */}
                       <div className="p-5 max-w-[62%] flex flex-col justify-between z-10">
                         <div className="space-y-1.5">
-                          <h3 className="font-extrabold text-slate-900 text-base sm:text-lg leading-snug tracking-tight font-sans">
+                          <h3 className="font-bold text-slate-900 text-base sm:text-lg leading-snug tracking-tight">
                             {locale === 'ar' ? card.title_ar : card.title_en}
                           </h3>
                           <p className="text-slate-800/80 font-medium text-[11px] leading-relaxed">
@@ -609,10 +609,10 @@ export default function AdminPromoBannersPage() {
                       title={preset.name}
                       style={{ backgroundColor: preset.hex }}
                       className={`w-7 h-7 rounded-xl border transition-all cursor-pointer ${
-                        formData.bg_color?.toLowerCase() === preset.hex.toLowerCase()
-                          ? 'ring-2 ring-slate-900 scale-110 shadow-sm border-white'
-                          : 'border-slate-300 hover:scale-105'
-                      }`}
+ formData.bg_color?.toLowerCase() === preset.hex.toLowerCase()
+ ? 'ring-2 ring-slate-900 scale-110 shadow-sm border-white'
+ : 'border-slate-300 hover:scale-105'
+ }`}
                     />
                   ))}
 

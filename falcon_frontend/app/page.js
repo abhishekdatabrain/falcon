@@ -355,9 +355,27 @@ export default function HomePage() {
   const categoryScrollRef = useRef(null);
   const [canScrollCatLeft, setCanScrollCatLeft] = useState(false);
   const [canScrollCatRight, setCanScrollCatRight] = useState(true);
-  const bestDealsScrollRef = useRef(null);
-  const [canScrollDealsLeft, setCanScrollDealsLeft] = useState(false);
-  const [canScrollDealsRight, setCanScrollDealsRight] = useState(true);
+  const [dealSlideIndex, setDealSlideIndex] = useState(0);
+  const [dealItemsPerSlide, setDealItemsPerSlide] = useState(10);
+  const [dealTouchStart, setDealTouchStart] = useState(null);
+  const [dealTouchEnd, setDealTouchEnd] = useState(null);
+
+  useEffect(() => {
+    const handleDealResize = () => {
+      if (typeof window === 'undefined') return;
+      const width = window.innerWidth;
+      if (width < 640) {
+        setDealItemsPerSlide(4);
+      } else if (width < 1024) {
+        setDealItemsPerSlide(6);
+      } else {
+        setDealItemsPerSlide(10);
+      }
+    };
+    handleDealResize();
+    window.addEventListener('resize', handleDealResize);
+    return () => window.removeEventListener('resize', handleDealResize);
+  }, []);
   const popularScrollRef = useRef(null);
   const promoScrollRef = useRef(null);
   const [canScrollPopularLeft, setCanScrollPopularLeft] = useState(false);
@@ -402,37 +420,6 @@ export default function HomePage() {
     }
   };
 
-  const checkBestDealsScroll = () => {
-    if (bestDealsScrollRef.current) {
-      const container = bestDealsScrollRef.current;
-      const { scrollLeft, scrollWidth, clientWidth } = container;
-      const maxScroll = Math.max(0, scrollWidth - clientWidth);
-      if (maxScroll <= 5) {
-        setCanScrollDealsLeft(false);
-        setCanScrollDealsRight(false);
-        return;
-      }
-      const current = Math.abs(scrollLeft);
-      setCanScrollDealsLeft(current > 5);
-      setCanScrollDealsRight(current < maxScroll - 5);
-    }
-  };
-
-  const scrollBestDeals = (direction) => {
-    if (bestDealsScrollRef.current) {
-      const container = bestDealsScrollRef.current;
-      const firstCard = container.querySelector('[data-deal-card]');
-      const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : (container.clientWidth / 5);
-      const gap = 16;
-      const step = cardWidth + gap;
-      const isRtl = locale === 'ar';
-      let offset = direction === 'next' ? step : -step;
-      if (isRtl) offset = -offset;
-      container.scrollBy({ left: offset, behavior: 'smooth' });
-      setTimeout(checkBestDealsScroll, 350);
-    }
-  };
-
   const checkPopularScroll = () => {
     if (popularScrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = popularScrollRef.current;
@@ -458,16 +445,6 @@ export default function HomePage() {
   useEffect(() => {
     checkCategoryScroll();
   }, [categories, locale]);
-
-  useEffect(() => {
-    checkBestDealsScroll();
-    const timer = setTimeout(checkBestDealsScroll, 300);
-    window.addEventListener('resize', checkBestDealsScroll);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', checkBestDealsScroll);
-    };
-  }, [bestDealsProducts, products, locale]);
 
   useEffect(() => {
     checkPopularScroll();
@@ -523,8 +500,8 @@ export default function HomePage() {
       try {
         const [catRes, prodRes, dealsRes, promoRes, sectionsRes, cmsRes] = await Promise.all([
           fetchApi('/categories?type=parent'),
-          fetchApi('/products?limit=30'),
-          fetchApi('/products?best_deals_or_store=true&limit=50'),
+          fetchApi('/products?limit=40'),
+          fetchApi('/products?best_deals_or_store=true&limit=40'),
           fetchApi('/promo-banners').catch(() => ({ success: false })),
           fetchApi('/category-sections/active').catch(() => ({ success: false })),
           fetchApi('/homepage-cms/public').catch(() => ({ success: false })),
@@ -616,7 +593,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="space-y-16 pb-16 font-sans bg-[#fbfcfb]">
+    <div className="space-y-16 pb-16 bg-[#fbfcfb]">
 
       {/* 1. Hero Section (Dynamic Multi-Slide Carousel & Slider with Auto-Play & Navigation) */}
       {(() => {
@@ -666,7 +643,7 @@ export default function HomePage() {
             style={{ backgroundColor: heroBg }}
             onMouseEnter={() => setHeroAutoplay(false)}
             onMouseLeave={() => setHeroAutoplay(true)}
-            className="relative overflow-hidden font-sans border-amber-100/60 lg:h-[calc(118vh-127px)] lg:min-h-[460px] lg:max-h-[620px] flex flex-col justify-between pt-2 sm:pt-4 pb-0 transition-colors duration-700 select-none group/hero"
+            className="relative overflow-hidden border-amber-100/60 lg:h-[calc(118vh-127px)] lg:min-h-[460px] lg:max-h-[620px] flex flex-col justify-between pt-2 sm:pt-4 pb-0 transition-colors duration-700 select-none group/hero"
           >
             {/* Previous Slide Button */}
             {slides.length > 1 && (
@@ -732,13 +709,13 @@ export default function HomePage() {
 
                   {/* Trust Badges Row */}
                   {activeHero.show_badges !== false && (
-                    <div className="pt-2.5 sm:pt-3 border-t border-amber-200/50 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-700 font-sans">
+                    <div className="pt-2.5 sm:pt-3 border-t border-amber-200/50 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-700">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
                           <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </div>
                         <div className="flex flex-col leading-tight">
-                          <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">
+                          <span className="font-bold text-slate-900 text-[11px] sm:text-xs">
                             {locale === 'ar' ? (activeHero.badge_1_title_ar || 'سريع وموثوق') : (activeHero.badge_1_title_en || 'Fast & Reliable')}
                           </span>
                           <span className="text-[10px] text-slate-500 font-medium">
@@ -752,7 +729,7 @@ export default function HomePage() {
                           <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </div>
                         <div className="flex flex-col leading-tight">
-                          <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">
+                          <span className="font-bold text-slate-900 text-[11px] sm:text-xs">
                             {locale === 'ar' ? (activeHero.badge_2_title_ar || 'أسعار رائعة') : (activeHero.badge_2_title_en || 'Great Prices')}
                           </span>
                           <span className="text-[10px] text-slate-500 font-medium">
@@ -766,7 +743,7 @@ export default function HomePage() {
                           <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </div>
                         <div className="flex flex-col leading-tight">
-                          <span className="font-extrabold text-slate-900 text-[11px] sm:text-xs">
+                          <span className="font-bold text-slate-900 text-[11px] sm:text-xs">
                             {locale === 'ar' ? (activeHero.badge_3_title_ar || 'آمن ومحمي') : (activeHero.badge_3_title_en || 'Secure')}
                           </span>
                           <span className="text-[10px] text-slate-500 font-medium">
@@ -812,9 +789,9 @@ export default function HomePage() {
                     onClick={() => setCurrentHeroSlide(idx)}
                     aria-label={`Slide ${idx + 1}`}
                     className={`transition-all duration-300 rounded-full cursor-pointer h-2.5 ${safeIndex === idx
-                        ? 'w-7 sm:w-8 bg-[#043927] shadow-xs'
-                        : 'w-2.5 bg-slate-300/80 hover:bg-slate-400'
-                      }`}
+ ? 'w-7 sm:w-8 bg-[#043927] shadow-xs'
+ : 'w-2.5 bg-slate-300/80 hover:bg-slate-400'
+ }`}
                   />
                 ))}
               </div>
@@ -835,7 +812,7 @@ export default function HomePage() {
         <section className="space-y-5 pt-2 select-none">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                 {locale === 'ar' ? 'استكشف تصنيفاتنا' : 'Explore Our Categories'}
               </h2>
 
@@ -922,7 +899,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="w-full pt-2 h-[42px] sm:h-[46px] flex items-start justify-center px-0.5">
-                      <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm md:text-base text-center group-hover/card:text-[#043927] transition-colors leading-snug font-sans line-clamp-2">
+                      <h3 className="font-bold text-slate-800 text-xs sm:text-sm md:text-base text-center group-hover/card:text-[#043927] transition-colors leading-snug line-clamp-2">
                         {locale === 'ar' ? titleAr : titleEn}
                       </h3>
                     </div>
@@ -936,7 +913,7 @@ export default function HomePage() {
         <section className="space-y-5 pt-2 select-none">
           {(() => {
             // Product Filtering Logic:
-            // Filter products by is_best_deal = true, active, non-deleted, and avoid duplicates
+            // Fetch up to 40 products and prioritize is_best_deal / show_on_store
             const allCandidates = [
               ...(Array.isArray(bestDealsProducts) ? bestDealsProducts : []),
               ...(Array.isArray(products) ? products : []),
@@ -963,71 +940,131 @@ export default function HomePage() {
               }
             }
 
-            if (allDeals.length === 0) return null;
+            // If fewer than 40 flagged deals, backfill with remaining active products up to 40
+            if (allDeals.length < 40) {
+              for (const prod of allCandidates) {
+                if (allDeals.length >= 40) break;
+                if (!prod) continue;
+                const isActive = prod.is_active !== false && String(prod.is_active) !== 'false';
+                const notDeleted = !prod.deleted_at && !prod.deletedAt;
+                if (!isActive || !notDeleted) continue;
 
-            // In the slider: all matching products are rendered so user sees first ones and slides through the rest
-            const displayDeals = allDeals;
-            const hasMoreThan10 = allDeals.length > 10 || bestDealsTotal > 10;
+                const idKey = String(prod.id || prod._id || prod.sku || prod.name_en || '');
+                if (idKey && !seenIds.has(idKey)) {
+                  seenIds.add(idKey);
+                  allDeals.push(prod);
+                }
+              }
+            }
+
+            const dealsToDisplay = allDeals.slice(0, 40);
+            if (dealsToDisplay.length === 0) return null;
+
+            // Responsive slide chunking:
+            // Desktop: 10 products per slide (5 cols x 2 rows)
+            // Tablet: 6 products per slide (3 cols x 2 rows)
+            // Mobile: 4 products per slide (2 cols x 2 rows)
+            const totalSlides = Math.max(1, Math.ceil(dealsToDisplay.length / dealItemsPerSlide));
+            const safeSlideIndex = Math.min(dealSlideIndex, totalSlides - 1);
+
+            const dealSlides = [];
+            for (let i = 0; i < dealsToDisplay.length; i += dealItemsPerSlide) {
+              dealSlides.push(dealsToDisplay.slice(i, i + dealItemsPerSlide));
+            }
+
+            const isPrevDisabled = safeSlideIndex === 0;
+            const isNextDisabled = safeSlideIndex >= totalSlides - 1;
+
+            const handlePrev = () => {
+              setDealSlideIndex((prev) => Math.max(0, prev - 1));
+            };
+
+            const handleNext = () => {
+              setDealSlideIndex((prev) => Math.min(totalSlides - 1, prev + 1));
+            };
+
+            const handleTouchStart = (e) => {
+              setDealTouchStart(e.targetTouches[0].clientX);
+              setDealTouchEnd(null);
+            };
+
+            const handleTouchMove = (e) => {
+              setDealTouchEnd(e.targetTouches[0].clientX);
+            };
+
+            const handleTouchEnd = () => {
+              if (!dealTouchStart || !dealTouchEnd) return;
+              const distance = dealTouchStart - dealTouchEnd;
+              const isRtl = locale === 'ar';
+              if (distance > 45) {
+                if (isRtl) handlePrev(); else handleNext();
+              } else if (distance < -45) {
+                if (isRtl) handleNext(); else handlePrev();
+              }
+            };
 
             return (
               <>
                 {/* Best Deals Heading & Navigation Arrows */}
                 <div className="flex items-center justify-between gap-3 mb-1">
                   <div className="flex items-center gap-3 min-w-0">
-                    <h2 className="text-2xl sm:text-[32px] font-extrabold text-slate-900 tracking-tight font-sans truncate">
+                    <h2 className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight truncate">
                       {locale === 'ar' ? 'أفضل عروض اليوم' : 'Best Deals'}
                     </h2>
-
-                    {/* {hasMoreThan10 && (
-                      <Link
-                        href="/products?is_best_deal=true"
-                        className="text-xs sm:text-sm font-bold text-[#006E2D] hover:text-[#008938] hover:underline flex items-center gap-1 transition-colors shrink-0"
-                      >
-                        <span>{locale === 'ar' ? 'عرض الكل' : 'View All'}</span>
-                        <ChevronRight className="w-4 h-4 rtl:rotate-180" />
-                      </Link>
-                    )} */}
                   </div>
 
                   {/* Left & Right Navigation Arrows beside heading */}
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
-                      onClick={() => scrollBestDeals('prev')}
-                      disabled={!canScrollDealsLeft}
+                      onClick={handlePrev}
+                      disabled={isPrevDisabled}
                       aria-label={locale === 'ar' ? 'السابق' : 'Previous'}
                       className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
-                        canScrollDealsLeft
-                          ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
-                          : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-40'
-                      }`}
+ !isPrevDisabled
+ ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
+ : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-40'
+ }`}
                     >
                       <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => scrollBestDeals('next')}
-                      disabled={!canScrollDealsRight}
+                      onClick={handleNext}
+                      disabled={isNextDisabled}
                       aria-label={locale === 'ar' ? 'التالي' : 'Next'}
                       className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
-                        canScrollDealsRight
-                          ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
-                          : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-40'
-                      }`}
+ !isNextDisabled
+ ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
+ : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-40'
+ }`}
                     >
                       <ChevronRight className="w-5 h-5 rtl:rotate-180" />
                     </button>
                   </div>
                 </div>
 
-                {/* Horizontal Product Carousel Slider */}
+                {/* 2-Row Horizontal Sliding Groups Carousel */}
                 <div
-                  ref={bestDealsScrollRef}
-                  onScroll={checkBestDealsScroll}
-                  className="flex items-stretch gap-3.5 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden w-full max-w-full"
-                  style={{ WebkitOverflowScrolling: 'touch' }}
+                  className="w-full overflow-hidden"
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
                 >
-                  {displayDeals.map((prod, idx) => {
+                  <div
+                    className="flex transition-transform duration-500 ease-in-out w-full"
+                    style={{
+                      transform: locale === 'ar'
+                        ? `translateX(${safeSlideIndex * 100}%)`
+                        : `translateX(-${safeSlideIndex * 100}%)`,
+                    }}
+                  >
+                    {dealSlides.map((slideGroup, slideIdx) => (
+                      <div
+                        key={`deal-group-${slideIdx}`}
+                        className="w-full shrink-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 pb-2 pt-1 px-1"
+                      >
+                        {slideGroup.map((prod, idx) => {
                     const titleEn = prod.name_en || prod.title_en;
                     const titleAr = prod.name_ar || prod.title_ar || titleEn;
                     const title = locale === 'ar' ? titleAr : titleEn;
@@ -1098,20 +1135,20 @@ export default function HomePage() {
 
                     return (
                       <Link
-                        key={prod.id ? `deal-${prod.id}` : `deal-${idx}`}
+                        key={prod.id ? `deal-${prod.id}` : `deal-${slideIdx}-${idx}`}
                         href={prod.id ? `/products/${prod.id}` : '/products'}
                         data-deal-card="true"
-                        className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-2.5 sm:p-3 flex flex-col justify-between relative font-sans cursor-pointer shrink-0 snap-start w-[calc((100%-14px)/1.6)] min-w-[calc((100%-14px)/1.6)] max-w-[calc((100%-14px)/1.6)] min-[460px]:w-[calc((100%-14px)/2)] min-[460px]:min-w-[calc((100%-14px)/2)] min-[460px]:max-w-[calc((100%-14px)/2)] sm:w-[calc((100%-32px)/3)] sm:min-w-[calc((100%-32px)/3)] sm:max-w-[calc((100%-32px)/3)] lg:w-[calc((100%-64px)/5)] lg:min-w-[calc((100%-64px)/5)] lg:max-w-[calc((100%-64px)/5)] select-none"
+                        className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-2.5 sm:p-3 flex flex-col justify-between relative cursor-pointer w-full min-w-0 max-w-full select-none"
                       >
                         {/* Top Badges & Wishlist */}
                         <div className="flex items-center justify-between z-10 mb-0.5 h-5">
                           {isOutOfStock ? (
-                            <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                            <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
                               <Ban className="w-2.5 h-2.5 text-white" />
                               <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
                             </span>
                           ) : prod.is_best_seller === true ? (
-                            <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                            <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
                               <Star className="w-2.5 h-2.5 fill-current text-white" />
                               <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>
                             </span>
@@ -1173,7 +1210,7 @@ export default function HomePage() {
                             </div>
 
                             {/* Product Title (Consistent 2-line height) */}
-                            <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-tight font-sans group-hover:text-[#043927] transition-colors mb-0.5 min-h-[30px] sm:min-h-[34px]">
+                            <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-tight group-hover:text-[#043927] transition-colors mb-0.5 min-h-[30px] sm:min-h-[34px]">
                               {title}
                             </h3>
 
@@ -1203,7 +1240,7 @@ export default function HomePage() {
                           {/* Price & Add to Cart / Quantity Action Row */}
                           <div className="pt-1.5 border-t border-slate-100 flex flex-col gap-1.5 mt-auto">
                             <div className="flex items-baseline gap-1.5 whitespace-nowrap min-h-[18px]">
-                              <span className="text-sm sm:text-[15px] font-black text-slate-900 font-sans whitespace-nowrap leading-tight">
+                              <span className="text-sm sm:text-[15px] font-black text-slate-900 whitespace-nowrap leading-tight">
                                 <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
                                 {finalPrice.toFixed(2)}
                               </span>
@@ -1277,7 +1314,7 @@ export default function HomePage() {
                                       <Minus className="w-3 h-3 stroke-[2.5]" />
                                     </button>
 
-                                    <span className="font-extrabold text-xs text-[#043927] px-1 select-none">
+                                    <span className="font-bold text-xs text-[#043927] px-1 select-none">
                                       {cartItem.quantity}
                                     </span>
 
@@ -1323,11 +1360,14 @@ export default function HomePage() {
                           </div>
                         </div>
                       </Link>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
-              </>
-            );
+              </div>
+            </>
+          );
           })()}
         </section>
 
@@ -1359,11 +1399,11 @@ export default function HomePage() {
                       <div
                         key={card.id}
                         style={bgStyle}
-                        className={`${bgClass} rounded-[28px] relative overflow-hidden flex justify-between min-h-[200px] sm:min-h-[220px] shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group font-sans`}
+                        className={`${bgClass} rounded-[28px] relative overflow-hidden flex justify-between min-h-[200px] sm:min-h-[220px] shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group `}
                       >
                         <div className="p-4 sm:p-7 max-w-[62%] flex flex-col justify-between z-10">
                           <div className="space-y-2">
-                            <h3 className="font-extrabold text-slate-900 text-xl sm:text-2xl leading-snug tracking-tight font-sans">{cardTitle}</h3>
+                            <h3 className="font-bold text-slate-900 text-xl sm:text-2xl leading-snug tracking-tight">{cardTitle}</h3>
                             <p className="text-slate-800/80 font-medium text-xs sm:text-sm leading-relaxed">{cardDesc}</p>
                           </div>
                           <div className="pt-4">
@@ -1421,11 +1461,11 @@ export default function HomePage() {
                       <div
                         key={card.id}
                         style={{ ...bgStyle, width: 'calc(33.333% - 14px)', minWidth: '260px', flexShrink: 0 }}
-                        className={`${bgClass} rounded-[28px] relative overflow-hidden flex justify-between min-h-[200px] sm:min-h-[220px] shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group font-sans`}
+                        className={`${bgClass} rounded-[28px] relative overflow-hidden flex justify-between min-h-[200px] sm:min-h-[220px] shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group `}
                       >
                         <div className="p-6 sm:p-7 max-w-[62%] flex flex-col justify-between z-10">
                           <div className="space-y-2">
-                            <h3 className="font-extrabold text-slate-900 text-xl sm:text-2xl leading-snug tracking-tight font-sans">{cardTitle}</h3>
+                            <h3 className="font-bold text-slate-900 text-xl sm:text-2xl leading-snug tracking-tight">{cardTitle}</h3>
                             <p className="text-slate-800/80 font-medium text-xs sm:text-sm leading-relaxed">{cardDesc}</p>
                           </div>
                           <div className="pt-4">
@@ -1525,13 +1565,13 @@ export default function HomePage() {
           return (
             <section
               style={{ backgroundColor: cfg.bg_color || '#FAF7F0' }}
-              className="rounded-[15px] sm:rounded-[32px] overflow-hidden border border-amber-200/50 shadow-xs hover:shadow-md transition-all duration-300 relative group font-sans bg-gradient-to-r from-[#FAF7F0] via-[#F9F5EC] to-[#F5EFE3]"
+              className="rounded-[15px] sm:rounded-[32px] overflow-hidden border border-amber-200/50 shadow-xs hover:shadow-md transition-all duration-300 relative group bg-gradient-to-r from-[#FAF7F0] via-[#F9F5EC] to-[#F5EFE3]"
             >
               <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
                 {/* Left Dynamic Text Column */}
                 <div className="lg:col-span-6 p-2 sm:p-4 lg:p-6 space-y-4 text-left rtl:text-right z-10">
                   {/* Category Tag */}
-                  <span className="text-[#043927] font-black text-xs sm:text-[13px] uppercase tracking-[0.22em] block font-sans">
+                  <span className="text-[#043927] font-black text-xs sm:text-[13px] uppercase tracking-[0.22em] block">
                     {tagText}
                   </span>
 
@@ -1565,7 +1605,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Trust Badges */}
-                  <div className="pt-5 border-t border-amber-200/60 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-800 font-extrabold">
+                  <div className="pt-5 border-t border-amber-200/60 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-800 font-bold">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-md text-[#043927] flex items-center justify-center shrink-0">
                         <ShieldCheck className="w-5 h-5 text-[#043927]" />
@@ -1611,7 +1651,7 @@ export default function HomePage() {
         {/* 7. Popular Picks Product 2-Row Slider Section */}
         <section className="space-y-5 pt-2 select-none">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl sm:text-[32px] font-extrabold text-slate-900 tracking-tight font-sans">
+            <h2 className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight">
               {locale === 'ar' ? 'الأكثر شعبية' : 'Popular Picks'}
             </h2>
 
@@ -1762,17 +1802,17 @@ export default function HomePage() {
                         <Link
                           key={prod.id ? `pop-${prod.id}-${colIdx}-${idx}` : `pop-${colIdx}-${idx}`}
                           href={prod.id ? `/products/${prod.id}` : '/products'}
-                          className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer flex-1"
+                          className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative cursor-pointer flex-1"
                         >
                           {/* Top Badges */}
                           <div className="flex items-center justify-between z-10 mb-1">
                             {isOutOfStock ? (
-                              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
                                 <Ban className="w-2.5 h-2.5 text-white" />
                                 <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
                               </span>
                             ) : prod.is_best_seller === true ? (
-                              <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                              <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
                                 <Star className="w-2.5 h-2.5 fill-current text-white" />
                                 <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>
                               </span>
@@ -1833,7 +1873,7 @@ export default function HomePage() {
                               </div>
 
                               {/* Product Title */}
-                              <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug font-sans group-hover:text-[#043927] transition-colors mb-1">
+                              <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug group-hover:text-[#043927] transition-colors mb-1">
                                 {title}
                               </h3>
 
@@ -1863,7 +1903,7 @@ export default function HomePage() {
                             {/* Price & Add to Cart / Quantity Action Row */}
                             <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 mt-auto">
                               <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                                <span className="text-sm sm:text-[15px] font-black text-slate-900 font-sans whitespace-nowrap leading-tight">
+                                <span className="text-sm sm:text-[15px] font-black text-slate-900 whitespace-nowrap leading-tight">
                                   <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
                                   {finalPrice.toFixed(2)}
                                 </span>
@@ -1937,7 +1977,7 @@ export default function HomePage() {
                                         <Minus className="w-3 h-3 stroke-[2.5]" />
                                       </button>
 
-                                      <span className="flex-1 text-center text-xs font-black text-slate-900 font-sans select-none">
+                                      <span className="flex-1 text-center text-xs font-black text-slate-900 select-none">
                                         {isBusy ? (
                                           <Loader2 className="w-3 h-3 animate-spin mx-auto text-emerald-600" />
                                         ) : (
@@ -1997,8 +2037,8 @@ export default function HomePage() {
         </section>
 
         {/* 8. Freshness at your Doorstep Banner Section */}
-        <section className="py-10 sm:py-14 text-center space-y-3 max-w-3xl mx-auto font-sans">
-          <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-[#333333] tracking-tight leading-snug font-sans">
+        <section className="py-10 sm:py-14 text-center space-y-3 max-w-3xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-bold text-[#333333] tracking-tight leading-snug">
             {locale === 'ar' ? 'الطازج حتى عتبة دارك' : 'Freshness at your Doorstep'}
           </h2>
           <p className="text-[#666666] font-normal text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">

@@ -566,7 +566,7 @@ export default function CheckoutPage() {
 
   if (cartLoading) {
     return (
-      <div className="min-h-screen bg-[#F7F8FA] font-sans flex items-center justify-center py-24">
+      <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center py-24">
         <div className="w-12 h-12 border-4 border-[#05A764] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -583,7 +583,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] font-sans text-slate-900 pb-24">
+    <div className="min-h-screen bg-[#F7F8FA] text-slate-900 pb-24">
 
       {/* Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
@@ -598,12 +598,12 @@ export default function CheckoutPage() {
             Shopping Cart
           </Link>
           <span className="text-slate-300">›</span>
-          <span className="text-slate-900 font-extrabold">Secure Checkout</span>
+          <span className="text-slate-900 font-bold">Secure Checkout</span>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-extrabold flex items-center gap-3">
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-3">
             <AlertCircle className="w-5 h-5 shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
@@ -619,10 +619,10 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-black text-xs flex items-center justify-center font-sans">
+                  <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-black text-xs flex items-center justify-center">
                     1
                   </div>
-                  <h2 className="text-base sm:text-lg font-extrabold text-slate-900 font-sans tracking-tight">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                     Delivery Address
                   </h2>
                 </div>
@@ -661,11 +661,11 @@ export default function CheckoutPage() {
 
                       <div className="space-y-1 pr-6">
                         <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-sm text-slate-900 font-sans">
+                          <span className="font-bold text-sm text-slate-900">
                             {activeAddress.area || activeAddress.city || 'Home'}
                           </span>
                           {activeAddress.is_default && (
-                            <span className="bg-slate-200 text-slate-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md font-sans">
+                            <span className="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md">
                               {locale === 'ar' ? 'افتراضي' : 'Default'}
                             </span>
                           )}
@@ -714,7 +714,7 @@ export default function CheckoutPage() {
                       setAddressModalTab('new');
                       setShowAddressModal(true);
                     }}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#05A764] hover:bg-[#048b53] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#05A764] hover:bg-[#048b53] text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>{locale === 'ar' ? 'إضافة عنوان توصيل' : 'Add Delivery Address'}</span>
@@ -726,11 +726,11 @@ export default function CheckoutPage() {
             {/* STEP 2: Choose Delivery Speed & Time */}
             <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-5">
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-black text-xs flex items-center justify-center font-sans">
+                <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-black text-xs flex items-center justify-center">
                   2
                 </div>
                 <div>
-                  <h2 className="text-base sm:text-lg font-extrabold text-slate-900 font-sans tracking-tight">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                     Choose Delivery Speed & Time
                   </h2>
                   <p className="text-xs text-slate-500 font-medium">
@@ -745,28 +745,28 @@ export default function CheckoutPage() {
                 <div
                   onClick={() => setDeliverySpeed('express')}
                   className={`rounded-2xl p-4 cursor-pointer transition-all relative ${
-                    deliverySpeed === 'express'
-                      ? 'bg-[#E8F8F0] border-2 border-[#05A764] shadow-2xs'
-                      : 'bg-white hover:bg-slate-50 border border-slate-200'
-                  }`}
+ deliverySpeed === 'express'
+ ? 'bg-[#E8F8F0] border-2 border-[#05A764] shadow-2xs'
+ : 'bg-white hover:bg-slate-50 border border-slate-200'
+ }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
                       <Zap className="w-4 h-4 text-[#05A764] fill-current" />
-                      <span className="font-extrabold text-sm text-slate-900 font-sans">
+                      <span className="font-bold text-sm text-slate-900">
                         Express Delivery
                       </span>
-                      <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full font-sans uppercase">
+                      <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
                         Fastest
                       </span>
                     </div>
                     <div className="text-right">
                       <span className="text-[10px] text-slate-400 font-bold block">SAR</span>
-                      <span className="font-extrabold text-sm text-slate-900">12.00</span>
+                      <span className="font-bold text-sm text-slate-900">12.00</span>
                     </div>
                   </div>
 
-                  <p className="text-xs font-extrabold text-[#05A764] font-sans">
+                  <p className="text-xs font-bold text-[#05A764]">
                     Arriving within 90 minutes
                   </p>
                   <p className="text-[11px] text-slate-500 font-medium mt-1">
@@ -778,20 +778,20 @@ export default function CheckoutPage() {
                 <div
                   onClick={() => setDeliverySpeed('standard')}
                   className={`rounded-2xl p-4 cursor-pointer transition-all relative ${
-                    deliverySpeed === 'standard'
-                      ? 'bg-[#E8F8F0] border-2 border-[#05A764] shadow-2xs'
-                      : 'bg-white hover:bg-slate-50 border border-slate-200'
-                  }`}
+ deliverySpeed === 'standard'
+ ? 'bg-[#E8F8F0] border-2 border-[#05A764] shadow-2xs'
+ : 'bg-white hover:bg-slate-50 border border-slate-200'
+ }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-4 h-4 text-slate-700" />
-                      <span className="font-extrabold text-sm text-slate-900 font-sans">
+                      <span className="font-bold text-sm text-slate-900">
                         Standard Schedule
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="font-extrabold text-sm text-emerald-600 font-sans">Free</span>
+                      <span className="font-bold text-sm text-emerald-600">Free</span>
                       <span className="text-[10px] text-slate-400 font-medium block">over SAR 100</span>
                     </div>
                   </div>
@@ -807,7 +807,7 @@ export default function CheckoutPage() {
 
               {/* Scheduled Windows Available (Dynamic from Admin Panel) */}
               <div className="space-y-3 pt-2">
-                <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block font-sans">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                   {locale === 'ar' ? 'فترات التوصيل المتاحة:' : 'SCHEDULED WINDOWS AVAILABLE:'}
                 </span>
 
@@ -827,11 +827,11 @@ export default function CheckoutPage() {
                           key={d.key || d.date}
                           type="button"
                           onClick={() => handleSelectDate(label)}
-                          className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer font-sans ${
-                            isSelected
-                              ? 'bg-slate-900 text-white shadow-2xs'
-                              : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
-                          }`}
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+ isSelected
+ ? 'bg-slate-900 text-white shadow-2xs'
+ : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
+ }`}
                         >
                           {label}
                         </button>
@@ -843,11 +843,11 @@ export default function CheckoutPage() {
                         key={d}
                         type="button"
                         onClick={() => handleSelectDate(d)}
-                        className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer font-sans ${
-                          selectedDate === d
-                            ? 'bg-slate-900 text-white shadow-2xs'
-                            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
-                        }`}
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+ selectedDate === d
+ ? 'bg-slate-900 text-white shadow-2xs'
+ : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
+ }`}
                       >
                         {d}
                       </button>
@@ -885,27 +885,27 @@ export default function CheckoutPage() {
                             setSelectedTimeSlot(slotLabel);
                           }}
                           className={`p-3 rounded-xl text-center transition-all border relative ${
-                            expired
-                              ? 'bg-slate-100/90 border-slate-200 text-slate-400 cursor-not-allowed select-none opacity-60'
-                              : isSelected
-                              ? 'bg-white border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs cursor-pointer'
-                              : 'bg-white border-slate-200/80 hover:border-slate-300 cursor-pointer'
-                          }`}
+ expired
+ ? 'bg-slate-100/90 border-slate-200 text-slate-400 cursor-not-allowed select-none opacity-60'
+ : isSelected
+ ? 'bg-white border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs cursor-pointer'
+ : 'bg-white border-slate-200/80 hover:border-slate-300 cursor-pointer'
+ }`}
                         >
-                          <span className={`font-extrabold text-xs block font-sans ${expired ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                          <span className={`font-bold text-xs block ${expired ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
                             {slotLabel}
                           </span>
                           {expired ? (
-                            <span className="text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full bg-slate-200 text-slate-500 font-sans">
+                            <span className="text-[10px] font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full bg-slate-200 text-slate-500">
                               {locale === 'ar' ? 'انتهى الوقت' : 'Time Passed'}
                             </span>
                           ) : tagLabel ? (
                             <span
-                              className={`text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full font-sans ${
-                                s.is_express
-                                  ? 'bg-emerald-50 text-emerald-700'
-                                  : 'bg-slate-100 text-slate-600'
-                              }`}
+                              className={`text-[10px] font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full ${
+ s.is_express
+ ? 'bg-emerald-50 text-emerald-700'
+ : 'bg-slate-100 text-slate-600'
+ }`}
                             >
                               {tagLabel}
                             </span>
@@ -938,27 +938,27 @@ export default function CheckoutPage() {
                             setSelectedTimeSlot(s.slot);
                           }}
                           className={`p-3 rounded-xl text-center transition-all border relative ${
-                            expired
-                              ? 'bg-slate-100/90 border-slate-200 text-slate-400 cursor-not-allowed select-none opacity-60'
-                              : isSelected
-                              ? 'bg-white border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs cursor-pointer'
-                              : 'border-slate-200/80 hover:border-slate-300 bg-white cursor-pointer'
-                          }`}
+ expired
+ ? 'bg-slate-100/90 border-slate-200 text-slate-400 cursor-not-allowed select-none opacity-60'
+ : isSelected
+ ? 'bg-white border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs cursor-pointer'
+ : 'border-slate-200/80 hover:border-slate-300 bg-white cursor-pointer'
+ }`}
                         >
-                          <span className={`font-extrabold text-xs block font-sans ${expired ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                          <span className={`font-bold text-xs block ${expired ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
                             {s.slot}
                           </span>
                           {expired ? (
-                            <span className="text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full bg-slate-200 text-slate-500 font-sans">
+                            <span className="text-[10px] font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full bg-slate-200 text-slate-500">
                               {locale === 'ar' ? 'انتهى الوقت' : 'Time Passed'}
                             </span>
                           ) : (
                             <span
-                              className={`text-[10px] font-extrabold mt-0.5 inline-block px-2 py-0.5 rounded-full font-sans ${
-                                s.isExpress
-                                  ? 'bg-emerald-50 text-emerald-700'
-                                  : 'bg-slate-100 text-slate-600'
-                              }`}
+                              className={`text-[10px] font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full ${
+ s.isExpress
+ ? 'bg-emerald-50 text-emerald-700'
+ : 'bg-slate-100 text-slate-600'
+ }`}
                             >
                               {s.tag}
                             </span>
@@ -975,7 +975,7 @@ export default function CheckoutPage() {
                   { slot_label_en: '4:00 PM - 6:00 PM' },
                   { slot_label_en: '7:00 PM - 9:00 PM' }
                 ]).every((s) => isSlotExpired(s.slot_label_en || s.slot)) && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs text-amber-800 font-bold font-sans">
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs text-amber-800 font-bold">
                     {locale === 'ar' ? '⚠️ انتهت جميع مواعيد التوصيل لليوم، يرجى اختيار موعد ليوم الغد للمتابعة' : '⚠️ All delivery slots for today have ended. Please select tomorrow to schedule your order.'}
                   </div>
                 )}
@@ -989,7 +989,7 @@ export default function CheckoutPage() {
           <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24">
 
             {/* Express Fulfillment Badge Header */}
-            <div className="flex items-center gap-2 text-[11px] font-extrabold text-slate-700 font-sans px-1">
+            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-700 px-1">
               <span className="w-2 h-2 rounded-full bg-[#05A764] animate-pulse" />
               <span>Express Fulfillment Center: Al-Olaya Hub, Riyadh</span>
             </div>
@@ -1001,11 +1001,11 @@ export default function CheckoutPage() {
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5 text-slate-900" />
-                  <h2 className="text-lg font-extrabold text-slate-900 font-sans">
+                  <h2 className="text-lg font-bold text-slate-900">
                     Your Bag
                   </h2>
                 </div>
-                <span className="text-xs font-extrabold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full font-sans">
+                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
                   {bagItems.length} items
                 </span>
               </div>
@@ -1065,7 +1065,7 @@ export default function CheckoutPage() {
                           })()}
                           </div>
                           <div className="min-w-0">
-                            <h4 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                            <h4 className="font-bold text-xs text-slate-900 truncate">
                               {itemName}
                             </h4>
                             {itemSubtitle && (
@@ -1073,7 +1073,7 @@ export default function CheckoutPage() {
                                 {itemSubtitle}
                               </p>
                             )}
-                            <div className="font-extrabold text-xs text-[#05A764] font-sans mt-0.5">
+                            <div className="font-bold text-xs text-[#05A764] mt-0.5">
                               SAR {itemPrice.toFixed(2)}
                             </div>
                           </div>
@@ -1084,17 +1084,17 @@ export default function CheckoutPage() {
                           <button
                             type="button"
                             onClick={() => handleUpdateBagQuantity(item.id, item.quantity, -1)}
-                            className="text-slate-500 hover:text-slate-800 font-extrabold text-xs px-1 cursor-pointer"
+                            className="text-slate-500 hover:text-slate-800 font-bold text-xs px-1 cursor-pointer"
                           >
                             -
                           </button>
-                          <span className="font-extrabold text-xs text-slate-900">
+                          <span className="font-bold text-xs text-slate-900">
                             {item.quantity}
                           </span>
                           <button
                             type="button"
                             onClick={() => handleUpdateBagQuantity(item.id, item.quantity, 1)}
-                            className="text-slate-500 hover:text-slate-800 font-extrabold text-xs px-1 cursor-pointer"
+                            className="text-slate-500 hover:text-slate-800 font-bold text-xs px-1 cursor-pointer"
                           >
                             +
                           </button>
@@ -1107,7 +1107,7 @@ export default function CheckoutPage() {
 
               {/* Promo Code or Voucher Dynamic Section */}
               <div className="space-y-2 pt-2">
-                <span className="text-xs font-extrabold text-slate-700 block font-sans">
+                <span className="text-xs font-bold text-slate-700 block">
                   {locale === 'ar' ? 'رمز الكوبون أو القسيمة' : 'Promo Code or Voucher'}
                 </span>
 
@@ -1119,10 +1119,10 @@ export default function CheckoutPage() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-black text-xs text-slate-900 uppercase font-sans tracking-wider">
+                          <span className="font-black text-xs text-slate-900 uppercase tracking-wider">
                             {appliedCoupon.code}
                           </span>
-                          <span className="bg-[#05A764] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase font-sans">
+                          <span className="bg-[#05A764] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
                             {locale === 'ar' ? 'مطبق' : 'Applied'}
                           </span>
                         </div>
@@ -1137,7 +1137,7 @@ export default function CheckoutPage() {
                     <button
                       type="button"
                       onClick={handleRemoveCoupon}
-                      className="text-xs text-rose-600 hover:text-rose-700 font-extrabold hover:underline flex items-center gap-1 cursor-pointer px-2 py-1 shrink-0"
+                      className="text-xs text-rose-600 hover:text-rose-700 font-bold hover:underline flex items-center gap-1 cursor-pointer px-2 py-1 shrink-0"
                       title={locale === 'ar' ? 'إزالة الكوبون' : 'Remove coupon'}
                     >
                       <X className="w-3.5 h-3.5" />
@@ -1179,7 +1179,7 @@ export default function CheckoutPage() {
                         type="button"
                         onClick={() => handleApplyCoupon()}
                         disabled={couponLoading || !couponInput.trim()}
-                        className="bg-[#043927] hover:bg-[#02281b] disabled:bg-slate-200 text-white disabled:text-slate-400 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-2xs transition-all cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 shrink-0"
+                        className="bg-[#043927] hover:bg-[#02281b] disabled:bg-slate-200 text-white disabled:text-slate-400 font-bold text-xs px-4 py-2.5 rounded-xl shadow-2xs transition-all cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 shrink-0"
                       >
                         {couponLoading ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1208,7 +1208,7 @@ export default function CheckoutPage() {
                               key={c.code}
                               type="button"
                               onClick={() => handleApplyCoupon(c.code)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#006E2D] text-[10px] font-extrabold transition-all cursor-pointer hover:scale-102"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#006E2D] text-[10px] font-bold transition-all cursor-pointer hover:scale-102"
                             >
                               <Tag className="w-2.5 h-2.5" />
                               <span>{c.code}</span>
@@ -1225,10 +1225,10 @@ export default function CheckoutPage() {
               </div>
 
               {/* Price Breakdown */}
-              <div className="space-y-2.5 text-xs font-semibold text-slate-600 pt-2 border-t border-slate-100 font-sans">
+              <div className="space-y-2.5 text-xs font-semibold text-slate-600 pt-2 border-t border-slate-100">
                 <div className="flex justify-between">
                   <span>{locale === 'ar' ? 'المجموع الفرعي للمنتجات' : 'Items Subtotal'}</span>
-                  <span className="font-extrabold text-slate-900">
+                  <span className="font-bold text-slate-900">
                     SAR {itemsSubtotal.toFixed(2)}
                   </span>
                 </div>
@@ -1237,13 +1237,13 @@ export default function CheckoutPage() {
                   <span className="flex items-center gap-1">
                     {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'} <Zap className="w-3 h-3 text-[#05A764] fill-current" />
                   </span>
-                  <span className="font-extrabold text-slate-900">
+                  <span className="font-bold text-slate-900">
                     SAR {deliveryFee.toFixed(2)}
                   </span>
                 </div>
 
                 {appliedCoupon && promoDiscount > 0 && (
-                  <div className="flex justify-between text-[#05A764] font-extrabold">
+                  <div className="flex justify-between text-[#05A764] font-bold">
                     <span>
                       {locale === 'ar'
                         ? `خصم الكوبون (${appliedCoupon.code})`
@@ -1257,7 +1257,7 @@ export default function CheckoutPage() {
                   <span className="flex items-center gap-1">
                     {locale === 'ar' ? 'ضريبة القيمة المضافة (15% VAT)' : 'Estimated VAT (15%)'}
                   </span>
-                  <span className="font-extrabold text-slate-900">
+                  <span className="font-bold text-slate-900">
                     SAR {vatTotal.toFixed(2)}
                   </span>
                 </div>
@@ -1266,7 +1266,7 @@ export default function CheckoutPage() {
 
                 <div className="flex items-baseline justify-between pt-1">
                   <div>
-                    <span className="text-sm font-extrabold text-slate-900 block font-sans">
+                    <span className="text-sm font-bold text-slate-900 block">
                       {locale === 'ar' ? 'المجموع الكلي للدفع' : 'Total to Pay'}
                     </span>
                     <span className="text-[10px] text-slate-400 font-medium">
@@ -1274,7 +1274,7 @@ export default function CheckoutPage() {
                     </span>
                   </div>
 
-                  <div className="text-xl sm:text-2xl font-black text-slate-900 font-sans tracking-tight flex items-baseline gap-1">
+                  <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-baseline gap-1">
                     <span className="text-xs font-bold text-slate-700">SAR</span>
                     <span>{finalTotal.toFixed(2)}</span>
                   </div>
@@ -1286,7 +1286,7 @@ export default function CheckoutPage() {
                 type="button"
                 onClick={handleInitiatePayment}
                 disabled={loading}
-                className="w-full py-4 rounded-full bg-[#006E2D] hover:bg-[#048b53] text-white font-black text-base transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer font-sans active:scale-98 disabled:opacity-70"
+                className="w-full py-4 rounded-full bg-[#006E2D] hover:bg-[#048b53] text-white font-black text-base transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-70"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -1324,10 +1324,10 @@ export default function CheckoutPage() {
 
       {/* Address Selection & Creation Modal */}
       {showAddressModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl space-y-5 relative max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-lg font-extrabold text-slate-900 font-sans">
+              <h3 className="text-lg font-bold text-slate-900">
                 {addressModalTab === 'list' && addresses.length > 0
                   ? (locale === 'ar' ? 'اختر عنوان التوصيل' : 'Select Delivery Address')
                   : (locale === 'ar' ? 'إضافة عنوان توصيل جديد' : 'Add New Delivery Address')}
@@ -1359,28 +1359,28 @@ export default function CheckoutPage() {
                           );
                         }}
                         className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                          isSelected
-                            ? 'border-[#05A764] bg-emerald-50/50 shadow-xs'
-                            : 'border-slate-200 hover:border-slate-300 bg-white'
-                        }`}
+ isSelected
+ ? 'border-[#05A764] bg-emerald-50/50 shadow-xs'
+ : 'border-slate-200 hover:border-slate-300 bg-white'
+ }`}
                       >
                         <div className="flex items-start gap-3">
                           <div
                             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
-                              isSelected
-                                ? 'border-[#05A764] bg-[#05A764]'
-                                : 'border-slate-300 bg-white'
-                            }`}
+ isSelected
+ ? 'border-[#05A764] bg-[#05A764]'
+ : 'border-slate-300 bg-white'
+ }`}
                           >
                             {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
                           </div>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-extrabold text-xs text-slate-900">
+                              <span className="font-bold text-xs text-slate-900">
                                 {addr.area || addr.city || 'Home'}
                               </span>
                               {addr.is_default && (
-                                <span className="bg-slate-200 text-slate-700 text-[9px] font-extrabold px-1.5 py-0.5 rounded">
+                                <span className="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded">
                                   {locale === 'ar' ? 'افتراضي' : 'Default'}
                                 </span>
                               )}
@@ -1406,7 +1406,7 @@ export default function CheckoutPage() {
                       setNewAddress(getEmptyAddress());
                       setAddressModalTab('new');
                     }}
-                    className="flex-1 py-2.5 rounded-xl border border-dashed border-[#05A764] text-[#05A764] hover:bg-emerald-50 font-extrabold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 py-2.5 rounded-xl border border-dashed border-[#05A764] text-[#05A764] hover:bg-emerald-50 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>{locale === 'ar' ? 'إضافة عنوان جديد' : '+ Add New Address'}</span>
@@ -1414,7 +1414,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setShowAddressModal(false)}
-                    className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
                   >
                     {locale === 'ar' ? 'إغلاق' : 'Close'}
                   </button>
@@ -1434,7 +1434,7 @@ export default function CheckoutPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                       {locale === 'ar' ? 'الاسم الكامل *' : 'Full Name *'}
                     </label>
                     <input
@@ -1448,7 +1448,7 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                       {locale === 'ar' ? 'رقم الجوال *' : 'Mobile Number *'}
                     </label>
                     <input
@@ -1464,7 +1464,7 @@ export default function CheckoutPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                       {locale === 'ar' ? 'المدينة *' : 'City *'}
                     </label>
                     <input
@@ -1478,7 +1478,7 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                       {locale === 'ar' ? 'الحي / المنطقة *' : 'District / Area *'}
                     </label>
                     <input
@@ -1493,7 +1493,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                     {locale === 'ar' ? 'تفاصيل العنوان / الشارع *' : 'Street Address Line *'}
                   </label>
                   <textarea
@@ -1506,7 +1506,7 @@ export default function CheckoutPage() {
                   />
                 </div>
 
-                <div className="flex gap-2.5 pt-3 font-sans">
+                <div className="flex gap-2.5 pt-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -1516,13 +1516,13 @@ export default function CheckoutPage() {
                         setShowAddressModal(false);
                       }
                     }}
-                    className="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer"
+                    className="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
                   >
                     {locale === 'ar' ? 'إلغاء' : 'Cancel'}
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 rounded-xl bg-[#05A764] hover:bg-[#048b53] text-white font-extrabold text-xs transition-colors shadow-sm cursor-pointer"
+                    className="flex-1 py-3 rounded-xl bg-[#05A764] hover:bg-[#048b53] text-white font-bold text-xs transition-colors shadow-sm cursor-pointer"
                   >
                     {locale === 'ar' ? 'حفظ العنوان' : 'Save Address'}
                   </button>
@@ -1535,8 +1535,8 @@ export default function CheckoutPage() {
 
       {/* TEST PAYMENT GATEWAY MODAL SIMULATOR */}
       {showPaymentGatewayModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 font-sans animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden relative space-y-0 font-sans">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden relative space-y-0">
             
             {/* Gateway Top Bar */}
             <div className="bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between">
@@ -1546,10 +1546,10 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-sm text-white tracking-tight">
+                    <h3 className="font-bold text-sm text-white tracking-tight">
                       Falcon Test Payment Gateway
                     </h3>
-                    <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full uppercase font-sans">
+                    <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
                       Sandbox
                     </span>
                   </div>
@@ -1574,7 +1574,7 @@ export default function CheckoutPage() {
                 <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">
                   Merchant
                 </span>
-                <span className="font-extrabold text-xs text-slate-900 font-sans">
+                <span className="font-bold text-xs text-slate-900">
                   Falcon Fresh Direct (Riyadh)
                 </span>
               </div>
@@ -1582,7 +1582,7 @@ export default function CheckoutPage() {
                 <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">
                   Amount Due
                 </span>
-                <span className="font-black text-base text-[#05A764] font-sans">
+                <span className="font-black text-base text-[#05A764]">
                   SAR {finalTotal.toFixed(2)}
                 </span>
               </div>
@@ -1593,7 +1593,7 @@ export default function CheckoutPage() {
               <div className="p-8 text-center space-y-4 my-4">
                 <div className="w-16 h-16 rounded-full border-4 border-[#05A764] border-t-transparent animate-spin mx-auto" />
                 <div>
-                  <h4 className="font-extrabold text-base text-slate-900 font-sans">
+                  <h4 className="font-bold text-base text-slate-900">
                     Authorizing 3D Secure Payment...
                   </h4>
                   <p className="text-xs text-slate-500 font-medium mt-1">
@@ -1616,7 +1616,7 @@ export default function CheckoutPage() {
                 )}
 
                 {/* Simulated Card / Payment Scheme Card */}
-                <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-4 text-white shadow-md relative overflow-hidden space-y-3 font-sans">
+                <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-4 text-white shadow-md relative overflow-hidden space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-mono tracking-widest text-emerald-400 font-bold uppercase">
                       {paymentMethod === 'mada' ? 'Saudi Mada Debit' : paymentMethod === 'apple_pay' ? 'Apple Pay Touch' : paymentMethod === 'stc_pay' ? 'STC Pay Wallet' : 'Visa / Mastercard'}
@@ -1651,7 +1651,7 @@ export default function CheckoutPage() {
                 {/* 3D Secure OTP Code Simulation Block */}
                 <div className="bg-[#F5F6F8] rounded-2xl p-4 space-y-2.5 border border-slate-200/80">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-extrabold text-slate-800 font-sans">3D Secure OTP Verification</span>
+                    <span className="font-bold text-slate-800">3D Secure OTP Verification</span>
                     <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                       SMS Sent
                     </span>
@@ -1677,7 +1677,7 @@ export default function CheckoutPage() {
                     type="button"
                     onClick={() => handleExecutePayment(true)}
                     disabled={isSimulatingPayment}
-                    className="w-full py-3.5 rounded-2xl bg-[#05A764] hover:bg-[#048b53] text-white font-extrabold text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer font-sans active:scale-98 disabled:opacity-70"
+                    className="w-full py-3.5 rounded-2xl bg-[#05A764] hover:bg-[#048b53] text-white font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-70"
                   >
                     <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
                     <span>Authorize Test Payment • SAR {finalTotal.toFixed(2)}</span>
@@ -1687,7 +1687,7 @@ export default function CheckoutPage() {
                     type="button"
                     onClick={() => handleExecutePayment(false)}
                     disabled={isSimulatingPayment}
-                    className="w-full py-2.5 rounded-2xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-slate-200 text-slate-600 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer font-sans active:scale-98"
+                    className="w-full py-2.5 rounded-2xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-slate-200 text-slate-600 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
                   >
                     <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
                     <span>Simulate Payment Failure (Card Declined)</span>

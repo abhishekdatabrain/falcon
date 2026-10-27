@@ -352,7 +352,7 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-24 text-center font-sans">
+      <div className="max-w-7xl mx-auto px-4 py-24 text-center">
         <h2 className="text-2xl font-bold text-slate-800">
           {locale === 'ar' ? 'المنتج غير موجود' : 'Product Not Found'}
         </h2>
@@ -396,10 +396,10 @@ export default function ProductDetailPage() {
   ).filter((hl) => hl && ((hl.text_en && hl.text_en.trim()) || (hl.text_ar && hl.text_ar.trim()) || (hl.text && hl.text.trim())));
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-10 font-sans bg-white pb-24">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-10 bg-white pb-24">
 
       {/* 1. Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs font-medium text-slate-500 font-sans">
+      <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
         <Link href="/" className="hover:text-[#043927] transition-colors">{locale === 'ar' ? 'الرئيسية' : 'Home'}</Link>
         <span>›</span>
         <Link href="/products" className="hover:text-[#043927] transition-colors">{locale === 'ar' ? 'البقالة' : 'Groceries'}</Link>
@@ -425,7 +425,7 @@ export default function ProductDetailPage() {
                 <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
               </span>
             ) : product.is_best_seller === true && (
-              <span className="absolute top-4 left-4 bg-[#FFA500] text-white text-[11px] font-extrabold px-3.5 py-1 rounded-full uppercase tracking-wider shadow-2xs z-10 flex items-center gap-1">
+              <span className="absolute top-4 left-4 bg-[#FFA500] text-white text-[11px] font-bold px-3.5 py-1 rounded-full uppercase tracking-wider shadow-2xs z-10 flex items-center gap-1">
                 <Star className="w-3 h-3 fill-current text-white" />
                 <span>BEST SELLER</span>
               </span>
@@ -463,7 +463,7 @@ export default function ProductDetailPage() {
                   type="button"
                   onClick={() => setSelectedImg(imgUrl)}
                   className={`aspect-square rounded-2xl p-1 bg-[#F8F9FA] border-2 transition-all cursor-pointer overflow-hidden flex items-center justify-center ${isSelected ? 'border-[#043927] ring-2 ring-emerald-100 shadow-xs scale-95' : 'border-slate-200/80 hover:border-slate-300 opacity-80 hover:opacity-100'
-                    }`}
+ }`}
                 >
                   <img
                     src={getImageUrl(imgUrl) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400'}
@@ -481,7 +481,7 @@ export default function ProductDetailPage() {
 
           {/* Section 2: Product Highlights (Dynamic below Gallery) */}
           {validHighlights.length > 0 && (
-            <div className="bg-[#FFFDF7] rounded-2xl p-3.5 border border-[#F5DE98] flex flex-wrap items-center justify-around gap-2 text-xs font-bold text-slate-800 font-sans shadow-2xs">
+            <div className="bg-[#FFFDF7] rounded-2xl p-3.5 border border-[#F5DE98] flex flex-wrap items-center justify-around gap-2 text-xs font-bold text-slate-800 shadow-2xs">
               {validHighlights.map((hl, idx) => {
                 const text = locale === 'ar' ? (hl.text_ar || hl.text_en || hl.text) : (hl.text_en || hl.text || hl.text_ar);
                 if (!text) return null;
@@ -505,12 +505,12 @@ export default function ProductDetailPage() {
 
           {/* Category Tag */}
           <div>
-            <span className="bg-emerald-100/80 text-[#043927] font-extrabold text-[11px] px-3 py-1 rounded-full uppercase tracking-wider inline-block">
+            <span className="bg-emerald-100/80 text-[#043927] font-bold text-[11px] px-3 py-1 rounded-full uppercase tracking-wider inline-block">
               {locale === 'ar' ? (product.tag_ar || 'طازج من المزرعة') : (product.tag_en || 'Farm Fresh')}
             </span>
 
             {/* Product Title */}
-            <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-bold text-slate-900 tracking-tight leading-tight font-sans mt-2">
+            <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-bold text-slate-900 tracking-tight leading-tight mt-2">
               {locale === 'ar' ? product.name_ar : product.name_en}
             </h1>
 
@@ -518,7 +518,7 @@ export default function ProductDetailPage() {
             <div className="flex items-center gap-2 mt-2">
               {((product.reviews_count !== undefined && product.reviews_count !== null && Number(product.reviews_count) > 0) || (product.rating !== undefined && product.rating !== null && Number(product.rating) > 0)) ? (
                 <>
-                  <div className="flex items-center gap-0.5 text-amber-500 font-extrabold text-sm">
+                  <div className="flex items-center gap-0.5 text-amber-500 font-bold text-sm">
                     <span>★ ★ ★ ★ ★</span>
                     <span className="text-slate-900 font-bold ml-1">
                       {Number(product.rating || 0).toFixed(1)}
@@ -565,7 +565,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Price Box - Single Line Layout */}
-          <div className="flex items-center gap-3 flex-wrap pt-3 border-t border-slate-100 font-sans">
+          <div className="flex items-center gap-3 flex-wrap pt-3 border-t border-slate-100">
             {/* Selling Price (Dark Green Bold) */}
             <span className="text-[#043927] font-black text-2xl sm:text-3xl tracking-tight">
               {locale === 'ar' ? `${discountPrice || currentUnitPrice} ريال` : `SAR ${discountPrice || currentUnitPrice}`}
@@ -585,7 +585,7 @@ export default function ProductDetailPage() {
           {product?.has_variants && Array.isArray(product.variants) && product.variants.length > 0 && (
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
-                <label className="font-extrabold text-slate-900 text-sm block font-sans">
+                <label className="font-bold text-slate-900 text-sm block">
                   {locale === 'ar' ? 'اختر الحجم / العبوة' : 'Choose Size / Pack Size'}
                 </label>
                 {activeVariant?.sku && (
@@ -624,11 +624,11 @@ export default function ProductDetailPage() {
                         }
                       }}
                       className={`p-3.5 rounded-2xl border text-left rtl:text-right transition-all cursor-pointer relative flex flex-col justify-between min-h-[75px] ${varOutOfStock
-                          ? 'opacity-40 cursor-not-allowed bg-slate-50 border-slate-200'
-                          : isSelected
-                            ? 'border-2 border-[#043927] bg-emerald-50/50 shadow-xs ring-2 ring-[#043927]/10'
-                            : 'border-slate-200 hover:border-emerald-300 bg-white'
-                        }`}
+ ? 'opacity-40 cursor-not-allowed bg-slate-50 border-slate-200'
+ : isSelected
+ ? 'border-2 border-[#043927] bg-emerald-50/50 shadow-xs ring-2 ring-[#043927]/10'
+ : 'border-slate-200 hover:border-emerald-300 bg-white'
+ }`}
                     >
                       <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                         <div className="flex items-center gap-2 min-w-0">
@@ -651,7 +651,7 @@ export default function ProductDetailPage() {
                         </div>
                         <div
                           className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? 'border-[#043927] bg-[#043927] text-white' : 'border-slate-300'
-                            }`}
+ }`}
                         >
                           {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                         </div>
@@ -663,8 +663,8 @@ export default function ProductDetailPage() {
                         </span>
                       )}
 
-                      <div className="flex items-baseline gap-1.5 mt-1 font-sans">
-                        <span className="font-extrabold text-slate-900 text-xs sm:text-sm">
+                      <div className="flex items-baseline gap-1.5 mt-1">
+                        <span className="font-bold text-slate-900 text-xs sm:text-sm">
                           SAR {vDisc || vPrice}
                         </span>
                         {vDisc && vDisc < vPrice && (
@@ -686,7 +686,7 @@ export default function ProductDetailPage() {
           {/* Stock status indicator (for all products) */}
           <div className="text-xs font-semibold text-slate-600 flex items-center gap-1.5 pt-1">
             <span className={`w-2.5 h-2.5 rounded-full ${isOutOfStock ? 'bg-rose-500 ring-2 ring-rose-200' : 'bg-emerald-500 ring-2 ring-emerald-200'}`} />
-            <span className={isOutOfStock ? 'text-rose-600 font-extrabold' : 'text-emerald-700 font-bold'}>
+            <span className={isOutOfStock ? 'text-rose-600 font-bold' : 'text-emerald-700 font-bold'}>
               {isOutOfStock
                 ? (locale === 'ar' ? 'غير متوفر في المخزون حالياً (نفذت الكمية)' : 'Currently Out of Stock')
                 : (locale === 'ar' ? `متوفر في المخزون (${activeStock} متوفرة)` : `In Stock (${activeStock} available)`)}
@@ -700,7 +700,7 @@ export default function ProductDetailPage() {
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 disabled={isOutOfStock || quantity <= 1}
-                className="text-slate-400 hover:text-slate-900 text-base font-extrabold px-1 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                className="text-slate-400 hover:text-slate-900 text-base font-bold px-1 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 -
               </button>
@@ -708,7 +708,7 @@ export default function ProductDetailPage() {
               <button
                 onClick={() => setQuantity(quantity + 1)}
                 disabled={isOutOfStock || (activeStock > 0 && quantity >= activeStock)}
-                className="text-slate-400 hover:text-slate-900 text-base font-extrabold px-1 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                className="text-slate-400 hover:text-slate-900 text-base font-bold px-1 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 +
               </button>
@@ -716,7 +716,7 @@ export default function ProductDetailPage() {
 
             {/* Dynamic Total */}
             <div className="text-right rtl:text-left">
-              <span className="text-slate-900 font-extrabold text-sm sm:text-base font-sans">
+              <span className="text-slate-900 font-bold text-sm sm:text-base">
                 {locale === 'ar' ? `الإجمالي: ${totalPrice} ريال` : `Total: SAR ${totalPrice}`}
               </span>
             </div>
@@ -727,10 +727,10 @@ export default function ProductDetailPage() {
             <button
               onClick={handleAddToCart}
               disabled={adding || isOutOfStock}
-              className={`flex-1 py-4 px-8 rounded-full text-white font-extrabold text-base shadow-md transition-all flex items-center justify-center gap-2 group ${isOutOfStock
-                  ? 'bg-slate-400 cursor-not-allowed'
-                  : 'bg-[#043927] hover:bg-[#02281b] hover:shadow-xl cursor-pointer'
-                }`}
+              className={`flex-1 py-4 px-8 rounded-full text-white font-bold text-base shadow-md transition-all flex items-center justify-center gap-2 group ${isOutOfStock
+ ? 'bg-slate-400 cursor-not-allowed'
+ : 'bg-[#043927] hover:bg-[#02281b] hover:shadow-xl cursor-pointer'
+ }`}
             >
               <ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span>
@@ -783,34 +783,34 @@ export default function ProductDetailPage() {
       </div>
 
       {/* 3. Tabbed Information Section */}
-      <div className="pt-10 border-t border-slate-200/80 space-y-6 font-sans">
+      <div className="pt-10 border-t border-slate-200/80 space-y-6">
 
         {/* Tab Buttons Header */}
-        <div className="flex items-center gap-8 border-b border-slate-200 text-sm sm:text-base font-bold text-slate-500 font-sans">
+        <div className="flex items-center gap-8 border-b border-slate-200 text-sm sm:text-base font-bold text-slate-500">
           <button
             onClick={() => setActiveTab('description')}
             className={`pb-3 transition-colors cursor-pointer ${activeTab === 'description'
-              ? 'border-b-2 border-[#043927] text-[#043927] font-extrabold'
-              : 'hover:text-slate-900'
-              }`}
+ ? 'border-b-2 border-[#043927] text-[#043927] font-bold'
+ : 'hover:text-slate-900'
+ }`}
           >
             {locale === 'ar' ? 'وصف المنتج' : 'Product Description'}
           </button>
           <button
             onClick={() => setActiveTab('nutrition')}
             className={`pb-3 transition-colors cursor-pointer ${activeTab === 'nutrition'
-              ? 'border-b-2 border-[#043927] text-[#043927] font-extrabold'
-              : 'hover:text-slate-900'
-              }`}
+ ? 'border-b-2 border-[#043927] text-[#043927] font-bold'
+ : 'hover:text-slate-900'
+ }`}
           >
             {locale === 'ar' ? 'القيمة الغذائية' : 'Nutrition Facts'}
           </button>
           <button
             onClick={() => setActiveTab('reviews')}
             className={`pb-3 transition-colors cursor-pointer ${activeTab === 'reviews'
-              ? 'border-b-2 border-[#043927] text-[#043927] font-extrabold'
-              : 'hover:text-slate-900'
-              }`}
+ ? 'border-b-2 border-[#043927] text-[#043927] font-bold'
+ : 'hover:text-slate-900'
+ }`}
           >
             {locale === 'ar'
               ? `التقييمات (${product?.reviews || product?.review_count || product?.num_reviews || 0})`
@@ -824,7 +824,7 @@ export default function ProductDetailPage() {
 
             {/* Left Content */}
             <div className="lg:col-span-7 space-y-4">
-              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 font-sans tracking-tight">
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                 {locale === 'ar'
                   ? (product?.description_title_ar || product?.tag_ar || product?.name_ar || 'طازج طبيعياً')
                   : (product?.description_title_en || product?.tag_en || product?.name_en || 'Naturally Fresh')}
@@ -886,7 +886,7 @@ export default function ProductDetailPage() {
                 className="w-full h-56 sm:h-64 object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-6">
-                <span className="text-white font-extrabold text-lg sm:text-xl font-sans drop-shadow-md">
+                <span className="text-white font-bold text-lg sm:text-xl drop-shadow-md">
                   {locale === 'ar'
                     ? (product?.name_ar ? `${product.name_ar} - طازج ولذيذ!` : 'جودة طازجة يمكنك تذوقها!')
                     : (product?.name_en ? `${product.name_en} - Fresh & Pure!` : 'Freshness you can taste!')} →
@@ -898,7 +898,7 @@ export default function ProductDetailPage() {
         )}
 
         {activeTab === 'nutrition' && (
-          <div className="pt-2 max-w-xl space-y-3 text-xs sm:text-sm font-sans">
+          <div className="pt-2 max-w-xl space-y-3 text-xs sm:text-sm">
             <h4 className="font-bold text-slate-900 flex items-center gap-2">
               <Activity className="w-4 h-4 text-emerald-600" />
               <span>
@@ -962,7 +962,7 @@ export default function ProductDetailPage() {
                   {nut?.serving_size && (
                     <div className="pb-2 mb-2 border-b border-slate-200/80 flex items-center justify-between text-xs font-bold text-emerald-800 bg-emerald-50/60 px-3 py-1.5 rounded-xl">
                       <span>{locale === 'ar' ? 'حجم الحصة' : 'Serving Size'}</span>
-                      <span className="font-extrabold">{nut.serving_size}</span>
+                      <span className="font-bold">{nut.serving_size}</span>
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-2.5 text-slate-700">
@@ -971,7 +971,7 @@ export default function ProductDetailPage() {
                       .map(([label, val], idx) => (
                         <div key={idx} className="bg-white p-2.5 rounded-xl border border-slate-200/70 flex flex-col justify-between shadow-2xs">
                           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{label}</span>
-                          <span className="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5">{val}</span>
+                          <span className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5">{val}</span>
                         </div>
                       ))}
                   </div>
@@ -989,7 +989,7 @@ export default function ProductDetailPage() {
                   {Number(product?.rating || 0).toFixed(1)}
                 </span>
                 <div>
-                  <div className="text-amber-500 font-extrabold text-sm">★ ★ ★ ★ ★</div>
+                  <div className="text-amber-500 font-bold text-sm">★ ★ ★ ★ ★</div>
                   <span className="text-slate-600 font-medium">
                     {locale === 'ar'
                       ? `بناءً على ${Number(product?.reviews_count || product?.reviews || product?.review_count).toLocaleString()} تقييم موثق`
@@ -1015,11 +1015,11 @@ export default function ProductDetailPage() {
 
       {/* 4. "You May Also Like" Related Products Section */}
       {relatedProducts.length > 0 && (
-        <div className="pt-10 border-t border-slate-200/80 space-y-6 font-sans">
+        <div className="pt-10 border-t border-slate-200/80 space-y-6">
 
           {/* Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
               {locale === 'ar' ? 'قد يعجبك أيضاً' : 'You May Also Like'}
             </h2>
 
@@ -1031,9 +1031,9 @@ export default function ProductDetailPage() {
                 disabled={!canScrollRelLeft}
                 aria-label="Previous products"
                 className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${canScrollRelLeft
-                    ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
-                    : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50'
-                  }`}
+ ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
+ : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50'
+ }`}
               >
                 <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
               </button>
@@ -1043,9 +1043,9 @@ export default function ProductDetailPage() {
                 disabled={!canScrollRelRight}
                 aria-label="Next products"
                 className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${canScrollRelRight
-                    ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
-                    : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50'
-                  }`}
+ ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
+ : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50'
+ }`}
               >
                 <ChevronRight className="w-5 h-5 rtl:rotate-180" />
               </button>
@@ -1113,7 +1113,7 @@ export default function ProductDetailPage() {
                 return (
                   <div
                     key={item.id}
-                    className="w-[190px] sm:w-[215px] md:w-[230px] shrink-0 snap-start group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between font-sans cursor-pointer min-h-[290px]"
+                    className="w-[190px] sm:w-[215px] md:w-[230px] shrink-0 snap-start group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between cursor-pointer min-h-[290px]"
                   >
                     <Link href={`/products/${item.id}`} className="space-y-2 block">
                       {/* Image */}
@@ -1146,7 +1146,7 @@ export default function ProductDetailPage() {
                           </span>
                         )}
 
-                        <div className="flex items-center gap-1 text-[10px] text-amber-500 font-extrabold">
+                        <div className="flex items-center gap-1 text-[10px] text-amber-500 font-bold">
                           {hasItemRatings ? (
                             <>
                               <span>★ {itemRating}</span>
@@ -1160,7 +1160,7 @@ export default function ProductDetailPage() {
                         </div>
 
                         <div className="flex items-baseline gap-1.5 pt-1">
-                          <span className="font-extrabold text-slate-900 text-sm font-sans whitespace-nowrap">
+                          <span className="font-bold text-slate-900 text-sm whitespace-nowrap">
                             <span className="text-[10px] text-slate-500 font-bold mr-0.5">SAR</span>
                             {displayPrice}
                           </span>
@@ -1182,7 +1182,7 @@ export default function ProductDetailPage() {
                           e.stopPropagation();
                           setVariantModalProduct(item);
                         }}
-                        className="w-full mt-2 py-2 rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-extrabold text-xs shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5"
+                        className="w-full mt-2 py-2 rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-bold text-xs shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                         <span>{locale === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
@@ -1196,7 +1196,7 @@ export default function ProductDetailPage() {
                           handleAddRelated(item);
                         }}
                         disabled={addingRelId === item.id}
-                        className="w-full mt-2 py-2 rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-extrabold text-xs shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
+                        className="w-full mt-2 py-2 rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-bold text-xs shadow-2xs transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
                       >
                         <ShoppingBag className="w-3.5 h-3.5" />
                         <span>{addingRelId === item.id ? '...' : (locale === 'ar' ? 'أضف' : 'Add to Cart')}</span>

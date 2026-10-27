@@ -415,7 +415,7 @@ function TrackOrderContent() {
   const actualTemp = order?.delivery?.sensor_temperature || driverTelemetry?.temp || null;
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] font-sans text-slate-900 pb-28 select-none">
+    <div className="min-h-screen bg-[#F7F8FA] text-slate-900 pb-28 select-none">
 
       {/* ================= TOP SEARCH & QUICK TRACK HEADER ================= */}
       <div className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs">
@@ -429,7 +429,7 @@ function TrackOrderContent() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-black text-slate-900 tracking-tight font-sans">
+                  <h1 className="text-lg font-black text-slate-900 tracking-tight">
                     {locale === 'ar' ? 'المتابعة المباشرة للطلب' : 'Live Order Tracking'}
                   </h1>
                   <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
@@ -485,7 +485,7 @@ function TrackOrderContent() {
         {loading && !order ? (
           <div className="bg-white rounded-3xl p-16 text-center space-y-4 border border-slate-200/80 shadow-xs">
             <div className="w-12 h-12 border-4 border-[#05A764] border-t-transparent rounded-full animate-spin mx-auto" />
-            <h3 className="text-sm font-extrabold text-slate-900 font-sans">
+            <h3 className="text-sm font-bold text-slate-900">
               {locale === 'ar' ? 'جاري الاتصال بنظام المتابعة المباشر...' : 'Connecting to Live Telemetry & GPS Servers...'}
             </h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
@@ -497,7 +497,7 @@ function TrackOrderContent() {
             <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
               <AlertCircle className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-extrabold text-slate-900 font-sans">
+            <h3 className="text-base font-bold text-slate-900">
               {locale === 'ar' ? 'تعذر العثور على الطلب' : 'Unable to Locate Order'}
             </h3>
             <p className="text-xs text-slate-500">{error}</p>
@@ -530,11 +530,11 @@ function TrackOrderContent() {
                   </span>
                   <span
                     className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${status === 'DELIVERED'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : status === 'OUT_FOR_DELIVERY'
-                          ? 'bg-cyan-100 text-cyan-800 animate-pulse'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
+ ? 'bg-emerald-100 text-emerald-800'
+ : status === 'OUT_FOR_DELIVERY'
+ ? 'bg-cyan-100 text-cyan-800 animate-pulse'
+ : 'bg-amber-100 text-amber-800'
+ }`}
                   >
                     {status === 'OUT_FOR_DELIVERY' ? '🚚 OUT FOR DELIVERY' : status}
                   </span>
@@ -628,10 +628,10 @@ function TrackOrderContent() {
                     <Clock className="w-3.5 h-3.5 text-emerald-600" />
                     <span>{locale === 'ar' ? 'فترة التوصيل المجدولة' : 'SCHEDULED DELIVERY WINDOW'}</span>
                   </span>
-                  <div className="text-xs font-extrabold text-slate-900">
+                  <div className="text-xs font-bold text-slate-900">
                     📅 {order?.delivery_date || 'Today'}
                   </div>
-                  <div className="text-xs font-extrabold text-emerald-700">
+                  <div className="text-xs font-bold text-emerald-700">
                     ⏰ {order?.delivery_slot || '4:00 PM - 6:00 PM (Standard Slot)'}
                   </div>
                 </div>
@@ -642,7 +642,7 @@ function TrackOrderContent() {
                     type="button"
                     onClick={handleDownloadInvoice}
                     disabled={downloadingInvoice}
-                    className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs transition-colors flex items-center justify-center gap-1.5 border border-slate-200 cursor-pointer"
+                    className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 border border-slate-200 cursor-pointer"
                   >
                     <FileCheck className="w-3.5 h-3.5 text-slate-600" />
                     <span>{downloadingInvoice ? 'Loading...' : (locale === 'ar' ? 'الفاتورة' : 'Invoice')}</span>
@@ -651,7 +651,7 @@ function TrackOrderContent() {
                   <button
                     type="button"
                     onClick={handleShare}
-                    className="py-2.5 px-3 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                    className="py-2.5 px-3 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                   >
                     <Share2 className="w-3.5 h-3.5 text-[#05A764]" />
                     <span>{copiedLink ? 'Copied!' : (locale === 'ar' ? 'مشاركة' : 'Share')}</span>
@@ -663,7 +663,7 @@ function TrackOrderContent() {
               <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-2xs space-y-3">
                 <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
                   <MapPin className="w-4 h-4 text-rose-500" />
-                  <h3 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">
+                  <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
                     {locale === 'ar' ? 'عنوان التوصيل' : 'Delivery Destination'}
                   </h3>
                 </div>
@@ -694,7 +694,7 @@ function TrackOrderContent() {
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                   <div className="flex items-center gap-2">
                     <Package className="w-4 h-4 text-emerald-600" />
-                    <h3 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">
+                    <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
                       {locale === 'ar' ? 'المنتجات المطلوبة' : `Ordered Items (${order?.items?.length || 0})`}
                     </h3>
                   </div>
@@ -714,12 +714,12 @@ function TrackOrderContent() {
                     return (
                       <div key={it.id || idx} className="flex items-center justify-between gap-2.5 text-xs py-1.5 border-b border-slate-50 last:border-none">
                         <div className="min-w-0 flex-1">
-                          <h4 className="font-extrabold text-slate-900 truncate">{pName}</h4>
+                          <h4 className="font-bold text-slate-900 truncate">{pName}</h4>
                           <span className="text-[11px] text-slate-400 font-medium">
                             Qty: {qty} × SAR {unitPrice.toFixed(2)}
                           </span>
                         </div>
-                        <span className="font-black text-slate-900 shrink-0 font-sans">
+                        <span className="font-black text-slate-900 shrink-0">
                           SAR {lineTotal.toFixed(2)}
                         </span>
                       </div>
@@ -731,17 +731,17 @@ function TrackOrderContent() {
                 <div className="pt-2 border-t border-slate-100 space-y-1.5 text-xs font-semibold text-slate-600">
                   <div className="flex justify-between">
                     <span>{locale === 'ar' ? 'المجموع الفرعي' : 'Subtotal:'}</span>
-                    <span className="font-extrabold text-slate-900">SAR {parseFloat(order?.subtotal || 0).toFixed(2)}</span>
+                    <span className="font-bold text-slate-900">SAR {parseFloat(order?.subtotal || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee:'}</span>
-                    <span className="font-extrabold text-slate-900">
+                    <span className="font-bold text-slate-900">
                       {parseFloat(order?.delivery_fee || 0) > 0 ? `SAR ${parseFloat(order.delivery_fee).toFixed(2)}` : 'FREE'}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>{locale === 'ar' ? 'ضريبة القيمة المضافة 15%' : 'Estimated VAT (15%):'}</span>
-                    <span className="font-extrabold text-slate-900">SAR {parseFloat(order?.tax_total || 0).toFixed(2)}</span>
+                    <span className="font-bold text-slate-900">SAR {parseFloat(order?.tax_total || 0).toFixed(2)}</span>
                   </div>
                   {parseFloat(order?.discount_total || 0) > 0 && (
                     <div className="flex justify-between text-emerald-700 font-bold">
@@ -752,7 +752,7 @@ function TrackOrderContent() {
                           {order?.coupon_code ? ` (${order.coupon_code})` : ''}:
                         </span>
                       </span>
-                      <span className="font-extrabold text-emerald-700">- SAR {parseFloat(order.discount_total).toFixed(2)}</span>
+                      <span className="font-bold text-emerald-700">- SAR {parseFloat(order.discount_total).toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between pt-1 border-t border-dashed border-slate-200 text-sm font-black text-slate-900">
@@ -766,7 +766,7 @@ function TrackOrderContent() {
               <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-2xs space-y-2 text-xs">
                 <div className="flex items-center gap-2">
                   <Headphones className="w-4 h-4 text-emerald-600" />
-                  <h4 className="font-extrabold text-slate-900">Need Delivery Assistance?</h4>
+                  <h4 className="font-bold text-slate-900">Need Delivery Assistance?</h4>
                 </div>
                 <p className="text-slate-500">
                   Falcon central cold-chain dispatch supervisor is on standby for gate access or gate code issues.
@@ -900,7 +900,7 @@ function TrackOrderContent() {
                             {driverPhone ? (
                               <a
                                 href={`tel:${driverPhone}`}
-                                className="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 font-extrabold text-xs transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                                className="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 font-bold text-xs transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
                               >
                                 <PhoneCall className="w-4 h-4 text-emerald-600" />
                                 <span>{locale === 'ar' ? 'اتصال بالمندوب' : 'Call Driver'}</span>
@@ -909,7 +909,7 @@ function TrackOrderContent() {
                               <button
                                 type="button"
                                 onClick={() => showToast(locale === 'ar' ? 'رقم هاتف المندوب غير متاح حالياً' : 'Driver contact number is currently private or unavailable', 'info')}
-                                className="px-4 py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-400 font-extrabold text-xs flex items-center gap-1.5 cursor-not-allowed"
+                                className="px-4 py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-400 font-bold text-xs flex items-center gap-1.5 cursor-not-allowed"
                                 title="Phone number unavailable"
                               >
                                 <PhoneCall className="w-4 h-4 text-slate-400" />
@@ -920,7 +920,7 @@ function TrackOrderContent() {
                             <button
                               type="button"
                               disabled
-                              className="px-4 py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-400 font-extrabold text-xs flex items-center gap-1.5 cursor-not-allowed opacity-80"
+                              className="px-4 py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-400 font-bold text-xs flex items-center gap-1.5 cursor-not-allowed opacity-80"
                               title={locale === 'ar' ? 'المراسلة المباشرة غير مفعلة لهذا التوصيل' : 'Direct in-app messaging is unavailable for this delivery'}
                             >
                               <MessageSquare className="w-4 h-4 text-slate-400" />
@@ -956,7 +956,7 @@ function TrackOrderContent() {
                       <CheckCircle2 className="w-8 h-8 stroke-[2.5]" />
                     </div>
                     <div className="space-y-1.5 max-w-md mx-auto">
-                      <h3 className="text-xl font-black text-slate-900 font-sans">
+                      <h3 className="text-xl font-black text-slate-900">
                         {locale === 'ar' ? 'تم توصيل الطلب بنجاح' : 'Order Delivered Successfully'}
                       </h3>
                       <p className="text-xs text-slate-600 leading-relaxed font-medium">
@@ -978,7 +978,7 @@ function TrackOrderContent() {
                       <AlertCircle className="w-8 h-8 stroke-[2.5]" />
                     </div>
                     <div className="space-y-1.5 max-w-md mx-auto">
-                      <h3 className="text-xl font-black text-slate-900 font-sans">
+                      <h3 className="text-xl font-black text-slate-900">
                         {status === 'CANCELLED'
                           ? (locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled')
                           : (locale === 'ar' ? 'تعذر التوصيل' : 'Delivery Attempt Unsuccessful')}
@@ -999,7 +999,7 @@ function TrackOrderContent() {
                         <Clock className="w-5 h-5" />
                       </div>
                       <div className="space-y-0.5">
-                        <h4 className="text-sm font-black text-amber-950 font-sans">
+                        <h4 className="text-sm font-black text-amber-950">
                           {locale === 'ar' ? 'التتبع المباشر غير نشط حالياً' : 'Live Tracking Not Yet Active'}
                         </h4>
                         <p className="text-xs font-bold text-amber-800 leading-relaxed">
@@ -1017,7 +1017,7 @@ function TrackOrderContent() {
                           <Truck className="w-6 h-6 text-[#043927]" />
                         </div>
                         <div className="space-y-1">
-                          <h4 className="text-sm font-black text-slate-900 font-sans">
+                          <h4 className="text-sm font-black text-slate-900">
                             {status === 'PACKED' || status === 'DRIVER_ASSIGNED' || status === 'DRIVER_ACCEPTED'
                               ? (locale === 'ar' ? 'الطلب مجهز ومعبأ وبانتظار الانطلاق' : 'Order Packed & Awaiting Courier Departure')
                               : (locale === 'ar' ? 'الطلب قيد التجهيز في المركز اللوجستي' : 'Order Being Prepared at Fulfillment Center')}
@@ -1065,7 +1065,7 @@ function TrackOrderContent() {
                           </div>
                         </div>
 
-                        <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
                           {locale === 'ar' ? 'بانتظار الانطلاق' : 'Ready to Dispatch'}
                         </span>
                       </div>
@@ -1086,7 +1086,7 @@ function TrackOrderContent() {
 
       {/* ================= COURIER CHAT SLIDE-OVER MODAL ================= */}
       {chatOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-96 max-w-[90vw] bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col font-sans animate-in slide-in-from-bottom duration-200">
+        <div className="fixed bottom-6 right-6 z-50 w-96 max-w-[90vw] bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-200">
 
           {/* Chat Header */}
           <div className="bg-[#043927] p-4 text-white flex items-center justify-between">
@@ -1100,7 +1100,7 @@ function TrackOrderContent() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 absolute bottom-0 right-0 border-2 border-white" />
               </div>
               <div>
-                <h4 className="font-extrabold text-xs">{driverInfo.name || 'Tariq Al-Harbi'}</h4>
+                <h4 className="font-bold text-xs">{driverInfo.name || 'Tariq Al-Harbi'}</h4>
                 <p className="text-[10px] text-emerald-300">Courier is Active Now</p>
               </div>
             </div>
@@ -1123,9 +1123,9 @@ function TrackOrderContent() {
               >
                 <div
                   className={`p-3 rounded-2xl max-w-[85%] font-medium ${msg.sender === 'customer'
-                      ? 'bg-[#006E2D] text-white rounded-br-xs'
-                      : 'bg-white text-slate-900 border border-slate-200 rounded-bl-xs shadow-2xs'
-                    }`}
+ ? 'bg-[#006E2D] text-white rounded-br-xs'
+ : 'bg-white text-slate-900 border border-slate-200 rounded-bl-xs shadow-2xs'
+ }`}
                 >
                   {msg.text}
                 </div>

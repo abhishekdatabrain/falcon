@@ -161,7 +161,7 @@ export default function AdminCategoryBannerPage() {
   };
 
   return (
-    <div className="space-y-8 pb-16 font-sans">
+    <div className="space-y-8 pb-16">
       
       {/* Top Header & Action Controls */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -240,8 +240,8 @@ export default function AdminCategoryBannerPage() {
               type="button"
               onClick={() => setPreviewLocale('en')}
               className={`px-3 py-1 rounded-lg transition-all ${
-                previewLocale === 'en' ? 'bg-white shadow-2xs text-[#043927]' : 'text-slate-600 hover:text-slate-900'
-              }`}
+ previewLocale === 'en' ? 'bg-white shadow-2xs text-[#043927]' : 'text-slate-600 hover:text-slate-900'
+ }`}
             >
               English Preview
             </button>
@@ -249,8 +249,8 @@ export default function AdminCategoryBannerPage() {
               type="button"
               onClick={() => setPreviewLocale('ar')}
               className={`px-3 py-1 rounded-lg transition-all ${
-                previewLocale === 'ar' ? 'bg-white shadow-2xs text-[#043927]' : 'text-slate-600 hover:text-slate-900'
-              }`}
+ previewLocale === 'ar' ? 'bg-white shadow-2xs text-[#043927]' : 'text-slate-600 hover:text-slate-900'
+ }`}
             >
               العربية (RTL)
             </button>
@@ -268,15 +268,15 @@ export default function AdminCategoryBannerPage() {
             {/* Left Content */}
             <div className="lg:col-span-8 space-y-3 z-10 text-left rtl:text-right">
               <div className="flex items-center gap-2">
-                <span className="bg-[#05A764] text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
+                <span className="bg-[#05A764] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
                   {previewLocale === 'ar' ? (form.badge1_ar || form.badge1_en) : form.badge1_en}
                 </span>
-                <span className="bg-[#ea580c] text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
+                <span className="bg-[#ea580c] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
                   {previewLocale === 'ar' ? (form.badge2_ar || form.badge2_en) : form.badge2_en}
                 </span>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight text-white font-sans">
+              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight text-white">
                 {previewLocale === 'ar' ? (form.title_ar || form.title_en) : form.title_en}
               </h3>
 
@@ -297,7 +297,7 @@ export default function AdminCategoryBannerPage() {
                     e.currentTarget.src = '/banners/farm_fresh_produce.jpg';
                   }}
                 />
-                <span className="absolute bottom-2 bg-emerald-950/90 text-amber-300 font-extrabold text-[10px] px-3 py-1 rounded-full border border-amber-400/40 shadow-md whitespace-nowrap max-w-[90%] truncate">
+                <span className="absolute bottom-2 bg-emerald-950/90 text-amber-300 font-bold text-[10px] px-3 py-1 rounded-full border border-amber-400/40 shadow-md whitespace-nowrap max-w-[90%] truncate">
                   {previewLocale === 'ar' ? (form.image_badge_ar || form.image_badge_en) : form.image_badge_en}
                 </span>
               </div>
@@ -525,10 +525,10 @@ export default function AdminCategoryBannerPage() {
                     type="button"
                     onClick={() => setForm({ ...form, image_url: preset.url })}
                     className={`p-2 rounded-xl text-left rtl:text-right border text-[11px] font-semibold transition-all flex items-center gap-2 cursor-pointer ${
-                      form.image_url === preset.url
-                        ? 'border-emerald-500 bg-emerald-50/60 text-[#043927] font-bold'
-                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                    }`}
+ form.image_url === preset.url
+ ? 'border-emerald-500 bg-emerald-50/60 text-[#043927] font-bold'
+ : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+ }`}
                   >
                     <span className="truncate">{preset.label}</span>
                   </button>
@@ -595,10 +595,10 @@ export default function AdminCategoryBannerPage() {
                     type="button"
                     onClick={() => setForm({ ...form, bg_color: color.hex })}
                     className={`p-2.5 rounded-xl border flex items-center gap-2.5 text-xs font-bold transition-all cursor-pointer ${
-                      form.bg_color === color.hex
-                        ? 'border-emerald-600 bg-emerald-50 text-[#043927] ring-1 ring-emerald-500'
-                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
-                    }`}
+ form.bg_color === color.hex
+ ? 'border-emerald-600 bg-emerald-50 text-[#043927] ring-1 ring-emerald-500'
+ : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
+ }`}
                   >
                     <span
                       className="w-5 h-5 rounded-lg border border-black/10 shrink-0 shadow-2xs"
@@ -642,8 +642,8 @@ export default function AdminCategoryBannerPage() {
                 type="button"
                 onClick={() => setForm({ ...form, enabled: !form.enabled })}
                 className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
-                  form.enabled ? 'bg-[#043927] justify-end' : 'bg-slate-300 justify-start'
-                }`}
+ form.enabled ? 'bg-[#043927] justify-end' : 'bg-slate-300 justify-start'
+ }`}
               >
                 <span className="bg-white w-4 h-4 rounded-full shadow-md"></span>
               </button>

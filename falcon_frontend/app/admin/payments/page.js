@@ -434,14 +434,14 @@ export default function AdminPaymentsPage() {
             <div key={idx} className="flex flex-col items-center relative z-10 text-center flex-1">
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border transition-all ${
-                  st.failed
-                    ? 'bg-rose-500 border-rose-600 text-white shadow-xs'
-                    : st.done
-                    ? 'bg-emerald-600 border-emerald-700 text-white shadow-xs'
-                    : st.current
-                    ? 'bg-amber-400 border-amber-500 text-slate-900 animate-pulse shadow-xs'
-                    : 'bg-white border-slate-300 text-slate-400'
-                }`}
+ st.failed
+ ? 'bg-rose-500 border-rose-600 text-white shadow-xs'
+ : st.done
+ ? 'bg-emerald-600 border-emerald-700 text-white shadow-xs'
+ : st.current
+ ? 'bg-amber-400 border-amber-500 text-slate-900 animate-pulse shadow-xs'
+ : 'bg-white border-slate-300 text-slate-400'
+ }`}
               >
                 {st.failed ? <X className="w-3.5 h-3.5" /> : st.done ? <Check className="w-3.5 h-3.5" /> : idx + 1}
               </div>
@@ -459,7 +459,7 @@ export default function AdminPaymentsPage() {
   };
 
   return (
-    <div className="space-y-6 font-sans pb-20">
+    <div className="space-y-6 pb-20">
       
       {/* 1. Header Banner & Actions */}
       <div className="bg-gradient-to-r from-slate-950 via-[#05442e] to-emerald-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-emerald-500/20 relative overflow-hidden">
@@ -545,10 +545,10 @@ export default function AdminPaymentsPage() {
         <div
           onClick={() => setActiveTab('BANK_AUDIT')}
           className={`rounded-3xl p-5 border transition-all cursor-pointer flex items-center justify-between relative overflow-hidden group ${
-            stats.pendingBankAuditCount > 0
-              ? 'bg-gradient-to-br from-amber-500/10 via-amber-50 to-white border-amber-300 shadow-md ring-2 ring-amber-400/30'
-              : 'bg-white border-slate-200/80 shadow-xs'
-          }`}
+ stats.pendingBankAuditCount > 0
+ ? 'bg-gradient-to-br from-amber-500/10 via-amber-50 to-white border-amber-300 shadow-md ring-2 ring-amber-400/30'
+ : 'bg-white border-slate-200/80 shadow-xs'
+ }`}
         >
           <div className="space-y-1">
             <div className="flex items-center gap-1.5">
@@ -648,18 +648,18 @@ export default function AdminPaymentsPage() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl font-black text-xs transition-all whitespace-nowrap cursor-pointer shrink-0 ${
-                  isActive
-                    ? 'bg-[#05442e] text-white shadow-md'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900'
-                }`}
+ isActive
+ ? 'bg-[#05442e] text-white shadow-md'
+ : 'bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+ }`}
               >
                 <span>{tab.label}</span>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                    isActive
-                      ? 'bg-white/20 text-white'
-                      : tab.badgeColor || 'bg-slate-200 text-slate-700'
-                  }`}
+ isActive
+ ? 'bg-white/20 text-white'
+ : tab.badgeColor || 'bg-slate-200 text-slate-700'
+ }`}
                 >
                   {tab.count}
                 </span>
@@ -733,8 +733,8 @@ export default function AdminPaymentsPage() {
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-xl transition-all cursor-pointer ${
-                  viewMode === 'grid' ? 'bg-white text-[#05442e] shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'
-                }`}
+ viewMode === 'grid' ? 'bg-white text-[#05442e] shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'
+ }`}
                 title="Grid / Card View"
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -742,8 +742,8 @@ export default function AdminPaymentsPage() {
               <button
                 onClick={() => setViewMode('table')}
                 className={`p-1.5 rounded-xl transition-all cursor-pointer ${
-                  viewMode === 'table' ? 'bg-white text-[#05442e] shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'
-                }`}
+ viewMode === 'table' ? 'bg-white text-[#05442e] shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'
+ }`}
                 title="Dense Table View"
               >
                 <List className="w-4 h-4" />
@@ -807,10 +807,10 @@ export default function AdminPaymentsPage() {
               <div
                 key={pay.id}
                 className={`bg-white rounded-3xl p-6 border transition-all duration-300 space-y-5 flex flex-col justify-between group shadow-xs hover:shadow-xl ${
-                  isBankAuditNeeded
-                    ? 'border-amber-300 ring-2 ring-amber-400/20'
-                    : 'border-slate-200/80 hover:border-emerald-500/40'
-                }`}
+ isBankAuditNeeded
+ ? 'border-amber-300 ring-2 ring-amber-400/20'
+ : 'border-slate-200/80 hover:border-emerald-500/40'
+ }`}
               >
                 
                 {/* Card Top: Order Link, Method, Amount */}
@@ -866,7 +866,7 @@ export default function AdminPaymentsPage() {
                           <Landmark className="w-4 h-4 text-amber-700" />
                           <span>{locale === 'ar' ? 'إيصال التحويل البنكي المقدم:' : 'Submitted Bank Proof:'}</span>
                         </span>
-                        <span className="font-extrabold text-slate-900 bg-white px-2.5 py-0.5 rounded-lg border border-amber-200 shadow-2xs">
+                        <span className="font-bold text-slate-900 bg-white px-2.5 py-0.5 rounded-lg border border-amber-200 shadow-2xs">
                           {pay.confirmation.bank_name || 'Bank Transfer'}
                         </span>
                       </div>
@@ -1139,7 +1139,7 @@ export default function AdminPaymentsPage() {
                         {pay.confirmation ? (
                           <div className="flex items-center gap-2.5">
                             <div className="space-y-0.5">
-                              <span className="text-[11px] font-extrabold text-slate-800 block whitespace-nowrap">
+                              <span className="text-[11px] font-bold text-slate-800 block whitespace-nowrap">
                                 {pay.confirmation.bank_name || 'Bank'}
                               </span>
                               <div className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 whitespace-nowrap">
@@ -1156,7 +1156,7 @@ export default function AdminPaymentsPage() {
                             {proofUrl && (
                               <button
                                 onClick={() => setSelectedProofPayment(pay)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[11px] transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[11px] transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
                                 title="Inspect Proof Slip"
                               >
                                 <Eye className="w-3.5 h-3.5 text-amber-700" />
@@ -1189,7 +1189,7 @@ export default function AdminPaymentsPage() {
                               <button
                                 onClick={() => handleVerify(pay.id)}
                                 disabled={actionLoading}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#05442e] hover:bg-emerald-800 text-white font-extrabold text-[11px] transition-all shadow-xs cursor-pointer border border-emerald-700/50"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#05442e] hover:bg-emerald-800 text-white font-bold text-[11px] transition-all shadow-xs cursor-pointer border border-emerald-700/50"
                                 title="Approve & Verify"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5 text-lime-300" />
@@ -1201,7 +1201,7 @@ export default function AdminPaymentsPage() {
                                   setRejectionReason('Invalid or fake reference number');
                                 }}
                                 disabled={actionLoading}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-extrabold text-[11px] transition-all cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[11px] transition-all cursor-pointer"
                                 title="Reject"
                               >
                                 <XCircle className="w-3.5 h-3.5 text-rose-600" />
@@ -1212,7 +1212,7 @@ export default function AdminPaymentsPage() {
 
                           <button
                             onClick={() => setInspectPayment(pay)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-[11px] transition-all cursor-pointer border border-slate-200"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition-all cursor-pointer border border-slate-200"
                             title="View Full Audit"
                           >
                             <Info className="w-3.5 h-3.5 text-slate-500" />
@@ -1447,10 +1447,10 @@ export default function AdminPaymentsPage() {
                     type="button"
                     onClick={() => setRejectionReason(chip)}
                     className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                      rejectionReason === chip
-                        ? 'bg-rose-600 text-white border-rose-700 shadow-xs'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
+ rejectionReason === chip
+ ? 'bg-rose-600 text-white border-rose-700 shadow-xs'
+ : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+ }`}
                   >
                     {chip}
                   </button>
@@ -1622,7 +1622,7 @@ export default function AdminPaymentsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
                     <span className="text-slate-400 font-bold block">{locale === 'ar' ? 'العميل:' : 'Customer:'}</span>
-                    <span className="font-extrabold text-slate-800 text-sm">
+                    <span className="font-bold text-slate-800 text-sm">
                       {inspectPayment.order.customer?.first_name} {inspectPayment.order.customer?.last_name || ''}
                     </span>
                     <p className="text-slate-500 mt-0.5">{inspectPayment.order.customer?.email} | {inspectPayment.order.customer?.mobile}</p>
@@ -1680,7 +1680,7 @@ export default function AdminPaymentsPage() {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setInspectPayment(null)}
-                className="px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs transition-colors cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors cursor-pointer"
               >
                 {locale === 'ar' ? 'إغلاق' : 'Close'}
               </button>

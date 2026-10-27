@@ -721,6 +721,7 @@ class OrderService {
 
     const { count, rows: orders } = await Order.findAndCountAll({
       where,
+      subQuery: false,
       include: [
         {
           model: Customer,
@@ -741,10 +742,12 @@ class OrderService {
         {
           model: OrderItem,
           as: 'items',
+          separate: true,
         },
         {
           model: OrderStatusHistory,
           as: 'status_history',
+          separate: true,
           include: [{ model: User, as: 'changed_by', attributes: ['id', 'email', 'role'] }],
         },
         {

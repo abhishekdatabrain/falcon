@@ -412,7 +412,7 @@ function ProductsCatalogContent() {
     const name = (locale === 'ar' ? node.name_ar : node.name_en) || node.name_en || node.name || '';
 
     return (
-      <div key={node.id} className="space-y-1 font-sans">
+      <div key={node.id} className="space-y-1">
         
         {/* Category Item Row */}
         <div
@@ -423,10 +423,10 @@ function ProductsCatalogContent() {
             handleSelectCat(node, level);
           }}
           className={`flex items-center justify-between py-2 px-3 rounded-xl transition-all cursor-pointer group select-none ${
-            isAncestorActive || isSelected
-              ? 'bg-emerald-50/90 text-[#043927] font-extrabold border border-emerald-100/90 shadow-2xs'
-              : 'hover:bg-slate-100/80 text-slate-700 font-medium'
-          }`}
+ isAncestorActive || isSelected
+ ? 'bg-emerald-50/90 text-[#043927] font-bold border border-emerald-100/90 shadow-2xs'
+ : 'hover:bg-slate-100/80 text-slate-700 font-medium'
+ }`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
             {/* Collapse/Expand Toggle (- / +) for parents, or Checkbox */}
@@ -446,17 +446,17 @@ function ProductsCatalogContent() {
               /* Blue / White Checkbox matching reference screenshot */
               <div
                 className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${
-                  isSelected
-                    ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
-                    : 'border-slate-300 bg-white group-hover:border-[#043927]'
-                }`}
+ isSelected
+ ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+ : 'border-slate-300 bg-white group-hover:border-[#043927]'
+ }`}
               >
                 {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
               </div>
             )}
 
             {/* Category Name */}
-            <span className={`text-xs truncate font-sans ${isAncestorActive || isSelected ? 'font-black text-[#043927]' : 'font-semibold text-slate-800 group-hover:text-[#043927]'}`}>
+            <span className={`text-xs truncate ${isAncestorActive || isSelected ? 'font-black text-[#043927]' : 'font-semibold text-slate-800 group-hover:text-[#043927]'}`}>
               {name}
             </span>
           </div>
@@ -489,17 +489,17 @@ function ProductsCatalogContent() {
             <div
               onClick={() => handleSelectCat(node, level)}
               className={`flex items-center gap-2.5 py-1.5 px-3 rounded-xl cursor-pointer transition-colors ${
-                isSelected
-                  ? 'bg-emerald-50/90 text-[#043927] font-black border border-emerald-200/80 shadow-2xs'
-                  : 'hover:bg-slate-100/70 text-slate-700'
-              }`}
+ isSelected
+ ? 'bg-emerald-50/90 text-[#043927] font-black border border-emerald-200/80 shadow-2xs'
+ : 'hover:bg-slate-100/70 text-slate-700'
+ }`}
             >
               <div
                 className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${
-                  isSelected
-                    ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
-                    : 'border-slate-300 bg-white'
-                }`}
+ isSelected
+ ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+ : 'border-slate-300 bg-white'
+ }`}
               >
                 {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
               </div>
@@ -571,38 +571,38 @@ function ProductsCatalogContent() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-20 font-sans bg-[#fbfcfb]">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-20 bg-[#fbfcfb]">
 
       {/* 1. Dynamic Category Hero Banner */}
       {heroBannerConfig?.enabled !== false && (
         <div
           style={{ backgroundColor: heroBannerConfig?.bg_color || '#043927' }}
-          className="rounded-2xl sm:p-8 min-h-[180px] relative overflow-hidden text-white shadow-md font-sans transition-all"
+          className="rounded-2xl sm:p-8 min-h-[180px] relative overflow-hidden text-white shadow-md transition-all"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
             
             {/* Left Text Block */}
             <div className="lg:col-span-8 space-y-3 text-left rtl:text-right z-10">
               <div className="flex items-center gap-2">
-                <span className="bg-[#05A764] text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
+                <span className="bg-[#05A764] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
                   {locale === 'ar'
                     ? (heroBannerConfig?.badge1_ar || heroBannerConfig?.badge1_en || 'طازج 100% من المزرعة')
                     : (heroBannerConfig?.badge1_en || '100% FARM FRESH')}
                 </span>
-                <span className="bg-[#ea580c] text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
+                <span className="bg-[#ea580c] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
                   {locale === 'ar'
                     ? (heroBannerConfig?.badge2_ar || heroBannerConfig?.badge2_en || 'أفضل سعر مضمون')
                     : (heroBannerConfig?.badge2_en || 'BEST PRICE GUARANTEED')}
                 </span>
               </div>
 
-              <h1 className="text-2xl sm:text-4xl lg:text-[40px] font-black tracking-tight leading-tight font-heading">
+              <h1 className="text-2xl sm:text-4xl lg:text-[40px] font-black tracking-tight leading-tight">
                 {locale === 'ar'
                   ? (heroBannerConfig?.title_ar || heroBannerConfig?.title_en || 'فواكه وخضروات طازجة من المزرعة')
                   : (heroBannerConfig?.title_en || 'Fresh Farm Fruits & Groceries')}
               </h1>
 
-              <p className="text-[#a7f3d0] font-medium text-xs sm:text-sm lg:text-base max-w-2xl leading-relaxed font-sans">
+              <p className="text-[#a7f3d0] font-medium text-xs sm:text-sm lg:text-base max-w-2xl leading-relaxed">
                 {locale === 'ar'
                   ? (heroBannerConfig?.desc_ar || heroBannerConfig?.desc_en || 'منتجات مزارع طازجة منتقاة بعناية وموثقة 100٪ للتغذية اليومية لعائلتك، مباشرة من المزرعة إلى مائدتك.')
                   : (heroBannerConfig?.desc_en || 'Hand-picked 100% certified fresh farm produce, fruits, herbs and whole foods for your daily nutrition. Direct farm-to-table for your family\'s health.')}
@@ -666,12 +666,12 @@ function ProductsCatalogContent() {
                 key={chip.id}
                 onClick={() => setActiveFilterChip(chip.id)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  activeFilterChip === chip.id
-                    ? 'bg-[#043927] text-white shadow-xs'
-                    : chip.isGold
-                    ? 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
+ activeFilterChip === chip.id
+ ? 'bg-[#043927] text-white shadow-xs'
+ : chip.isGold
+ ? 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
+ : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+ }`}
               >
                 {locale === 'ar' ? chip.label_ar : chip.label_en}
               </button>
@@ -794,29 +794,29 @@ function ProductsCatalogContent() {
                 <div
                   key={prod.id}
                   onClick={() => router.push(`/products/${prod.id}`)}
-                  className="group bg-white rounded-2xl border border-slate-200/90 hover:border-[#05A764] shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative font-sans cursor-pointer h-full"
+                  className="group bg-white rounded-2xl border border-slate-200/90 hover:border-[#05A764] shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative cursor-pointer h-full"
                 >
                   {/* Top Badges */}
                   <div className="flex items-center justify-between z-10 mb-1">
                     {isOutOfStock ? (
-                      <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                      <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
                         <Ban className="w-2.5 h-2.5 text-white" />
                         <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
                       </span>
                     ) : Boolean(prod.is_best_seller || prod.isBestSeller) ? (
-                      <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                      <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
                         <Star className="w-2.5 h-2.5 fill-current text-white" />
                         <span>{locale === 'ar' ? 'الأكثر مبيعاً' : 'BEST SELLER'}</span>
                       </span>
                     ) : prod.badge ? (
                       <span
-                        className={`px-2 py-0.5 rounded-full text-white font-extrabold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs ${
-                          prod.badgeType === 'red'
-                            ? 'bg-rose-600'
-                            : prod.badgeType === 'green'
-                            ? 'bg-[#05A764]'
-                            : 'bg-[#FFA500]'
-                        }`}
+                        className={`px-2 py-0.5 rounded-full text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs ${
+ prod.badgeType === 'red'
+ ? 'bg-rose-600'
+ : prod.badgeType === 'green'
+ ? 'bg-[#05A764]'
+ : 'bg-[#FFA500]'
+ }`}
                       >
                         <Star className="w-2.5 h-2.5 fill-current text-white" />
                         <span>{prod.badge}</span>
@@ -894,11 +894,11 @@ function ProductsCatalogContent() {
                           )}
                         </div>
                         {/* Dynamic Rating & Reviews Row */}
-                        <div className="flex items-center gap-1 text-[11px] shrink-0 font-sans">
+                        <div className="flex items-center gap-1 text-[11px] shrink-0">
                           {((prod.reviews_count !== undefined && prod.reviews_count !== null && Number(prod.reviews_count) > 0) || (prod.rating !== undefined && prod.rating !== null && Number(prod.rating) > 0)) ? (
                             <>
                               <span className="text-amber-500 font-bold text-xs">★</span>
-                              <span className="text-slate-900 font-extrabold text-[11px]">
+                              <span className="text-slate-900 font-bold text-[11px]">
                                 {Number(prod.rating || 0).toFixed(1)}
                               </span>
                               <span className="text-slate-400 font-normal text-[10px]">
@@ -914,7 +914,7 @@ function ProductsCatalogContent() {
                       </div>
 
                       {/* Product Title */}
-                      <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug font-sans group-hover:text-[#043927] transition-colors">
+                      <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug group-hover:text-[#043927] transition-colors">
                         {locale === 'ar' ? prod.name_ar || prod.title_ar : prod.name_en || prod.title_en}
                       </h3>
                     </div>
@@ -923,7 +923,7 @@ function ProductsCatalogContent() {
                     <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 mt-auto">
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-baseline gap-1.5 flex-wrap">
-                          <span className="text-sm sm:text-[15px] font-black text-slate-900 font-sans whitespace-nowrap leading-tight">
+                          <span className="text-sm sm:text-[15px] font-black text-slate-900 whitespace-nowrap leading-tight">
                             <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
                             {finalPrice.toFixed(2)}
                           </span>
@@ -998,7 +998,7 @@ function ProductsCatalogContent() {
                                 <Minus className="w-3 h-3 stroke-[2.5]" />
                               </button>
 
-                              <span className="flex-1 text-center text-xs font-black text-slate-900 font-sans select-none">
+                              <span className="flex-1 text-center text-xs font-black text-slate-900 select-none">
                                 {isBusy ? (
                                   <Loader2 className="w-3 h-3 animate-spin mx-auto text-emerald-600" />
                                 ) : (
@@ -1054,7 +1054,7 @@ function ProductsCatalogContent() {
           </div>
 
           {/* Pagination & Item Controls Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4 font-sans text-xs">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
             <span className="text-slate-500 font-medium">
               {totalItems === 0
                 ? (locale === 'ar' ? 'لا توجد منتجات' : 'No items found')
@@ -1094,10 +1094,10 @@ function ProductsCatalogContent() {
                       type="button"
                       onClick={() => handlePageChange(p)}
                       className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-[#043927] text-white shadow-2xs'
-                          : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
+ isActive
+ ? 'bg-[#043927] text-white shadow-2xs'
+ : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
+ }`}
                     >
                       {p}
                     </button>
@@ -1119,13 +1119,13 @@ function ProductsCatalogContent() {
           </div>
 
           {/* Bottom Trust Feature Cards (3 Columns) */}
-          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 font-sans">
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
             <div className="bg-[#F0FDF4] p-4.5 rounded-2xl border border-emerald-100 flex items-start gap-3 shadow-2xs">
               <div className="w-10 h-10 rounded-xl bg-[#05A764] text-white flex items-center justify-center shrink-0">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div className="space-y-0.5">
-                <h4 className="font-extrabold text-sm text-slate-900">{locale === 'ar' ? '١٠٠٪ طازج أو مجاناً' : '100% Fresh or Free'}</h4>
+                <h4 className="font-bold text-sm text-slate-900">{locale === 'ar' ? '١٠٠٪ طازج أو مجاناً' : '100% Fresh or Free'}</h4>
                 <p className="text-[11px] text-slate-600 leading-snug">
                   {locale === 'ar' ? 'ضمان الانتعاش التام أو الاسترجاع الفوري' : '100% freshness guaranteed or return instantly with full refund.'}
                 </p>
@@ -1137,7 +1137,7 @@ function ProductsCatalogContent() {
                 <Truck className="w-5 h-5" />
               </div>
               <div className="space-y-0.5">
-                <h4 className="font-extrabold text-sm text-slate-900">{locale === 'ar' ? 'سلسلة تبريد مستمرة' : 'Continuous Cold Chain'}</h4>
+                <h4 className="font-bold text-sm text-slate-900">{locale === 'ar' ? 'سلسلة تبريد مستمرة' : 'Continuous Cold Chain'}</h4>
                 <p className="text-[11px] text-slate-600 leading-snug">
                   {locale === 'ar' ? 'توصيل مبرد بشاحنات محكومة الحرارة' : 'Harvested & delivered under temperature controlled environment.'}
                 </p>
@@ -1149,7 +1149,7 @@ function ProductsCatalogContent() {
                 <Leaf className="w-5 h-5" />
               </div>
               <div className="space-y-0.5">
-                <h4 className="font-extrabold text-sm text-slate-900">{locale === 'ar' ? 'فواكه سعودية فاخرة' : 'Saudi Famous Fruit'}</h4>
+                <h4 className="font-bold text-sm text-slate-900">{locale === 'ar' ? 'فواكه سعودية فاخرة' : 'Saudi Famous Fruit'}</h4>
                 <p className="text-[11px] text-slate-600 leading-snug">
                   {locale === 'ar' ? 'محاصيل محلياً من أفضل مزارع المملكة' : 'Selection of premier vegetables and fruits harvested locally.'}
                 </p>

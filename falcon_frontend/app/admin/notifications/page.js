@@ -157,10 +157,10 @@ export default function AdminNotificationsPage() {
               key={t.key}
               onClick={() => setActiveTypeFilter(t.key)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeTypeFilter === t.key
-                  ? 'bg-purple-50 text-purple-700 border border-purple-200 shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200'
-              }`}
+ activeTypeFilter === t.key
+ ? 'bg-purple-50 text-purple-700 border border-purple-200 shadow-xs'
+ : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200'
+ }`}
             >
               {t.label}
             </button>
@@ -193,16 +193,16 @@ export default function AdminNotificationsPage() {
             <div key={n.id} className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-purple-300 shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="space-y-1.5 flex-1">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="font-extrabold text-slate-900 text-sm">
+                  <span className="font-bold text-slate-900 text-sm">
                     {locale === 'ar' ? n.title_ar : n.title_en}
                   </span>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                    n.type === 'ORDER_CONFIRMATION' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                    n.type === 'PAYMENT_CONFIRMATION' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                    n.type === 'DRIVER_ASSIGNMENT' ? 'bg-cyan-50 text-cyan-700 border-cyan-200' :
-                    n.type === 'DELIVERY_COMPLETED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                    'bg-purple-50 text-purple-700 border-purple-200'
-                  }`}>
+ n.type === 'ORDER_CONFIRMATION' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+ n.type === 'PAYMENT_CONFIRMATION' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+ n.type === 'DRIVER_ASSIGNMENT' ? 'bg-cyan-50 text-cyan-700 border-cyan-200' :
+ n.type === 'DELIVERY_COMPLETED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+ 'bg-purple-50 text-purple-700 border-purple-200'
+ }`}>
                     {n.type}
                   </span>
                 </div>

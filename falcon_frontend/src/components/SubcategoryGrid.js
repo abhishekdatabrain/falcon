@@ -70,7 +70,7 @@ export default function SubcategoryGrid({
   }
 
   return (
-    <section className="space-y-4 pt-2 select-none font-sans">
+    <section className="space-y-4 pt-2 select-none">
       
       {/* Section Header with Navigation Arrows */}
       <div className="flex items-center justify-between gap-3">
@@ -79,7 +79,7 @@ export default function SubcategoryGrid({
             <Layers className="w-4 h-4 text-[#006E2D]" />
           </div>
           <div>
-            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-heading">
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
               {sectionTitle}
             </h2>
             
@@ -149,7 +149,7 @@ export default function SubcategoryGrid({
 
               {/* Subcategory Name */}
               <div className="w-full pt-2">
-                <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm group-hover/card:text-[#043927] transition-colors leading-snug line-clamp-2">
+                <h3 className="font-bold text-slate-800 text-xs sm:text-sm group-hover/card:text-[#043927] transition-colors leading-snug line-clamp-2">
                   {subTitle}
                 </h3>
               </div>

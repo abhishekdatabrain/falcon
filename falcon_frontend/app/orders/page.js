@@ -449,7 +449,7 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F4F6F4] flex items-center justify-center py-24 font-sans">
+      <div className="min-h-screen bg-[#F4F6F4] flex items-center justify-center py-24">
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 border-4 border-[#043927] border-t-transparent rounded-full animate-spin" />
           <span className="text-xs font-bold text-slate-600">Loading your purchase history...</span>
@@ -459,7 +459,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F6F4] font-sans pb-24 text-slate-800">
+    <div className="min-h-screen bg-[#F4F6F4] pb-24 text-slate-800">
 
       {/* Top Breadcrumb Navigation */}
       <div className="bg-white border-b border-slate-200/80 py-3 px-4 sm:px-6 lg:px-8 text-xs font-semibold text-slate-500">
@@ -473,7 +473,7 @@ export default function OrdersPage() {
             My Account
           </Link>
           <ChevronRight className="w-3 h-3 text-slate-300 rtl:rotate-180" />
-          <span className="text-slate-900 font-extrabold">My Orders</span>
+          <span className="text-slate-900 font-bold">My Orders</span>
         </div>
       </div>
 
@@ -485,13 +485,13 @@ export default function OrdersPage() {
           <div className="lg:col-span-3 space-y-4">
 
             {/* User Profile Card */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-4 font-sans">
+            <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-13 h-13 rounded-2xl bg-[#043927] text-white font-black text-lg flex items-center justify-center border-2 border-emerald-100 shadow-2xs shrink-0">
                   {profile?.first_name ? profile.first_name[0].toUpperCase() : 'M'}
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-extrabold text-slate-900 text-sm leading-tight truncate">
+                  <h3 className="font-bold text-slate-900 text-sm leading-tight truncate">
                     {profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Mohammed Al-Salem' : 'Mohammed Al-Salem'}
                   </h3>
 
@@ -506,19 +506,19 @@ export default function OrdersPage() {
                 <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
                   <span className="text-[10px] font-bold text-slate-400 block uppercase">MartPoints</span>
                   <span className="font-black text-slate-900 text-sm block">1,420 pts</span>
-                  <span className="text-[9px] font-extrabold text-emerald-700 block mt-0.5">(SAR 71.00 Value)</span>
+                  <span className="text-[9px] font-bold text-emerald-700 block mt-0.5">(SAR 71.00 Value)</span>
                 </div>
                 <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
                   <span className="text-[10px] font-bold text-slate-400 block uppercase">Tier Savings</span>
                   <span className="font-black text-slate-900 text-sm block">SAR 384</span>
-                  <span className="text-[9px] font-extrabold text-emerald-700 block mt-0.5">Active</span>
+                  <span className="text-[9px] font-bold text-emerald-700 block mt-0.5">Active</span>
                 </div>
               </div> */}
 
               {/* Delivery Zone Banner */}
               <div className="bg-emerald-50/80 border border-emerald-200/70 p-3 rounded-2xl flex items-center justify-between text-xs">
                 <div className="space-y-0.5">
-                  <span className="font-extrabold text-[#043927] block text-[11px]">North Riyadh Express</span>
+                  <span className="font-bold text-[#043927] block text-[11px]">North Riyadh Express</span>
                   <span className="text-[10px] text-emerald-800 font-bold block">20-Min Delivery Guarantee</span>
                 </div>
                 <Truck className="w-5 h-5 text-[#05A764] shrink-0" />
@@ -537,7 +537,7 @@ export default function OrdersPage() {
                   <Package className="w-4 h-4 text-[#05A764]" />
                   <span>My Orders</span>
                 </div>
-                <span className="bg-[#05A764] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                <span className="bg-[#05A764] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                   {activeCount} Active
                 </span>
               </Link>
@@ -561,7 +561,7 @@ export default function OrdersPage() {
                   <Heart className="w-4 h-4 text-slate-400" />
                   <span>Wishlist</span>
                 </div>
-                <span className="text-[11px] font-extrabold text-slate-400">
+                <span className="text-[11px] font-bold text-slate-400">
                   {wishlist?.length || 0}
                 </span>
               </Link>
@@ -574,7 +574,7 @@ export default function OrdersPage() {
                   <Home className="w-4 h-4 text-slate-400" />
                   <span>Saved Addresses</span>
                 </div>
-                <span className="text-[11px] font-extrabold text-slate-400">
+                <span className="text-[11px] font-bold text-slate-400">
                   {addressesCount}
                 </span>
               </Link>
@@ -602,7 +602,7 @@ export default function OrdersPage() {
                     {unreadNotifsCount}
                   </span>
                 ) : (
-                  <span className="text-[11px] font-extrabold text-slate-400">
+                  <span className="text-[11px] font-bold text-slate-400">
                     0
                   </span>
                 )}
@@ -616,7 +616,7 @@ export default function OrdersPage() {
                   <Headphones className="w-4 h-4 text-emerald-600" />
                   <span>24/7 Concierge Support</span>
                 </div>
-                <span className="text-[10px] font-extrabold text-emerald-600">● Online</span>
+                <span className="text-[10px] font-bold text-emerald-600">● Online</span>
               </Link>
 
 
@@ -655,7 +655,7 @@ export default function OrdersPage() {
               </div>
               <button
                 type="button"
-                className="px-5 py-3 bg-[#043927] text-white rounded-2xl font-extrabold text-xs shadow-xs hover:bg-[#02281b] transition-colors cursor-pointer flex items-center gap-2 shrink-0"
+                className="px-5 py-3 bg-[#043927] text-white rounded-2xl font-bold text-xs shadow-xs hover:bg-[#02281b] transition-colors cursor-pointer flex items-center gap-2 shrink-0"
               >
                 <Filter className="w-3.5 h-3.5" />
                 <span>Filter</span>
@@ -663,14 +663,14 @@ export default function OrdersPage() {
             </div>
 
             {/* Status Pills Tabs Row */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar text-xs font-extrabold">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setActiveTab('ALL')}
                 className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'ALL'
-                  ? 'bg-[#054529] text-white border-[#054529] shadow-xs'
-                  : 'bg-white text-slate-600 border-[#054529] hover:bg-slate-50'
-                  }`}
+ ? 'bg-[#054529] text-white border-[#054529] shadow-xs'
+ : 'bg-white text-slate-600 border-[#054529] hover:bg-slate-50'
+ }`}
               >
                 <span>All Orders</span>
                 <span className="px-1.5 py-0.2 rounded-md bg-white/20 text-xs">{orders.length}</span>
@@ -680,9 +680,9 @@ export default function OrdersPage() {
                 type="button"
                 onClick={() => setActiveTab('ACTIVE')}
                 className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'ACTIVE'
-                  ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
-                  : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50/50'
-                  }`}
+ ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
+ : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50/50'
+ }`}
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span>Active & In-Transit</span>
@@ -693,9 +693,9 @@ export default function OrdersPage() {
                 type="button"
                 onClick={() => setActiveTab('DELIVERED')}
                 className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'DELIVERED'
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                  }`}
+ ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+ : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+ }`}
               >
                 <span>Delivered</span>
                 <span className="px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-700 text-xs">{deliveredCount}</span>
@@ -705,9 +705,9 @@ export default function OrdersPage() {
                 type="button"
                 onClick={() => setActiveTab('CANCELLED')}
                 className={`px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'CANCELLED'
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                  }`}
+ ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+ : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+ }`}
               >
                 <span>Cancelled</span>
                 <span className="px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-700 text-xs">{cancelledCount}</span>
@@ -750,7 +750,7 @@ export default function OrdersPage() {
                   // ---------------- CARD TYPE 1: OUT FOR DELIVERY / IN-TRANSIT ----------------
                   if (ord.order_status === 'OUT_FOR_DELIVERY' || ord.order_status === 'ARRIVED') {
                     return (
-                      <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 font-sans">
+                      <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4">
                         {/* Top Bar Header */}
                         <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
                           <div className="flex flex-wrap items-center gap-3">
@@ -782,7 +782,7 @@ export default function OrdersPage() {
                               <div>
                                 <div className="flex items-center gap-2">
                                   <h4 className="font-black text-[#043927] text-sm">{locale === 'ar' ? 'السائق في الطريق إليك' : 'Out for Delivery'}</h4>
-                                  <span className="text-xs font-extrabold text-emerald-800">
+                                  <span className="text-xs font-bold text-emerald-800">
                                     • {ord.delivery_slot ? `${ord.delivery_date || 'Today'} (${ord.delivery_slot})` : (locale === 'ar' ? 'يصل قريباً' : 'Arriving in ~20 mins')}
                                   </span>
                                 </div>
@@ -799,7 +799,7 @@ export default function OrdersPage() {
 
                           {/* 5-Step Progress Bar */}
                           <div className="bg-slate-50/70 rounded-2xl p-4 border border-slate-100 space-y-2">
-                            <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-500">
+                            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
                               <span className="uppercase tracking-wider">LIVE TRANSIT PROGRESS</span>
                               <span className="text-emerald-800 font-black">Step 4 of 5 Complete</span>
                             </div>
@@ -854,7 +854,7 @@ export default function OrdersPage() {
 
                           {/* Included Items List */}
                           {ord.items && ord.items.length > 0 && (
-                            <div className="space-y-2 font-sans pt-1">
+                            <div className="space-y-2 pt-1">
                               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                 Included in this delivery ({ord.items.length} items):
                               </span>
@@ -894,15 +894,15 @@ export default function OrdersPage() {
                                         </div>
 
                                         <div className="min-w-0">
-                                          <h5 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                                          <h5 className="font-bold text-xs text-slate-900 truncate">
                                             {name}
                                           </h5>
                                           <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="bg-[#05A764]/10 text-[#05A764] text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
+                                            <span className="bg-[#05A764]/10 text-[#05A764] text-[10px] font-black px-2 py-0.5 rounded-full">
                                               Qty: {qty}
                                             </span>
                                             {itemPrice > 0 && (
-                                              <span className="text-[11px] font-extrabold text-slate-700 font-sans">
+                                              <span className="text-[11px] font-bold text-slate-700">
                                                 SAR {itemPrice.toFixed(2)}
                                               </span>
                                             )}
@@ -946,7 +946,7 @@ export default function OrdersPage() {
 
                           <Link
                             href={`/track-order?orderNumber=${ord.order_number}`}
-                            className="px-5 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+                            className="px-5 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-bold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
                           >
                             <MapPin className="w-4 h-4 text-[#05A764]" />
                             <span>{locale === 'ar' ? 'تتبع السائق مباشرة' : 'Track Driver Live'}</span>
@@ -995,13 +995,13 @@ export default function OrdersPage() {
                     }
 
                     return (
-                      <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 font-sans">
+                      <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4">
                         {/* Top Bar Header */}
                         <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="font-black text-slate-900 text-sm">Order #{ord.order_number}</span>
                             <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase border ${isConfirmed ? 'bg-blue-50 text-blue-800 border-blue-200' : isPacked ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'
-                              }`}>
+ }`}>
                               {statusBadgeText}
                             </span>
                             <span className="text-slate-300">|</span>
@@ -1009,7 +1009,7 @@ export default function OrdersPage() {
                               {locale === 'ar' ? 'تاريخ الطلب:' : 'Placed:'} {formatPlacedTime(ord.createdAt)}
                             </span>
                             <span className="text-slate-300">•</span>
-                            <span className="text-emerald-800 font-extrabold flex items-center gap-1">
+                            <span className="text-emerald-800 font-bold flex items-center gap-1">
                               ⏱️ {locale === 'ar' ? 'الفترة:' : 'Slot:'} {ord.delivery_slot ? `${ord.delivery_date ? `${ord.delivery_date} • ` : ''}${ord.delivery_slot}` : (locale === 'ar' ? 'فترة مجدولة' : 'Scheduled Delivery')}
                             </span>
                           </div>
@@ -1035,14 +1035,14 @@ export default function OrdersPage() {
                               </div>
                             </div>
 
-                            <span className="bg-amber-950 text-amber-300 font-extrabold text-[10px] px-3 py-1 rounded-full border border-amber-800 shadow-2xs whitespace-nowrap self-start sm:self-center">
+                            <span className="bg-amber-950 text-amber-300 font-bold text-[10px] px-3 py-1 rounded-full border border-amber-800 shadow-2xs whitespace-nowrap self-start sm:self-center">
                               {ord.delivery_date || (locale === 'ar' ? 'طلب مجدول' : 'Scheduled Slot')}
                             </span>
                           </div>
 
                           {/* Items List */}
                           {ord.items && ord.items.length > 0 && (
-                            <div className="space-y-2 font-sans pt-1">
+                            <div className="space-y-2 pt-1">
                               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                 {locale === 'ar' ? 'المنتجات الجاري تجهيزها' : 'Items Being Prepared'} ({ord.items.length}):
                               </span>
@@ -1082,15 +1082,15 @@ export default function OrdersPage() {
                                         </div>
 
                                         <div className="min-w-0">
-                                          <h5 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                                          <h5 className="font-bold text-xs text-slate-900 truncate">
                                             {name}
                                           </h5>
                                           <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="bg-[#05A764]/10 text-[#05A764] text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
+                                            <span className="bg-[#05A764]/10 text-[#05A764] text-[10px] font-black px-2 py-0.5 rounded-full">
                                               Qty: {qty}
                                             </span>
                                             {itemPrice > 0 && (
-                                              <span className="text-[11px] font-extrabold text-slate-700 font-sans">
+                                              <span className="text-[11px] font-bold text-slate-700">
                                                 SAR {itemPrice.toFixed(2)}
                                               </span>
                                             )}
@@ -1146,7 +1146,7 @@ export default function OrdersPage() {
                   // ---------------- CARD TYPE 3: RECURRING SUBSCRIPTION ORDER ----------------
                   if (ord.order_status === 'SCHEDULED' || ord.type === 'SUBSCRIPTION') {
                     return (
-                      <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 font-sans">
+                      <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4">
                         {/* Top Bar */}
                         <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
                           <div className="flex flex-wrap items-center gap-3">
@@ -1211,7 +1211,7 @@ export default function OrdersPage() {
                   // ---------------- CARD TYPE 4: DELIVERED SUCCESSFUL ORDER ----------------
                   if (ord.order_status === 'DELIVERED') {
                     return (
-                      <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 font-sans">
+                      <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4">
                         {/* Top Bar */}
                         <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
                           <div className="flex flex-wrap items-center gap-3">
@@ -1221,7 +1221,7 @@ export default function OrdersPage() {
                               {locale === 'ar' ? 'تم التوصيل:' : 'Delivered:'} {formatDeliveredTime(ord)}
                             </span>
                             <span className="text-slate-300">•</span>
-                            <span className="text-emerald-700 font-extrabold flex items-center gap-1">
+                            <span className="text-emerald-700 font-bold flex items-center gap-1">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               <span>{locale === 'ar' ? 'تم التوصيل بنجاح' : 'Delivered Successfully'}</span>
                             </span>
@@ -1254,7 +1254,7 @@ export default function OrdersPage() {
                                   type="button"
                                   disabled={reorderLoadingId === ord.id}
                                   onClick={() => handleOrderAgain(ord)}
-                                  className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-extrabold text-xs hover:bg-slate-100 flex items-center gap-1 cursor-pointer disabled:opacity-60 active:scale-98"
+                                  className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 flex items-center gap-1 cursor-pointer disabled:opacity-60 active:scale-98"
                                 >
                                   {reorderLoadingId === ord.id ? (
                                     <Loader2 className="w-3.5 h-3.5 text-emerald-700 animate-spin" />
@@ -1263,7 +1263,7 @@ export default function OrdersPage() {
                                   )}
                                   <span>{reorderLoadingId === ord.id ? (locale === 'ar' ? 'جاري التحقق...' : 'Checking...') : (locale === 'ar' ? 'إعادة الشراء' : 'Buy Again')}</span>
                                 </button>
-                                <Link href={`/orders/${ord.id}`} className="px-3.5 py-2 rounded-xl bg-slate-200/80 text-slate-800 font-extrabold text-xs hover:bg-slate-300 cursor-pointer">
+                                <Link href={`/orders/${ord.id}`} className="px-3.5 py-2 rounded-xl bg-slate-200/80 text-slate-800 font-bold text-xs hover:bg-slate-300 cursor-pointer">
                                   View Details
                                 </Link>
                               </div>
@@ -1272,7 +1272,7 @@ export default function OrdersPage() {
 
                           {/* Product Items List */}
                           {ord.items && ord.items.length > 0 && (
-                            <div className="space-y-2 font-sans pt-1">
+                            <div className="space-y-2 pt-1">
                               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                 Items Delivered ({ord.items.length}):
                               </span>
@@ -1312,15 +1312,15 @@ export default function OrdersPage() {
                                         </div>
 
                                         <div className="min-w-0">
-                                          <h5 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                                          <h5 className="font-bold text-xs text-slate-900 truncate">
                                             {name}
                                           </h5>
                                           <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="bg-[#05A764]/10 text-[#05A764] text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
+                                            <span className="bg-[#05A764]/10 text-[#05A764] text-[10px] font-black px-2 py-0.5 rounded-full">
                                               Qty: {qty}
                                             </span>
                                             {itemPrice > 0 && (
-                                              <span className="text-[11px] font-extrabold text-slate-700 font-sans">
+                                              <span className="text-[11px] font-bold text-slate-700">
                                                 SAR {itemPrice.toFixed(2)}
                                               </span>
                                             )}
@@ -1343,7 +1343,7 @@ export default function OrdersPage() {
                                 type="button"
                                 disabled={reorderLoadingId === ord.id}
                                 onClick={() => handleOrderAgain(ord)}
-                                className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-60 active:scale-98"
+                                className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-bold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-60 active:scale-98"
                               >
                                 {reorderLoadingId === ord.id ? (
                                   <Loader2 className="w-4 h-4 text-[#05A764] animate-spin" />
@@ -1363,7 +1363,7 @@ export default function OrdersPage() {
                                   return (
                                     <Link
                                       href={`/orders/${ord.id}`}
-                                      className="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-extrabold hover:bg-amber-100 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                                      className="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-bold hover:bg-amber-100 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
                                       title={locale === 'ar' ? 'عرض تقييم المنتج' : 'View Product Rating'}
                                     >
                                       <div className="flex items-center gap-0.5 text-amber-500">
@@ -1371,9 +1371,9 @@ export default function OrdersPage() {
                                           <Star
                                             key={star}
                                             className={`w-3.5 h-3.5 ${star <= ratingVal
-                                                ? 'text-amber-500 fill-amber-400'
-                                                : 'text-slate-300 fill-slate-100'
-                                              }`}
+ ? 'text-amber-500 fill-amber-400'
+ : 'text-slate-300 fill-slate-100'
+ }`}
                                           />
                                         ))}
                                       </div>
@@ -1432,7 +1432,7 @@ export default function OrdersPage() {
                   const isReturned = ['RETURNED', 'DELIVERY_FAILED'].includes(ord.order_status);
 
                   return (
-                    <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 font-sans opacity-95">
+                    <div key={ord.id} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 opacity-95">
                       {/* Top Bar */}
                       <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
                         <div className="flex flex-wrap items-center gap-3">
@@ -1443,17 +1443,17 @@ export default function OrdersPage() {
                           </span>
                           <span className="text-slate-300">•</span>
                           {isCancelled ? (
-                            <span className="text-rose-600 font-extrabold flex items-center gap-1">
+                            <span className="text-rose-600 font-bold flex items-center gap-1">
                               <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
                               <span>{locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled'}</span>
                             </span>
                           ) : isReturned ? (
-                            <span className="text-purple-700 font-extrabold flex items-center gap-1">
+                            <span className="text-purple-700 font-bold flex items-center gap-1">
                               <RotateCcw className="w-3.5 h-3.5 text-purple-600" />
                               <span>{locale === 'ar' ? 'تم إرجاع الطلب' : 'Delivery Returned'}</span>
                             </span>
                           ) : (
-                            <span className="text-slate-700 font-extrabold flex items-center gap-1">
+                            <span className="text-slate-700 font-bold flex items-center gap-1">
                               <Package className="w-3.5 h-3.5 text-slate-500" />
                               <span>Status: {ord.order_status}</span>
                             </span>
@@ -1469,7 +1469,7 @@ export default function OrdersPage() {
                       <div className="px-6 space-y-3">
                         {/* Notice Banner */}
                         <div className={`p-4 rounded-2xl border flex items-center justify-between text-xs font-medium ${isCancelled ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-slate-50 border-slate-200 text-slate-700'
-                          }`}>
+ }`}>
                           <div className="flex items-center gap-2.5">
                             <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
                             <span>
@@ -1486,7 +1486,7 @@ export default function OrdersPage() {
 
                         {/* Product Items List */}
                         {ord.items && ord.items.length > 0 && (
-                          <div className="space-y-2 font-sans pt-1">
+                          <div className="space-y-2 pt-1">
                             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                               {locale === 'ar' ? 'المنتجات في هذا الطلب' : 'Items in this order'} ({ord.items.length}):
                             </span>
@@ -1526,15 +1526,15 @@ export default function OrdersPage() {
                                       </div>
 
                                       <div className="min-w-0">
-                                        <h5 className="font-extrabold text-xs text-slate-900 truncate font-sans">
+                                        <h5 className="font-bold text-xs text-slate-900 truncate">
                                           {name}
                                         </h5>
                                         <div className="flex items-center gap-2 mt-0.5">
-                                          <span className="bg-slate-200 text-slate-700 text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
+                                          <span className="bg-slate-200 text-slate-700 text-[10px] font-black px-2 py-0.5 rounded-full">
                                             Qty: {qty}
                                           </span>
                                           {itemPrice > 0 && (
-                                            <span className="text-[11px] font-extrabold text-slate-600 font-sans">
+                                            <span className="text-[11px] font-bold text-slate-600">
                                               SAR {itemPrice.toFixed(2)}
                                             </span>
                                           )}
@@ -1554,7 +1554,7 @@ export default function OrdersPage() {
                         <div className="flex items-center gap-2">
                           <Link
                             href="/products"
-                            className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                            className="px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-bold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                           >
                             <RotateCcw className="w-4 h-4 text-[#05A764]" />
                             <span>{locale === 'ar' ? 'إعادة الطلب' : 'Re-Order / Buy Again'}</span>
@@ -1576,7 +1576,7 @@ export default function OrdersPage() {
             </div>
 
             {/* ================= 100% FRESHNESS & COLD-CHAIN GUARANTEE FOOTER BANNER ================= */}
-            <div className="bg-[#043927] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-emerald-800/80 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden font-sans">
+            <div className="bg-[#043927] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-emerald-800/80 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
               <div className="space-y-2 relative z-10 max-w-2xl">
                 <div className="flex items-center gap-2 text-amber-300 font-black text-sm uppercase tracking-wider">
                   <ShieldCheck className="w-5 h-5 text-[#05A764]" />
@@ -1655,7 +1655,7 @@ export default function OrdersPage() {
                 <div className="bg-amber-50/90 border border-amber-200/90 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-amber-900">
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-extrabold">{locale === 'ar' ? 'كميات جزئية متوفرة' : 'Partial Quantities Available'}</p>
+                    <p className="font-bold">{locale === 'ar' ? 'كميات جزئية متوفرة' : 'Partial Quantities Available'}</p>
                     <p className="text-[11px] text-amber-800 font-medium mt-0.5">
                       {locale === 'ar'
                         ? 'بعض المنتجات يتوفر منها كميات أقل من طلبك الأصلي. تم تعديل الكمية إلى المتاح في المخزون.'
@@ -1669,7 +1669,7 @@ export default function OrdersPage() {
                 <div className="bg-purple-50/90 border border-purple-200/90 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-purple-900">
                   <Sparkles className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-extrabold">{locale === 'ar' ? 'نوع المنتج غير متاح' : 'Variant Selection Required'}</p>
+                    <p className="font-bold">{locale === 'ar' ? 'نوع المنتج غير متاح' : 'Variant Selection Required'}</p>
                     <p className="text-[11px] text-purple-800 font-medium mt-0.5">
                       {locale === 'ar'
                         ? 'النوع الذي طلبته سابقاً غير متوفر حالياً. يرجى اختيار حجم/نوع بديل من الخيارات المتاحة.'
@@ -1683,7 +1683,7 @@ export default function OrdersPage() {
                 <div className="bg-blue-50/90 border border-blue-200/90 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-blue-900">
                   <Tag className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-extrabold">{locale === 'ar' ? 'تحديثات في الأسعار' : 'Price Updates'}</p>
+                    <p className="font-bold">{locale === 'ar' ? 'تحديثات في الأسعار' : 'Price Updates'}</p>
                     <p className="text-[11px] text-blue-800 font-medium mt-0.5">
                       {locale === 'ar'
                         ? 'تم تحديث أسعار بعض المنتجات وفقاً لأسعار البيع الحالية في المتجر.'
@@ -1697,7 +1697,7 @@ export default function OrdersPage() {
                 <div className="bg-slate-100 border border-slate-200 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-slate-700">
                   <AlertCircle className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-extrabold">{locale === 'ar' ? 'منتجات غير متوفرة' : 'Unavailable Items'}</p>
+                    <p className="font-bold">{locale === 'ar' ? 'منتجات غير متوفرة' : 'Unavailable Items'}</p>
                     <p className="text-[11px] text-slate-600 font-medium mt-0.5">
                       {locale === 'ar'
                         ? 'المنتجات غير المتوفرة في المخزون سيتم تخطيها تلقائياً ولن تُضاف إلى السلة.'
@@ -1724,12 +1724,12 @@ export default function OrdersPage() {
                     <div
                       key={item.orderItemId}
                       className={`p-3.5 rounded-2xl border transition-all ${
-                        !isSelectable
-                          ? 'bg-slate-50/70 border-slate-200/70 opacity-60'
-                          : currentSel.selected
-                          ? 'bg-white border-emerald-300 shadow-2xs ring-1 ring-emerald-100'
-                          : 'bg-white border-slate-200 opacity-70'
-                      }`}
+ !isSelectable
+ ? 'bg-slate-50/70 border-slate-200/70 opacity-60'
+ : currentSel.selected
+ ? 'bg-white border-emerald-300 shadow-2xs ring-1 ring-emerald-100'
+ : 'bg-white border-slate-200 opacity-70'
+ }`}
                     >
                       <div className="flex items-start gap-3">
                         {/* Selection Checkbox */}
@@ -1772,7 +1772,7 @@ export default function OrdersPage() {
                         {/* Product Details & Variant Picker */}
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-start justify-between gap-2">
-                            <h4 className="font-extrabold text-sm text-slate-900 truncate">
+                            <h4 className="font-bold text-sm text-slate-900 truncate">
                               {locale === 'ar' ? item.nameAr || item.nameEn : item.nameEn || item.nameAr}
                             </h4>
                             {/* Price Display */}
@@ -1783,8 +1783,8 @@ export default function OrdersPage() {
                                   <span className="font-black text-slate-900 text-xs">SAR {item.currentPrice.toFixed(2)}</span>
                                   <span
                                     className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
-                                      item.priceDiff > 0 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'
-                                    }`}
+ item.priceDiff > 0 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'
+ }`}
                                   >
                                     {item.priceDiff > 0 ? `+${item.priceDiff.toFixed(2)}` : `${item.priceDiff.toFixed(2)}`}
                                   </span>
@@ -1899,7 +1899,7 @@ export default function OrdersPage() {
 
             {/* Modal Footer */}
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <span className="font-extrabold text-slate-600">
+              <span className="font-bold text-slate-600">
                 {(() => {
                   const selectedCount = Object.values(reorderSelections).filter((s) => s.selected && !s.skip && s.quantity > 0).length;
                   return locale === 'ar'

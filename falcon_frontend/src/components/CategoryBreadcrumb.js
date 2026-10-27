@@ -13,7 +13,7 @@ export default function CategoryBreadcrumb({ breadcrumbs = [] }) {
   const { locale } = useLanguage();
 
   return (
-    <nav aria-label="Breadcrumb" className="font-sans">
+    <nav aria-label="Breadcrumb" className="">
       <ol className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold text-slate-500 flex-wrap">
         
         {/* Home Link */}
@@ -41,7 +41,7 @@ export default function CategoryBreadcrumb({ breadcrumbs = [] }) {
               <li className="flex items-center">
                 {isLast ? (
                   <span
-                    className="text-[#043927] font-extrabold truncate max-w-[200px] sm:max-w-[320px]"
+                    className="text-[#043927] font-bold truncate max-w-[200px] sm:max-w-[320px]"
                     aria-current="page"
                   >
                     {title}

@@ -293,7 +293,7 @@ export default function AdminHeroBannersPage() {
   };
 
   return (
-    <div className="space-y-8 font-sans p-2 sm:p-4 md:p-6">
+    <div className="space-y-8 p-2 sm:p-4 md:p-6">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
         <div>
@@ -301,7 +301,7 @@ export default function AdminHeroBannersPage() {
             <div className="p-2 rounded-xl bg-emerald-50 text-[#043927]">
               <Sparkles className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
               {locale === 'ar' ? 'إدارة بنرات الهيرو الرئيسة' : 'Hero Banners Management'}
             </h1>
           </div>
@@ -323,7 +323,7 @@ export default function AdminHeroBannersPage() {
 
       {/* Switcher Tabs to Jump between Hero Banners and Promotional Cards */}
       <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 max-w-md">
-        <span className="flex-1 py-2 text-center text-xs font-extrabold bg-white text-slate-900 rounded-xl shadow-xs border border-slate-200/80">
+        <span className="flex-1 py-2 text-center text-xs font-bold bg-white text-slate-900 rounded-xl shadow-xs border border-slate-200/80">
           {locale === 'ar' ? 'سلايدر الهيرو الرئيسي' : 'Hero Carousel Banners'}
         </span>
         <Link
@@ -367,8 +367,8 @@ export default function AdminHeroBannersPage() {
             <div
               key={banner.id}
               className={`bg-white rounded-2xl border shadow-xs overflow-hidden transition-all duration-200 hover:shadow-md ${
-                banner.is_active ? 'border-slate-200' : 'border-slate-200 opacity-75'
-              }`}
+ banner.is_active ? 'border-slate-200' : 'border-slate-200 opacity-75'
+ }`}
             >
               {/* Card Header Preview Box */}
               <div className="relative bg-[#FAF7F0] p-6 border-b border-amber-100 flex items-center justify-between overflow-hidden min-h-[180px]">
@@ -382,7 +382,7 @@ export default function AdminHeroBannersPage() {
                     {locale === 'ar' ? banner.title_ar || banner.title_en : banner.title_en}
                   </h3>
                   {banner.subtitle_en && (
-                    <p className="text-xs font-extrabold text-[#01813E]">
+                    <p className="text-xs font-bold text-[#01813E]">
                       {locale === 'ar' ? banner.subtitle_ar || banner.subtitle_en : banner.subtitle_en}
                     </p>
                   )}
@@ -408,10 +408,10 @@ export default function AdminHeroBannersPage() {
                   <button
                     onClick={() => handleToggleStatus(banner)}
                     className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      banner.is_active
-                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                    }`}
+ banner.is_active
+ ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+ : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+ }`}
                   >
                     {banner.is_active ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
                     <span>{banner.is_active ? (locale === 'ar' ? 'نشط' : 'Active') : (locale === 'ar' ? 'معطل' : 'Inactive')}</span>
@@ -775,13 +775,13 @@ export default function AdminHeroBannersPage() {
                       type="button"
                       onClick={() => setFormData({ ...formData, show_badges: !formData.show_badges })}
                       className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
-                        formData.show_badges ? 'bg-[#043927]' : 'bg-slate-300'
-                      }`}
+ formData.show_badges ? 'bg-[#043927]' : 'bg-slate-300'
+ }`}
                     >
                       <span
                         className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                          formData.show_badges ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'
-                        }`}
+ formData.show_badges ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'
+ }`}
                       />
                     </button>
                   </div>
@@ -799,7 +799,7 @@ export default function AdminHeroBannersPage() {
                       </div>
                       <div className="space-y-2">
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'العنوان الرئيسي (English)' : 'Title (English)'}
                           </label>
                           <input
@@ -811,7 +811,7 @@ export default function AdminHeroBannersPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'العنوان الرئيسي (بالعربية)' : 'Title (Arabic)'}
                           </label>
                           <input
@@ -824,7 +824,7 @@ export default function AdminHeroBannersPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'النص الفرعي (English)' : 'Subtitle (English)'}
                           </label>
                           <input
@@ -836,7 +836,7 @@ export default function AdminHeroBannersPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'النص الفرعي (بالعربية)' : 'Subtitle (Arabic)'}
                           </label>
                           <input
@@ -861,7 +861,7 @@ export default function AdminHeroBannersPage() {
                       </div>
                       <div className="space-y-2">
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'العنوان الرئيسي (English)' : 'Title (English)'}
                           </label>
                           <input
@@ -873,7 +873,7 @@ export default function AdminHeroBannersPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'العنوان الرئيسي (بالعربية)' : 'Title (Arabic)'}
                           </label>
                           <input
@@ -886,7 +886,7 @@ export default function AdminHeroBannersPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'النص الفرعي (English)' : 'Subtitle (English)'}
                           </label>
                           <input
@@ -898,7 +898,7 @@ export default function AdminHeroBannersPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'النص الفرعي (بالعربية)' : 'Subtitle (Arabic)'}
                           </label>
                           <input
@@ -923,7 +923,7 @@ export default function AdminHeroBannersPage() {
                       </div>
                       <div className="space-y-2">
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'العنوان الرئيسي (English)' : 'Title (English)'}
                           </label>
                           <input
@@ -935,7 +935,7 @@ export default function AdminHeroBannersPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'العنوان الرئيسي (بالعربية)' : 'Title (Arabic)'}
                           </label>
                           <input
@@ -948,7 +948,7 @@ export default function AdminHeroBannersPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'النص الفرعي (English)' : 'Subtitle (English)'}
                           </label>
                           <input
@@ -960,7 +960,7 @@ export default function AdminHeroBannersPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                             {locale === 'ar' ? 'النص الفرعي (بالعربية)' : 'Subtitle (Arabic)'}
                           </label>
                           <input
@@ -997,13 +997,13 @@ export default function AdminHeroBannersPage() {
                     type="button"
                     onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
-                      formData.is_active ? 'bg-[#043927]' : 'bg-slate-200'
-                    }`}
+ formData.is_active ? 'bg-[#043927]' : 'bg-slate-200'
+ }`}
                   >
                     <span
                       className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                        formData.is_active ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'
-                      }`}
+ formData.is_active ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'
+ }`}
                     />
                   </button>
                   <span className="text-xs font-semibold text-slate-600">

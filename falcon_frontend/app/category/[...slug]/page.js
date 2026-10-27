@@ -30,7 +30,7 @@ import {
  */
 function CategoryPageSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 animate-pulse font-sans">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 animate-pulse">
       {/* Breadcrumb Skeleton */}
       <div className="h-4 w-64 bg-slate-200 rounded-md"></div>
 
@@ -383,11 +383,11 @@ function CategoryHierarchyContent() {
   // 2. Error State with Retry
   if (error || !categoryData) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center font-sans">
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
         <div className="w-20 h-20 mx-auto rounded-3xl bg-rose-50 text-rose-600 flex items-center justify-center mb-6 shadow-sm border border-rose-100">
           <AlertCircle className="w-10 h-10" />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mb-3">
           {locale === 'ar' ? 'التصنيف غير موجود' : 'Category Not Found'}
         </h1>
         <p className="text-slate-500 max-w-md mx-auto mb-8 text-sm sm:text-base leading-relaxed">
@@ -455,10 +455,10 @@ function CategoryHierarchyContent() {
                 type="button"
                 onClick={() => handlePageChange(pg)}
                 className={`w-8 h-8 rounded-xl font-bold transition-all cursor-pointer ${
-                  currentPage === pg
-                    ? 'bg-[#043927] text-white shadow-2xs'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                }`}
+ currentPage === pg
+ ? 'bg-[#043927] text-white shadow-2xs'
+ : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+ }`}
               >
                 {pg}
               </button>
@@ -480,7 +480,7 @@ function CategoryHierarchyContent() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 font-sans">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
       
       {/* 1. Dynamic Breadcrumbs (Home > Level 1 > Level 2 > Level 3 > Level 4) */}
       <CategoryBreadcrumb breadcrumbs={breadcrumbTrail} />

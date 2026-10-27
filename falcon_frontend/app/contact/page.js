@@ -62,7 +62,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FBFDFB] font-sans pb-24 text-slate-800 space-y-8 sm:space-y-12">
+    <div className="min-h-screen bg-[#FBFDFB] pb-24 text-slate-800 space-y-8 sm:space-y-12">
       
       {/* ================= BREADCRUMBS ================= */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
@@ -328,7 +328,7 @@ export default function ContactPage() {
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4 text-xs font-sans">
+              <form onSubmit={handleSubmit} className="space-y-4 text-xs">
                 
                 {/* Row 1: Full Name & Email Address */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -528,10 +528,10 @@ export default function ContactPage() {
                     type="button"
                     onClick={() => setActiveHub('riyadh')}
                     className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
-                      activeHub === 'riyadh'
-                        ? 'bg-[#043927] text-white'
-                        : 'bg-white/95 text-slate-700 hover:bg-white border border-slate-200'
-                    }`}
+ activeHub === 'riyadh'
+ ? 'bg-[#043927] text-white'
+ : 'bg-white/95 text-slate-700 hover:bg-white border border-slate-200'
+ }`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${activeHub === 'riyadh' ? 'bg-[#34D399]' : 'bg-slate-400'}`}></span>
                     <span>{isAr ? 'الرياض المركزية' : 'Riyadh Central'}</span>
@@ -541,10 +541,10 @@ export default function ContactPage() {
                     type="button"
                     onClick={() => setActiveHub('jeddah')}
                     className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
-                      activeHub === 'jeddah'
-                        ? 'bg-[#043927] text-white'
-                        : 'bg-white/95 text-slate-700 hover:bg-white border border-slate-200'
-                    }`}
+ activeHub === 'jeddah'
+ ? 'bg-[#043927] text-white'
+ : 'bg-white/95 text-slate-700 hover:bg-white border border-slate-200'
+ }`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${activeHub === 'jeddah' ? 'bg-[#34D399]' : 'bg-slate-400'}`}></span>
                     <span>{isAr ? 'جدة الغربية' : 'Jeddah West'}</span>
@@ -554,10 +554,10 @@ export default function ContactPage() {
                     type="button"
                     onClick={() => setActiveHub('dammam')}
                     className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
-                      activeHub === 'dammam'
-                        ? 'bg-[#043927] text-white'
-                        : 'bg-white/95 text-slate-700 hover:bg-white border border-slate-200'
-                    }`}
+ activeHub === 'dammam'
+ ? 'bg-[#043927] text-white'
+ : 'bg-white/95 text-slate-700 hover:bg-white border border-slate-200'
+ }`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${activeHub === 'dammam' ? 'bg-[#34D399]' : 'bg-slate-400'}`}></span>
                     <span>{isAr ? 'الدمام الشرقية' : 'Dammam East'}</span>
@@ -652,7 +652,7 @@ export default function ContactPage() {
             </div>
 
             {/* Farmer Partnership Dark Banner */}
-            <div className="bg-[#043927] text-white rounded-3xl p-6 shadow-md border border-emerald-900 space-y-3 font-sans">
+            <div className="bg-[#043927] text-white rounded-3xl p-6 shadow-md border border-emerald-900 space-y-3">
               <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">
                 {isAr ? 'انضمام المزارعين المحليين' : 'LOCAL FARMER ONBOARDING'}
               </span>

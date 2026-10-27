@@ -158,7 +158,7 @@ export default function VariantSelectionModal({ product, isOpen, onClose }) {
       dir={locale === 'ar' ? 'rtl' : 'ltr'}
     >
       <div
-        className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200 font-sans"
+        className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -242,8 +242,8 @@ export default function VariantSelectionModal({ product, isOpen, onClose }) {
                 <div
                   key={v.id || index}
                   className={`pt-3 first:pt-0 flex items-center justify-between gap-3 p-2.5 rounded-2xl transition-all ${
-                    selectedQty > 0 ? 'bg-emerald-50/50 border border-emerald-200/80 shadow-2xs' : 'hover:bg-slate-50/70 border border-transparent'
-                  }`}
+ selectedQty > 0 ? 'bg-emerald-50/50 border border-emerald-200/80 shadow-2xs' : 'hover:bg-slate-50/70 border border-transparent'
+ }`}
                 >
                   {/* Left: Thumbnail & Details */}
                   <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -261,7 +261,7 @@ export default function VariantSelectionModal({ product, isOpen, onClose }) {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-extrabold text-slate-900 text-sm sm:text-base leading-snug">
+                        <span className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
                           {displayLabel}
                         </span>
                         {hasDiscount && (
@@ -292,7 +292,7 @@ export default function VariantSelectionModal({ product, isOpen, onClose }) {
                       </div>
 
                       {/* Price in SAR */}
-                      <div className="flex items-baseline gap-1.5 mt-1 font-sans">
+                      <div className="flex items-baseline gap-1.5 mt-1">
                         <span className="text-sm sm:text-base font-black text-[#043927]">
                           SAR {finalPrice.toFixed(2)}
                         </span>
@@ -337,7 +337,7 @@ export default function VariantSelectionModal({ product, isOpen, onClose }) {
                           <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
                         </button>
 
-                        <span className="min-w-[24px] text-center font-black text-sm text-[#006E2D] font-sans select-none">
+                        <span className="min-w-[24px] text-center font-black text-sm text-[#006E2D] select-none">
                           {selectedQty}
                         </span>
 
@@ -367,7 +367,7 @@ export default function VariantSelectionModal({ product, isOpen, onClose }) {
                 ? (locale === 'ar' ? 'لم يتم تحديد خيارات' : 'No options selected')
                 : (locale === 'ar' ? `${totalSelectedQty} خيارات مختارة` : `${totalSelectedQty} item(s) selected`)}
             </div>
-            <div className="text-lg sm:text-xl font-black text-slate-900 font-sans">
+            <div className="text-lg sm:text-xl font-black text-slate-900">
               SAR {totalSelectedPrice.toFixed(2)}
             </div>
           </div>
@@ -376,7 +376,7 @@ export default function VariantSelectionModal({ product, isOpen, onClose }) {
             type="button"
             onClick={handleConfirm}
             disabled={totalSelectedQty === 0 || isSubmitting}
-            className="flex-1 max-w-[200px] sm:max-w-[240px] h-12 rounded-2xl bg-[#006E2D] hover:bg-[#005824] active:scale-98 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+            className="flex-1 max-w-[200px] sm:max-w-[240px] h-12 rounded-2xl bg-[#006E2D] hover:bg-[#005824] active:scale-98 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>

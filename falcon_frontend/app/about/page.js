@@ -26,7 +26,7 @@ export default function AboutPage() {
   const isAr = locale === 'ar';
 
   return (
-    <div className="min-h-screen bg-[#FBFDFB] font-sans pb-24 text-slate-800 space-y-16 sm:space-y-24">
+    <div className="min-h-screen bg-[#FBFDFB] pb-24 text-slate-800 space-y-16 sm:space-y-24">
       
       {/* ================= SECTION 1: HERO BANNER ================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14">
@@ -94,7 +94,7 @@ export default function AboutPage() {
               <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-slate-200/90 text-slate-800 text-[11px] font-bold shadow-md flex items-center gap-2">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#05A764]" />
                 <span className="text-slate-500 font-medium">{isAr ? 'جودة موثقة' : 'Verified Quality'}</span>
-                <span className="font-extrabold text-[#043927]">{isAr ? 'سلسلة تبريد 100%' : '100% Cold-Chain'}</span>
+                <span className="font-bold text-[#043927]">{isAr ? 'سلسلة تبريد 100%' : '100% Cold-Chain'}</span>
               </div>
 
               {/* Overlay Floating Card Bottom */}
@@ -104,7 +104,7 @@ export default function AboutPage() {
                     🌱
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-xs text-slate-900">
+                    <h4 className="font-bold text-xs text-slate-900">
                       {isAr ? 'من الحصاد الفوري إلى بابك' : 'Dawn Harvest to Doorstep'}
                     </h4>
                     <p className="text-[10px] text-slate-500 font-medium">
@@ -214,7 +214,7 @@ export default function AboutPage() {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 01. QUALITY PROTOCOL
               </span>
-              <h3 className="font-extrabold text-slate-900 text-base leading-snug">
+              <h3 className="font-bold text-slate-900 text-base leading-snug">
                 {isAr ? 'طزاجة لا تقبل المساومة' : 'Uncompromised Freshness'}
               </h3>
               <p className="text-xs text-slate-500 font-normal leading-relaxed">
@@ -238,7 +238,7 @@ export default function AboutPage() {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 02. ECONOMIC IMPACT
               </span>
-              <h3 className="font-extrabold text-slate-900 text-base leading-snug">
+              <h3 className="font-bold text-slate-900 text-base leading-snug">
                 {isAr ? 'دعم وتمكين المزارع المحلي' : 'Championing Local Growers'}
               </h3>
               <p className="text-xs text-slate-500 font-normal leading-relaxed">
@@ -262,7 +262,7 @@ export default function AboutPage() {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 03. GREEN FLEET
               </span>
-              <h3 className="font-extrabold text-slate-900 text-base leading-snug">
+              <h3 className="font-bold text-slate-900 text-base leading-snug">
                 {isAr ? 'تغليف صديق للبيئة' : 'Eco-Conscious Packaging'}
               </h3>
               <p className="text-xs text-slate-500 font-normal leading-relaxed">
@@ -286,7 +286,7 @@ export default function AboutPage() {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 04. MICRO-HUBS
               </span>
-              <h3 className="font-extrabold text-slate-900 text-base leading-snug">
+              <h3 className="font-bold text-slate-900 text-base leading-snug">
                 {isAr ? 'سرعة مقرونة بالدقة' : 'Speed with Precision'}
               </h3>
               <p className="text-xs text-slate-500 font-normal leading-relaxed">
@@ -660,7 +660,7 @@ export default function AboutPage() {
             <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
               2021 • FOUNDING
             </span>
-            <h4 className="font-extrabold text-slate-900 text-sm">
+            <h4 className="font-bold text-slate-900 text-sm">
               {isAr ? 'إطلاق تجريبي بالرياض' : 'Riyadh Pilot'}
             </h4>
             <p className="text-xs text-slate-500 font-normal leading-relaxed">
@@ -678,7 +678,7 @@ export default function AboutPage() {
             <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
               2023 • EXPANSION
             </span>
-            <h4 className="font-extrabold text-slate-900 text-sm">
+            <h4 className="font-bold text-slate-900 text-sm">
               {isAr ? 'مراكز تبريد مصغرة' : 'Hyper-Local Cold Hubs'}
             </h4>
             <p className="text-xs text-slate-500 font-normal leading-relaxed">
@@ -696,7 +696,7 @@ export default function AboutPage() {
             <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
               2025 • TECH STACK
             </span>
-            <h4 className="font-extrabold text-slate-900 text-sm">
+            <h4 className="font-bold text-slate-900 text-sm">
               {isAr ? 'تنبؤ الطلب بالذكاء الاصطناعي' : 'AI Demand Prediction'}
             </h4>
             <p className="text-xs text-slate-500 font-normal leading-relaxed">
@@ -714,7 +714,7 @@ export default function AboutPage() {
             <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
               TODAY • MARKET LEADER
             </span>
-            <h4 className="font-extrabold text-slate-900 text-sm">
+            <h4 className="font-bold text-slate-900 text-sm">
               {isAr ? 'أكثر من 250 مزرعة وتوصيل مليوني' : '250+ Farms & 2M+ Delivery'}
             </h4>
             <p className="text-xs text-slate-500 font-normal leading-relaxed">

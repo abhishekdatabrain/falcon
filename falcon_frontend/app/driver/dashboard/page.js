@@ -445,7 +445,7 @@ export default function DriverDashboardPage() {
 
   return (
     <div
-      className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 antialiased"
+      className="min-h-screen bg-[#F8FAFC] text-slate-800 antialiased"
       dir={locale === 'ar' ? 'rtl' : 'ltr'}
     >
       {/* ============================================================== */}
@@ -517,11 +517,11 @@ export default function DriverDashboardPage() {
             </button>
 
             {/* Quick Status Pill */}
-            <div className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-extrabold bg-slate-50">
+            <div className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold bg-slate-50">
               <span
                 className={`w-2 h-2 rounded-full ${
-                  isAvailable ? 'bg-emerald-500 ring-2 ring-emerald-200' : isBusy ? 'bg-amber-500 ring-2 ring-amber-200' : 'bg-slate-400'
-                }`}
+ isAvailable ? 'bg-emerald-500 ring-2 ring-emerald-200' : isBusy ? 'bg-amber-500 ring-2 ring-amber-200' : 'bg-slate-400'
+ }`}
               />
               <span className="text-slate-700">
                 {isAvailable ? 'Available' : isBusy ? 'Busy Run' : 'Offline'}
@@ -560,7 +560,7 @@ export default function DriverDashboardPage() {
             <button
               type="button"
               onClick={handleLogout}
-              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 text-xs font-extrabold transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
               title={locale === 'ar' ? 'تسجيل الخروج' : 'Logout'}
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -585,16 +585,16 @@ export default function DriverDashboardPage() {
       {/* Sidebar Container: Fixed on left (LTR) or right (RTL), full vertical height */}
       <aside
         className={`fixed top-16 bottom-0 z-40 w-72 bg-white border-r rtl:border-r-0 rtl:border-l border-slate-200/90 shadow-xs flex flex-col justify-between transition-transform duration-300 ease-in-out ${
-          locale === 'ar'
-            ? 'right-0 lg:translate-x-0'
-            : 'left-0 lg:translate-x-0'
-        } ${
-          sidebarOpen
-            ? 'translate-x-0'
-            : locale === 'ar'
-            ? 'translate-x-full lg:translate-x-0'
-            : '-translate-x-full lg:translate-x-0'
-        }`}
+ locale === 'ar'
+ ? 'right-0 lg:translate-x-0'
+ : 'left-0 lg:translate-x-0'
+ } ${
+ sidebarOpen
+ ? 'translate-x-0'
+ : locale === 'ar'
+ ? 'translate-x-full lg:translate-x-0'
+ : '-translate-x-full lg:translate-x-0'
+ }`}
       >
         {/* Top Section: Driver Profile & Dispatch Availability Toggle */}
         <div className="p-5 space-y-5 overflow-y-auto flex-1">
@@ -606,8 +606,8 @@ export default function DriverDashboardPage() {
                 {driverInitial}
                 <span
                   className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white ${
-                    isAvailable ? 'bg-emerald-500' : isBusy ? 'bg-amber-500' : 'bg-slate-400'
-                  }`}
+ isAvailable ? 'bg-emerald-500' : isBusy ? 'bg-amber-500' : 'bg-slate-400'
+ }`}
                 />
               </div>
               <div className="min-w-0">
@@ -624,7 +624,7 @@ export default function DriverDashboardPage() {
             <div className="pt-2 border-t border-slate-200/70 space-y-1 text-xs">
               <div className="flex items-center justify-between text-[11px]">
                 <span className="text-slate-400 font-bold">{locale === 'ar' ? 'الرخصة:' : 'License:'}</span>
-                <span className="font-mono font-extrabold text-slate-700">
+                <span className="font-mono font-bold text-slate-700">
                   {driver?.license_number || 'SA-DL-9876'}
                 </span>
               </div>
@@ -669,8 +669,8 @@ export default function DriverDashboardPage() {
                   >
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${
-                        st.id === 'AVAILABLE' ? 'bg-emerald-400' : st.id === 'BUSY' ? 'bg-amber-300' : 'bg-slate-400'
-                      }`}
+ st.id === 'AVAILABLE' ? 'bg-emerald-400' : st.id === 'BUSY' ? 'bg-amber-300' : 'bg-slate-400'
+ }`}
                     />
                     <span className="text-[11px]">{locale === 'ar' ? st.label_ar : st.label_en}</span>
                   </button>
@@ -692,11 +692,11 @@ export default function DriverDashboardPage() {
                 setDeliveryTab('active');
                 setSidebarOpen(false);
               }}
-              className={`w-full p-3 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-xs font-extrabold ${
-                deliveryTab === 'active'
-                  ? 'bg-[#043927] text-white shadow-sm shadow-emerald-950/20'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
+              className={`w-full p-3 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-xs font-bold ${
+ deliveryTab === 'active'
+ ? 'bg-[#043927] text-white shadow-sm shadow-emerald-950/20'
+ : 'text-slate-700 hover:bg-slate-100'
+ }`}
             >
               <div className="flex items-center gap-2.5">
                 <Package className={`w-4 h-4 ${deliveryTab === 'active' ? 'text-[#05A764]' : 'text-slate-400'}`} />
@@ -704,8 +704,8 @@ export default function DriverDashboardPage() {
               </div>
               <span
                 className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                  deliveryTab === 'active' ? 'bg-emerald-500/30 text-emerald-200' : 'bg-slate-200 text-slate-700'
-                }`}
+ deliveryTab === 'active' ? 'bg-emerald-500/30 text-emerald-200' : 'bg-slate-200 text-slate-700'
+ }`}
               >
                 {activeDeliveries.length}
               </span>
@@ -718,11 +718,11 @@ export default function DriverDashboardPage() {
                 setDeliveryTab('history');
                 setSidebarOpen(false);
               }}
-              className={`w-full p-3 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-xs font-extrabold ${
-                deliveryTab === 'history'
-                  ? 'bg-[#043927] text-white shadow-sm shadow-emerald-950/20'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
+              className={`w-full p-3 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-xs font-bold ${
+ deliveryTab === 'history'
+ ? 'bg-[#043927] text-white shadow-sm shadow-emerald-950/20'
+ : 'text-slate-700 hover:bg-slate-100'
+ }`}
             >
               <div className="flex items-center gap-2.5">
                 <CheckCircle2
@@ -732,8 +732,8 @@ export default function DriverDashboardPage() {
               </div>
               <span
                 className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                  deliveryTab === 'history' ? 'bg-emerald-500/30 text-emerald-200' : 'bg-slate-200 text-slate-700'
-                }`}
+ deliveryTab === 'history' ? 'bg-emerald-500/30 text-emerald-200' : 'bg-slate-200 text-slate-700'
+ }`}
               >
                 {completedDeliveries.length}
               </span>
@@ -780,7 +780,7 @@ export default function DriverDashboardPage() {
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full p-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-extrabold transition-colors cursor-pointer flex items-center justify-center gap-2"
+            className="w-full p-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2"
           >
             <LogOut className="w-4 h-4" />
             <span>{locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out of Fleet'}</span>
@@ -835,8 +835,8 @@ export default function DriverDashboardPage() {
                 <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-2xl flex items-center gap-3">
                   <div
                     className={`w-3 h-3 rounded-full ${
-                      isAvailable ? 'bg-emerald-500 animate-pulse' : isBusy ? 'bg-amber-500' : 'bg-slate-400'
-                    }`}
+ isAvailable ? 'bg-emerald-500 animate-pulse' : isBusy ? 'bg-amber-500' : 'bg-slate-400'
+ }`}
                   />
                   <div className="text-xs">
                     <span className="font-black text-slate-900 block leading-tight">
@@ -926,10 +926,10 @@ export default function DriverDashboardPage() {
                   type="button"
                   onClick={() => setDeliveryTab('active')}
                   className={`flex-1 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                    deliveryTab === 'active'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
+ deliveryTab === 'active'
+ ? 'bg-white text-slate-900 shadow-xs'
+ : 'text-slate-600 hover:text-slate-900'
+ }`}
                 >
                   <Package className="w-3.5 h-3.5 text-[#05A764]" />
                   <span>{locale === 'ar' ? 'الطلبات النشطة' : 'Active Runs'}</span>
@@ -942,10 +942,10 @@ export default function DriverDashboardPage() {
                   type="button"
                   onClick={() => setDeliveryTab('history')}
                   className={`flex-1 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                    deliveryTab === 'history'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
+ deliveryTab === 'history'
+ ? 'bg-white text-slate-900 shadow-xs'
+ : 'text-slate-600 hover:text-slate-900'
+ }`}
                 >
                   <Calendar className="w-3.5 h-3.5 text-slate-500" />
                   <span>{locale === 'ar' ? 'سجل التوصيل' : 'History'}</span>
@@ -1089,7 +1089,7 @@ export default function DriverDashboardPage() {
                             <MapPin className="w-4 h-4" />
                           </div>
                           <div className="space-y-0.5">
-                            <p className="font-extrabold text-slate-900">{order?.address?.full_name}</p>
+                            <p className="font-bold text-slate-900">{order?.address?.full_name}</p>
                             <p className="text-slate-600">
                               {order?.address?.address_line}, {order?.address?.area}, {order?.address?.city}
                             </p>
@@ -1307,7 +1307,7 @@ export default function DriverDashboardPage() {
               </div>
 
               <div className="space-y-3">
-                <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                   <Package className="w-4 h-4 text-[#05A764]" />
                   <span>Order Items ({(selectedOrderDetails.order?.items || []).length})</span>
                 </h4>
@@ -1338,7 +1338,7 @@ export default function DriverDashboardPage() {
                         </div>
                       </div>
 
-                      <span className="text-xs font-extrabold text-slate-900">
+                      <span className="text-xs font-bold text-slate-900">
                         {(parseFloat(item.unit_price || 0) * (item.quantity || 1)).toFixed(2)} SAR
                       </span>
                     </div>
@@ -1421,7 +1421,7 @@ export default function DriverDashboardPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Total Collected:</span>
-                  <span className="font-extrabold text-[#043927]">
+                  <span className="font-bold text-[#043927]">
                     {parseFloat(completionConfirmDelivery.order?.grand_total || 0).toFixed(2)} SAR
                   </span>
                 </div>
@@ -1630,10 +1630,10 @@ export default function DriverDashboardPage() {
                   type="button"
                   onClick={() => setProfileTab('profile')}
                   className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                    profileTab === 'profile'
-                      ? 'bg-white text-slate-900 shadow-xs font-black'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
+ profileTab === 'profile'
+ ? 'bg-white text-slate-900 shadow-xs font-black'
+ : 'text-slate-500 hover:text-slate-800'
+ }`}
                 >
                   {locale === 'ar' ? 'بيانات السائق' : 'Contact Profile'}
                 </button>
@@ -1641,10 +1641,10 @@ export default function DriverDashboardPage() {
                   type="button"
                   onClick={() => setProfileTab('password')}
                   className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                    profileTab === 'password'
-                      ? 'bg-white text-slate-900 shadow-xs font-black'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
+ profileTab === 'password'
+ ? 'bg-white text-slate-900 shadow-xs font-black'
+ : 'text-slate-500 hover:text-slate-800'
+ }`}
                 >
                   {locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
                 </button>

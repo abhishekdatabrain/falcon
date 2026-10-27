@@ -443,6 +443,7 @@ class AdminService {
 
     const { count, rows: customers } = await Customer.findAndCountAll({
       where: customerWhere,
+      subQuery: false,
       include: [
         {
           model: User,
@@ -450,7 +451,11 @@ class AdminService {
           where: Object.keys(userWhere).length > 0 ? userWhere : undefined,
           attributes: ['id', 'email', 'mobile', 'status'],
         },
-        'addresses',
+        {
+          model: Address,
+          as: 'addresses',
+          separate: true,
+        },
       ],
       order: [['createdAt', 'DESC'], ['id', 'DESC']],
       limit: paginationConfig.limit,

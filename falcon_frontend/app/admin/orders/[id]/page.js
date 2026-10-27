@@ -288,16 +288,16 @@ export default function OrderDetailsPage({ params }) {
     switch (payment.status) {
       case 'PAID':
       case 'VERIFIED':
-        return <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">✓ PAID</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">✓ PAID</span>;
       case 'REFUNDED':
-        return <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-orange-100 text-orange-800 border border-orange-300">↺ REFUNDED</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300">↺ REFUNDED</span>;
       case 'FAILED':
       case 'REJECTED':
-        return <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-rose-100 text-rose-800 border border-rose-300">✗ FAILED</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">✗ FAILED</span>;
       case 'SUBMITTED':
-        return <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800 border border-blue-300">UNDER REVIEW</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">UNDER REVIEW</span>;
       default:
-        return <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-800 border border-amber-300">PENDING</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">PENDING</span>;
     }
   };
 
@@ -305,18 +305,18 @@ export default function OrderDetailsPage({ params }) {
   const renderPaymentMethodBadge = (method) => {
     const m = (method || '').toUpperCase();
     if (m.includes('RAZORPAY')) {
-      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">Razorpay</span>;
+      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Razorpay</span>;
     }
     if (m.includes('CASHFREE')) {
-      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-teal-50 text-teal-700 border border-teal-200">Cashfree</span>;
+      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">Cashfree</span>;
     }
     if (m.includes('COD') || m.includes('CASH')) {
-      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">Cash on Delivery</span>;
+      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Cash on Delivery</span>;
     }
     if (m.includes('BANK')) {
-      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200">Bank Transfer</span>;
+      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">Bank Transfer</span>;
     }
-    return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-slate-100 text-slate-700 border border-slate-200">{method || 'Credit/Debit Card'}</span>;
+    return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">{method || 'Credit/Debit Card'}</span>;
   };
 
   if (loading) {
@@ -390,7 +390,7 @@ export default function OrderDetailsPage({ params }) {
           </button>
 
           {order.order_status === 'CANCELLED' ? (
-            <span className="px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-extrabold text-xs flex items-center gap-1.5 shadow-2xs">
+            <span className="px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs">
               <XCircle className="w-4 h-4 text-rose-600" />
               <span>Order Cancelled (Locked)</span>
             </span>
@@ -463,7 +463,7 @@ export default function OrderDetailsPage({ params }) {
           {order.order_status === 'CANCELLED' && (
             <div className="bg-rose-50/70 border border-rose-200 rounded-3xl p-6 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-rose-200/60 pb-3">
-                <div className="flex items-center gap-2.5 text-rose-900 font-extrabold text-sm">
+                <div className="flex items-center gap-2.5 text-rose-900 font-bold text-sm">
                   <XCircle className="w-5 h-5 text-rose-600" />
                   <span>Customer Order Cancellation Details</span>
                 </div>
@@ -475,7 +475,7 @@ export default function OrderDetailsPage({ params }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
                 <div className="bg-white/90 rounded-2xl p-3.5 border border-rose-100 space-y-1">
                   <span className="text-[10px] uppercase font-bold text-slate-400 block">Cancellation Reason</span>
-                  <p className="font-extrabold text-slate-900">
+                  <p className="font-bold text-slate-900">
                     {order.cancellation_reason || 'Customer requested cancellation'}
                   </p>
                 </div>
@@ -489,7 +489,7 @@ export default function OrderDetailsPage({ params }) {
 
                 <div className="bg-white/90 rounded-2xl p-3.5 border border-rose-100 space-y-1">
                   <span className="text-[10px] uppercase font-bold text-slate-400 block">Cancelled Timestamp</span>
-                  <p className="font-extrabold text-slate-900">
+                  <p className="font-bold text-slate-900">
                     {order.cancelled_at ? new Date(order.cancelled_at).toLocaleString() : 'Recorded'}
                   </p>
                 </div>
@@ -498,12 +498,12 @@ export default function OrderDetailsPage({ params }) {
                   <span className="text-[10px] uppercase font-bold text-slate-400 block">Refund Status</span>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className={`px-2.5 py-1 rounded-full font-black text-[10px] ${
-                      order.refund_status === 'REFUNDED'
-                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                        : order.refund_status === 'PENDING_REFUND'
-                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                        : 'bg-slate-100 text-slate-700 border border-slate-200'
-                    }`}>
+ order.refund_status === 'REFUNDED'
+ ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+ : order.refund_status === 'PENDING_REFUND'
+ ? 'bg-amber-100 text-amber-800 border border-amber-300'
+ : 'bg-slate-100 text-slate-700 border border-slate-200'
+ }`}>
                       {order.refund_status || (order.payment?.status === 'REFUNDED' ? 'REFUNDED' : 'NOT_APPLICABLE')}
                     </span>
                   </div>
@@ -561,7 +561,7 @@ export default function OrderDetailsPage({ params }) {
                               )}
                             </div>
                             <div>
-                              <div className="font-extrabold text-slate-900">{item.product_name_en}</div>
+                              <div className="font-bold text-slate-900">{item.product_name_en}</div>
                               {item.product_name_ar && (
                                 <div className="text-[11px] text-slate-400">{item.product_name_ar}</div>
                               )}
@@ -649,12 +649,12 @@ export default function OrderDetailsPage({ params }) {
                   <div key={idx} className="relative">
                     <span
                       className={`absolute -left-[31px] top-0 w-4 h-4 rounded-full border-2 ${
-                        isCurrent
-                          ? 'bg-indigo-600 border-white ring-4 ring-indigo-100 animate-pulse'
-                          : isPassed
-                          ? 'bg-emerald-500 border-white'
-                          : 'bg-slate-300 border-white'
-                      }`}
+ isCurrent
+ ? 'bg-indigo-600 border-white ring-4 ring-indigo-100 animate-pulse'
+ : isPassed
+ ? 'bg-emerald-500 border-white'
+ : 'bg-slate-300 border-white'
+ }`}
                     ></span>
                     <div className="space-y-0.5">
                       <div className={`font-black text-xs ${isCurrent ? 'text-indigo-700' : isPassed ? 'text-slate-900' : 'text-slate-400'}`}>
@@ -690,7 +690,7 @@ export default function OrderDetailsPage({ params }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
                     <span className="text-slate-400 text-[10px] uppercase font-bold block">Assigned Driver</span>
-                    <div className="text-sm font-extrabold text-white mt-0.5">{drvUser.email}</div>
+                    <div className="text-sm font-bold text-white mt-0.5">{drvUser.email}</div>
                     <div className="text-slate-400 font-mono mt-0.5">Mobile: {drvUser.mobile || 'N/A'}</div>
                     <div className="text-slate-400 mt-0.5">License: {drv.license_number || 'N/A'}</div>
                     <div className="text-slate-400 mt-0.5">Vehicle: {drv.vehicle_details || 'Standard Fleet'}</div>
@@ -785,7 +785,7 @@ export default function OrderDetailsPage({ params }) {
             <div className="space-y-2.5 text-xs">
               <div>
                 <span className="text-[10px] text-slate-400 uppercase font-bold block">Customer Full Name</span>
-                <strong className="text-sm text-slate-900 font-extrabold">
+                <strong className="text-sm text-slate-900 font-bold">
                   {cust.first_name ? `${cust.first_name} ${cust.last_name || ''}` : 'Customer'}
                 </strong>
               </div>
@@ -930,7 +930,7 @@ export default function OrderDetailsPage({ params }) {
                       setTransactionIdInput(pay.transaction_id || '');
                       setShowVerifyPaymentModal(true);
                     }}
-                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Verify & Confirm Payment (Paid)</span>
@@ -940,7 +940,7 @@ export default function OrderDetailsPage({ params }) {
                 {(pay.status === 'PAID' || pay.status === 'VERIFIED') && (
                   <button
                     onClick={() => setShowRefundModal(true)}
-                    className="w-full py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <RotateCcw className="w-4 h-4" />
                     <span>Process Payment Refund</span>
@@ -971,7 +971,7 @@ export default function OrderDetailsPage({ params }) {
               <div className="space-y-2.5 text-xs">
                 <div>
                   <span className="text-[10px] text-slate-400 uppercase font-bold block">Driver Name / Email</span>
-                  <strong className="text-sm text-slate-900 font-extrabold">{drvUser.email}</strong>
+                  <strong className="text-sm text-slate-900 font-bold">{drvUser.email}</strong>
                 </div>
 
                 <div>
@@ -1007,7 +1007,7 @@ export default function OrderDetailsPage({ params }) {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900">
                 Update Status for Order #{order.order_number}
               </h3>
               <button onClick={() => setShowStatusModal(false)} className="p-1 rounded-xl bg-slate-100 text-slate-400 hover:text-slate-700">
@@ -1021,7 +1021,7 @@ export default function OrderDetailsPage({ params }) {
                 <select
                   value={targetStatus}
                   onChange={(e) => setTargetStatus(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-extrabold focus:border-indigo-500 outline-hidden cursor-pointer"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold focus:border-indigo-500 outline-hidden cursor-pointer"
                   required
                 >
                   <option value="PENDING_PAYMENT">PENDING (Pending Payment)</option>
@@ -1075,7 +1075,7 @@ export default function OrderDetailsPage({ params }) {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900">
                 {drv ? 'Reassign Driver' : 'Assign Driver'} for Order #{order.order_number}
               </h3>
               <button onClick={() => setShowAssignModal(false)} className="p-1 rounded-xl bg-slate-100 text-slate-400 hover:text-slate-700">
@@ -1140,7 +1140,7 @@ export default function OrderDetailsPage({ params }) {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900">
                 Verify Payment for Order #{order.order_number}
               </h3>
               <button onClick={() => setShowVerifyPaymentModal(false)} className="p-1 rounded-xl bg-slate-100 text-slate-400 hover:text-slate-700">
@@ -1208,7 +1208,7 @@ export default function OrderDetailsPage({ params }) {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900">
                 Refund Payment for Order #{order.order_number}
               </h3>
               <button onClick={() => setShowRefundModal(false)} className="p-1 rounded-xl bg-slate-100 text-slate-400 hover:text-slate-700">

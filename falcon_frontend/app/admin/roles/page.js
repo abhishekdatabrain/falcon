@@ -462,7 +462,7 @@ export default function AdminRolesPage() {
   }
 
   return (
-    <div className="space-y-6 font-sans pb-20">
+    <div className="space-y-6 pb-20">
       {/* 1. Header Banner & Quick Actions */}
       <div className="bg-gradient-to-r from-slate-950 via-[#05442e] to-emerald-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-emerald-500/20 relative overflow-hidden">
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-80 h-80 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
@@ -637,17 +637,17 @@ export default function AdminRolesPage() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl font-black text-xs transition-all whitespace-nowrap cursor-pointer shrink-0 ${
-                isActive
-                  ? 'bg-[#05442e] text-white shadow-md'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900'
-              }`}
+ isActive
+ ? 'bg-[#05442e] text-white shadow-md'
+ : 'bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+ }`}
             >
               <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
               <span
                 className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-                }`}
+ isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+ }`}
               >
                 {tab.count}
               </span>
@@ -762,10 +762,10 @@ export default function AdminRolesPage() {
                             <div className="flex items-center gap-3">
                               <div
                                 className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
-                                  isSuper
-                                    ? 'bg-purple-100 text-purple-700 border border-purple-200'
-                                    : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                }`}
+ isSuper
+ ? 'bg-purple-100 text-purple-700 border border-purple-200'
+ : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+ }`}
                               >
                                 <ShieldCheck className="w-5 h-5" />
                               </div>
@@ -803,8 +803,8 @@ export default function AdminRolesPage() {
                                 <Key className={`w-3.5 h-3.5 ${isSuper ? 'text-purple-600' : 'text-emerald-600'}`} />
                                 <span
                                   className={`text-xs font-bold ${
-                                    isSuper ? 'text-purple-700' : 'text-slate-800'
-                                  }`}
+ isSuper ? 'text-purple-700' : 'text-slate-800'
+ }`}
                                 >
                                   {isSuper ? `All (${totalPerms})` : `${permCount} / ${totalPerms}`}
                                 </span>
@@ -815,8 +815,8 @@ export default function AdminRolesPage() {
                               <div className="w-28 bg-slate-100 rounded-full h-1.5 overflow-hidden">
                                 <div
                                   className={`h-1.5 rounded-full transition-all ${
-                                    isSuper ? 'bg-purple-600' : 'bg-emerald-500'
-                                  }`}
+ isSuper ? 'bg-purple-600' : 'bg-emerald-500'
+ }`}
                                   style={{ width: `${permPercent}%` }}
                                 />
                               </div>
@@ -991,10 +991,10 @@ export default function AdminRolesPage() {
                           <td className="px-5 py-3.5">
                             <span
                               className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                                isSensitive
-                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
-                              }`}
+ isSensitive
+ ? 'bg-amber-100 text-amber-800 border border-amber-200'
+ : 'bg-slate-100 text-slate-700 border border-slate-200'
+ }`}
                             >
                               {log.action}
                             </span>
@@ -1106,8 +1106,8 @@ export default function AdminRolesPage() {
                   onChange={(e) => setRoleFormData({ ...roleFormData, name: e.target.value })}
                   placeholder="e.g., Administrator, Project Manager"
                   className={`w-full px-3.5 py-2.5 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium resize-y ${
-                    editingRole?.is_system ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''
-                  }`}
+ editingRole?.is_system ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''
+ }`}
                 />
               </div>
 
@@ -1125,8 +1125,8 @@ export default function AdminRolesPage() {
                   }
                   placeholder="Describe the responsibilities and access level for this role"
                   className={`w-full px-3.5 py-2.5 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium resize-y ${
-                    editingRole?.slug === 'super_admin' ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''
-                  }`}
+ editingRole?.slug === 'super_admin' ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''
+ }`}
                 />
               </div>
 
@@ -1138,8 +1138,8 @@ export default function AdminRolesPage() {
                     <div
                       onClick={toggleAllModalPermissions}
                       className={`flex items-center gap-2 ${
-                        editingRole?.slug === 'super_admin' ? 'cursor-default' : 'cursor-pointer hover:opacity-95'
-                      } transition-opacity`}
+ editingRole?.slug === 'super_admin' ? 'cursor-default' : 'cursor-pointer hover:opacity-95'
+ } transition-opacity`}
                     >
                       <input
                         type="checkbox"
@@ -1210,8 +1210,8 @@ export default function AdminRolesPage() {
                               {/* Module Name + Master Checkbox */}
                               <label
                                 className={`flex items-center gap-3 select-none py-0.5 ${
-                                  editingRole?.slug === 'super_admin' ? 'cursor-default' : 'cursor-pointer'
-                                }`}
+ editingRole?.slug === 'super_admin' ? 'cursor-default' : 'cursor-pointer'
+ }`}
                               >
                                 <input
                                   type="checkbox"
@@ -1298,14 +1298,14 @@ export default function AdminRolesPage() {
                                       disabled={editingRole?.slug === 'super_admin'}
                                       onClick={() => toggleModalPermission(ep.code)}
                                       className={`text-[10px] px-2 py-0.5 rounded-md border font-semibold transition-all ${
-                                        editingRole?.slug === 'super_admin'
-                                          ? 'cursor-default opacity-80'
-                                          : 'cursor-pointer'
-                                      } ${
-                                        checked
-                                          ? 'bg-blue-50 border-blue-300 text-blue-700'
-                                          : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-                                      }`}
+ editingRole?.slug === 'super_admin'
+ ? 'cursor-default opacity-80'
+ : 'cursor-pointer'
+ } ${
+ checked
+ ? 'bg-blue-50 border-blue-300 text-blue-700'
+ : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+ }`}
                                       title={ep.description || ep.name}
                                     >
                                       {checked ? '✓ ' : '+ '}

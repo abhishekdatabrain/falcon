@@ -226,7 +226,7 @@ export default function AdminCustomerDetailsPage() {
             <span>{locale === 'ar' ? 'العملاء' : 'Customers'}</span>
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <span className="text-slate-900 font-extrabold">{customer.first_name} {customer.last_name}</span>
+          <span className="text-slate-900 font-bold">{customer.first_name} {customer.last_name}</span>
         </div>
 
         <Link
@@ -250,11 +250,11 @@ export default function AdminCustomerDetailsPage() {
                 {customer.first_name} {customer.last_name}
               </h1>
               <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${
-                  customer.user?.status === 'ACTIVE'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-rose-50 text-rose-700 border-rose-200'
-                }`}
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+ customer.user?.status === 'ACTIVE'
+ ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+ : 'bg-rose-50 text-rose-700 border-rose-200'
+ }`}
               >
                 {customer.user?.status === 'ACTIVE' ? (
                   <>
@@ -303,10 +303,10 @@ export default function AdminCustomerDetailsPage() {
           <button
             onClick={handleToggleStatus}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
-              customer.user?.status === 'ACTIVE'
-                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
-                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
-            }`}
+ customer.user?.status === 'ACTIVE'
+ ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+ : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+ }`}
           >
             {customer.user?.status === 'ACTIVE' ? (
               <>
@@ -327,7 +327,7 @@ export default function AdminCustomerDetailsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-indigo-600">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Total Orders</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Orders</span>
             <ShoppingBag className="w-5 h-5" />
           </div>
           <div className="text-2xl font-black text-slate-900">{(customer.orders || []).length}</div>
@@ -335,7 +335,7 @@ export default function AdminCustomerDetailsPage() {
 
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-emerald-600">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Total Spent</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Spent</span>
             <CreditCard className="w-5 h-5" />
           </div>
           <div className="text-2xl font-black text-emerald-700">{totalSpent.toFixed(2)} SAR</div>
@@ -381,7 +381,7 @@ export default function AdminCustomerDetailsPage() {
                       {new Date(ord.createdAt).toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 font-extrabold text-[10px]">
+                      <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold text-[10px]">
                         {ord.order_status}
                       </span>
                     </td>
@@ -406,7 +406,7 @@ export default function AdminCustomerDetailsPage() {
                   <Edit3 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">Edit Customer Profile</h3>
+                  <h3 className="text-lg font-bold text-slate-900">Edit Customer Profile</h3>
                   <p className="text-xs text-slate-500">Update customer information</p>
                 </div>
               </div>
@@ -501,7 +501,7 @@ export default function AdminCustomerDetailsPage() {
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">Add Delivery Address</h3>
+                  <h3 className="text-lg font-bold text-slate-900">Add Delivery Address</h3>
                   <p className="text-xs text-slate-500">For {customer.first_name} {customer.last_name}</p>
                 </div>
               </div>

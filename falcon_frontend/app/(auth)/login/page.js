@@ -166,7 +166,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[88vh] flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 font-sans bg-gradient-to-b from-[#f7faf8] via-[#fbfcfb] to-white relative overflow-hidden">
+    <div className="min-h-[88vh] flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#f7faf8] via-[#fbfcfb] to-white relative overflow-hidden">
       {/* Background Ambient Glows */}
       <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[550px] h-[550px] rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-20 -right-20 w-[420px] h-[420px] rounded-full bg-lime-400/10 blur-3xl pointer-events-none" />
@@ -228,7 +228,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
             {/* Email or Mobile Field */}
             <div className="space-y-1.5">
-              <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                 {locale === 'ar' ? 'البريد الإلكتروني أو رقم الجوال' : 'Email or Mobile Number'}
               </label>
               <div className="relative">
@@ -242,15 +242,15 @@ export default function LoginPage() {
                       : 'e.g. name@example.com or 0500000001'
                   }
                   className={`w-full pl-10 pr-4 py-3 rounded-2xl text-slate-900 placeholder-slate-400 text-xs sm:text-[13px] font-semibold transition-all outline-none ${
-                    fieldErrors.loginInput
-                      ? 'bg-rose-50/40 border-2 border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
-                      : 'bg-slate-50/80 border border-slate-200 hover:border-slate-300 focus:bg-white focus:border-[#05442e] focus:ring-4 focus:ring-[#05442e]/10'
-                  }`}
+ fieldErrors.loginInput
+ ? 'bg-rose-50/40 border-2 border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+ : 'bg-slate-50/80 border border-slate-200 hover:border-slate-300 focus:bg-white focus:border-[#05442e] focus:ring-4 focus:ring-[#05442e]/10'
+ }`}
                 />
                 <Mail
                   className={`w-4 h-4 absolute left-3.5 top-3.5 transition-colors ${
-                    fieldErrors.loginInput ? 'text-rose-500' : 'text-slate-400'
-                  }`}
+ fieldErrors.loginInput ? 'text-rose-500' : 'text-slate-400'
+ }`}
                 />
               </div>
 
@@ -266,7 +266,7 @@ export default function LoginPage() {
             {/* Password Field */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                   {locale === 'ar' ? 'كلمة المرور' : 'Password'}
                 </label>
               </div>
@@ -278,15 +278,15 @@ export default function LoginPage() {
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   placeholder="••••••••"
                   className={`w-full pl-10 pr-10 py-3 rounded-2xl text-slate-900 placeholder-slate-400 text-xs sm:text-[13px] font-semibold transition-all outline-none ${
-                    fieldErrors.password
-                      ? 'bg-rose-50/40 border-2 border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
-                      : 'bg-slate-50/80 border border-slate-200 hover:border-slate-300 focus:bg-white focus:border-[#05442e] focus:ring-4 focus:ring-[#05442e]/10'
-                  }`}
+ fieldErrors.password
+ ? 'bg-rose-50/40 border-2 border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+ : 'bg-slate-50/80 border border-slate-200 hover:border-slate-300 focus:bg-white focus:border-[#05442e] focus:ring-4 focus:ring-[#05442e]/10'
+ }`}
                 />
                 <Lock
                   className={`w-4 h-4 absolute left-3.5 top-3.5 transition-colors ${
-                    fieldErrors.password ? 'text-rose-500' : 'text-slate-400'
-                  }`}
+ fieldErrors.password ? 'text-rose-500' : 'text-slate-400'
+ }`}
                 />
 
                 <button
@@ -312,7 +312,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-3 py-3.5 rounded-2xl bg-[#05442e] hover:bg-[#07593c] active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm tracking-wide transition-all shadow-md shadow-emerald-950/15 hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full mt-3 py-3.5 rounded-2xl bg-[#05442e] hover:bg-[#07593c] active:scale-[0.99] text-white font-bold text-xs sm:text-sm tracking-wide transition-all shadow-md shadow-emerald-950/15 hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -330,7 +330,7 @@ export default function LoginPage() {
             {locale === 'ar' ? 'ليس لديك حساب حتى الآن؟' : "Don't have an account?"}{' '}
             <Link
               href="/register"
-              className="text-[#05442e] hover:text-emerald-700 font-extrabold hover:underline transition-colors"
+              className="text-[#05442e] hover:text-emerald-700 font-bold hover:underline transition-colors"
             >
               {locale === 'ar' ? 'إنشاء حساب جديد' : 'Register Now'}
             </Link>

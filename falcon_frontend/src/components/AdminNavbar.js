@@ -97,7 +97,7 @@ export default function AdminNavbar({ mobileOpen, setMobileOpen }) {
               {locale === 'ar' ? 'إدارة سوبرماركت أورا' : 'Super Mart Admin'}
             </div>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180" />
-            <span className="font-extrabold text-emerald-700 uppercase tracking-wider text-xs">
+            <span className="font-bold text-emerald-700 uppercase tracking-wider text-xs">
               {currentSection.replace('-', ' ')}
             </span>
           </div>
@@ -156,8 +156,8 @@ export default function AdminNavbar({ mobileOpen, setMobileOpen }) {
                         <div
                           key={item.id}
                           className={`p-3.5 hover:bg-slate-50/80 transition-colors ${
-                            !item.is_read ? 'bg-emerald-50/40' : ''
-                          }`}
+ !item.is_read ? 'bg-emerald-50/40' : ''
+ }`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <span className="font-bold text-xs text-slate-900 line-clamp-1">

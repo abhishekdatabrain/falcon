@@ -60,7 +60,7 @@ export default function CouponCard({ onApplyCoupon, onRemoveCoupon, appliedCoupo
   return (
     <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-2xs space-y-4">
       {/* Title */}
-      <h3 className="text-md sm:text-lg font-bold text-slate-900 font-sans tracking-tight">
+      <h3 className="text-md sm:text-lg font-bold text-slate-900 tracking-tight">
         {locale === 'ar' ? 'هل لديك كوبون خصم؟' : 'Got a coupon?'}
       </h3>
 
@@ -71,7 +71,7 @@ export default function CouponCard({ onApplyCoupon, onRemoveCoupon, appliedCoupo
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-slate-900 text-sm tracking-wide uppercase font-sans">
+                <span className="font-bold text-slate-900 text-sm tracking-wide uppercase">
                   {appliedCoupon.code}
                 </span>
                 <span className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -106,16 +106,16 @@ export default function CouponCard({ onApplyCoupon, onRemoveCoupon, appliedCoupo
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleApply();
               }}
-              className="bg-transparent border-none outline-none font-semibold text-slate-900 placeholder:text-slate-400 text-sm sm:text-base uppercase tracking-wider w-full pr-2 font-sans"
+              className="bg-transparent border-none outline-none font-semibold text-slate-900 placeholder:text-slate-400 text-sm sm:text-base uppercase tracking-wider w-full pr-2"
             />
             <button
               onClick={() => handleApply()}
               disabled={!couponCode.trim()}
-              className={`font-bold text-xs sm:text-sm tracking-wider uppercase transition-colors shrink-0 font-sans cursor-pointer ${
-                couponCode.trim()
-                  ? 'text-[#0070F3] hover:text-[#005ECB]'
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
+              className={`font-bold text-xs sm:text-sm tracking-wider uppercase transition-colors shrink-0 cursor-pointer ${
+ couponCode.trim()
+ ? 'text-[#0070F3] hover:text-[#005ECB]'
+ : 'text-slate-400 hover:text-slate-600'
+ }`}
             >
               {locale === 'ar' ? 'تطبيق' : 'APPLY'}
             </button>
@@ -143,15 +143,15 @@ export default function CouponCard({ onApplyCoupon, onRemoveCoupon, appliedCoupo
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#EBF3FF] text-[#0066FF] flex items-center justify-center font-black text-sm shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
               %
             </div>
-            <span className="font-bold text-slate-800 text-sm sm:text-base font-sans group-hover:text-[#0066FF] transition-colors">
+            <span className="font-bold text-slate-800 text-sm sm:text-base group-hover:text-[#0066FF] transition-colors">
               {locale === 'ar' ? 'عرض العروض المتاحة' : 'View Available Offers'}
             </span>
           </div>
 
           <ChevronRight
             className={`w-5 h-5 text-slate-900 rtl:rotate-180 transition-transform duration-200 ${
-              showOffers ? 'rotate-90' : ''
-            }`}
+ showOffers ? 'rotate-90' : ''
+ }`}
           />
         </button>
 
@@ -165,7 +165,7 @@ export default function CouponCard({ onApplyCoupon, onRemoveCoupon, appliedCoupo
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-slate-900 text-xs tracking-wider uppercase bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                    <span className="font-bold text-slate-900 text-xs tracking-wider uppercase bg-white px-2 py-0.5 rounded-md border border-slate-200">
                       {offer.code}
                     </span>
                     <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">

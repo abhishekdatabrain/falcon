@@ -60,14 +60,14 @@ export default function OrderTrackingTimeline({ order, className = '' }) {
   if (status === 'CANCELLED') {
     const cancelledTime = order.cancelled_at || getTimestampFor(['CANCELLED']) || order.updatedAt;
     return (
-      <div className={`bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-rose-200/90 shadow-2xs font-sans ${className}`}>
+      <div className={`bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-rose-200/90 shadow-2xs ${className}`}>
         <div className="flex items-start gap-3.5">
           <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center shrink-0 shadow-2xs">
             <XCircle className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h3 className="text-sm sm:text-base font-extrabold text-rose-900">
+              <h3 className="text-sm sm:text-base font-bold text-rose-900">
                 {isAr ? 'تم إلغاء الطلب' : 'Order Cancelled'}
               </h3>
               {cancelledTime && (
@@ -88,14 +88,14 @@ export default function OrderTrackingTimeline({ order, className = '' }) {
   if (status === 'DELIVERY_FAILED') {
     const failedTime = getTimestampFor(['DELIVERY_FAILED']) || order.updatedAt;
     return (
-      <div className={`bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-amber-200/90 shadow-2xs font-sans ${className}`}>
+      <div className={`bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-amber-200/90 shadow-2xs ${className}`}>
         <div className="flex items-start gap-3.5">
           <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0 shadow-2xs">
             <AlertTriangle className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h3 className="text-sm sm:text-base font-extrabold text-amber-900">
+              <h3 className="text-sm sm:text-base font-bold text-amber-900">
                 {isAr ? 'تعذر توصيل الطلب' : 'Delivery Attempt Failed'}
               </h3>
               {failedTime && (
@@ -116,14 +116,14 @@ export default function OrderTrackingTimeline({ order, className = '' }) {
   if (status === 'RETURNED') {
     const returnedTime = getTimestampFor(['RETURNED']) || order.updatedAt;
     return (
-      <div className={`bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-300 shadow-2xs font-sans ${className}`}>
+      <div className={`bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-300 shadow-2xs ${className}`}>
         <div className="flex items-start gap-3.5">
           <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center shrink-0 shadow-2xs">
             <RotateCcw className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900">
                 {isAr ? 'تم إرجاع الطلب' : 'Order Returned'}
               </h3>
               {returnedTime && (
@@ -220,13 +220,13 @@ export default function OrderTrackingTimeline({ order, className = '' }) {
   ];
 
   return (
-    <div className={`bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-2xs font-sans ${className}`}>
+    <div className={`bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-2xs ${className}`}>
       
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 mb-5 sm:mb-6">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-[#05A764] animate-pulse" />
-          <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
             {isAr ? 'مراحل تتبع الطلب' : 'Order Tracking Progress'}
           </h3>
         </div>
@@ -250,8 +250,8 @@ export default function OrderTrackingTimeline({ order, className = '' }) {
                 {!isLast && (
                   <div
                     className={`absolute top-4 left-1/2 w-full h-1 z-0 transition-colors duration-500 rtl:right-1/2 rtl:left-auto ${
-                      isLineCompleted ? 'bg-[#05A764]' : 'bg-slate-200'
-                    }`}
+ isLineCompleted ? 'bg-[#05A764]' : 'bg-slate-200'
+ }`}
                   />
                 )}
 
@@ -275,12 +275,12 @@ export default function OrderTrackingTimeline({ order, className = '' }) {
                 {/* Step Title */}
                 <h4
                   className={`text-xs sm:text-sm tracking-tight ${
-                    step.isCurrent
-                      ? 'font-black text-slate-900'
-                      : step.isCompleted
-                        ? 'font-extrabold text-slate-800'
-                        : 'font-semibold text-slate-400'
-                  }`}
+ step.isCurrent
+ ? 'font-black text-slate-900'
+ : step.isCompleted
+ ? 'font-bold text-slate-800'
+ : 'font-semibold text-slate-400'
+ }`}
                 >
                   {step.name}
                 </h4>
@@ -288,14 +288,14 @@ export default function OrderTrackingTimeline({ order, className = '' }) {
                 {/* Date & Time / Pending / Estimated */}
                 <p
                   className={`text-[11px] sm:text-xs mt-1 leading-snug ${
-                    step.isEstimated
-                      ? 'font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md inline-block border border-amber-200/60'
-                      : step.isCurrent
-                        ? 'font-bold text-[#05A764]'
-                        : step.isCompleted
-                          ? 'font-medium text-slate-600'
-                          : 'font-normal text-slate-400'
-                  }`}
+ step.isEstimated
+ ? 'font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md inline-block border border-amber-200/60'
+ : step.isCurrent
+ ? 'font-bold text-[#05A764]'
+ : step.isCompleted
+ ? 'font-medium text-slate-600'
+ : 'font-normal text-slate-400'
+ }`}
                 >
                   {step.displayTime}
                 </p>
@@ -317,8 +317,8 @@ export default function OrderTrackingTimeline({ order, className = '' }) {
               {!isLast && (
                 <div
                   className={`absolute top-7 left-3.5 -ml-0.5 w-1 h-[calc(100%-1.25rem)] z-0 transition-colors duration-500 rtl:right-3.5 rtl:left-auto rtl:-mr-0.5 ${
-                    isLineCompleted ? 'bg-[#05A764]' : 'bg-slate-200'
-                  }`}
+ isLineCompleted ? 'bg-[#05A764]' : 'bg-slate-200'
+ }`}
                 />
               )}
 
@@ -344,12 +344,12 @@ export default function OrderTrackingTimeline({ order, className = '' }) {
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <h4
                     className={`text-xs sm:text-sm ${
-                      step.isCurrent
-                        ? 'font-black text-slate-900'
-                        : step.isCompleted
-                          ? 'font-extrabold text-slate-800'
-                          : 'font-semibold text-slate-400'
-                    }`}
+ step.isCurrent
+ ? 'font-black text-slate-900'
+ : step.isCompleted
+ ? 'font-bold text-slate-800'
+ : 'font-semibold text-slate-400'
+ }`}
                   >
                     {step.name}
                   </h4>
@@ -362,14 +362,14 @@ export default function OrderTrackingTimeline({ order, className = '' }) {
 
                 <p
                   className={`text-[11px] sm:text-xs mt-0.5 leading-snug ${
-                    step.isEstimated
-                      ? 'font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md inline-block border border-amber-200/60'
-                      : step.isCurrent
-                        ? 'font-bold text-[#05A764]'
-                        : step.isCompleted
-                          ? 'font-medium text-slate-600'
-                          : 'font-normal text-slate-400'
-                  }`}
+ step.isEstimated
+ ? 'font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md inline-block border border-amber-200/60'
+ : step.isCurrent
+ ? 'font-bold text-[#05A764]'
+ : step.isCompleted
+ ? 'font-medium text-slate-600'
+ : 'font-normal text-slate-400'
+ }`}
                 >
                   {step.displayTime}
                 </p>

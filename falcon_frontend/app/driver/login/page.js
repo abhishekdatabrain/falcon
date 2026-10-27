@@ -82,7 +82,7 @@ export default function DriverLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-between relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-between relative overflow-hidden">
       {/* Ambient Decorative Background Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[34rem] h-[34rem] rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-amber-400/10 blur-3xl pointer-events-none" />
@@ -142,7 +142,7 @@ export default function DriverLoginPage() {
               </div>
 
               <div>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-heading">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   {locale === 'ar' ? 'بوابة السائقين' : 'Driver Web Portal'}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
@@ -171,7 +171,7 @@ export default function DriverLoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Driver Email or Mobile */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   {locale === 'ar' ? 'البريد الإلكتروني أو رقم الجوال' : 'Driver Email or Mobile'}
                 </label>
                 <div className="relative">
@@ -190,7 +190,7 @@ export default function DriverLoginPage() {
               {/* Password */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                     {locale === 'ar' ? 'كلمة المرور' : 'Password'}
                   </label>
                 </div>
@@ -219,7 +219,7 @@ export default function DriverLoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 rounded-2xl bg-[#05442e] hover:bg-emerald-900 active:scale-[0.99] text-white font-extrabold text-sm transition-all shadow-md hover:shadow-xl hover:shadow-emerald-950/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-2"
+                className="w-full py-4 rounded-2xl bg-[#05442e] hover:bg-emerald-900 active:scale-[0.99] text-white font-bold text-sm transition-all shadow-md hover:shadow-xl hover:shadow-emerald-950/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-2"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

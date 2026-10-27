@@ -291,8 +291,8 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
       {/* Sidebar Container: Fixed directly under Navbar (top-16) with Fresh Grocery Styling */}
       <aside
         className={`fixed md:sticky top-16 inset-y-0 ${locale === 'ar' ? 'right-0' : 'left-0'} z-30 h-[calc(100vh-4rem)] w-72 bg-white/95 backdrop-blur-2xl border-${locale === 'ar' ? 'l' : 'r'} border-slate-200 text-slate-800 flex flex-col justify-between transition-transform duration-300 ease-in-out shadow-lg ${
-          mobileOpen ? 'translate-x-0' : locale === 'ar' ? 'translate-x-full md:translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
+ mobileOpen ? 'translate-x-0' : locale === 'ar' ? 'translate-x-full md:translate-x-0' : '-translate-x-full md:translate-x-0'
+ }`}
       >
         {/* Navigation Items */}
         <div className="p-5 space-y-5 overflow-y-auto custom-scrollbar flex-1">
@@ -306,10 +306,10 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
             </div>
             <span
               className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                isSuperAdmin
-                  ? 'bg-purple-100 text-purple-700 border border-purple-200'
-                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-              }`}
+ isSuperAdmin
+ ? 'bg-purple-100 text-purple-700 border border-purple-200'
+ : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+ }`}
             >
               {isSuperAdmin
                 ? 'Super Admin'
@@ -327,9 +327,9 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
                   {/* Category Section Header / Single Accordion Toggle */}
                   <div
                     onClick={() => cat.isExpandable && toggleCategory(cat.key)}
-                    className={`flex items-center justify-between px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider transition-colors ${
-                      cat.isExpandable ? 'cursor-pointer hover:text-slate-900 text-slate-400' : 'text-slate-400'
-                    }`}
+                    className={`flex items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+ cat.isExpandable ? 'cursor-pointer hover:text-slate-900 text-slate-400' : 'text-slate-400'
+ }`}
                   >
                     <span className={hasActiveChild ? 'text-emerald-700 font-black' : ''}>{cat.title}</span>
                     {cat.isExpandable && (
@@ -351,10 +351,10 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
                             href={item.href}
                             onClick={() => setMobileOpen(false)}
                             className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 group ${
-                              isActive
-                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-xs'
-                                : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/60 border border-transparent'
-                            }`}
+ isActive
+ ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-xs'
+ : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/60 border border-transparent'
+ }`}
                           >
                             <div className="flex items-center gap-2.5">
                               <Icon className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />

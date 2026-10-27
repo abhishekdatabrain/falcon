@@ -86,7 +86,7 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 font-sans shadow-md">
+    <header className="sticky top-0 z-50 shadow-md">
       {/* Primary Main Navbar (Dark Green Bar) */}
       <div className="bg-[#043927] text-white py-3.5 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/60">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">

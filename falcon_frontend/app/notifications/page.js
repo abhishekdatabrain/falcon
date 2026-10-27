@@ -319,7 +319,7 @@ export default function NotificationsPage() {
   const userPhone = profile?.user?.mobile || profile?.mobile || user?.mobile || '+966 50 123 4567';
 
   return (
-    <div className="min-h-screen bg-[#F4F6F4] font-sans pb-24 text-slate-800">
+    <div className="min-h-screen bg-[#F4F6F4] pb-24 text-slate-800">
 
       {/* ================= TOP BREADCRUMB & UTILITY HEADER ================= */}
       <div className="bg-white border-b border-slate-200/80 py-3 px-4 sm:px-6 lg:px-8 text-xs font-semibold text-slate-500">
@@ -335,7 +335,7 @@ export default function NotificationsPage() {
               My Account
             </Link>
             <ChevronRight className="w-3 h-3 text-slate-300 rtl:rotate-180" />
-            <span className="text-slate-900 font-extrabold">Notifications</span>
+            <span className="text-slate-900 font-bold">Notifications</span>
           </div>
 
           {/* Right Header Actions */}
@@ -386,7 +386,7 @@ export default function NotificationsPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <h3 className="font-extrabold text-slate-900 text-sm leading-tight truncate">
+                    <h3 className="font-bold text-slate-900 text-sm leading-tight truncate">
                       {userName}
                     </h3>
                   </div>
@@ -413,11 +413,11 @@ export default function NotificationsPage() {
                   <span>My Orders</span>
                 </div>
                 {activeOrdersCount > 0 ? (
-                  <span className="bg-[#05A764] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                  <span className="bg-[#05A764] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                     {activeOrdersCount} Active
                   </span>
                 ) : (
-                  <span className="text-[11px] font-extrabold text-slate-400">
+                  <span className="text-[11px] font-bold text-slate-400">
                     0
                   </span>
                 )}
@@ -442,7 +442,7 @@ export default function NotificationsPage() {
                   <Heart className="w-4 h-4 text-slate-400" />
                   <span>Wishlist</span>
                 </div>
-                <span className="text-[11px] font-extrabold text-slate-400">
+                <span className="text-[11px] font-bold text-slate-400">
                   {wishlist?.length || 0}
                 </span>
               </Link>
@@ -455,7 +455,7 @@ export default function NotificationsPage() {
                   <Bookmark className="w-4 h-4 text-slate-400" />
                   <span>Saved Addresses</span>
                 </div>
-                <span className="text-[11px] font-extrabold text-slate-400">
+                <span className="text-[11px] font-bold text-slate-400">
                   {addressesCount}
                 </span>
               </Link>
@@ -483,7 +483,7 @@ export default function NotificationsPage() {
                     {tabCounts.totalUnread} Unread
                   </span>
                 ) : (
-                  <span className="text-[11px] font-extrabold text-slate-300">0</span>
+                  <span className="text-[11px] font-bold text-slate-300">0</span>
                 )}
               </div>
 
@@ -495,7 +495,7 @@ export default function NotificationsPage() {
                   <Headphones className="w-4 h-4 text-emerald-600" />
                   <span>24/7 Concierge</span>
                 </div>
-                <span className="text-[10px] font-extrabold text-emerald-600">● Online</span>
+                <span className="text-[10px] font-bold text-emerald-600">● Online</span>
               </Link>
 
 
@@ -561,15 +561,15 @@ export default function NotificationsPage() {
                 type="button"
                 onClick={() => setActiveTab('all')}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
-                  activeTab === 'all'
-                    ? 'bg-[#043927] text-white shadow-xs'
-                    : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
-                }`}
+ activeTab === 'all'
+ ? 'bg-[#043927] text-white shadow-xs'
+ : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
+ }`}
               >
                 <span>All Notifications</span>
-                <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${
-                  activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                }`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+ activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+ }`}>
                   {tabCounts.all}
                 </span>
               </button>
@@ -578,15 +578,15 @@ export default function NotificationsPage() {
                 type="button"
                 onClick={() => setActiveTab('orders')}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
-                  activeTab === 'orders'
-                    ? 'bg-[#043927] text-white shadow-xs'
-                    : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
-                }`}
+ activeTab === 'orders'
+ ? 'bg-[#043927] text-white shadow-xs'
+ : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
+ }`}
               >
                 <span>Orders & Delivery</span>
-                <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${
-                  activeTab === 'orders' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
-                }`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+ activeTab === 'orders' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+ }`}>
                   {tabCounts.orders}
                 </span>
               </button>
@@ -595,15 +595,15 @@ export default function NotificationsPage() {
                 type="button"
                 onClick={() => setActiveTab('farm')}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
-                  activeTab === 'farm'
-                    ? 'bg-[#043927] text-white shadow-xs'
-                    : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
-                }`}
+ activeTab === 'farm'
+ ? 'bg-[#043927] text-white shadow-xs'
+ : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
+ }`}
               >
                 <span>Farm Harvest & Restock</span>
-                <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${
-                  activeTab === 'farm' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
-                }`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+ activeTab === 'farm' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+ }`}>
                   {tabCounts.farm}
                 </span>
               </button>
@@ -612,15 +612,15 @@ export default function NotificationsPage() {
                 type="button"
                 onClick={() => setActiveTab('deals')}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
-                  activeTab === 'deals'
-                    ? 'bg-[#043927] text-white shadow-xs'
-                    : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
-                }`}
+ activeTab === 'deals'
+ ? 'bg-[#043927] text-white shadow-xs'
+ : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
+ }`}
               >
                 <span>Exclusive Deals</span>
-                <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${
-                  activeTab === 'deals' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                }`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+ activeTab === 'deals' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+ }`}>
                   {tabCounts.deals}
                 </span>
               </button>
@@ -629,15 +629,15 @@ export default function NotificationsPage() {
                 type="button"
                 onClick={() => setActiveTab('security')}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
-                  activeTab === 'security'
-                    ? 'bg-[#043927] text-white shadow-xs'
-                    : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
-                }`}
+ activeTab === 'security'
+ ? 'bg-[#043927] text-white shadow-xs'
+ : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
+ }`}
               >
                 <span>Account & Security</span>
-                <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${
-                  activeTab === 'security' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                }`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+ activeTab === 'security' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+ }`}>
                   {tabCounts.security}
                 </span>
               </button>
@@ -649,7 +649,7 @@ export default function NotificationsPage() {
               {/* ---------------- 1. TODAY • FRESH ALERTS ---------------- */}
               {groupedSections.today.length > 0 && (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs font-extrabold text-slate-700 tracking-wider">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-700 tracking-wider">
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-600" />
                       <span className="uppercase">TODAY • FRESH ALERTS</span>
@@ -683,7 +683,7 @@ export default function NotificationsPage() {
               {/* ---------------- 2. YESTERDAY ---------------- */}
               {groupedSections.yesterday.length > 0 && (
                 <div className="space-y-3">
-                  <div className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                     YESTERDAY
                   </div>
 
@@ -711,7 +711,7 @@ export default function NotificationsPage() {
               {/* ---------------- 3. EARLIER THIS WEEK ---------------- */}
               {groupedSections.earlier.length > 0 && (
                 <div className="space-y-3">
-                  <div className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                     EARLIER THIS WEEK
                   </div>
 
@@ -742,7 +742,7 @@ export default function NotificationsPage() {
                   <div className="w-14 h-14 rounded-full bg-emerald-50 text-[#043927] flex items-center justify-center mx-auto">
                     <Bell className="w-7 h-7" />
                   </div>
-                  <h3 className="font-extrabold text-slate-900 text-base">No notifications found</h3>
+                  <h3 className="font-bold text-slate-900 text-base">No notifications found</h3>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
                     You have caught up with all updates in this category. We will notify you when new farm harvests or order updates occur.
                   </p>
@@ -791,17 +791,17 @@ export default function NotificationsPage() {
                           type="button"
                           onClick={() => toggleChannel(ch.id)}
                           className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider cursor-pointer transition-all ${
-                            ch.active
-                              ? 'bg-[#043927] text-white hover:bg-[#02281b]'
-                              : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                          }`}
+ ch.active
+ ? 'bg-[#043927] text-white hover:bg-[#02281b]'
+ : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+ }`}
                         >
                           {ch.active ? 'ACTIVE' : 'PAUSED'}
                         </button>
                       </div>
 
                       <div>
-                        <h4 className="font-extrabold text-xs text-slate-900 leading-tight">
+                        <h4 className="font-bold text-xs text-slate-900 leading-tight">
                           {ch.name}
                         </h4>
                         <p className="text-[11px] font-bold text-slate-600 truncate mt-0.5">
@@ -852,10 +852,10 @@ export default function NotificationsPage() {
                 >
                   <Star
                     className={`w-8 h-8 ${
-                      star <= selectedRating
-                        ? 'text-amber-400 fill-amber-400'
-                        : 'text-slate-300'
-                    }`}
+ star <= selectedRating
+ ? 'text-amber-400 fill-amber-400'
+ : 'text-slate-300'
+ }`}
                   />
                 </button>
               ))}
@@ -924,7 +924,7 @@ export default function NotificationsPage() {
               ].map((pref, i) => (
                 <div key={i} className="flex items-start justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100 gap-3">
                   <div>
-                    <h5 className="font-extrabold text-xs text-slate-900">{pref.title}</h5>
+                    <h5 className="font-bold text-xs text-slate-900">{pref.title}</h5>
                     <p className="text-[11px] text-slate-500 mt-0.5">{pref.desc}</p>
                   </div>
                   <input
@@ -1048,8 +1048,8 @@ function NotificationCard({
   return (
     <div
       className={`bg-white rounded-3xl p-5 border shadow-2xs transition-all relative ${
-        !item.isRead ? 'border-s-4 border-s-emerald-600 border-slate-200/90' : 'border-slate-200/80'
-      }`}
+ !item.isRead ? 'border-s-4 border-s-emerald-600 border-slate-200/90' : 'border-slate-200/80'
+ }`}
     >
       <div className="flex items-start gap-4">
 
@@ -1067,13 +1067,13 @@ function NotificationCard({
               {item.badgeText && (
                 <span
                   className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${
-                    item.badgeStyle || 'bg-[#043927] text-white'
-                  }`}
+ item.badgeStyle || 'bg-[#043927] text-white'
+ }`}
                 >
                   {item.badgeText}
                 </span>
               )}
-              <h3 className="font-extrabold text-slate-900 text-sm leading-snug">
+              <h3 className="font-bold text-slate-900 text-sm leading-snug">
                 {item.title}
               </h3>
             </div>
@@ -1145,7 +1145,7 @@ function NotificationCard({
                   className="w-12 h-12 rounded-xl object-cover border border-slate-200/80 shrink-0"
                 />
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900 leading-tight">
+                  <h4 className="font-bold text-xs text-slate-900 leading-tight">
                     {item.productCard.name}
                   </h4>
                   <span className="inline-block text-[10px] text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded-md mt-1 border border-emerald-200/60">

@@ -216,7 +216,7 @@ export default function AdminFeaturedBannerPage() {
   const currentImg = formData.banner_mode === 'full_banner' ? formData.full_banner_url : formData.image_url;
 
   return (
-    <div className="space-y-6 font-sans pb-12">
+    <div className="space-y-6 pb-12">
       {/* 1. Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200">
         <div>
@@ -224,7 +224,7 @@ export default function AdminFeaturedBannerPage() {
             <div className="w-8 h-8 rounded-xl bg-[#043927] text-white flex items-center justify-center shadow-xs">
               <Sparkles className="w-4 h-4" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-heading">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               {locale === 'ar' ? 'إدارة بانر الصفحة الرئيسية المميز' : 'Homepage Featured Banner Management'}
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
@@ -244,10 +244,10 @@ export default function AdminFeaturedBannerPage() {
             type="button"
             onClick={() => setIsActive(!isActive)}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              isActive
-                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-200'
-                : 'bg-slate-200 text-slate-600 hover:bg-slate-300 border border-slate-300'
-            }`}
+ isActive
+ ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-200'
+ : 'bg-slate-200 text-slate-600 hover:bg-slate-300 border border-slate-300'
+ }`}
           >
             <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-600 animate-pulse' : 'bg-slate-400'}`} />
             <span>{isActive ? (locale === 'ar' ? 'ظاهر بالمتجر' : 'Visible on Storefront') : (locale === 'ar' ? 'مخفي' : 'Hidden')}</span>
@@ -279,7 +279,7 @@ export default function AdminFeaturedBannerPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-emerald-700" />
-                <h3 className="text-sm font-extrabold text-slate-800">
+                <h3 className="text-sm font-bold text-slate-800">
                   {locale === 'ar' ? 'معاينة حية فورية كما تظهر في المتجر' : 'Live Interactive Storefront Preview'}
                 </h3>
               </div>
@@ -292,8 +292,8 @@ export default function AdminFeaturedBannerPage() {
                     type="button"
                     onClick={() => setPreviewLocale('en')}
                     className={`px-3 py-1 rounded-lg transition-all ${
-                      previewLocale === 'en' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
-                    }`}
+ previewLocale === 'en' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+ }`}
                   >
                     English (LTR)
                   </button>
@@ -301,8 +301,8 @@ export default function AdminFeaturedBannerPage() {
                     type="button"
                     onClick={() => setPreviewLocale('ar')}
                     className={`px-3 py-1 rounded-lg transition-all ${
-                      previewLocale === 'ar' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
-                    }`}
+ previewLocale === 'ar' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+ }`}
                   >
                     العربية (RTL)
                   </button>
@@ -327,7 +327,7 @@ export default function AdminFeaturedBannerPage() {
                 <div
                   style={{ backgroundColor: formData.bg_color || '#FAF7F0' }}
                   dir={isAr ? 'rtl' : 'ltr'}
-                  className="rounded-[24px] sm:rounded-[32px] overflow-hidden border border-amber-200/70 shadow-sm relative font-sans transition-all"
+                  className="rounded-[24px] sm:rounded-[32px] overflow-hidden border border-amber-200/70 shadow-sm relative transition-all"
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
                     {/* Left Column: Text Content */}
@@ -410,7 +410,7 @@ export default function AdminFeaturedBannerPage() {
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <Sliders className="w-4 h-4 text-emerald-700" />
-                    <h3 className="text-sm font-extrabold text-slate-900">
+                    <h3 className="text-sm font-bold text-slate-900">
                       {locale === 'ar' ? 'وضع تصميم البانر' : 'Banner Display Mode'}
                     </h3>
                   </div>
@@ -419,10 +419,10 @@ export default function AdminFeaturedBannerPage() {
                       type="button"
                       onClick={() => setFormData({ ...formData, banner_mode: 'split_content' })}
                       className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                        formData.banner_mode !== 'full_banner'
-                          ? 'bg-white text-[#043927] shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
+ formData.banner_mode !== 'full_banner'
+ ? 'bg-white text-[#043927] shadow-xs'
+ : 'text-slate-600 hover:text-slate-900'
+ }`}
                     >
                       {locale === 'ar' ? 'تصميم ديناميكي (نص + صورة)' : 'Dynamic Layout (Text + Image)'}
                     </button>
@@ -430,10 +430,10 @@ export default function AdminFeaturedBannerPage() {
                       type="button"
                       onClick={() => setFormData({ ...formData, banner_mode: 'full_banner' })}
                       className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                        formData.banner_mode === 'full_banner'
-                          ? 'bg-white text-[#043927] shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
+ formData.banner_mode === 'full_banner'
+ ? 'bg-white text-[#043927] shadow-xs'
+ : 'text-slate-600 hover:text-slate-900'
+ }`}
                     >
                       {locale === 'ar' ? 'صورة بانر كاملة (1024x315)' : 'Full Banner Image'}
                     </button>
@@ -445,7 +445,7 @@ export default function AdminFeaturedBannerPage() {
                   {/* Category Tag */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                         Category Tag (EN)
                       </label>
                       <input
@@ -456,7 +456,7 @@ export default function AdminFeaturedBannerPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                         Category Tag (AR)
                       </label>
                       <input
@@ -464,7 +464,7 @@ export default function AdminFeaturedBannerPage() {
                         dir="rtl"
                         value={formData.category_tag_ar}
                         onChange={(e) => setFormData({ ...formData, category_tag_ar: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:border-emerald-600 focus:outline-none text-right font-sans"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:border-emerald-600 focus:outline-none text-right"
                       />
                     </div>
                   </div>
@@ -472,7 +472,7 @@ export default function AdminFeaturedBannerPage() {
                   {/* Headline Line 1 */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                         Headline Line 1 (EN - Green)
                       </label>
                       <input
@@ -483,7 +483,7 @@ export default function AdminFeaturedBannerPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                         Headline Line 1 (AR - Green)
                       </label>
                       <input
@@ -491,7 +491,7 @@ export default function AdminFeaturedBannerPage() {
                         dir="rtl"
                         value={formData.headline_ar_1}
                         onChange={(e) => setFormData({ ...formData, headline_ar_1: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-emerald-900 focus:bg-white focus:border-emerald-600 focus:outline-none text-right font-sans"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-emerald-900 focus:bg-white focus:border-emerald-600 focus:outline-none text-right"
                       />
                     </div>
                   </div>
@@ -499,7 +499,7 @@ export default function AdminFeaturedBannerPage() {
                   {/* Headline Line 2 */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                         Headline Line 2 (EN - Gold/Amber)
                       </label>
                       <input
@@ -510,7 +510,7 @@ export default function AdminFeaturedBannerPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                         Headline Line 2 (AR - Gold/Amber)
                       </label>
                       <input
@@ -518,7 +518,7 @@ export default function AdminFeaturedBannerPage() {
                         dir="rtl"
                         value={formData.headline_ar_2}
                         onChange={(e) => setFormData({ ...formData, headline_ar_2: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-amber-700 focus:bg-white focus:border-emerald-600 focus:outline-none text-right font-sans"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-amber-700 focus:bg-white focus:border-emerald-600 focus:outline-none text-right"
                       />
                     </div>
                   </div>
@@ -526,7 +526,7 @@ export default function AdminFeaturedBannerPage() {
                   {/* Description */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                         Description (EN)
                       </label>
                       <textarea
@@ -537,7 +537,7 @@ export default function AdminFeaturedBannerPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                         Description (AR)
                       </label>
                       <textarea
@@ -545,7 +545,7 @@ export default function AdminFeaturedBannerPage() {
                         dir="rtl"
                         value={formData.desc_ar}
                         onChange={(e) => setFormData({ ...formData, desc_ar: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:bg-white focus:border-emerald-600 focus:outline-none leading-relaxed text-right font-sans"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:bg-white focus:border-emerald-600 focus:outline-none leading-relaxed text-right"
                       />
                     </div>
                   </div>
@@ -553,7 +553,7 @@ export default function AdminFeaturedBannerPage() {
                   {/* Button & Link */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                         Button Text (EN)
                       </label>
                       <input
@@ -564,7 +564,7 @@ export default function AdminFeaturedBannerPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                         Button Text (AR)
                       </label>
                       <input
@@ -572,11 +572,11 @@ export default function AdminFeaturedBannerPage() {
                         dir="rtl"
                         value={formData.btn_text_ar}
                         onChange={(e) => setFormData({ ...formData, btn_text_ar: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white text-right font-sans"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white text-right"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                         Button Action Link
                       </label>
                       <input
@@ -595,7 +595,7 @@ export default function AdminFeaturedBannerPage() {
               <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                   <Shield className="w-4 h-4 text-emerald-700" />
-                  <h3 className="text-sm font-extrabold text-slate-900">
+                  <h3 className="text-sm font-bold text-slate-900">
                     {locale === 'ar' ? 'شارات ومزايا الثقة السفلية' : 'Trust Badges Customization'}
                   </h3>
                 </div>
@@ -619,7 +619,7 @@ export default function AdminFeaturedBannerPage() {
                       value={formData.badge_1_ar}
                       onChange={(e) => setFormData({ ...formData, badge_1_ar: e.target.value })}
                       placeholder="علامات موثوقة"
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-right font-sans"
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-right"
                     />
                   </div>
 
@@ -641,7 +641,7 @@ export default function AdminFeaturedBannerPage() {
                       value={formData.badge_2_ar}
                       onChange={(e) => setFormData({ ...formData, badge_2_ar: e.target.value })}
                       placeholder="توصيل سريع وموثوق"
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-right font-sans"
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-right"
                     />
                   </div>
 
@@ -663,7 +663,7 @@ export default function AdminFeaturedBannerPage() {
                       value={formData.badge_3_ar}
                       onChange={(e) => setFormData({ ...formData, badge_3_ar: e.target.value })}
                       placeholder="قيمة يومية"
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-right font-sans"
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-right"
                     />
                   </div>
                 </div>
@@ -677,7 +677,7 @@ export default function AdminFeaturedBannerPage() {
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <ImageIcon className="w-4 h-4 text-emerald-700" />
-                    <h3 className="text-sm font-extrabold text-slate-900">
+                    <h3 className="text-sm font-bold text-slate-900">
                       {formData.banner_mode === 'full_banner' ? 'Full Banner Image' : 'Showcase Products Image'}
                     </h3>
                   </div>
@@ -748,7 +748,7 @@ export default function AdminFeaturedBannerPage() {
               <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                   <Palette className="w-4 h-4 text-emerald-700" />
-                  <h3 className="text-sm font-extrabold text-slate-900">
+                  <h3 className="text-sm font-bold text-slate-900">
                     {locale === 'ar' ? 'لون الخلفية للبانر' : 'Background Color'}
                   </h3>
                 </div>
@@ -778,10 +778,10 @@ export default function AdminFeaturedBannerPage() {
                           type="button"
                           onClick={() => setFormData({ ...formData, bg_color: preset.hex })}
                           className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                            formData.bg_color === preset.hex
-                              ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold'
-                              : 'border-slate-100 hover:border-slate-300 text-slate-700 bg-white'
-                          }`}
+ formData.bg_color === preset.hex
+ ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold'
+ : 'border-slate-100 hover:border-slate-300 text-slate-700 bg-white'
+ }`}
                         >
                           <div className="flex items-center gap-2">
                             <span

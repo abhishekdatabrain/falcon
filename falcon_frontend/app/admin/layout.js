@@ -97,7 +97,7 @@ export default function AdminLayout({ children }) {
   const isAuthorized = !requiredPermission || isSuperAdmin || hasPermission(requiredPermission);
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       {/* 1. Full-Width Top Header Navbar Across Entire Screen */}
       <AdminNavbar
         mobileOpen={mobileOpen}

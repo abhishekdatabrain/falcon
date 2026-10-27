@@ -217,14 +217,14 @@ export default function ProductFilterSidebar({
       const isParentAllChecked = isDirectMatch;
 
       return (
-        <div key={node.id} className="space-y-1 font-sans">
+        <div key={node.id} className="space-y-1">
           {/* Parent Pill matching Screenshot 1 */}
           <div
             onClick={(e) => toggleCatExpand(node.id, e)}
             className={`w-full py-2 px-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between select-none ${isExpanded || isAncestorActive
-                ? 'bg-[#F0FDF4] border-[#86EFAC] text-slate-900 shadow-2xs'
-                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-800'
-              }`}
+ ? 'bg-[#F0FDF4] border-[#86EFAC] text-slate-900 shadow-2xs'
+ : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-800'
+ }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
               {/* Expand / Collapse Icon (- / +) */}
@@ -253,13 +253,13 @@ export default function ProductFilterSidebar({
               <div
                 onClick={(e) => handleCheckboxClick(node, e)}
                 className={`flex items-center gap-2.5 py-1 px-1.5 rounded-lg transition-colors cursor-pointer select-none ${isParentAllChecked ? 'text-[#043927] font-bold bg-emerald-50/70' : 'text-slate-700 hover:text-[#043927]'
-                  }`}
+ }`}
               >
                 <div
                   className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${isParentAllChecked
-                      ? 'bg-[#043927] border-[#043927] text-white shadow-2xs'
-                      : 'border-slate-300 bg-white hover:border-[#043927]'
-                    }`}
+ ? 'bg-[#043927] border-[#043927] text-white shadow-2xs'
+ : 'border-slate-300 bg-white hover:border-[#043927]'
+ }`}
                 >
                   {isParentAllChecked && <Check className="w-3 h-3 text-white stroke-[3]" />}
                 </div>
@@ -282,20 +282,20 @@ export default function ProductFilterSidebar({
         key={node.id}
         onClick={(e) => handleCheckboxClick(node, e)}
         className={`flex items-center gap-2.5 py-1 px-1.5 rounded-lg transition-colors cursor-pointer select-none ${isNodeSelected ? 'text-[#043927] font-bold bg-emerald-50/70' : 'text-slate-700 hover:text-[#043927]'
-          }`}
+ }`}
       >
         <div
           className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${isNodeSelected
-              ? 'bg-[#043927] border-[#043927] text-white shadow-2xs'
-              : 'border-slate-300 bg-white hover:border-[#043927]'
-            }`}
+ ? 'bg-[#043927] border-[#043927] text-white shadow-2xs'
+ : 'border-slate-300 bg-white hover:border-[#043927]'
+ }`}
         >
           {isNodeSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
         </div>
         <span
           title={name}
           className={`text-xs sm:text-[13px] truncate max-w-[170px] ${isNodeSelected ? 'font-bold text-[#043927]' : 'font-medium text-slate-700'
-            }`}
+ }`}
         >
           {name}
         </span>
@@ -305,11 +305,11 @@ export default function ProductFilterSidebar({
 
   // Sidebar Body Content
   const sidebarContent = (
-    <div className="space-y-5 font-sans">
+    <div className="space-y-5">
 
       {/* 1. Header with Reset Filters */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-        <h3 className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center gap-2 font-heading">
+        <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
           <SlidersHorizontal className="w-4 h-4 text-[#043927]" />
           <span>{locale === 'ar' ? 'تصفية المنتجات' : 'Filter Products'}</span>
         </h3>
@@ -352,7 +352,7 @@ export default function ProductFilterSidebar({
           <label
             onClick={() => onChangeDeliverySpeed && onChangeDeliverySpeed('express')}
             className={`flex items-center gap-2 cursor-pointer py-1 px-1.5 rounded-lg transition-colors ${deliverySpeed === 'express' ? 'text-[#043927] font-bold bg-emerald-50/70' : 'text-slate-700 hover:text-slate-900'
-              }`}
+ }`}
           >
             <input
               type="radio"
@@ -369,7 +369,7 @@ export default function ProductFilterSidebar({
           <label
             onClick={() => onChangeDeliverySpeed && onChangeDeliverySpeed('scheduled')}
             className={`flex items-center gap-2 cursor-pointer py-1 px-1.5 rounded-lg transition-colors ${deliverySpeed === 'scheduled' ? 'text-[#043927] font-bold bg-emerald-50/70' : 'text-slate-700 hover:text-slate-900'
-              }`}
+ }`}
           >
             <input
               type="radio"
@@ -467,14 +467,14 @@ export default function ProductFilterSidebar({
                     if (onToggleBrand) onToggleBrand(brandName);
                   }}
                   className={`flex items-center justify-between transition-colors cursor-pointer select-none py-1 px-1.5 rounded-lg ${isChecked ? 'text-[#043927] font-bold bg-emerald-50/80' : 'text-slate-700 hover:text-[#043927]'
-                    }`}
+ }`}
                 >
                   <div className="flex items-center gap-2">
                     <div
                       className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 transition-all ${isChecked
-                          ? 'bg-[#043927] border-[#043927] text-white shadow-2xs'
-                          : 'border-slate-300 bg-white'
-                        }`}
+ ? 'bg-[#043927] border-[#043927] text-white shadow-2xs'
+ : 'border-slate-300 bg-white'
+ }`}
                     >
                       {isChecked && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
                     </div>
@@ -497,13 +497,13 @@ export default function ProductFilterSidebar({
   return (
     <>
       {/* Desktop Sticky Aside */}
-      <aside className="hidden lg:block bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs sticky top-24 self-start font-sans">
+      <aside className="hidden lg:block bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs sticky top-24 self-start">
         {sidebarContent}
       </aside>
 
       {/* Mobile Drawer (Slide-over Modal) */}
       {isOpenMobile && (
-        <div className="fixed inset-0 z-50 lg:hidden flex font-sans">
+        <div className="fixed inset-0 z-50 lg:hidden flex">
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
@@ -515,7 +515,7 @@ export default function ProductFilterSidebar({
 
             {/* Drawer Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-[#043927] text-white">
-              <div className="flex items-center gap-2 font-black font-heading text-base">
+              <div className="flex items-center gap-2 font-black text-base">
                 <SlidersHorizontal className="w-4 h-4 text-emerald-300" />
                 <span>{locale === 'ar' ? 'تصفية المنتجات' : 'Filter Products'}</span>
               </div>

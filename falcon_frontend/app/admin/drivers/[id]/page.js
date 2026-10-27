@@ -154,7 +154,7 @@ export default function AdminDriverHistoryPage() {
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-extrabold text-slate-900">{driver.user?.email}</h2>
+                  <h2 className="text-base font-bold text-slate-900">{driver.user?.email}</h2>
                   <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${driver.user?.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
                     {driver.user?.status || 'ACTIVE'}
                   </span>
@@ -173,7 +173,7 @@ export default function AdminDriverHistoryPage() {
             {/* License & Vehicle Details */}
             <div className="space-y-2 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
               <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{locale === 'ar' ? 'معلومات المركبة والرخصة' : 'Vehicle & License Info'}</div>
-              <div className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+              <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-cyan-600" />
                 <span>License: <strong className="font-mono text-cyan-700">{driver.license_number}</strong></span>
               </div>
@@ -182,13 +182,13 @@ export default function AdminDriverHistoryPage() {
                 <span>{driver.vehicle_details || 'No vehicle info registered'}</span>
               </div>
               <div className="pt-1">
-                <span className={`inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 rounded-full border ${
-                  driver.availability_status === 'AVAILABLE'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : driver.availability_status === 'BUSY'
-                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : 'bg-slate-100 text-slate-600 border-slate-200'
-                }`}>
+                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border ${
+ driver.availability_status === 'AVAILABLE'
+ ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+ : driver.availability_status === 'BUSY'
+ ? 'bg-amber-50 text-amber-700 border-amber-200'
+ : 'bg-slate-100 text-slate-600 border-slate-200'
+ }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${driver.availability_status === 'AVAILABLE' ? 'bg-emerald-500' : driver.availability_status === 'BUSY' ? 'bg-amber-500 animate-pulse' : 'bg-slate-400'}`}></span>
                   {driver.availability_status || 'OFFLINE'}
                 </span>
@@ -223,7 +223,7 @@ export default function AdminDriverHistoryPage() {
               <h3 className="text-base font-black text-slate-900">
                 {locale === 'ar' ? 'سجل الطلبات المسندة' : 'Assigned Deliveries Log'}
               </h3>
-              <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                 {filteredDeliveries.length} {locale === 'ar' ? 'طلب' : 'Records'}
               </span>
             </div>
@@ -315,7 +315,7 @@ export default function AdminDriverHistoryPage() {
                           {/* Customer Info */}
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
-                              <div className="text-xs font-extrabold text-slate-800">
+                              <div className="text-xs font-bold text-slate-800">
                                 {cust.first_name ? `${cust.first_name} ${cust.last_name || ''}` : 'Customer'}
                               </div>
                               <div className="text-[11px] text-slate-500 font-mono">
@@ -335,12 +335,12 @@ export default function AdminDriverHistoryPage() {
                           {/* Status */}
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full border ${
-                              isDelivered
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : isActive
-                                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : 'bg-slate-100 text-slate-700 border-slate-200'
-                            }`}>
+ isDelivered
+ ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+ : isActive
+ ? 'bg-amber-50 text-amber-700 border-amber-200'
+ : 'bg-slate-100 text-slate-700 border-slate-200'
+ }`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${isDelivered ? 'bg-emerald-500' : isActive ? 'bg-amber-500 animate-pulse' : 'bg-slate-400'}`}></span>
                               {del.status || order.order_status || 'ASSIGNED'}
                             </span>

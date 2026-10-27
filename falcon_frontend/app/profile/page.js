@@ -332,7 +332,7 @@ export default function ProfilePage() {
   const fullName = [firstName, lastName].filter(Boolean).join(' ') || (user?.name || (user?.email ? user.email.split('@')[0] : 'Falcon Member'));
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] font-sans text-slate-900 pb-28 select-none">
+    <div className="min-h-screen bg-[#F7F8FA] text-slate-900 pb-28 select-none">
       
       {/* Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
@@ -346,10 +346,10 @@ export default function ProfilePage() {
             <span className="text-slate-300">›</span>
             <span>{locale === 'ar' ? 'حسابي' : 'My Account'}</span>
             <span className="text-slate-300">›</span>
-            <span className="text-slate-900 font-extrabold">{locale === 'ar' ? 'ملفي الشخصي' : 'My Profile'}</span>
+            <span className="text-slate-900 font-bold">{locale === 'ar' ? 'ملفي الشخصي' : 'My Profile'}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-[#05A764] font-extrabold bg-emerald-50 border border-emerald-200/80 px-3.5 py-1.5 rounded-full shadow-2xs self-start sm:self-auto font-sans">
+          <div className="flex items-center gap-2 text-[#05A764] font-bold bg-emerald-50 border border-emerald-200/80 px-3.5 py-1.5 rounded-full shadow-2xs self-start sm:self-auto">
             <span className="w-2 h-2 rounded-full bg-[#05A764] animate-pulse" />
             <span>
               {user
@@ -384,7 +384,7 @@ export default function ProfilePage() {
               </Link>
               <Link
                 href="/register?redirect=/profile"
-                className="bg-white hover:bg-slate-50 border border-amber-300 text-amber-900 text-xs font-extrabold px-3 py-2 rounded-xl transition-all"
+                className="bg-white hover:bg-slate-50 border border-amber-300 text-amber-900 text-xs font-bold px-3 py-2 rounded-xl transition-all"
               >
                 {locale === 'ar' ? 'حساب جديد' : 'Register'}
               </Link>
@@ -420,7 +420,7 @@ export default function ProfilePage() {
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="font-black text-base sm:text-lg text-slate-900 truncate font-sans">
+                    <h2 className="font-black text-base sm:text-lg text-slate-900 truncate">
                       {fullName}
                     </h2>
                   </div>
@@ -432,7 +432,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Sidebar Navigation Menu */}
-            <div className="bg-white rounded-3xl border border-slate-200/90 p-2.5 shadow-2xs space-y-1 font-sans text-xs font-bold text-slate-700">
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-2.5 shadow-2xs space-y-1 text-xs font-bold text-slate-700">
 
               <Link
                 href="/orders"
@@ -443,11 +443,11 @@ export default function ProfilePage() {
                   <span>{locale === 'ar' ? 'طلباتي' : 'My Orders'}</span>
                 </div>
                 {activeOrdersCount > 0 ? (
-                  <span className="bg-[#05A764] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                  <span className="bg-[#05A764] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                     {activeOrdersCount} {locale === 'ar' ? 'نشط' : 'Active'}
                   </span>
                 ) : (
-                  <span className="text-[11px] font-extrabold text-slate-400">
+                  <span className="text-[11px] font-bold text-slate-400">
                     0
                   </span>
                 )}
@@ -472,7 +472,7 @@ export default function ProfilePage() {
                   <Heart className="w-4 h-4 text-slate-500" />
                   <span>{locale === 'ar' ? 'المفضلة' : 'Wishlist'}</span>
                 </div>
-                <span className="text-[11px] font-extrabold text-slate-400">
+                <span className="text-[11px] font-bold text-slate-400">
                   {wishlist?.length || 0}
                 </span>
               </Link>
@@ -485,7 +485,7 @@ export default function ProfilePage() {
                   <MapPin className="w-4 h-4 text-slate-500" />
                   <span>{locale === 'ar' ? 'العناوين المحفوظة' : 'Saved Addresses'}</span>
                 </div>
-                <span className="text-[11px] font-extrabold text-slate-400">
+                <span className="text-[11px] font-bold text-slate-400">
                   {addressesCount}
                 </span>
               </Link>
@@ -512,7 +512,7 @@ export default function ProfilePage() {
                     {unreadNotifsCount}
                   </span>
                 ) : (
-                  <span className="text-[11px] font-extrabold text-slate-400">0</span>
+                  <span className="text-[11px] font-bold text-slate-400">0</span>
                 )}
               </Link>
             </div>
@@ -521,11 +521,11 @@ export default function ProfilePage() {
             <div className="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-2xs flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <Headphones className="w-4 h-4 text-[#05A764]" />
-                <span className="font-extrabold text-xs text-slate-900 font-sans">
+                <span className="font-bold text-xs text-slate-900">
                   {locale === 'ar' ? 'دعم كونسيرج 24/7' : '24/7 Concierge Support'}
                 </span>
               </div>
-              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-sans uppercase">
+              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full uppercase">
                 ONLINE
               </span>
             </div>
@@ -536,7 +536,7 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2.5">
                 <MessageSquare className="w-4 h-4 text-emerald-600" />
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900 font-sans">
+                  <h4 className="font-bold text-xs text-slate-900">
                     {locale === 'ar' ? 'تحتاج مساعدة في المقاضي؟' : 'Need Grocery Help?'}
                   </h4>
                   <p className="text-[10px] text-slate-500 font-medium">
@@ -549,7 +549,7 @@ export default function ProfilePage() {
                 href="https://wa.me/966559876543?text=Hello%20Falcon%20VIP%20Grocery%20Support"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-[#05A764] hover:bg-[#048b53] text-white font-extrabold text-xs px-3 py-1.5 rounded-xl shadow-xs cursor-pointer font-sans inline-block"
+                className="bg-[#05A764] hover:bg-[#048b53] text-white font-bold text-xs px-3 py-1.5 rounded-xl shadow-xs cursor-pointer inline-block"
               >
                 {locale === 'ar' ? 'تواصل الآن' : 'Chat Now'}
               </a>
@@ -563,7 +563,7 @@ export default function ProfilePage() {
             {/* HEADER TITLE & SAVE BUTTON */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-sans">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   {locale === 'ar' ? 'ملفي الشخصي والتفضيلات' : 'My Profile & Preferences'}
                 </h1>
                 <p className="text-xs text-slate-500 font-medium mt-1">
@@ -577,7 +577,7 @@ export default function ProfilePage() {
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-[#043927] hover:bg-[#02281b] disabled:opacity-70 text-white font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer font-sans shrink-0 self-start sm:self-auto"
+                className="bg-[#043927] hover:bg-[#02281b] disabled:opacity-70 text-white font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer shrink-0 self-start sm:self-auto"
               >
                 {saving ? (
                   <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
@@ -590,7 +590,7 @@ export default function ProfilePage() {
 
             {/* DYNAMIC PROFILE STRENGTH CARD */}
             <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs space-y-2.5">
-              <div className="flex items-center justify-between font-sans">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-[#05A764]" />
                   <span className="font-black text-xs sm:text-sm text-slate-900">
@@ -619,7 +619,7 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-[#05A764]" />
                   <div>
-                    <h2 className="font-extrabold text-sm sm:text-base text-slate-900 font-sans">
+                    <h2 className="font-bold text-sm sm:text-base text-slate-900">
                       {locale === 'ar' ? 'البيانات الشخصية' : 'Personal Details'}
                     </h2>
                     <p className="text-[11px] text-slate-400 font-medium">
@@ -628,7 +628,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <span className="text-[10px] font-extrabold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full font-sans uppercase">
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full uppercase">
                   ZATCA Compliant
                 </span>
               </div>
@@ -663,7 +663,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-1">
-                  <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 font-sans">
+                  <h4 className="font-bold text-xs sm:text-sm text-slate-900">
                     {locale === 'ar' ? 'صورة الحساب' : 'Account Avatar'}
                   </h4>
                   <p className="text-[11px] text-slate-500 font-medium leading-tight">
@@ -672,11 +672,11 @@ export default function ProfilePage() {
                       : 'Accepts JPG, WEBP or PNG. Maximum file size is 5MB. Visible to delivery personnel during doorstep delivery.'}
                   </p>
 
-                  <div className="flex items-center gap-3 pt-1 font-sans">
+                  <div className="flex items-center gap-3 pt-1">
                     <label
-                      className={`bg-[#043927] hover:bg-[#02281b] text-white text-[11px] font-extrabold px-3 py-1.5 rounded-xl cursor-pointer transition-colors shadow-2xs inline-flex items-center gap-1.5 ${
-                        uploadingAvatar ? 'opacity-60 cursor-not-allowed' : ''
-                      }`}
+                      className={`bg-[#043927] hover:bg-[#02281b] text-white text-[11px] font-bold px-3 py-1.5 rounded-xl cursor-pointer transition-colors shadow-2xs inline-flex items-center gap-1.5 ${
+ uploadingAvatar ? 'opacity-60 cursor-not-allowed' : ''
+ }`}
                     >
                       {uploadingAvatar && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                       <span>
@@ -711,7 +711,7 @@ export default function ProfilePage() {
                 
                 {/* First Name */}
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-extrabold">
+                  <label className="block text-slate-700 font-bold">
                     {locale === 'ar' ? 'الاسم الأول' : 'First Name'}
                   </label>
                   <input
@@ -719,13 +719,13 @@ export default function ProfilePage() {
                     value={firstName}
                     placeholder={locale === 'ar' ? 'الاسم الأول' : 'First Name'}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
                   />
                 </div>
 
                 {/* Last Name */}
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-extrabold">
+                  <label className="block text-slate-700 font-bold">
                     {locale === 'ar' ? 'اسم العائلة' : 'Last Name'}
                   </label>
                   <input
@@ -733,14 +733,14 @@ export default function ProfilePage() {
                     value={lastName}
                     placeholder={locale === 'ar' ? 'اسم العائلة' : 'Last Name'}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
                   />
                 </div>
 
                 {/* Email Address */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="block text-slate-700 font-extrabold">
+                    <label className="block text-slate-700 font-bold">
                       {locale === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}
                     </label>
                     <span className="text-[10px] font-black text-emerald-600 flex items-center gap-0.5">
@@ -752,14 +752,14 @@ export default function ProfilePage() {
                     value={email}
                     placeholder="name@domain.com"
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
                   />
                 </div>
 
                 {/* Mobile Phone (KSA) */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="block text-slate-700 font-extrabold">
+                    <label className="block text-slate-700 font-bold">
                       {locale === 'ar' ? 'رقم الجوال (السعودية)' : 'Mobile Phone (KSA)'}
                     </label>
                     <span className="text-[10px] font-black text-emerald-600 flex items-center gap-0.5">
@@ -771,20 +771,20 @@ export default function ProfilePage() {
                     value={mobile}
                     placeholder="+966 5x xxx xxxx"
                     onChange={(e) => setMobile(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
                   />
                 </div>
 
                 {/* Date of Birth */}
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-extrabold">
+                  <label className="block text-slate-700 font-bold">
                     {locale === 'ar' ? 'تاريخ الميلاد' : 'Date of Birth'}
                   </label>
                   <input
                     type="date"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
                   />
                   <p className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
                     🎂 {locale === 'ar' ? 'نقاط مضاعفة في أسبوع يوم ميلادك!' : 'Double MartPoints on your birthday harvest week.'}
@@ -793,29 +793,29 @@ export default function ProfilePage() {
 
                 {/* Gender Toggle */}
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-extrabold">
+                  <label className="block text-slate-700 font-bold">
                     {locale === 'ar' ? 'الجنس' : 'Gender'}
                   </label>
                   <div className="flex items-center gap-2 pt-0.5">
                     <button
                       type="button"
                       onClick={() => setGender('Female')}
-                      className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer font-sans ${
-                        gender === 'Female'
-                          ? 'bg-[#043927] text-white shadow-xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+ gender === 'Female'
+ ? 'bg-[#043927] text-white shadow-xs'
+ : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+ }`}
                     >
                       ♀ {locale === 'ar' ? 'أنثى' : 'Female'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setGender('Male')}
-                      className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer font-sans ${
-                        gender === 'Male'
-                          ? 'bg-[#043927] text-white shadow-xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+ gender === 'Male'
+ ? 'bg-[#043927] text-white shadow-xs'
+ : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+ }`}
                     >
                       ♂ {locale === 'ar' ? 'ذكر' : 'Male'}
                     </button>
@@ -824,13 +824,13 @@ export default function ProfilePage() {
 
                 {/* Preferred Interface & Invoices */}
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-extrabold">
+                  <label className="block text-slate-700 font-bold">
                     {locale === 'ar' ? 'لغة الواجهة والفواتير المفضلة' : 'Preferred Interface & Invoices'}
                   </label>
                   <select
                     value={interfaceLang}
                     onChange={(e) => setInterfaceLang(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 cursor-pointer"
                   >
                     <option value="English (US) - Primary">English (US) - Primary</option>
                     <option value="العربية (KSA) - Secondary">العربية (KSA) - Secondary</option>
@@ -840,7 +840,7 @@ export default function ProfilePage() {
                 {/* National ID / Iqama (ZATCA e-Invoice) */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="block text-slate-700 font-extrabold">
+                    <label className="block text-slate-700 font-bold">
                       {locale === 'ar' ? 'رقم الهوية الوطنية / الإقامة' : 'National ID / Iqama (ZATCA e-Invoice)'}
                     </label>
                     <span className="text-[10px] font-black text-emerald-600 flex items-center gap-0.5">
@@ -853,12 +853,12 @@ export default function ProfilePage() {
                       value={nationalId}
                       placeholder="10xxxxxxxx"
                       onChange={(e) => setNationalId(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300 font-sans"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
                     />
                     <button
                       type="button"
                       onClick={handleSave}
-                      className="text-xs text-[#05A764] font-extrabold hover:underline shrink-0 cursor-pointer"
+                      className="text-xs text-[#05A764] font-bold hover:underline shrink-0 cursor-pointer"
                     >
                       {locale === 'ar' ? 'تحديث' : 'Update'}
                     </button>
@@ -875,7 +875,7 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2">
                   <Lock className="w-4 h-4 text-[#05A764]" />
                   <div>
-                    <h2 className="font-extrabold text-sm sm:text-base text-slate-900 font-sans">
+                    <h2 className="font-bold text-sm sm:text-base text-slate-900">
                       {locale === 'ar' ? 'كلمة المرور والأمان' : 'Password & Security'}
                     </h2>
                     <p className="text-[11px] text-slate-400 font-medium">
@@ -884,19 +884,19 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full font-sans uppercase">
+                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full uppercase">
                   🟢 2FA Active
                 </span>
               </div>
 
-              <div className="space-y-3 font-sans">
+              <div className="space-y-3">
                 {/* Account Password Row */}
                 <div className="bg-[#F5F6F8] rounded-2xl p-3.5 flex items-center justify-between border border-slate-200/60">
                   <div className="flex items-center gap-3">
                     <Key className="w-4 h-4 text-slate-600 shrink-0" />
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-xs text-slate-900">
+                        <span className="font-bold text-xs text-slate-900">
                           {locale === 'ar' ? 'كلمة المرور' : 'Account Password'}
                         </span>
                         <span className="bg-emerald-100 text-[#043927] text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
@@ -923,7 +923,7 @@ export default function ProfilePage() {
                         showToast('Please enter an email address first', 'error');
                       }
                     }}
-                    className="bg-white hover:bg-slate-100 text-slate-800 font-extrabold text-xs px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs cursor-pointer"
+                    className="bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs cursor-pointer"
                   >
                     {locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
                   </button>
@@ -934,7 +934,7 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-3">
                     <Smartphone className="w-4 h-4 text-[#05A764] shrink-0" />
                     <div>
-                      <h4 className="font-extrabold text-xs text-slate-900">
+                      <h4 className="font-bold text-xs text-slate-900">
                         {locale === 'ar' ? 'المصادقة الثنائية (2FA)' : 'Two-Factor Authentication (2FA)'}
                       </h4>
                       <p className="text-[10px] text-slate-500 font-medium leading-tight">
@@ -959,7 +959,7 @@ export default function ProfilePage() {
 
                 {/* Linked Identity Providers Row */}
                 <div className="pt-2">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2 font-sans">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">
                     LINKED IDENTITY PROVIDERS
                   </span>
 
@@ -967,7 +967,7 @@ export default function ProfilePage() {
                     {/* Apple ID */}
                     <div className="bg-[#F5F6F8] rounded-xl p-2.5 border border-slate-200/60 flex items-center justify-between text-xs">
                       <div>
-                        <span className="font-extrabold text-slate-900 block"> Apple ID</span>
+                        <span className="font-bold text-slate-900 block"> Apple ID</span>
                         <span className="text-[9px] text-slate-400 font-medium">FaceID 1-Tap</span>
                       </div>
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -976,7 +976,7 @@ export default function ProfilePage() {
                     {/* Nafath App */}
                     <div className="bg-[#F5F6F8] rounded-xl p-2.5 border border-slate-200/60 flex items-center justify-between text-xs">
                       <div>
-                        <span className="font-extrabold text-slate-900 block">🛡️ Nafath App</span>
+                        <span className="font-bold text-slate-900 block">🛡️ Nafath App</span>
                         <span className="text-[9px] text-slate-400 font-medium">National Verified</span>
                       </div>
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -985,7 +985,7 @@ export default function ProfilePage() {
                     {/* Google Account */}
                     <div className="bg-[#F5F6F8] rounded-xl p-2.5 border border-slate-200/60 flex items-center justify-between text-xs">
                       <div>
-                        <span className="font-extrabold text-slate-900 block">🌐 Google Account</span>
+                        <span className="font-bold text-slate-900 block">🌐 Google Account</span>
                         <span className="text-[9px] text-slate-400 font-medium">
                           {user?.email?.includes('@gmail.com') ? 'Connected' : 'Not connected'}
                         </span>
@@ -996,7 +996,7 @@ export default function ProfilePage() {
                         <button
                           type="button"
                           onClick={() => showToast(locale === 'ar' ? 'جاري ربط حساب Google...' : 'Connecting Google account...', 'info')}
-                          className="text-xs text-[#05A764] font-extrabold hover:underline"
+                          className="text-xs text-[#05A764] font-bold hover:underline"
                         >
                           Link
                         </button>
@@ -1016,7 +1016,7 @@ export default function ProfilePage() {
               <div className="border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <MessageCircle className="w-4 h-4 text-[#05A764]" />
-                  <h2 className="font-extrabold text-sm sm:text-base text-slate-900 font-sans">
+                  <h2 className="font-bold text-sm sm:text-base text-slate-900">
                     {locale === 'ar' ? 'قنوات التواصل والإشعارات' : 'Communication Channels'}
                   </h2>
                 </div>
@@ -1027,13 +1027,13 @@ export default function ProfilePage() {
                 </p>
               </div>
 
-              <div className="space-y-3 font-sans">
+              <div className="space-y-3">
                 {/* WhatsApp Order Tracking */}
                 <div className="bg-[#F5F6F8] rounded-2xl p-3.5 flex items-center justify-between border border-slate-200/60">
                   <div className="flex items-center gap-3">
                     <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
                     <div>
-                      <h4 className="font-extrabold text-xs text-slate-900">
+                      <h4 className="font-bold text-xs text-slate-900">
                         {locale === 'ar'
                           ? 'تتبع الطلبات وتنبيهات الحصاد الطازج عبر واتساب'
                           : 'WhatsApp Order Tracking & Fresh Harvest Alerts'}
@@ -1062,7 +1062,7 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-3">
                     <Smartphone className="w-4 h-4 text-[#05A764] shrink-0" />
                     <div>
-                      <h4 className="font-extrabold text-xs text-slate-900">
+                      <h4 className="font-bold text-xs text-slate-900">
                         {locale === 'ar' ? 'رمز استلام الطلب ووصول السائق عبر SMS' : 'SMS Delivery PINs & Driver Arrival'}
                       </h4>
                       <p className="text-[10px] text-slate-500 font-medium leading-tight">

@@ -425,7 +425,7 @@ export default function CategoryBannerManager({ activeLevel = 1 }) {
   const levelBadgeText = previewLocale === 'ar' ? levelInfo.badge_ar : levelInfo.badge_en;
 
   return (
-    <div className="space-y-6 pb-12 font-sans">
+    <div className="space-y-6 pb-12">
       
       {/* 4-Level Navigation Tabs Bar */}
       <div className="bg-white rounded-2xl p-2 border border-slate-200/80 shadow-xs flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -437,10 +437,10 @@ export default function CategoryBannerManager({ activeLevel = 1 }) {
               key={lvl}
               href={cfg.route}
               className={`flex-1 min-w-[170px] px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-between gap-2 transition-all ${
-                isCurrent
-                  ? 'bg-[#043927] text-white shadow-md'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/60'
-              }`}
+ isCurrent
+ ? 'bg-[#043927] text-white shadow-md'
+ : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/60'
+ }`}
             >
               <span className="flex items-center gap-1.5 truncate">
                 <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${isCurrent ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
@@ -534,7 +534,7 @@ export default function CategoryBannerManager({ activeLevel = 1 }) {
           {/* Optional Parent Category Filter when level > 1 */}
           {activeLevel > 1 && parentCategories.length > 0 && (
             <div>
-              <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                 {isAr ? `تصفية حسب قسم المستوى ${activeLevel - 1}:` : `Filter by Level ${activeLevel - 1} Parent:`}
               </label>
               <select
@@ -572,10 +572,10 @@ export default function CategoryBannerManager({ activeLevel = 1 }) {
                     type="button"
                     onClick={() => setSelectedCatId(cat.id || cat.slug)}
                     className={`w-full text-left rtl:text-right p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer ${
-                      isSelected
-                        ? 'bg-emerald-50/80 border-emerald-500 shadow-xs ring-1 ring-emerald-500'
-                        : 'bg-white hover:bg-slate-50 border-slate-200/70'
-                    }`}
+ isSelected
+ ? 'bg-emerald-50/80 border-emerald-500 shadow-xs ring-1 ring-emerald-500'
+ : 'bg-white hover:bg-slate-50 border-slate-200/70'
+ }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
@@ -664,8 +664,8 @@ export default function CategoryBannerManager({ activeLevel = 1 }) {
                   type="button"
                   onClick={() => setPreviewLocale('en')}
                   className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                    previewLocale === 'en' ? 'bg-white shadow-xs text-emerald-900' : 'text-slate-500'
-                  }`}
+ previewLocale === 'en' ? 'bg-white shadow-xs text-emerald-900' : 'text-slate-500'
+ }`}
                 >
                   English Preview
                 </button>
@@ -673,8 +673,8 @@ export default function CategoryBannerManager({ activeLevel = 1 }) {
                   type="button"
                   onClick={() => setPreviewLocale('ar')}
                   className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                    previewLocale === 'ar' ? 'bg-white shadow-xs text-emerald-900' : 'text-slate-500'
-                  }`}
+ previewLocale === 'ar' ? 'bg-white shadow-xs text-emerald-900' : 'text-slate-500'
+ }`}
                 >
                   معاينة بالعربية
                 </button>
@@ -684,7 +684,7 @@ export default function CategoryBannerManager({ activeLevel = 1 }) {
             {/* Exactly replicates CategoryBanner.js on /category/[slug] */}
             <div
               dir={previewLocale === 'ar' ? 'rtl' : 'ltr'}
-              className="relative rounded-3xl overflow-hidden bg-[#043927] text-white shadow-lg border border-emerald-900/50 font-sans p-4 sm:p-5 lg:px-7 lg:py-5"
+              className="relative rounded-3xl overflow-hidden bg-[#043927] text-white shadow-lg border border-emerald-900/50 p-4 sm:p-5 lg:px-7 lg:py-5"
             >
               {/* Background Graphic Accents */}
               <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -703,12 +703,12 @@ export default function CategoryBannerManager({ activeLevel = 1 }) {
                       </span>
                     )}
                     {previewTag && (
-                      <span className="bg-[#05A764] text-white text-[9px] sm:text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
+                      <span className="bg-[#05A764] text-white text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
                         {previewTag}
                       </span>
                     )}
                     {previewBadge && (
-                      <span className="bg-[#ea580c] text-white text-[9px] sm:text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
+                      <span className="bg-[#ea580c] text-white text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
                         {previewBadge}
                       </span>
                     )}

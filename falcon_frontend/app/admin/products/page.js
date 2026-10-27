@@ -1293,7 +1293,7 @@ export default function AdminProductsPage() {
       {viewMode === 'list' && (
         <>
           {/* Header */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
             {/* Top Row: Title & Subtitle on Left | "+ Add Grocery Item" Button on Top Right */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
               <div className="flex items-center gap-4">
@@ -1305,21 +1305,21 @@ export default function AdminProductsPage() {
                     <h1 className="text-2xl font-black text-slate-900 whitespace-nowrap">
                       {locale === 'ar' ? 'إدارة كتالوج المواد الغذائية وطازج' : 'Fresh Product Catalog'}
                     </h1>
-                    <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                       {totalRecords} {locale === 'ar' ? 'منتج' : 'Items'}
                     </span>
                     {statusFilter === 'ACTIVE' && (
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300">
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300">
                         {locale === 'ar' ? 'النشطة فقط' : 'Active Only'}
                       </span>
                     )}
                     {statusFilter === 'INACTIVE' && (
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-300">
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-300">
                         {locale === 'ar' ? 'المعطلة فقط' : 'Inactive Only'}
                       </span>
                     )}
                     {(startDate || endDate) && (
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300">
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300">
                         {locale === 'ar' ? 'تاريخ مخصص' : 'Date Range'}
                       </span>
                     )}
@@ -1334,7 +1334,7 @@ export default function AdminProductsPage() {
               {canCreate && (
                 <button
                   onClick={openAdd}
-                  className="h-11 px-5 rounded-xl flex items-center justify-center gap-2 bg-[#043927] hover:bg-[#02281b] text-white text-xs font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer whitespace-nowrap shrink-0"
+                  className="h-11 px-5 rounded-xl flex items-center justify-center gap-2 bg-[#043927] hover:bg-[#02281b] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer whitespace-nowrap shrink-0"
                 >
                   <Plus className="w-4 h-4 text-emerald-400" />
                   <span>{locale === 'ar' ? 'إضافة صنف طازج' : 'Add Item'}</span>
@@ -1441,16 +1441,16 @@ export default function AdminProductsPage() {
 
           {/* Table of Products */}
           {loading ? (
-            <div className="py-12 text-center text-slate-500 font-sans">Loading product catalog...</div>
+            <div className="py-12 text-center text-slate-500">Loading product catalog...</div>
           ) : filteredProducts.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200 font-sans">
+            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200">
               No grocery products found. Click "Add Grocery Item" to create new listings.
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden font-sans">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-slate-600">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
                     <tr>
                       <th className="px-3.5 py-3 w-[125px] whitespace-nowrap text-left">{locale === 'ar' ? 'الإجراءات' : 'Actions'}</th>
                       <th className="px-3.5 py-3 min-w-[220px]">{locale === 'ar' ? 'المنتج والصور' : 'Product & Images'}</th>
@@ -1532,7 +1532,7 @@ export default function AdminProductsPage() {
                                     <ImageIcon className="w-5 h-5" />
                                   </div>
                                   {imgList.length > 1 && (
-                                    <span className="absolute -top-1.5 -right-1.5 bg-[#05A764] text-white text-[9px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                                    <span className="absolute -top-1.5 -right-1.5 bg-[#05A764] text-white text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                                       +{imgList.length - 1}
                                     </span>
                                   )}
@@ -1543,7 +1543,7 @@ export default function AdminProductsPage() {
                                 </div>
                               )}
                               <div className="min-w-0">
-                                <h4 className="font-extrabold text-slate-900 text-sm leading-snug font-sans">
+                                <h4 className="font-bold text-slate-900 text-sm leading-snug">
                                   {prod.name_en}
                                 </h4>
                                 {prod.name_ar && (
@@ -1553,27 +1553,27 @@ export default function AdminProductsPage() {
                                 )}
                                 <div className="flex flex-wrap items-center gap-1 mt-1">
                                   {prod.show_on_store && (
-                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
                                       🏪 {locale === 'ar' ? 'معروض في المتجر' : 'Show on Store'}
                                     </span>
                                   )}
                                   {prod.is_popular_pick && (
-                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-200">
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-200">
                                       ⭐ Popular Pick
                                     </span>
                                   )}
                                   {prod.is_best_deal && (
-                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 border border-rose-200">
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 border border-rose-200">
                                       🔥 Best Deal
                                     </span>
                                   )}
                                   {prod.is_best_seller && (
-                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
                                       ⭐ Best Seller
                                     </span>
                                   )}
                                   {prod.is_featured && (
-                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
                                       ✨ Featured
                                     </span>
                                   )}
@@ -1602,14 +1602,14 @@ export default function AdminProductsPage() {
 
                           {/* 4-Level Category Hierarchy Column */}
                           <td className="px-3.5 py-3 text-xs font-medium text-slate-700 min-w-[160px]">
-                            <span className="font-extrabold text-slate-900 block">{prod.category?.name_en || 'Main Category'}</span>
+                            <span className="font-bold text-slate-900 block">{prod.category?.name_en || 'Main Category'}</span>
                             {prod.subcategory && (
                               <span className="text-[11px] text-[#05A764] font-bold flex items-center gap-1 mt-0.5 whitespace-nowrap">
                                 ↪ {prod.subcategory.name_en}
                               </span>
                             )}
                             {prod.sub_subcategory && (
-                              <span className="text-[10px] text-[#043927] font-extrabold flex items-center gap-1 mt-0.5 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80 w-fit whitespace-nowrap">
+                              <span className="text-[10px] text-[#043927] font-bold flex items-center gap-1 mt-0.5 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80 w-fit whitespace-nowrap">
                                 ↳ {prod.sub_subcategory.name_en}
                               </span>
                             )}
@@ -1620,7 +1620,7 @@ export default function AdminProductsPage() {
                             )}
                           </td>
 
-                          <td className="px-3.5 py-3 font-black text-slate-900 text-sm sm:text-base font-sans whitespace-nowrap">
+                          <td className="px-3.5 py-3 font-black text-slate-900 text-sm sm:text-base whitespace-nowrap">
                             {prod.has_variants && prod.variants && prod.variants.length > 0 ? (
                               <div>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase block">From</span>
@@ -1637,12 +1637,12 @@ export default function AdminProductsPage() {
                           {/* Stock Column */}
                           <td className="px-3.5 py-3 whitespace-nowrap">
                             <div className="flex items-center gap-2">
-                              <span className={`inline-flex items-center text-xs font-extrabold px-3 py-1.5 rounded-full border whitespace-nowrap ${prod.stock_quantity > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                              <span className={`inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-full border whitespace-nowrap ${prod.stock_quantity > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
                                 {prod.stock_quantity > 0 ? `Stock: ${prod.stock_quantity}` : 'Out of Stock'}
                               </span>
                               <button
                                 onClick={() => openStockModal(prod)}
-                                className="px-2.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-[#043927] rounded-xl text-[11px] font-extrabold cursor-pointer transition-all flex items-center gap-1 shadow-2xs border border-emerald-200/80 whitespace-nowrap"
+                                className="px-2.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-[#043927] rounded-xl text-[11px] font-bold cursor-pointer transition-all flex items-center gap-1 shadow-2xs border border-emerald-200/80 whitespace-nowrap"
                                 title="Adjust Stock & View Movement History"
                               >
                                 <Sliders className="w-3 h-3 text-[#05A764]" /> Adjust
@@ -1653,11 +1653,11 @@ export default function AdminProductsPage() {
                           {/* Unit & Size Column */}
                           <td className="px-3.5 py-3 whitespace-nowrap text-xs font-bold text-slate-700">
                             {prod.has_variants && prod.variants && prod.variants.length > 0 ? (
-                              <span className="inline-block bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl text-emerald-900 font-bold font-sans">
+                              <span className="inline-block bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl text-emerald-900 font-bold">
                                 {prod.variants.map((v) => `${v.unit_value || ''}${v.unit_type || ''}`).filter(Boolean).join(', ')}
                               </span>
                             ) : prod.unit ? (
-                              <span className="inline-block bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-slate-800 font-semibold font-sans">
+                              <span className="inline-block bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-slate-800 font-semibold">
                                 {prod.unit_value} {prod.unit_type} ({prod.pack_size})
                               </span>
                             ) : (
@@ -1668,11 +1668,11 @@ export default function AdminProductsPage() {
                           {/* Status Column */}
                           <td className="px-3.5 py-3 whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border ${
-                                prod.is_active !== false
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-rose-50 text-rose-700 border-rose-200'
-                              }`}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+ prod.is_active !== false
+ ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+ : 'bg-rose-50 text-rose-700 border-rose-200'
+ }`}
                             >
                               {prod.is_active !== false ? (
                                 <>
@@ -1706,7 +1706,7 @@ export default function AdminProductsPage() {
 
       {/* Page View 2: Dedicated Add/Edit Product Form with 3-Level Category Selection */}
       {viewMode === 'form' && (
-        <div className="space-y-6 font-sans">
+        <div className="space-y-6">
           {/* Form Header */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -1732,14 +1732,14 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold transition-all cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="px-5 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white text-xs font-extrabold transition-all shadow-md cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white text-xs font-bold transition-all shadow-md cursor-pointer"
               >
                 Save Item
               </button>
@@ -1749,8 +1749,8 @@ export default function AdminProductsPage() {
           {/* Form Body Layout */}
           <form onSubmit={handleSubmit} className="space-y-6">
 {/* MIDDLE SECTION: FULL WIDTH CATEGORY CLASSIFICATION (4 LEVELS) */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans w-full">
-              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 w-full">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
                 <Layers className="w-4 h-4 text-[#05A764]" /> 2. Category Classification (4 Levels)
               </h3>
 
@@ -1859,17 +1859,17 @@ export default function AdminProductsPage() {
 
               {/* Selected Hierarchy Breadcrumb Preview Path Bar */}
               {(productForm.category_id || productForm.subcategory_id || productForm.sub_subcategory_id || productForm.sub_sub_subcategory_id) && (
-                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200/80 flex items-center gap-2 text-xs font-semibold text-slate-700 font-sans mt-2 flex-wrap">
+                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200/80 flex items-center gap-2 text-xs font-semibold text-slate-700 mt-2 flex-wrap">
                   <span className="text-slate-400 font-bold">Selected Path:</span>
                   {productForm.category_id && (
-                    <span className="bg-white border border-slate-200 text-slate-900 font-extrabold px-2.5 py-1 rounded-lg shadow-2xs">
+                    <span className="bg-white border border-slate-200 text-slate-900 font-bold px-2.5 py-1 rounded-lg shadow-2xs">
                       {mainCategories.find((c) => String(c.id) === String(productForm.category_id))?.name_en || 'Main Category'}
                     </span>
                   )}
                   {productForm.subcategory_id && (
                     <>
                       <span className="text-slate-400">➔</span>
-                      <span className="bg-emerald-50 border border-emerald-200 text-emerald-900 font-extrabold px-2.5 py-1 rounded-lg">
+                      <span className="bg-emerald-50 border border-emerald-200 text-emerald-900 font-bold px-2.5 py-1 rounded-lg">
                         {subCategories.find((sc) => String(sc.id) === String(productForm.subcategory_id))?.name_en || 'Sub-Category'}
                       </span>
                     </>
@@ -1897,8 +1897,8 @@ export default function AdminProductsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
               {/* CARD 1: PRODUCT INFORMATION */}
-              <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
-                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+              <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
                   <Apple className="w-4 h-4 text-[#05A764]" /> 1. Product Information
                 </h3>
 
@@ -1978,9 +1978,9 @@ export default function AdminProductsPage() {
               </div>
 
               {/* CARD 2: GALLERY IMAGES */}
-              <div className="lg:col-span-1 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
+              <div className="lg:col-span-1 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                     <ImageIcon className="w-4 h-4 text-emerald-600" /> Gallery Images ({productForm.images.length})
                   </h3>
                 </div>
@@ -2010,10 +2010,10 @@ export default function AdminProductsPage() {
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-1.5 pt-0.5">
-                        <span className="bg-white px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-900 font-extrabold text-[10px]">
+                        <span className="bg-white px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-900 font-bold text-[10px]">
                           Types: JPG, PNG, WEBP, PDF
                         </span>
-                        <span className="bg-white px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-900 font-extrabold text-[10px]">
+                        <span className="bg-white px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-900 font-bold text-[10px]">
                           Max Size: 5MB / file
                         </span>
                       </div>
@@ -2022,7 +2022,7 @@ export default function AdminProductsPage() {
 
                   {/* Loading spinner while uploading */}
                   {uploadingProductImages && (
-                    <div className="py-2.5 px-3 rounded-xl bg-emerald-100/70 border border-emerald-200 text-xs font-extrabold text-[#043927] flex items-center justify-center gap-2 animate-pulse">
+                    <div className="py-2.5 px-3 rounded-xl bg-emerald-100/70 border border-emerald-200 text-xs font-bold text-[#043927] flex items-center justify-center gap-2 animate-pulse">
                       <div className="w-4 h-4 border-2 border-[#043927] border-t-transparent rounded-full animate-spin"></div>
                       Uploading image(s) & analyzing file size...
                     </div>
@@ -2046,11 +2046,11 @@ export default function AdminProductsPage() {
                               className="w-full h-20 object-contain rounded-xl bg-white border border-slate-100"
                             />
                             <div className="w-full flex items-center justify-between mt-1.5 gap-1">
-                              <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${idx === 0 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-200 text-slate-700'}`}>
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${idx === 0 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-200 text-slate-700'}`}>
                                 {idx === 0 ? '★ Main' : `#${idx + 1}`}
                               </span>
                               {meta ? (
-                                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-white border border-emerald-200 text-emerald-800 truncate" title={`${meta.type} | ${meta.size}`}>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white border border-emerald-200 text-emerald-800 truncate" title={`${meta.type} | ${meta.size}`}>
                                   {meta.type} ({meta.size})
                                 </span>
                               ) : (
@@ -2091,12 +2091,12 @@ export default function AdminProductsPage() {
               <div className="lg:col-span-2 space-y-6">
 
                 {/* HAS VARIANTS TOGGLE BANNER */}
-                <div className="bg-gradient-to-r from-emerald-50 via-teal-50/40 to-white rounded-3xl p-6 border-2 border-emerald-200/90 shadow-xs space-y-4 font-sans">
+                <div className="bg-gradient-to-r from-emerald-50 via-teal-50/40 to-white rounded-3xl p-6 border-2 border-emerald-200/90 shadow-xs space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <Layers className="w-5 h-5 text-[#043927]" />
-                        <h3 className="text-base font-extrabold text-[#043927] tracking-tight">
+                        <h3 className="text-base font-bold text-[#043927] tracking-tight">
                           Product Variants (Has Variants)
                         </h3>
                         <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 border border-emerald-300">
@@ -2149,8 +2149,8 @@ export default function AdminProductsPage() {
                 {!productForm.has_variants ? (
                   <>
                     {/* CARD 3: UNIT & PACKAGING (Single Product) */}
-                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
-                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+                      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
                         <Package className="w-4 h-4 text-[#05A764]" /> 3. Unit & Packaging
                       </h3>
 
@@ -2222,7 +2222,7 @@ export default function AdminProductsPage() {
 
                     {/* CARD 4: INVENTORY & STOCK (Single Product) */}
                     <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
                         <ShoppingBag className="w-4 h-4 text-[#05A764]" /> 4. Inventory & Stock
                       </h3>
 
@@ -2272,8 +2272,8 @@ export default function AdminProductsPage() {
                     </div>
 
                     {/* CARD 5: PRICING (Single Product) */}
-                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
-                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+                      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
                         <Tag className="w-4 h-4 text-[#05A764]" /> 5. Pricing
                       </h3>
 
@@ -2292,7 +2292,7 @@ export default function AdminProductsPage() {
                               onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
                               className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-black focus:outline-none focus:bg-white focus:border-[#043927]"
                             />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-emerald-700">SAR</span>
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-700">SAR</span>
                           </div>
                         </div>
 
@@ -2309,7 +2309,7 @@ export default function AdminProductsPage() {
                               onChange={(e) => setProductForm({ ...productForm, discount_price: e.target.value })}
                               className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
                             />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">SAR</span>
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">SAR</span>
                           </div>
                         </div>
 
@@ -2326,14 +2326,14 @@ export default function AdminProductsPage() {
                               onChange={(e) => setProductForm({ ...productForm, vat_percentage: e.target.value })}
                               className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
                             />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">%</span>
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
                           </div>
                         </div>
                       </div>
 
                       <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between mt-2">
                         <div className="space-y-0.5">
-                          <span className="text-xs font-extrabold text-slate-900 block">Price Includes VAT</span>
+                          <span className="text-xs font-bold text-slate-900 block">Price Includes VAT</span>
                           <span className="text-[11px] text-slate-500 font-medium">When enabled, the selling price already includes calculated tax (ZATCA compliant).</span>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -2351,8 +2351,8 @@ export default function AdminProductsPage() {
                 ) : (
                   <>
                     {/* VARIANTS ACTIVE: BASE SKU & TAX SETTINGS */}
-                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
-                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+                      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
                         <ShoppingBag className="w-4 h-4 text-[#05A764]" /> Base SKU & Tax Settings
                       </h3>
 
@@ -2384,7 +2384,7 @@ export default function AdminProductsPage() {
                               onChange={(e) => setProductForm({ ...productForm, vat_percentage: e.target.value })}
                               className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
                             />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">%</span>
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
                           </div>
                         </div>
 
@@ -2405,7 +2405,7 @@ export default function AdminProductsPage() {
 
                       <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between mt-2">
                         <div className="space-y-0.5">
-                          <span className="text-xs font-extrabold text-slate-900 block">Prices Include VAT</span>
+                          <span className="text-xs font-bold text-slate-900 block">Prices Include VAT</span>
                           <span className="text-[11px] text-slate-500 font-medium">When enabled, variant selling prices include tax.</span>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -2421,7 +2421,7 @@ export default function AdminProductsPage() {
                     </div>
 
                     {/* DYNAMIC PRODUCT VARIANTS TABLE & PRESETS */}
-                    <div className="bg-white rounded-3xl p-6 border-2 border-[#05A764]/40 shadow-xs space-y-5 font-sans">
+                    <div className="bg-white rounded-3xl p-6 border-2 border-[#05A764]/40 shadow-xs space-y-5">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
                         <div>
                           <div className="flex items-center gap-2">
@@ -2438,7 +2438,7 @@ export default function AdminProductsPage() {
                         <button
                           type="button"
                           onClick={handleAddVariant}
-                          className="px-4 py-2 bg-[#043927] hover:bg-[#05A764] text-white rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs shrink-0 self-start sm:self-auto"
+                          className="px-4 py-2 bg-[#043927] hover:bg-[#05A764] text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs shrink-0 self-start sm:self-auto"
                         >
                           <Plus className="w-4 h-4" /> Add Variant
                         </button>
@@ -2446,7 +2446,7 @@ export default function AdminProductsPage() {
 
                       {/* QUICK PRESET CHIPS */}
                       <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider shrink-0 flex items-center gap-1">
                           <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Quick Super Mart Presets:
                         </span>
                         <button
@@ -2713,10 +2713,10 @@ export default function AdminProductsPage() {
                                             }
                                           }}
                                           className={`group relative rounded-2xl p-1.5 transition-all bg-white flex flex-col justify-between overflow-hidden shadow-2xs select-none ${
-                                            isPrimary
-                                              ? 'border-2 border-[#05A764] ring-2 ring-emerald-500/10 shadow-emerald-50'
-                                              : 'border border-slate-200 hover:border-slate-300'
-                                          }`}
+ isPrimary
+ ? 'border-2 border-[#05A764] ring-2 ring-emerald-500/10 shadow-emerald-50'
+ : 'border border-slate-200 hover:border-slate-300'
+ }`}
                                         >
                                           {/* Top Badges / Set Primary / Remove */}
                                           <div className="flex items-center justify-between gap-1 mb-1">
@@ -2858,7 +2858,7 @@ export default function AdminProductsPage() {
 
                           {/* SUMMARY BAR */}
                           <div className="bg-emerald-50/80 p-4 rounded-2xl border border-emerald-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-                            <span className="font-extrabold text-[#043927]">
+                            <span className="font-bold text-[#043927]">
                               Total Stock: {productForm.variants.reduce((acc, v) => acc + parseInt(v.stock_quantity || '0', 10), 0)} units across {productForm.variants.length} variants
                             </span>
                             <span className="font-bold text-slate-700">
@@ -2872,11 +2872,11 @@ export default function AdminProductsPage() {
                 )}
 
                 {/* CARD: PRODUCT DESCRIPTION & DYNAMIC HIGHLIGHTS */}
-                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5 font-sans">
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-[#05A764]" />
-                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                         Product Description & Highlights
                       </h3>
                     </div>
@@ -2961,7 +2961,7 @@ export default function AdminProductsPage() {
                           <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
                             Section 1: Product Feature Badges ({productForm.feature_badges?.length || 0})
                           </label>
-                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                             Below Title & Rating
                           </span>
                         </div>
@@ -2972,7 +2972,7 @@ export default function AdminProductsPage() {
                       <button
                         type="button"
                         onClick={handleAddFeatureBadge}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#043927] border border-emerald-200 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 self-start sm:self-auto shrink-0"
+                        className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#043927] border border-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 self-start sm:self-auto shrink-0"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         Add Badge
@@ -3076,7 +3076,7 @@ export default function AdminProductsPage() {
                           <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
                             Section 2: Product Highlights ({productForm.highlights?.length || 0})
                           </label>
-                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
                             Below Image Gallery
                           </span>
                         </div>
@@ -3087,7 +3087,7 @@ export default function AdminProductsPage() {
                       <button
                         type="button"
                         onClick={handleAddHighlight}
-                        className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 self-start sm:self-auto shrink-0"
+                        className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 self-start sm:self-auto shrink-0"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         Add Highlight
@@ -3183,11 +3183,11 @@ export default function AdminProductsPage() {
                 </div>
 
                 {/* CARD: NUTRITION FACTS */}
-                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5 font-sans">
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <div className="flex items-center gap-2">
                       <Activity className="w-4 h-4 text-[#05A764]" />
-                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                         Nutrition Facts Management
                       </h3>
                     </div>
@@ -3342,22 +3342,22 @@ export default function AdminProductsPage() {
                           </span>
                         )}
                         {productForm.nutrition_facts?.calories && (
-                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-extrabold text-[11px]">
+                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-bold text-[11px]">
                             🔥 {productForm.nutrition_facts.calories}
                           </span>
                         )}
                         {productForm.nutrition_facts?.protein && (
-                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-extrabold text-[11px]">
+                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-bold text-[11px]">
                             Protein: {productForm.nutrition_facts.protein}
                           </span>
                         )}
                         {productForm.nutrition_facts?.carbohydrates && (
-                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-extrabold text-[11px]">
+                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-bold text-[11px]">
                             Carbs: {productForm.nutrition_facts.carbohydrates}
                           </span>
                         )}
                         {productForm.nutrition_facts?.fat && (
-                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-extrabold text-[11px]">
+                          <span className="bg-white border border-emerald-200 text-slate-800 px-2 py-1 rounded-lg font-bold text-[11px]">
                             Fat: {productForm.nutrition_facts.fat}
                           </span>
                         )}
@@ -3372,8 +3372,8 @@ export default function AdminProductsPage() {
               <div className="lg:col-span-1 space-y-6">
 
                 {/* CARD 6: ONLINE STORE STOREFRONT SETTINGS */}
-                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 font-sans">
-                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
                     <Globe className="w-4 h-4 text-[#05A764]" /> 6. Storefront Visibility & Badges
                   </h3>
 
@@ -3381,7 +3381,7 @@ export default function AdminProductsPage() {
                     {/* Show on Store */}
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
                       <div className="space-y-0.5 pr-2">
-                        <span className="text-xs font-extrabold text-slate-900 block">
+                        <span className="text-xs font-bold text-slate-900 block">
                           {locale === 'ar' ? 'عرض في المتجر' : 'Show on Store'}
                         </span>
                         <span className="text-[10px] text-slate-500 font-medium block">
@@ -3402,7 +3402,7 @@ export default function AdminProductsPage() {
                     {/* Available for Purchase */}
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
                       <div className="space-y-0.5 pr-2">
-                        <span className="text-xs font-extrabold text-slate-900 block">
+                        <span className="text-xs font-bold text-slate-900 block">
                           {locale === 'ar' ? 'متاح للشراء' : 'Available for Purchase'}
                         </span>
                         <span className="text-[10px] text-slate-500 font-medium block">
@@ -3423,7 +3423,7 @@ export default function AdminProductsPage() {
                     {/* Featured */}
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
                       <div className="space-y-0.5 pr-2">
-                        <span className="text-xs font-extrabold text-slate-900 block">Featured</span>
+                        <span className="text-xs font-bold text-slate-900 block">Featured</span>
                         <span className="text-[10px] text-slate-500 font-medium block">Highlight in home sliders</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -3440,7 +3440,7 @@ export default function AdminProductsPage() {
                     {/* New Arrival */}
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
                       <div className="space-y-0.5 pr-2">
-                        <span className="text-xs font-extrabold text-slate-900 block">New Arrival</span>
+                        <span className="text-xs font-bold text-slate-900 block">New Arrival</span>
                         <span className="text-[10px] text-slate-500 font-medium block">Display NEW badge</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -3457,7 +3457,7 @@ export default function AdminProductsPage() {
                     {/* Best Seller */}
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
                       <div className="space-y-0.5 pr-2">
-                        <span className="text-xs font-extrabold text-slate-900 block">Best Seller</span>
+                        <span className="text-xs font-bold text-slate-900 block">Best Seller</span>
                         <span className="text-[10px] text-slate-500 font-medium block">Display ⭐ Best Seller</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -3474,7 +3474,7 @@ export default function AdminProductsPage() {
                     {/* Best Deal */}
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
                       <div className="space-y-0.5 pr-2">
-                        <span className="text-xs font-extrabold text-slate-900 block">Best Deal</span>
+                        <span className="text-xs font-bold text-slate-900 block">Best Deal</span>
                         <span className="text-[10px] text-slate-500 font-medium block">Display 🔥 Best Deal</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -3491,7 +3491,7 @@ export default function AdminProductsPage() {
                     {/* Popular Pick */}
                     <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between">
                       <div className="space-y-0.5 pr-2">
-                        <span className="text-xs font-extrabold text-slate-900 block">Popular Pick</span>
+                        <span className="text-xs font-bold text-slate-900 block">Popular Pick</span>
                         <span className="text-[10px] text-slate-500 font-medium block">Display ⭐ Popular Pick</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -3520,12 +3520,12 @@ export default function AdminProductsPage() {
 
       {/* STOCK ADJUSTMENT & MANAGEMENT MODAL */}
       {stockModalProduct && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto font-sans animate-in fade-in">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6 relative max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div className="space-y-1">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                   <Sliders className="w-3.5 h-3.5" /> Stock Adjustment & Inventory Audit
                 </span>
                 <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
@@ -3555,11 +3555,11 @@ export default function AdminProductsPage() {
                   <button
                     type="button"
                     onClick={() => setStockAdjType('RESTOCK')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      stockAdjType === 'RESTOCK'
-                        ? 'bg-[#043927] text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                    }`}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+ stockAdjType === 'RESTOCK'
+ ? 'bg-[#043927] text-white shadow-xs'
+ : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+ }`}
                   >
                     <TrendingUp className="w-4 h-4 text-emerald-400" />
                     📥 Restock (+ Add)
@@ -3567,11 +3567,11 @@ export default function AdminProductsPage() {
                   <button
                     type="button"
                     onClick={() => setStockAdjType('DAMAGE')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      stockAdjType === 'DAMAGE'
-                        ? 'bg-rose-700 text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                    }`}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+ stockAdjType === 'DAMAGE'
+ ? 'bg-rose-700 text-white shadow-xs'
+ : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+ }`}
                   >
                     <TrendingDown className="w-4 h-4 text-rose-300" />
                     📤 Waste / Damage (- Remove)
@@ -3579,11 +3579,11 @@ export default function AdminProductsPage() {
                   <button
                     type="button"
                     onClick={() => setStockAdjType('CORRECTION')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      stockAdjType === 'CORRECTION'
-                        ? 'bg-amber-600 text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                    }`}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+ stockAdjType === 'CORRECTION'
+ ? 'bg-amber-600 text-white shadow-xs'
+ : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+ }`}
                   >
                     <RefreshCw className="w-4 h-4 text-amber-200" />
                     ✏️ Audit Count (Set Total)
@@ -3604,7 +3604,7 @@ export default function AdminProductsPage() {
                     placeholder="e.g. 150"
                     value={stockAdjNewTotal}
                     onChange={(e) => setStockAdjNewTotal(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-extrabold focus:outline-none focus:bg-white focus:border-[#043927]"
+                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
                   />
                   <p className="text-[11px] text-slate-500 font-medium mt-1">
                     Calculated Change: <span className="font-bold text-slate-800">{parseInt(stockAdjNewTotal || '0', 10) - (stockModalProduct.stock_quantity || 0) >= 0 ? `+${parseInt(stockAdjNewTotal || '0', 10) - (stockModalProduct.stock_quantity || 0)}` : `${parseInt(stockAdjNewTotal || '0', 10) - (stockModalProduct.stock_quantity || 0)}`} PCS</span>
@@ -3622,10 +3622,10 @@ export default function AdminProductsPage() {
                     placeholder="e.g. 50"
                     value={stockAdjQty}
                     onChange={(e) => setStockAdjQty(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-extrabold focus:outline-none focus:bg-white focus:border-[#043927]"
+                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:bg-white focus:border-[#043927]"
                   />
                   <p className="text-[11px] text-slate-500 font-medium mt-1">
-                    Resulting Total Stock: <span className="font-extrabold text-emerald-700">
+                    Resulting Total Stock: <span className="font-bold text-emerald-700">
                       {stockAdjType === 'RESTOCK'
                         ? (stockModalProduct.stock_quantity || 0) + (parseInt(stockAdjQty || '0', 10))
                         : Math.max(0, (stockModalProduct.stock_quantity || 0) - (parseInt(stockAdjQty || '0', 10)))} {stockModalProduct.unit || 'PCS'}
@@ -3660,14 +3660,14 @@ export default function AdminProductsPage() {
                 <button
                   type="button"
                   onClick={() => setStockModalProduct(null)}
-                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold transition-all cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingStockAdj}
-                  className="px-6 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white text-xs font-extrabold transition-all shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white text-xs font-bold transition-all shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
                   {submittingStockAdj ? 'Saving...' : 'Confirm Stock Adjustment'}
                 </button>
@@ -3676,7 +3676,7 @@ export default function AdminProductsPage() {
 
             {/* Stock Movement Audit Trail History */}
             <div className="pt-4 border-t border-slate-100 space-y-3">
-              <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                 <History className="w-4 h-4 text-emerald-600" /> Stock Movement Audit Log ({stockLogs.length})
               </h4>
 
@@ -3689,22 +3689,22 @@ export default function AdminProductsPage() {
                   {stockLogs.map((log) => (
                     <div
                       key={log.id}
-                      className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between text-xs font-sans"
+                      className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between text-xs"
                     >
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase border ${
-                              log.type === 'RESTOCK' || log.type === 'ADD'
-                                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                                : log.type === 'DAMAGE' || log.type === 'REMOVE'
-                                ? 'bg-rose-100 text-rose-800 border-rose-200'
-                                : 'bg-amber-100 text-amber-800 border-amber-200'
-                            }`}
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${
+ log.type === 'RESTOCK' || log.type === 'ADD'
+ ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+ : log.type === 'DAMAGE' || log.type === 'REMOVE'
+ ? 'bg-rose-100 text-rose-800 border-rose-200'
+ : 'bg-amber-100 text-amber-800 border-amber-200'
+ }`}
                           >
                             {log.type}
                           </span>
-                          <span className="font-extrabold text-slate-800">
+                          <span className="font-bold text-slate-800">
                             {log.quantity >= 0 ? `+${log.quantity}` : log.quantity} PCS
                           </span>
                           <span className="text-slate-400 font-mono text-[11px]">

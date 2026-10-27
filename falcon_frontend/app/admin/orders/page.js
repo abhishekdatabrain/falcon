@@ -428,16 +428,16 @@ export default function AdminOrdersPage() {
     switch (payment.status) {
       case 'PAID':
       case 'VERIFIED':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">✓ PAID</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">✓ PAID</span>;
       case 'REFUNDED':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-orange-100 text-orange-800 border border-orange-300">↺ REFUNDED</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-300">↺ REFUNDED</span>;
       case 'FAILED':
       case 'REJECTED':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">✗ FAILED</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">✗ FAILED</span>;
       case 'SUBMITTED':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-300">UNDER REVIEW</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">UNDER REVIEW</span>;
       default:
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">PENDING</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">PENDING</span>;
     }
   };
 
@@ -472,7 +472,7 @@ export default function AdminOrdersPage() {
               <h1 className="text-2xl font-black text-slate-900">
                 {locale === 'ar' ? 'إدارة الطلبات الشاملة' : 'Order Management'}
               </h1>
-              <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
                 {stats?.total || 0} {locale === 'ar' ? 'طلب' : 'Total Orders'}
               </span>
             </div>
@@ -538,77 +538,77 @@ export default function AdminOrdersPage() {
       <div className="bg-white rounded-2xl p-2 border border-slate-200 shadow-xs flex items-center gap-2 overflow-x-auto">
         <button
           onClick={() => { setActiveTab('ALL'); setCurrentPage(1); }}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'ALL'
-              ? 'bg-slate-900 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+ activeTab === 'ALL'
+ ? 'bg-slate-900 text-white shadow-sm'
+ : 'text-slate-600 hover:bg-slate-100'
+ }`}
         >
           {locale === 'ar' ? 'جميع الطلبات' : 'All Orders'} ({stats?.total || 0})
         </button>
 
         <button
           onClick={() => { setActiveTab('PENDING'); setCurrentPage(1); }}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'PENDING'
-              ? 'bg-amber-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+ activeTab === 'PENDING'
+ ? 'bg-amber-600 text-white shadow-sm'
+ : 'text-slate-600 hover:bg-slate-100'
+ }`}
         >
           ⏳ {locale === 'ar' ? 'قيد الانتظار' : 'Pending'} ({stats?.pending || 0})
         </button>
 
         <button
           onClick={() => { setActiveTab('PROCESSING'); setCurrentPage(1); }}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'PROCESSING'
-              ? 'bg-indigo-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+ activeTab === 'PROCESSING'
+ ? 'bg-indigo-600 text-white shadow-sm'
+ : 'text-slate-600 hover:bg-slate-100'
+ }`}
         >
           ⚙️ {locale === 'ar' ? 'قيد المعالجة' : 'Processing'} ({stats?.processing || 0})
         </button>
 
         <button
           onClick={() => { setActiveTab('OUT_FOR_DELIVERY'); setCurrentPage(1); }}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'OUT_FOR_DELIVERY'
-              ? 'bg-cyan-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+ activeTab === 'OUT_FOR_DELIVERY'
+ ? 'bg-cyan-600 text-white shadow-sm'
+ : 'text-slate-600 hover:bg-slate-100'
+ }`}
         >
           🚚 {locale === 'ar' ? 'خرج للتوصيل' : 'Out for Delivery'} ({stats?.outForDelivery || 0})
         </button>
 
         <button
           onClick={() => { setActiveTab('COMPLETED'); setCurrentPage(1); }}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'COMPLETED'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+ activeTab === 'COMPLETED'
+ ? 'bg-emerald-600 text-white shadow-sm'
+ : 'text-slate-600 hover:bg-slate-100'
+ }`}
         >
           ✓ {locale === 'ar' ? 'المكتملة' : 'Completed'} ({stats?.delivered || 0})
         </button>
 
         <button
           onClick={() => { setActiveTab('CANCELLED'); setCurrentPage(1); }}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'CANCELLED'
-              ? 'bg-rose-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+ activeTab === 'CANCELLED'
+ ? 'bg-rose-600 text-white shadow-sm'
+ : 'text-slate-600 hover:bg-slate-100'
+ }`}
         >
           ✕ {locale === 'ar' ? 'الملغية' : 'Cancelled'} ({stats?.cancelled || 0})
         </button>
 
         <button
           onClick={() => { setActiveTab('RETURNED'); setCurrentPage(1); }}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'RETURNED'
-              ? 'bg-orange-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+ activeTab === 'RETURNED'
+ ? 'bg-orange-600 text-white shadow-sm'
+ : 'text-slate-600 hover:bg-slate-100'
+ }`}
         >
           ↺ {locale === 'ar' ? 'المسترجعة' : 'Returned'} ({stats?.returned || 0})
         </button>
@@ -658,10 +658,10 @@ export default function AdminOrdersPage() {
             <button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
-                showAdvancedFilters || orderStatusFilter !== 'ALL' || paymentStatusFilter !== 'ALL' || paymentMethodFilter !== 'ALL' || driverFilter !== 'ALL' || fromDate || minAmount
-                  ? 'bg-indigo-50 text-indigo-700 border-indigo-300'
-                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-              }`}
+ showAdvancedFilters || orderStatusFilter !== 'ALL' || paymentStatusFilter !== 'ALL' || paymentMethodFilter !== 'ALL' || driverFilter !== 'ALL' || fromDate || minAmount
+ ? 'bg-indigo-50 text-indigo-700 border-indigo-300'
+ : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+ }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
               <span>{locale === 'ar' ? 'الفلاتر المتقدمة' : 'Advanced Filters'}</span>
@@ -850,7 +850,7 @@ export default function AdminOrdersPage() {
 
                       {/* 2. Customer Name */}
                       <td className="px-5 py-3.5 whitespace-nowrap">
-                        <div className="text-xs font-extrabold text-slate-900">
+                        <div className="text-xs font-bold text-slate-900">
                           {cust.first_name ? `${cust.first_name} ${cust.last_name || ''}` : 'Customer'}
                         </div>
                         <div className="text-[10px] text-slate-400 truncate max-w-[140px]">
@@ -1028,30 +1028,30 @@ export default function AdminOrdersPage() {
               <button
                 onClick={() => setDrawerTab('overview')}
                 className={`pb-3 border-b-2 transition-all cursor-pointer ${
-                  drawerTab === 'overview'
-                    ? 'border-indigo-600 text-indigo-700'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
+ drawerTab === 'overview'
+ ? 'border-indigo-600 text-indigo-700'
+ : 'border-transparent text-slate-500 hover:text-slate-800'
+ }`}
               >
                 Overview & Items
               </button>
               <button
                 onClick={() => setDrawerTab('progress')}
                 className={`pb-3 border-b-2 transition-all cursor-pointer ${
-                  drawerTab === 'progress'
-                    ? 'border-indigo-600 text-indigo-700'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
+ drawerTab === 'progress'
+ ? 'border-indigo-600 text-indigo-700'
+ : 'border-transparent text-slate-500 hover:text-slate-800'
+ }`}
               >
                 Delivery Timeline
               </button>
               <button
                 onClick={() => setDrawerTab('history')}
                 className={`pb-3 border-b-2 transition-all cursor-pointer ${
-                  drawerTab === 'history'
-                    ? 'border-indigo-600 text-indigo-700'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
+ drawerTab === 'history'
+ ? 'border-indigo-600 text-indigo-700'
+ : 'border-transparent text-slate-500 hover:text-slate-800'
+ }`}
               >
                 Audit History ({selectedOrder.status_history?.length || 0})
               </button>
@@ -1064,7 +1064,7 @@ export default function AdminOrdersPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
                       <div className="text-[10px] font-bold text-slate-400 uppercase">Customer</div>
-                      <div className="font-extrabold text-slate-900">
+                      <div className="font-bold text-slate-900">
                         {selectedOrder.customer?.first_name} {selectedOrder.customer?.last_name}
                       </div>
                       <div className="text-slate-600 font-mono">{selectedOrder.customer?.user?.mobile || 'N/A'}</div>
@@ -1089,7 +1089,7 @@ export default function AdminOrdersPage() {
                   {/* Payment Card */}
                   <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-indigo-950">Payment Status</span>
+                      <span className="font-bold text-indigo-950">Payment Status</span>
                       {renderPaymentBadge(selectedOrder.payment)}
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-slate-700 pt-1">
@@ -1145,8 +1145,8 @@ export default function AdminOrdersPage() {
                       return (
                         <div key={i} className="relative">
                           <span className={`absolute -left-[27px] top-0 w-3.5 h-3.5 rounded-full border-2 ${
-                            isCurrent ? 'bg-indigo-600 border-white ring-2 ring-indigo-200 animate-pulse' : isPassed ? 'bg-emerald-500 border-white' : 'bg-slate-300 border-white'
-                          }`}></span>
+ isCurrent ? 'bg-indigo-600 border-white ring-2 ring-indigo-200 animate-pulse' : isPassed ? 'bg-emerald-500 border-white' : 'bg-slate-300 border-white'
+ }`}></span>
                           <div>
                             <div className={`font-bold ${isCurrent ? 'text-indigo-700' : isPassed ? 'text-slate-900' : 'text-slate-400'}`}>
                               {st.title}
@@ -1201,7 +1201,7 @@ export default function AdminOrdersPage() {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900">
                 Assign Driver to Order #{assignModalOrder.order_number}
               </h3>
               <button onClick={() => setAssignModalOrder(null)} className="p-1 rounded-xl bg-slate-100 text-slate-400 hover:text-slate-700">
@@ -1266,7 +1266,7 @@ export default function AdminOrdersPage() {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900">
                 Update Status for Order #{statusModalOrder.order_number}
               </h3>
               <button onClick={() => setStatusModalOrder(null)} className="p-1 rounded-xl bg-slate-100 text-slate-400 hover:text-slate-700">
@@ -1280,7 +1280,7 @@ export default function AdminOrdersPage() {
                 <select
                   value={targetStatus}
                   onChange={(e) => setTargetStatus(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-extrabold focus:border-indigo-500 outline-hidden cursor-pointer"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold focus:border-indigo-500 outline-hidden cursor-pointer"
                   required
                 >
                   <option value="PENDING_PAYMENT">PENDING (Pending Payment)</option>
@@ -1334,7 +1334,7 @@ export default function AdminOrdersPage() {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900">
                 Payment Verification for Order #{paymentModalOrder.order_number}
               </h3>
               <button onClick={() => setPaymentModalOrder(null)} className="p-1 rounded-xl bg-slate-100 text-slate-400 hover:text-slate-700">

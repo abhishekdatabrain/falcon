@@ -213,7 +213,7 @@ export default function WishlistPage() {
   const isLoading = authLoading || (wishlistLoading && (!wishlist || wishlist.length === 0) && serverProducts === null);
 
   return (
-    <div className="min-h-screen bg-[#F8FAF8] font-sans pb-24 text-slate-800 space-y-8">
+    <div className="min-h-screen bg-[#F8FAF8] pb-24 text-slate-800 space-y-8">
       {/* Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         
@@ -238,10 +238,10 @@ export default function WishlistPage() {
               type="button"
               onClick={() => setActiveFilter('ALL')}
               className={`px-3 py-1 rounded-lg border transition-all cursor-pointer ${
-                activeFilter === 'ALL'
-                  ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
+ activeFilter === 'ALL'
+ ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
+ : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+ }`}
             >
               {locale === 'ar' ? 'الكل' : 'All Items'} ({totalCount})
             </button>
@@ -250,10 +250,10 @@ export default function WishlistPage() {
               type="button"
               onClick={() => setActiveFilter('IN_STOCK')}
               className={`px-3 py-1 rounded-lg border transition-all cursor-pointer ${
-                activeFilter === 'IN_STOCK'
-                  ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
+ activeFilter === 'IN_STOCK'
+ ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
+ : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+ }`}
             >
               {locale === 'ar' ? 'المتوفر فقط' : 'In Stock Only'} ({inStockCount})
             </button>
@@ -263,10 +263,10 @@ export default function WishlistPage() {
                 type="button"
                 onClick={() => setActiveFilter('DEALS')}
                 className={`px-3 py-1 rounded-lg border transition-all cursor-pointer ${
-                  activeFilter === 'DEALS'
-                    ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
+ activeFilter === 'DEALS'
+ ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
+ : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+ }`}
               >
                 {locale === 'ar' ? 'العروض' : 'On Deals'} ({dealsCount})
               </button>
@@ -277,10 +277,10 @@ export default function WishlistPage() {
                 type="button"
                 onClick={() => setActiveFilter('ORGANIC')}
                 className={`px-3 py-1 rounded-lg border transition-all cursor-pointer ${
-                  activeFilter === 'ORGANIC'
-                    ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
+ activeFilter === 'ORGANIC'
+ ? 'bg-[#043927] text-white border-[#043927] shadow-xs'
+ : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+ }`}
               >
                 🌱 {locale === 'ar' ? 'عضوي موثق' : 'Organic'} ({organicCount})
               </button>
@@ -308,8 +308,8 @@ export default function WishlistPage() {
                   </span>
                   <ChevronDown
                     className={`w-3.5 h-3.5 text-[#043927] transition-transform duration-200 ${
-                      isSortOpen ? 'rotate-180' : ''
-                    }`}
+ isSortOpen ? 'rotate-180' : ''
+ }`}
                   />
                 </button>
               </div>
@@ -328,10 +328,10 @@ export default function WishlistPage() {
                           setIsSortOpen(false);
                         }}
                         className={`w-full text-left rtl:text-right px-3 py-1.5 text-[11px] font-bold flex items-center justify-between transition-colors cursor-pointer ${
-                          isSelected
-                            ? 'bg-emerald-50 text-[#043927] font-black'
-                            : 'text-slate-700 hover:bg-slate-50'
-                        }`}
+ isSelected
+ ? 'bg-emerald-50 text-[#043927] font-black'
+ : 'text-slate-700 hover:bg-slate-50'
+ }`}
                       >
                         <span>{locale === 'ar' ? opt.label_ar : opt.label_en}</span>
                         {isSelected && <Check className="w-3.5 h-3.5 text-[#05A764]" />}
@@ -347,8 +347,8 @@ export default function WishlistPage() {
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={`p-1 rounded-md transition-colors cursor-pointer ${
-                  viewMode === 'grid' ? 'bg-white shadow-2xs text-[#043927]' : 'text-slate-400 hover:text-slate-700'
-                }`}
+ viewMode === 'grid' ? 'bg-white shadow-2xs text-[#043927]' : 'text-slate-400 hover:text-slate-700'
+ }`}
                 title="Grid View"
               >
                 <Grid className="w-3.5 h-3.5" />
@@ -357,8 +357,8 @@ export default function WishlistPage() {
                 type="button"
                 onClick={() => setViewMode('list')}
                 className={`p-1 rounded-md transition-colors cursor-pointer ${
-                  viewMode === 'list' ? 'bg-white shadow-2xs text-[#043927]' : 'text-slate-400 hover:text-slate-700'
-                }`}
+ viewMode === 'list' ? 'bg-white shadow-2xs text-[#043927]' : 'text-slate-400 hover:text-slate-700'
+ }`}
                 title="List View"
               >
                 <List className="w-3.5 h-3.5" />
@@ -373,7 +373,7 @@ export default function WishlistPage() {
 
           {/* ================= LEFT ACCOUNT SIDEBAR ================= */}
           <div className="lg:col-span-3 space-y-4">
-            <div className="bg-white rounded-3xl p-3 border border-slate-200/90 shadow-xs space-y-1 text-xs font-sans">
+            <div className="bg-white rounded-3xl p-3 border border-slate-200/90 shadow-xs space-y-1 text-xs">
               
 
               <Link
@@ -406,7 +406,7 @@ export default function WishlistPage() {
                   <Heart className="w-4 h-4 fill-rose-400 text-rose-400" />
                   <span>{locale === 'ar' ? 'قائمة المفضلة' : 'Wishlist'}</span>
                 </div>
-                <span className="text-[11px] font-extrabold text-emerald-200">
+                <span className="text-[11px] font-bold text-emerald-200">
                   {wishlist.length}
                 </span>
               </Link>
@@ -467,7 +467,7 @@ export default function WishlistPage() {
             {isLoading ? (
               <div className="bg-white rounded-3xl p-16 text-center space-y-3 border border-slate-200/90 shadow-xs">
                 <div className="w-8 h-8 border-4 border-[#043927] border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-xs font-extrabold text-slate-500">
+                <p className="text-xs font-bold text-slate-500">
                   {locale === 'ar' ? 'جاري تحميل قائمة المفضلة...' : 'Loading your wishlist...'}
                 </p>
               </div>
@@ -490,7 +490,7 @@ export default function WishlistPage() {
                 <div className="pt-2">
                   <Link
                     href="/login"
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs shadow-md transition-all cursor-pointer"
                   >
                     <LogIn className="w-4 h-4" />
                     <span>{locale === 'ar' ? 'تسجيل الدخول' : 'Sign In Now'}</span>
@@ -522,7 +522,7 @@ export default function WishlistPage() {
                 <div className="pt-2">
                   <Link
                     href="/products"
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs shadow-md transition-all cursor-pointer"
                   >
                     <span>{locale === 'ar' ? 'تصفح المنتجات' : 'Explore Products'}</span>
                     <ArrowRight className="w-4 h-4 rtl:rotate-180" />
@@ -538,16 +538,16 @@ export default function WishlistPage() {
                   return (
                     <div
                       key={item.id}
-                      className={`bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-emerald-500/40 transition-all font-sans relative ${
-                        !item.in_stock ? 'opacity-80 bg-slate-50/70' : ''
-                      }`}
+                      className={`bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-emerald-500/40 transition-all relative ${
+ !item.in_stock ? 'opacity-80 bg-slate-50/70' : ''
+ }`}
                     >
                       {/* Compact Top Media Container */}
                       <div className="relative w-full h-36 sm:h-40 bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center border-b border-slate-100 group">
 
                         {/* Bottom Left Badge */}
                         {item.badge_bottom && (
-                          <span className="absolute bottom-2 left-2 bg-amber-50 text-amber-900 border border-amber-200 text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-2xs z-10">
+                          <span className="absolute bottom-2 left-2 bg-amber-50 text-amber-900 border border-amber-200 text-[9px] font-bold px-2 py-0.5 rounded-full shadow-2xs z-10">
                             {item.badge_bottom}
                           </span>
                         )}
@@ -555,7 +555,7 @@ export default function WishlistPage() {
                         {/* Out of stock overlay */}
                         {!item.in_stock && (
                           <div className="absolute inset-0 bg-slate-900/35 backdrop-blur-[1px] flex items-center justify-center z-15">
-                            <span className="bg-slate-900 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-full shadow-md">
+                            <span className="bg-slate-900 text-white font-bold text-[10px] px-2.5 py-1 rounded-full shadow-md">
                               {locale === 'ar' ? 'غير متوفر حالياً' : 'Out of Stock'}
                             </span>
                           </div>
@@ -578,8 +578,8 @@ export default function WishlistPage() {
                               src={getImageUrl(item.image_url)}
                               alt={item.name}
                               className={`w-full h-full object-contain transition-transform duration-300 group-hover:scale-105 ${
-                                !item.in_stock ? 'grayscale' : ''
-                              }`}
+ !item.in_stock ? 'grayscale' : ''
+ }`}
                             />
                           ) : (
                             <div className="w-full h-full rounded-xl bg-slate-100 flex items-center justify-center text-slate-300">
@@ -607,7 +607,7 @@ export default function WishlistPage() {
                           {/* Rating & Tag in single compact line */}
                           <div className="flex items-center justify-between text-[10px] pt-0.5">
                             {item.rating ? (
-                              <div className="flex items-center gap-1 font-extrabold text-amber-500">
+                              <div className="flex items-center gap-1 font-bold text-amber-500">
                                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                                 <span>{item.rating}</span>
                                 {item.reviews_count > 0 && (
@@ -640,7 +640,7 @@ export default function WishlistPage() {
                               )}
                             </div>
 
-                            <span className={`text-[9px] font-extrabold ${item.in_stock ? 'text-emerald-700' : 'text-rose-600'}`}>
+                            <span className={`text-[9px] font-bold ${item.in_stock ? 'text-emerald-700' : 'text-rose-600'}`}>
                               {item.in_stock ? (locale === 'ar' ? 'متوفر' : 'In Stock') : (locale === 'ar' ? 'غير متوفر' : 'Unavailable')}
                             </span>
                           </div>
@@ -672,7 +672,7 @@ export default function WishlistPage() {
                                 type="button"
                                 onClick={() => handleAddToCart(item)}
                                 disabled={addingId === item.id}
-                                className="flex-1 py-1.5 px-2 rounded-lg bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-[11px] shadow-2xs transition-colors flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                                className="flex-1 py-1.5 px-2 rounded-lg bg-[#043927] hover:bg-[#02281b] text-white font-bold text-[11px] shadow-2xs transition-colors flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
                               >
                                 {addingId === item.id ? (
                                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -737,7 +737,7 @@ export default function WishlistPage() {
                             </span>
                           )}
                           <Link href={`/products/${item.id}`}>
-                            <h3 className="font-extrabold text-slate-900 text-sm leading-snug hover:text-[#043927]">
+                            <h3 className="font-bold text-slate-900 text-sm leading-snug hover:text-[#043927]">
                               {item.name}
                             </h3>
                           </Link>
@@ -750,7 +750,7 @@ export default function WishlistPage() {
                                 SAR {item.original_price.toFixed(2)}
                               </span>
                             )}
-                            <span className={`text-[10px] font-extrabold ${item.in_stock ? 'text-emerald-700' : 'text-rose-600'}`}>
+                            <span className={`text-[10px] font-bold ${item.in_stock ? 'text-emerald-700' : 'text-rose-600'}`}>
                               • {item.in_stock ? (locale === 'ar' ? 'متوفر' : 'In Stock') : (locale === 'ar' ? 'غير متوفر' : 'Unavailable')}
                             </span>
                           </div>
@@ -783,7 +783,7 @@ export default function WishlistPage() {
                             type="button"
                             onClick={() => handleAddToCart(item)}
                             disabled={addingId === item.id}
-                            className="py-2.5 px-4 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-extrabold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                            className="py-2.5 px-4 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                           >
                             {addingId === item.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
