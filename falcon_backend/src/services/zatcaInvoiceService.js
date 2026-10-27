@@ -337,8 +337,8 @@ class ZatcaInvoiceService {
 
       const invoiceItems = (order.items || []).map(item => ({
         invoice_id: invoice.id,
-        item_name_en: item.product_name_en || 'Product',
-        item_name_ar: item.product_name_ar || 'منتج',
+        item_name_en: item.product_name_en || '',
+        item_name_ar: item.product_name_ar || '',
         quantity: item.quantity || 1,
         unit_price: item.unit_price,
         vat_rate: 15.00,
@@ -484,240 +484,534 @@ class ZatcaInvoiceService {
   /**
    * Generates high-fidelity PDF Document for Invoices and Credit Notes
    */
-  async generatePdfInvoiceFile(invoice, items, qrPayload, originalInvoice = null) {
-    const uploadDir = process.env.UPLOAD_DIR || 'uploads';
-    const absoluteUploadDir = path.join(__dirname, '..', '..', uploadDir);
-    if (!fs.existsSync(absoluteUploadDir)) {
-      fs.mkdirSync(absoluteUploadDir, { recursive: true });
-    }
+ 
 
-    const isCreditNote = invoice.invoice_type === 'CREDIT_NOTE';
-    const filename = `invoice-${invoice.invoice_number}.pdf`;
-    const filePath = path.join(absoluteUploadDir, filename);
+async generatePdfInvoiceFile(invoice, items, qrPayload, originalInvoice = null) {
+  const uploadDir = process.env.UPLOAD_DIR || 'uploads';
+  const absoluteUploadDir = path.join(__dirname, '..', '..', uploadDir);
 
-    const qrImageDataUrl = await QRCode.toDataURL(qrPayload, {
-      errorCorrectionLevel: 'M',
-      margin: 1,
-      width: 140,
+  if (!fs.existsSync(absoluteUploadDir)) {
+    fs.mkdirSync(absoluteUploadDir, { recursive: true });
+  }
+
+  const isCreditNote = invoice.invoice_type === 'CREDIT_NOTE';
+  const filename = `invoice-${invoice.invoice_number}.pdf`;
+  const filePath = path.join(absoluteUploadDir, filename);
+
+  const qrImageDataUrl = await QRCode.toDataURL(qrPayload || 'PROFORMA INVOICE', {
+    errorCorrectionLevel: 'M',
+    margin: 1,
+    width: 120,
+  });
+
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({
+      size: 'A4',
+      margin: 25,
+      autoFirstPage: true,
+      bufferPages: true,
     });
 
-    return new Promise((resolve, reject) => {
-      const doc = new PDFDocument({ margin: 40, size: 'A4' });
-      const stream = fs.createWriteStream(filePath);
+    const stream = fs.createWriteStream(filePath);
+    doc.pipe(stream);
 
-      doc.pipe(stream);
+    let settled = false;
 
-      const pageWidth = 515;
-      const startX = 40;
+    const fail = (error) => {
+      if (settled) return;
+      settled = true;
+      stream.destroy();
+      fs.unlink(filePath, () => reject(error));
+    };
 
-      // ================= 1. LUXURY TOP BRANDING BANNER =================
-      const bannerBg = isCreditNote ? '#991B1B' : '#043927';
-      doc.roundedRect(startX, 35, pageWidth, 68, 10).fill(bannerBg);
+    stream.on('finish', () => {
+      if (settled) return;
+      settled = true;
+      resolve(`/uploads/${filename}`);
+    });
 
-      doc.fillColor('#FFFFFF').fontSize(18).font('Helvetica-Bold').text('FALCON FRESH MARKET', startX + 16, 47);
+    stream.on('error', fail);
+    doc.on('error', fail);
 
-      const titleText = isCreditNote
-        ? 'TAX CREDIT NOTE (اشعار دائن) • ZATCA FATOORAH PHASE 2'
-        : 'SIMPLIFIED TAX INVOICE • ZATCA FATOORAH PHASE 2';
-      doc.fillColor('#F59E0B').fontSize(8.5).font('Helvetica-Bold').text(titleText, startX + 16, 71);
-      doc.fillColor('#D1FAE5').fontSize(8).font('Helvetica').text('Kingdom of Saudi Arabia • Single Vendor E-Commerce Platform', startX + 16, 84);
+    try {
+      const startX = 30;
+      const pageWidth = doc.page.width - 60;
+      const pageBottom = doc.page.height - 30;
 
-      // Status Pill on top-right
-      const pillColor = isCreditNote ? '#DC2626' : '#05A764';
-      const pillLabel = isCreditNote ? 'CREDIT REVERSAL' : 'PAID & VERIFIED';
-      doc.roundedRect(startX + pageWidth - 125, 50, 110, 24, 6).fill(pillColor);
-      doc.fillColor('#FFFFFF').fontSize(8).font('Helvetica-Bold').text(pillLabel, startX + pageWidth - 125, 57, { width: 110, align: 'center' });
+      const GREEN = '#043927';
+      const DARK = '#0F172A';
+      const MUTED = '#64748B';
+      const BORDER = '#E2E8F0';
+      const LIGHT = '#F8FAFC';
+      const RED = '#DC2626';
 
-      // ================= 2. SELLER INFO & QR CODE CARDS =================
-      const cardY = 113;
-      const sellerCardWidth = 370;
+      const money = (value) => {
+        const number = Number(value ?? 0);
+        return `${Number.isFinite(number) ? number.toFixed(2) : '0.00'} SAR`;
+      };
 
-      doc.roundedRect(startX, cardY, sellerCardWidth, 80, 8).fillAndStroke('#F8FAFC', '#E2E8F0');
-      doc.fillColor('#043927').fontSize(9).font('Helvetica-Bold').text('SELLER / TAXPAYER DETAILS', startX + 12, cardY + 10);
-      doc.fillColor('#0F172A').fontSize(9).font('Helvetica-Bold').text(invoice.seller_name || 'Falcon E-Commerce Trading Co.', startX + 12, cardY + 25);
-      doc.fillColor('#475569').fontSize(8).font('Helvetica').text(`VAT Reg. No: ${invoice.seller_vat_number || '300000000000003'}   |   CR No: 1010892341`, startX + 12, cardY + 40);
-      doc.text('Address: King Fahd Rd, Al-Malqa District, Riyadh 13521, KSA', startX + 12, cardY + 53);
-      doc.fillColor('#05A764').fontSize(7.5).font('Helvetica-Bold').text('Official 100% Cold-Chain Refrigerated Delivery Certified', startX + 12, cardY + 66);
+      const clean = (value, fallback = '') =>
+        String(value ?? fallback)
+          .replace(/[^\x20-\x7E]/g, '')
+          .trim();
 
-      // QR Code Card
-      const qrCardX = startX + sellerCardWidth + 10;
-      const qrCardWidth = pageWidth - sellerCardWidth - 10;
-      doc.roundedRect(qrCardX, cardY, qrCardWidth, 80, 8).fillAndStroke('#FFFFFF', isCreditNote ? '#EF4444' : '#05A764');
-      doc.image(qrImageDataUrl, qrCardX + (qrCardWidth - 58) / 2, cardY + 5, { width: 58, height: 58 });
-      doc.fillColor('#043927').fontSize(6.5).font('Helvetica-Bold').text('ZATCA FATOORAH QR', qrCardX, cardY + 67, { width: qrCardWidth, align: 'center' });
+      const text = (value, x, y, options = {}) => {
+        const {
+          size = 8,
+          color = DARK,
+          bold = false,
+          width,
+          align = 'left',
+          ...rest
+        } = options;
 
-      // ================= 3. INVOICE META & BUYER CARDS =================
-      const metaY = 201;
-      const halfCardWidth = (pageWidth - 10) / 2;
+        doc
+          .font(bold ? 'Helvetica-Bold' : 'Helvetica')
+          .fontSize(size)
+          .fillColor(color)
+          .text(String(value), x, y, {
+            ...(width ? { width } : {}),
+            align,
+            lineBreak: false,
+            ...rest,
+          });
+      };
 
-      // Left: Metadata Card
-      doc.roundedRect(startX, metaY, halfCardWidth, 82, 8).fillAndStroke('#F8FAFC', '#E2E8F0');
-      doc.fillColor('#043927').fontSize(8.5).font('Helvetica-Bold').text(isCreditNote ? 'CREDIT NOTE METADATA' : 'INVOICE INFORMATION', startX + 12, metaY + 9);
+      const box = (x, y, width, height, fill = LIGHT, stroke = BORDER) => {
+        doc.roundedRect(x, y, width, height, 7).fillAndStroke(fill, stroke);
+      };
 
-      const formattedDate = new Date(invoice.issue_date_time).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+      // ================= 1. HEADER =================
+
+      const headerY = 25;
+      const headerHeight = 64;
+
+      doc
+        .roundedRect(startX, headerY, pageWidth, headerHeight, 8)
+        .fill(isCreditNote ? '#991B1B' : GREEN);
+
+      text('FALCON FRESH MARKET', startX + 14, 36, {
+        size: 17,
+        bold: true,
+        color: '#FFFFFF',
       });
 
-      doc.fillColor('#64748B').fontSize(7.5).font('Helvetica').text('Doc Number:', startX + 12, metaY + 24);
-      doc.fillColor('#0F172A').font('Helvetica-Bold').text(invoice.invoice_number, startX + 85, metaY + 24);
+      // Always show this heading.
+      text('PROFORMA INVOICE', startX + 14, 59, {
+        size: 12,
+        bold: true,
+        color: '#F59E0B',
+      });
 
-      if (isCreditNote && originalInvoice) {
-        doc.fillColor('#64748B').font('Helvetica').text('Original Invoice:', startX + 12, metaY + 37);
-        doc.fillColor('#DC2626').font('Helvetica-Bold').text(originalInvoice.invoice_number, startX + 85, metaY + 37);
-      } else {
-        doc.fillColor('#64748B').font('Helvetica').text('Issue Date:', startX + 12, metaY + 37);
-        doc.fillColor('#0F172A').font('Helvetica-Bold').text(formattedDate, startX + 85, metaY + 37);
+      text('Kingdom of Saudi Arabia - E-Commerce Platform', startX + 245, 72, {
+        size: 7,
+        color: '#D1FAE5',
+        width: pageWidth - 260,
+        align: 'right',
+      });
+
+      // ================= 2. SELLER & QR =================
+
+      const sellerY = 98;
+      const sellerWidth = pageWidth - 140;
+      const sellerHeight = 74;
+
+      box(startX, sellerY, sellerWidth, sellerHeight);
+
+      text('SELLER / TAXPAYER DETAILS', startX + 10, sellerY + 8, {
+        size: 9,
+        bold: true,
+        color: GREEN,
+      });
+
+      text(
+        clean(invoice.seller_name, 'Falcon E-Commerce Trading Co.'),
+        startX + 10,
+        sellerY + 23,
+        { size: 8.5, bold: true, width: sellerWidth - 20 }
+      );
+
+      text(
+        `VAT Reg. No: ${clean(invoice.seller_vat_number, '300000000000003')} | CR No: 1010892341`,
+        startX + 10,
+        sellerY + 37,
+        { size: 7.5, color: MUTED }
+      );
+
+      text(
+        'King Fahd Rd, Al-Malqa District, Riyadh 13521, KSA',
+        startX + 10,
+        sellerY + 50,
+        { size: 7.5, color: MUTED }
+      );
+
+      text('Cold-Chain Refrigerated Delivery', startX + 10, sellerY + 62, {
+        size: 7,
+        color: '#059669',
+        bold: true,
+      });
+
+      const qrX = startX + sellerWidth + 8;
+      const qrWidth = pageWidth - sellerWidth - 8;
+
+      box(qrX, sellerY, qrWidth, sellerHeight, '#FFFFFF', '#10B981');
+
+      doc.image(qrImageDataUrl, qrX + (qrWidth - 48) / 2, sellerY + 5, {
+        width: 48,
+        height: 48,
+      });
+
+      text('REFERENCE QR', qrX + 5, sellerY + 59, {
+        size: 7,
+        bold: true,
+        color: GREEN,
+        width: qrWidth - 10,
+        align: 'center',
+      });
+
+      // ================= 3. INVOICE / BUYER =================
+
+      const metaY = 180;
+      const cardHeight = 77;
+      const cardGap = 8;
+      const cardWidth = (pageWidth - cardGap) / 2;
+      const buyerX = startX + cardWidth + cardGap;
+
+      box(startX, metaY, cardWidth, cardHeight);
+      box(buyerX, metaY, cardWidth, cardHeight);
+
+      text('INVOICE INFORMATION', startX + 10, metaY + 8, {
+        size: 8.5,
+        bold: true,
+        color: GREEN,
+      });
+
+      const dateValue = invoice.issue_date_time
+        ? new Date(invoice.issue_date_time)
+        : new Date();
+
+      const formattedDate = Number.isNaN(dateValue.getTime())
+        ? '-'
+        : dateValue.toLocaleString('en-US', {
+            timeZone: 'Asia/Riyadh',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+
+      const infoRow = (label, value, y, x = startX, valueColor = DARK) => {
+        text(label, x + 10, y, {
+          size: 7.3,
+          color: MUTED,
+        });
+
+        text(clean(value, '-'), x + 96, y, {
+          size: 7.3,
+          bold: true,
+          color: valueColor,
+          width: cardWidth - 104,
+        });
+      };
+
+      infoRow('Doc Number:', invoice.invoice_number, metaY + 24);
+      infoRow('Issue Date:', formattedDate, metaY + 37);
+      infoRow('ICV Counter:', `#${invoice.invoice_counter ?? 1}`, metaY + 50);
+
+      infoRow('Status:', 'PROFORMA - TRIAL', metaY + 63, startX, '#059669');
+
+      text('CUSTOMER / BUYER DETAILS', buyerX + 10, metaY + 8, {
+        size: 8.5,
+        bold: true,
+        color: GREEN,
+      });
+
+      infoRow('Buyer Name:', invoice.buyer_name || 'Valued Customer', metaY + 24, buyerX);
+      infoRow('Fulfillment:', 'Home Express Delivery', metaY + 37, buyerX);
+      infoRow('Destination:', 'Riyadh, Saudi Arabia', metaY + 50, buyerX);
+      infoRow('Customer Type:', 'Individual Consumer (B2C)', metaY + 63, buyerX);
+
+      // ================= 4. PRODUCTS =================
+
+      const tableY = 266;
+      const tableHeaderHeight = 22;
+      const rowHeight = 22;
+
+      const safeItems = Array.isArray(items) && items.length
+        ? items
+        : [{
+            item_name_en: 'Fresh Grocery Item',
+            quantity: 1,
+            unit_price: invoice.total_excluding_vat,
+            vat_amount: invoice.vat_total,
+            total_with_vat: invoice.total_including_vat,
+          }];
+
+      // One-page layout: check available height before drawing.
+      // Larger orders should use a separate multi-page layout.
+      const estimatedSummaryY = tableY + tableHeaderHeight
+        + safeItems.length * rowHeight + 9;
+
+      const estimatedFooterBottom = estimatedSummaryY + 103 + 12 + 52 + 34;
+
+      if (estimatedFooterBottom > pageBottom) {
+        throw new Error(
+          `Invoice contains ${safeItems.length} products and cannot fit on one A4 page. Use a multi-page invoice layout for this order.`
+        );
       }
 
-      doc.fillColor('#64748B').font('Helvetica').text('ICV Counter:', startX + 12, metaY + 50);
-      doc.fillColor('#05A764').font('Helvetica-Bold').text(`#${invoice.invoice_counter || 1}`, startX + 85, metaY + 50);
+      doc.roundedRect(startX, tableY, pageWidth, tableHeaderHeight, 5).fill(GREEN);
 
-      doc.fillColor('#64748B').font('Helvetica').text('ZATCA Status:', startX + 12, metaY + 63);
-      doc.fillColor('#0F172A').font('Helvetica-Bold').text(`${invoice.zatca_status || 'REPORTED'} (Phase 2 Compliant)`, startX + 85, metaY + 63);
+      text('ITEM DESCRIPTION', startX + 10, tableY + 6, {
+        size: 8,
+        bold: true,
+        color: '#FFFFFF',
+      });
 
-      // Right: Buyer Card
-      const buyerCardX = startX + halfCardWidth + 10;
-      doc.roundedRect(buyerCardX, metaY, halfCardWidth, 82, 8).fillAndStroke('#F8FAFC', '#E2E8F0');
-      doc.fillColor('#043927').fontSize(8.5).font('Helvetica-Bold').text('CUSTOMER / BUYER DETAILS', buyerCardX + 12, metaY + 9);
+      text('QTY', startX + 224, tableY + 6, {
+        size: 8,
+        bold: true,
+        color: '#FFFFFF',
+        width: 30,
+        align: 'center',
+      });
 
-      const buyerNameClean = (invoice.buyer_name || 'Valued Customer').replace(/[^\x20-\x7E]/g, '').trim() || 'Valued Customer';
-      doc.fillColor('#64748B').fontSize(7.5).font('Helvetica').text('Buyer Name:', buyerCardX + 12, metaY + 24);
-      doc.fillColor('#0F172A').font('Helvetica-Bold').text(buyerNameClean, buyerCardX + 85, metaY + 24);
+      text('UNIT PRICE', startX + 260, tableY + 6, {
+        size: 8,
+        bold: true,
+        color: '#FFFFFF',
+        width: 77,
+        align: 'right',
+      });
 
-      doc.fillColor('#64748B').font('Helvetica').text('Fulfillment:', buyerCardX + 12, metaY + 37);
-      doc.fillColor('#0F172A').font('Helvetica-Bold').text('Home Express Delivery', buyerCardX + 85, metaY + 37);
+      text('VAT (15%)', startX + 343, tableY + 6, {
+        size: 8,
+        bold: true,
+        color: '#FFFFFF',
+        width: 70,
+        align: 'right',
+      });
 
-      doc.fillColor('#64748B').font('Helvetica').text('Destination:', buyerCardX + 12, metaY + 50);
-      doc.fillColor('#0F172A').font('Helvetica-Bold').text('Riyadh Province, Saudi Arabia', buyerCardX + 85, metaY + 50);
+      text('TOTAL', startX + 418, tableY + 6, {
+        size: 8,
+        bold: true,
+        color: '#FFFFFF',
+        width: 82,
+        align: 'right',
+      });
 
-      doc.fillColor('#64748B').font('Helvetica').text('Customer Type:', buyerCardX + 12, metaY + 63);
-      doc.fillColor('#05A764').font('Helvetica-Bold').text('Individual Consumer (B2C)', buyerCardX + 85, metaY + 63);
-
-      // ================= 4. ITEMIZED PRODUCTS TABLE =================
-      const tableHeaderY = 293;
-      doc.roundedRect(startX, tableHeaderY, pageWidth, 24, 6).fill(isCreditNote ? '#991B1B' : '#043927');
-
-      doc.fillColor('#FFFFFF').fontSize(8).font('Helvetica-Bold');
-      doc.text('ITEM DESCRIPTION', startX + 12, tableHeaderY + 8);
-      doc.text('QTY', startX + 225, tableHeaderY + 8, { width: 35, align: 'center' });
-      doc.text('UNIT PRICE', startX + 265, tableHeaderY + 8, { width: 75, align: 'right' });
-      doc.text('VAT (15%)', startX + 345, tableHeaderY + 8, { width: 70, align: 'right' });
-      doc.text('TOTAL (SAR)', startX + 420, tableHeaderY + 8, { width: 85, align: 'right' });
-
-      let currentY = tableHeaderY + 26;
-      const rowHeight = 26;
-
-      const safeItems = Array.isArray(items) && items.length > 0 ? items : [
-        {
-          item_name_en: 'Fresh Grocery Item',
-          quantity: 1,
-          unit_price: invoice.total_excluding_vat,
-          vat_amount: invoice.vat_total,
-          total_with_vat: invoice.total_including_vat,
-        }
-      ];
+      let currentY = tableY + tableHeaderHeight;
 
       safeItems.forEach((item, index) => {
-        const isAlt = index % 2 === 1;
-        if (isAlt) {
-          doc.rect(startX, currentY, pageWidth, rowHeight).fill('#F8FAFC');
+        if (index % 2 === 1) {
+          doc.rect(startX, currentY, pageWidth, rowHeight).fill(LIGHT);
         }
 
-        doc.moveTo(startX, currentY + rowHeight).lineTo(startX + pageWidth, currentY + rowHeight).strokeColor('#E2E8F0').lineWidth(0.6).stroke();
+        const itemName = clean(
+          item.item_name_en || item.name,
+          'Fresh Grocery Item'
+        ).substring(0, 39);
 
-        const rawName = item.item_name_en || item.name || 'Fresh Grocery Item';
-        const sanitizedName = rawName.replace(/[^\x20-\x7E]/g, '').trim();
-        const itemName = (sanitizedName || 'Fresh Grocery Item').substring(0, 38);
-        const qty = item.quantity || 1;
-        const unitPrice = parseFloat(item.unit_price || 0).toFixed(2);
-        const vatAmount = parseFloat(item.vat_amount || 0).toFixed(2);
-        const totalWithVat = parseFloat(item.total_with_vat || (parseFloat(unitPrice) * qty)).toFixed(2);
+        const qty = Number(item.quantity ?? 1);
+        const unitPrice = Number(item.unit_price ?? 0);
+        const vat = Number(item.vat_amount ?? 0);
+        const total = Number(
+          item.total_with_vat ?? unitPrice * qty + vat
+        );
 
-        doc.fillColor('#0F172A').fontSize(8.5).font('Helvetica-Bold').text(itemName, startX + 12, currentY + 8);
-        doc.fillColor('#475569').fontSize(8.5).font('Helvetica').text(qty.toString(), startX + 225, currentY + 8, { width: 35, align: 'center' });
-        doc.text(`${unitPrice} SAR`, startX + 265, currentY + 8, { width: 75, align: 'right' });
-        doc.text(`${vatAmount} SAR`, startX + 345, currentY + 8, { width: 70, align: 'right' });
-        doc.fillColor(isCreditNote ? '#DC2626' : '#043927').font('Helvetica-Bold').text(`${totalWithVat} SAR`, startX + 420, currentY + 8, { width: 85, align: 'right' });
+        text(itemName, startX + 10, currentY + 6, {
+          size: 8,
+          bold: true,
+          width: 212,
+        });
+
+        text(qty, startX + 224, currentY + 6, {
+          size: 8,
+          width: 30,
+          align: 'center',
+        });
+
+        text(money(unitPrice), startX + 260, currentY + 6, {
+          size: 8,
+          width: 77,
+          align: 'right',
+        });
+
+        text(money(vat), startX + 343, currentY + 6, {
+          size: 8,
+          width: 70,
+          align: 'right',
+        });
+
+        text(money(total), startX + 418, currentY + 6, {
+          size: 8,
+          bold: true,
+          color: GREEN,
+          width: 82,
+          align: 'right',
+        });
+
+        doc
+          .moveTo(startX, currentY + rowHeight)
+          .lineTo(startX + pageWidth, currentY + rowHeight)
+          .strokeColor(BORDER)
+          .lineWidth(0.5)
+          .stroke();
 
         currentY += rowHeight;
       });
 
-      // ================= 5. FINANCIAL SUMMARY & HIGHLIGHT CARD =================
-      const summaryY = currentY + 14;
-      const summaryWidth = 240;
+      // ================= 5. FINANCIAL SUMMARY =================
+
+      const summaryY = currentY + 9;
+      const summaryWidth = 246;
       const summaryX = startX + pageWidth - summaryWidth;
+      const summaryHeight = 103;
 
-      doc.roundedRect(summaryX, summaryY, summaryWidth, 105, 8).fillAndStroke('#F8FAFC', '#E2E8F0');
+      box(summaryX, summaryY, summaryWidth, summaryHeight);
 
-      const subtotal = parseFloat(invoice.total_excluding_vat || 0).toFixed(2);
-      const vatTotal = parseFloat(invoice.vat_total || 0).toFixed(2);
-      const grandTotal = parseFloat(invoice.total_including_vat || 0).toFixed(2);
+      const subtotal = Number(invoice.total_excluding_vat ?? 0);
+      const vatTotal = Number(invoice.vat_total ?? 0);
+      const deliveryFee = Number(invoice.delivery_fee ?? 0);
+      const grandTotal = Number(invoice.total_including_vat ?? 0);
 
-      doc.fillColor('#64748B').fontSize(8).font('Helvetica').text('Subtotal (Excl. VAT):', summaryX + 12, summaryY + 12);
-      doc.fillColor('#0F172A').font('Helvetica-Bold').text(`${subtotal} SAR`, summaryX + 120, summaryY + 12, { width: 108, align: 'right' });
+      const summaryRow = (label, value, y, color = DARK) => {
+        text(label, summaryX + 10, y, {
+          size: 7.5,
+          color: MUTED,
+        });
 
-      doc.fillColor('#64748B').font('Helvetica').text('Delivery Fee:', summaryX + 12, summaryY + 28);
-      doc.fillColor('#05A764').font('Helvetica-Bold').text('0.00 SAR (FREE)', summaryX + 120, summaryY + 28, { width: 108, align: 'right' });
+        text(money(value), summaryX + 128, y, {
+          size: 8,
+          bold: true,
+          color,
+          width: 108,
+          align: 'right',
+        });
+      };
 
-      doc.fillColor('#64748B').font('Helvetica').text('Value Added Tax (15%):', summaryX + 12, summaryY + 44);
-      doc.fillColor('#0F172A').font('Helvetica-Bold').text(`${vatTotal} SAR`, summaryX + 120, summaryY + 44, { width: 108, align: 'right' });
+      summaryRow('Subtotal (Excl. VAT):', subtotal, summaryY + 10);
+      summaryRow('Delivery Fee:', deliveryFee, summaryY + 25, '#059669');
+      summaryRow('VAT (15%):', vatTotal, summaryY + 40);
 
-      // Grand Total Highlight Banner
-      doc.roundedRect(summaryX + 6, summaryY + 62, summaryWidth - 12, 35, 6).fill(isCreditNote ? '#991B1B' : '#043927');
-      doc.fillColor('#F59E0B').fontSize(8).font('Helvetica-Bold').text(isCreditNote ? 'CREDIT REVERSED (INCL. VAT):' : 'GRAND TOTAL (INCL. VAT):', summaryX + 14, summaryY + 74);
-      doc.fillColor('#FFFFFF').fontSize(12).font('Helvetica-Bold').text(`${grandTotal} SAR`, summaryX + 120, summaryY + 72, { width: 100, align: 'right' });
+      doc
+        .roundedRect(summaryX + 6, summaryY + 60, summaryWidth - 12, 35, 5)
+        .fill(GREEN);
 
-      // Left Column Quality / Guarantee Box
-      const guaranteeWidth = summaryX - startX - 15;
-      doc.roundedRect(startX, summaryY, guaranteeWidth, 105, 8).fillAndStroke(isCreditNote ? '#FEF2F2' : '#ECFDF5', isCreditNote ? '#FECACA' : '#A7F3D0');
+      text('GRAND TOTAL:', summaryX + 13, summaryY + 72, {
+        size: 9,
+        bold: true,
+        color: '#F59E0B',
+      });
 
-      doc.fillColor(isCreditNote ? '#991B1B' : '#043927').fontSize(9).font('Helvetica-Bold').text(
-        isCreditNote ? 'OFFICIAL TAX CREDIT NOTE REVERSAL' : '100% FRESHNESS & COLD-CHAIN CERTIFIED',
-        startX + 14,
-        summaryY + 14
-      );
+      text(money(grandTotal), summaryX + 111, summaryY + 70, {
+        size: 11,
+        bold: true,
+        color: '#FFFFFF',
+        width: 119,
+        align: 'right',
+      });
 
-      doc.fillColor(isCreditNote ? '#7F1D1D' : '#065F46').fontSize(7.5).font('Helvetica').text(
-        isCreditNote
-          ? `This credit note is issued to adjust/reverse the original invoice ${originalInvoice?.invoice_number || ''}. Reason: ${invoice.notes || 'Customer refund'}. In accordance with ZATCA regulations, tax liability is adjusted accordingly.`
-          : 'Every produce and chilled grocery cut in this order was packed in an insulated thermal tote and maintained within 2°C to 4°C active refrigerated temperature logs from harvest farm to your doorstep.',
-        startX + 14,
-        summaryY + 30,
-        { width: guaranteeWidth - 28, lineGap: 3 }
-      );
+      // ================= 6. FRESHNESS BOX =================
 
-      // ================= 6. OFFICIAL LEGAL FOOTER =================
-      const footerY = 740;
-      doc.moveTo(startX, footerY).lineTo(startX + pageWidth, footerY).strokeColor('#CBD5E1').lineWidth(0.8).stroke();
+      const guaranteeWidth = summaryX - startX - 9;
 
-      doc.fillColor('#64748B').fontSize(7).font('Helvetica').text(
-        'This is a certified electronic tax document generated in accordance with ZATCA (Zakat, Tax and Customs Authority) Phase 2 Fatoorah regulations in the Kingdom of Saudi Arabia. No handwritten signature or physical stamp is required.',
+      box(
         startX,
-        footerY + 10,
-        { width: pageWidth, align: 'center', lineGap: 2 }
+        summaryY,
+        guaranteeWidth,
+        summaryHeight,
+        '#ECFDF5',
+        '#A7F3D0'
       );
 
-      doc.fillColor('#043927').fontSize(7.5).font('Helvetica-Bold').text(
-        'Falcon Fresh Market KSA • Commercial Registration: 1010892341 • VAT Number: 300000000000003 • 24/7 Hotline: 9200-FALCON',
-        startX,
-        footerY + 30,
-        { width: pageWidth, align: 'center' }
+      text('100% FRESHNESS & COLD-CHAIN', startX + 10, summaryY + 13, {
+        size: 8.5,
+        bold: true,
+        color: GREEN,
+      });
+
+      text(
+        'Fresh grocery items are carefully packed and handled for safe delivery.',
+        startX + 10,
+        summaryY + 35,
+        {
+          size: 8,
+          color: '#065F46',
+          width: guaranteeWidth - 20,
+          lineBreak: true,
+        }
       );
+
+      // ================= 7. COMPACT FOOTER =================
+
+      const footerY = summaryY + summaryHeight + 12;
+
+      doc
+        .moveTo(startX, footerY)
+        .lineTo(startX + pageWidth, footerY)
+        .strokeColor('#CBD5E1')
+        .lineWidth(0.7)
+        .stroke();
+
+      text(
+        'This document is generated for trial and reference purposes only.',
+        startX,
+        footerY + 8,
+        {
+          size: 7,
+          color: MUTED,
+          width: pageWidth,
+          align: 'center',
+        }
+      );
+
+      text(
+        'Falcon Fresh Market KSA - Commercial Registration: 1010892341',
+        startX,
+        footerY + 22,
+        {
+          size: 7,
+          bold: true,
+          color: GREEN,
+          width: pageWidth,
+          align: 'center',
+        }
+      );
+
+      // ================= 8. TRIAL NOTE =================
+
+      const noteY = footerY + 52;
+      const noteHeight = 34;
+
+      doc
+        .roundedRect(startX, noteY, pageWidth, noteHeight, 6)
+        .fillAndStroke('#FEF2F2', '#FCA5A5');
+
+      text(
+        'Note :- This is not valid invoice only for trial',
+        startX + 10,
+        noteY + 11,
+        {
+          size: 10,
+          bold: true,
+          color: RED,
+          width: pageWidth - 20,
+          align: 'center',
+        }
+      );
+
+      // ================= 9. FINISH =================
 
       doc.end();
+    } catch (error) {
+      fail(error);
+    }
+  });
+}
 
-      stream.on('finish', () => {
-        resolve(`/uploads/${filename}`);
-      });
-      stream.on('error', (err) => {
-        reject(err);
-      });
-    });
-  }
+
 
   /**
    * Retrieves all invoices with search, filters, pagination, summary metrics,
