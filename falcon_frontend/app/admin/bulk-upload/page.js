@@ -495,7 +495,7 @@ export default function BulkUploadPage({ initialTab = 'products' }) {
           </div>
 
           {/* Drag & Drop Upload Zone */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs space-y-4">
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -556,17 +556,17 @@ export default function BulkUploadPage({ initialTab = 'products' }) {
             </div>
 
             {/* Action Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <div className="flex items-center gap-2 text-xs text-slate-500 font-medium min-w-0 max-w-xl">
                 <Info className="w-4 h-4 text-slate-400 shrink-0" />
-                <span>
+                <span className="leading-relaxed">
                   {activeTab === 'categories'
                     ? 'Categories match by unique category_code. Parent categories must be declared before subcategories.'
                     : 'Products and variants match by unique SKU. Images reference filenames or public URLs.'}
                 </span>
               </div>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap shrink-0 w-full lg:w-auto justify-end">
                 {selectedFile && (
                   <button
                     type="button"
@@ -576,7 +576,7 @@ export default function BulkUploadPage({ initialTab = 'products' }) {
                       setImportResult(null);
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
-                    className="px-4 py-2.5 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
+                    className="px-3.5 py-2.5 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer whitespace-nowrap shrink-0"
                   >
                     Clear File
                   </button>
@@ -586,16 +586,16 @@ export default function BulkUploadPage({ initialTab = 'products' }) {
                   type="button"
                   onClick={handleValidate}
                   disabled={!selectedFile || validating || importing}
-                  className="flex-1 sm:flex-none px-6 py-2.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white transition-all shadow-md shadow-indigo-500/20 cursor-pointer flex items-center justify-center gap-2"
+                  className="px-4 py-2.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white transition-all shadow-md shadow-indigo-500/20 cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"
                 >
                   {validating ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                       <span>Validating Rows...</span>
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="w-4 h-4" />
+                      <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Validate File</span>
                     </>
                   )}
@@ -610,16 +610,16 @@ export default function BulkUploadPage({ initialTab = 'products' }) {
                       validationResult.validCount === 0 ||
                       (errorHandling === 'ALL_OR_NOTHING' && validationResult.errorCount > 0)
                     }
-                    className="flex-1 sm:flex-none px-6 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white transition-all shadow-md shadow-emerald-500/20 cursor-pointer flex items-center justify-center gap-2"
+                    className="px-4 sm:px-5 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white transition-all shadow-md shadow-emerald-500/20 cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"
                   >
                     {importing ? (
                       <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Importing to Database...</span>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Importing...</span>
                       </>
                     ) : (
                       <>
-                        <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                        <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
                         <span>Proceed with Import ({validationResult.validCount})</span>
                       </>
                     )}
