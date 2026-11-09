@@ -1,0 +1,2087 @@
+'use client';
+import React, { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
+import { useLanguage } from '../src/contexts/LanguageContext';
+import { useCart } from '../src/contexts/CartContext';
+import { useWishlist } from '../src/contexts/WishlistContext';
+import { useToast } from '../src/contexts/ToastContext';
+import { fetchApi, getImageUrl } from '../src/services/api';
+import { getCategoryUrl } from '../src/services/categoryHierarchy';
+import { ShoppingBag, Truck, ShieldCheck, FileCheck, ArrowRight, Star, Sparkles, CheckCircle2, Leaf, Tag, ChevronRight, ChevronLeft, Gift, Headphones, Shield, Smartphone, Heart, Flame, TrendingUp, Plus, Minus, Trash2, Loader2, Zap, Ban } from 'lucide-react';
+import WaveDivider from '../src/components/WaveDivider';
+import VariantSelectionModal from '../src/components/VariantSelectionModal';
+
+const SAFE_DEFAULT_CATEGORIES = [];
+
+const getCategoryImageUrl = (cat) => {
+  if (cat && cat.image_url && typeof cat.image_url === 'string' && cat.image_url.trim() !== '') {
+    return cat.image_url;
+  }
+  const name = (cat?.name_en || '').toLowerCase();
+};
+
+const STATIC_MOST_BUY = [
+  { id: 'mb-1', name_en: 'Watermelon Fresh', name_ar: 'بطيخ أحمر طازج', price: '4.00', img: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400' },
+  { id: 'mb-2', name_en: 'Fresh Bananas (1 kg)', name_ar: 'موز طازج (1 كجم)', price: '2.50', img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400' },
+  { id: 'mb-3', name_en: 'Organic Kiwi (500 g)', name_ar: 'كيوي عضوي (500 جرام)', price: '3.50', img: 'https://images.unsplash.com/photo-1585059819970-311904b48f61?w=400' },
+  { id: 'mb-4', name_en: 'Pure Olive & Cooking Oil', name_ar: 'زيت طهي نقي (1 لتر)', price: '7.00', img: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400' },
+  { id: 'mb-5', name_en: 'Farm Fresh Meat Cuts', name_ar: 'لحم طازج مبرد (1 كجم)', price: '35.00', img: 'https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=400' },
+];
+
+const STATIC_TRENDING = [
+  {
+    id: 'tr-1',
+    name_en: 'Organic Red Strawberries (250 g)',
+    name_ar: 'فراولة حمراء عضوية (250 جرام)',
+    price: '14.50',
+    mrp: '18.00',
+    badge: 'Trending 🔥',
+    badge_ar: 'شائع 🔥',
+    img: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400',
+  },
+  {
+    id: 'tr-2',
+    name_en: 'Organic Hass Avocados (2 pcs)',
+    name_ar: 'أفوكادو هاس عضوي (حبتان)',
+    price: '16.00',
+    mrp: '20.00',
+    badge: 'Hot Pick',
+    badge_ar: 'الأكثر طلباً',
+    img: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400',
+  },
+  {
+    id: 'tr-3',
+    name_en: 'Extra Virgin Olive Oil (1 L)',
+    name_ar: 'زيت زيتون بكر ممتاز (1 لتر)',
+    price: '28.00',
+    mrp: '35.00',
+    badge: 'Best Seller',
+    badge_ar: 'الأكثر مبيعاً',
+    img: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400',
+  },
+  {
+    id: 'tr-4',
+    name_en: 'Pure Mountain Honey (500 g)',
+    name_ar: 'عسل جبل طبيعي (500 جرام)',
+    price: '45.00',
+    mrp: '55.00',
+    badge: 'Trending 🔥',
+    badge_ar: 'شائع 🔥',
+    img: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400',
+  },
+  {
+    id: 'tr-5',
+    name_en: 'Farm Organic Eggs (12 pcs)',
+    name_ar: 'بيض مزارع عضوي (12 حبة)',
+    price: '11.00',
+    mrp: '14.00',
+    badge: 'Hot Pick',
+    badge_ar: 'ممتاز',
+    img: 'https://images.unsplash.com/photo-1506976785307-8732e854ad03?w=400',
+  },
+  {
+    id: 'tr-6',
+    name_en: 'Fresh Red Tomatoes (1 kg)',
+    name_ar: 'طماطم حمراء طازجة (1 كجم)',
+    price: '3.00',
+    mrp: '4.50',
+    badge: 'Trending 🔥',
+    badge_ar: 'شائع 🔥',
+    img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400',
+  },
+  {
+    id: 'tr-7',
+    name_en: 'Green Broccoli (500 g)',
+    name_ar: 'بروكلي أخضر (500 جرام)',
+    price: '5.00',
+    mrp: '7.00',
+    badge: 'Best Seller',
+    badge_ar: 'الأكثر مبيعاً',
+    img: 'https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400',
+  },
+  {
+    id: 'tr-8',
+    name_en: 'Organic Fresh Kiwi (500 g)',
+    name_ar: 'كيوي عضوي طازج (500 جرام)',
+    price: '3.50',
+    mrp: '5.00',
+    badge: 'Hot Pick',
+    badge_ar: 'الأكثر طلباً',
+    img: 'https://images.unsplash.com/photo-1585059819970-311904b48f61?w=400',
+  },
+  {
+    id: 'tr-9',
+    name_en: 'Sweet Yellow Bananas (1 kg)',
+    name_ar: 'موز أصفر طازج (1 كجم)',
+    price: '2.50',
+    mrp: '4.00',
+    badge: 'Trending 🔥',
+    badge_ar: 'شائع 🔥',
+    img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400',
+  },
+  {
+    id: 'tr-10',
+    name_en: 'Fresh Farm Whole Milk (1 L)',
+    name_ar: 'حليب مزرعة طازج (1 لتر)',
+    price: '5.50',
+    mrp: '7.50',
+    badge: 'Hot Pick',
+    badge_ar: 'طازج',
+    img: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=400',
+  },
+];
+
+const DEALS_PRODUCTS = [
+
+];
+
+const POPULAR_PRODUCTS = [
+];
+
+const PROMO_CARDS_BANNER = [{}];
+
+const HOUSEHOLD_SUBCATEGORIES = [
+  {
+    id: 'laundry-care',
+    title_en: 'Laundry Care',
+    title_ar: 'العناية بالغسيل',
+    img: '/subcategories/laundry_care.png',
+    href: '/products?category=household&sub=laundry',
+  },
+  {
+    id: 'toilet-cleaner',
+    title_en: 'Toilet Cleaner',
+    title_ar: 'منظف الحمام',
+    img: '/subcategories/toilet_cleaner.png',
+    href: '/products?category=household&sub=toilet-cleaner',
+  },
+  {
+    id: 'vacuum-cleaner',
+    title_en: 'Vacuum Cleaner',
+    title_ar: 'مكنسة كهربائية',
+    img: '/subcategories/vacuum_cleaner.png',
+    href: '/products?category=household&sub=vacuum',
+  },
+  {
+    id: 'storage',
+    title_en: 'Storage',
+    title_ar: 'التخزين',
+    img: '/subcategories/storage.png',
+    href: '/products?category=household&sub=storage',
+  },
+  {
+    id: 'lights-lamps',
+    title_en: 'Lights & Lamps',
+    title_ar: 'إضاءة ومصابيح',
+    img: '/subcategories/lights_lamps.png',
+    href: '/products?category=household&sub=lighting',
+  },
+  {
+    id: 'chairs',
+    title_en: 'Chairs',
+    title_ar: 'كراسي',
+    img: '/subcategories/chairs.png',
+    href: '/products?category=household&sub=chairs',
+  },
+];
+
+const GROCERIES_SUBCATEGORIES = [
+  {
+    id: 'rice-grains',
+    title_en: 'Rice & Grains',
+    title_ar: 'الأرز والحبوب',
+    img: '/subcategories/rice_grains.png',
+    href: '/products?category=groceries&sub=rice-grains',
+  },
+  {
+    id: 'flour-baking',
+    title_en: 'Flour & Baking',
+    title_ar: 'الدقيق والخبز',
+    img: '/subcategories/flour_baking.png',
+    href: '/products?category=groceries&sub=flour',
+  },
+  {
+    id: 'pulses-lentils',
+    title_en: 'Pulses & Lentils',
+    title_ar: 'البقوليات والعدس',
+    img: '/subcategories/pulses_lentils.png',
+    href: '/products?category=groceries&sub=lentils',
+  },
+  {
+    id: 'pasta-noodles',
+    title_en: 'Pasta & Noodles',
+    title_ar: 'معكرونة ونودلز',
+    img: '/subcategories/pasta_noodles.png',
+    href: '/products?category=groceries&sub=pasta',
+  },
+  {
+    id: 'tea-coffee',
+    title_en: 'Tea & Coffee',
+    title_ar: 'شاي وقهوة',
+    img: '/subcategories/tea_coffee.png',
+    href: '/products?category=groceries&sub=tea-coffee',
+  },
+  {
+    id: 'sugar-sweeteners',
+    title_en: 'Sugar & Sweeteners',
+    title_ar: 'السكر والمحليات',
+    img: '/subcategories/sugar_sweeteners.png',
+    href: '/products?category=groceries&sub=sugar',
+  },
+];
+
+function SubCategorySlider({ title, items, locale }) {
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      const maxScroll = scrollWidth - clientWidth;
+      const current = Math.abs(scrollLeft);
+      setCanScrollLeft(current > 10);
+      setCanScrollRight(current < maxScroll - 10);
+    }
+  };
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const container = scrollRef.current;
+      const scrollAmount = Math.max(container.clientWidth * 0.75, 260);
+      const isRtl = locale === 'ar';
+      let offset = direction === 'next' ? scrollAmount : -scrollAmount;
+      if (isRtl) offset = -offset;
+      container.scrollBy({ left: offset, behavior: 'smooth' });
+      setTimeout(checkScroll, 350);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    const timer = setTimeout(checkScroll, 300);
+    return () => clearTimeout(timer);
+  }, [items, locale]);
+
+  return (
+    <div className="space-y-5 select-none">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl sm:text-2xl lg:text-[26px] font-bold text-slate-900 tracking-tight">
+          {title}
+        </h2>
+
+        {/* Desktop Navigation Arrows in Header */}
+        <div className="hidden sm:flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => scroll('prev')}
+            disabled={!canScrollLeft}
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
+            aria-label={locale === 'ar' ? 'السابق' : 'Previous'}
+          >
+            <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scroll('next')}
+            disabled={!canScrollRight}
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
+            aria-label={locale === 'ar' ? 'التالي' : 'Next'}
+          >
+            <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+          </button>
+        </div>
+      </div>
+
+      {/* Horizontal Scroll Track - 6 items per row on desktop */}
+      <div
+        ref={scrollRef}
+        onScroll={checkScroll}
+        className="flex items-start gap-3.5 sm:gap-4 overflow-x-auto scrollbar-none py-1.5 px-0.5 scroll-smooth snap-x snap-mandatory"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {items.map((item) => {
+          const rawImg = item.image_url || item.img || '';
+          const resolvedImg = rawImg.startsWith('blob:') || rawImg.startsWith('data:') || rawImg.startsWith('http')
+            ? rawImg
+            : getImageUrl(rawImg);
+          const titleEn = item.title_en || item.name_en || '';
+          const titleAr = item.title_ar || item.name_ar || titleEn;
+          const itemTitle = locale === 'ar' ? titleAr : titleEn;
+          const itemLink = item.link_url || item.href || `/products?category=${encodeURIComponent(titleEn.toLowerCase())}`;
+
+          return (
+            <Link
+              key={item.id}
+              href={itemLink}
+              className="group flex flex-col items-center cursor-pointer text-center shrink-0 snap-start w-[calc((100%-16px)/2.3)] sm:w-[calc((100%-32px)/3.3)] md:w-[calc((100%-48px)/4.5)] lg:w-[calc((100%-5*16px)/6)] min-w-0"
+            >
+              <div className="relative w-full aspect-square bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center overflow-hidden shrink-0 min-h-0 min-w-0 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+                <img
+                  src={resolvedImg}
+                  alt={itemTitle}
+                  className="w-full h-full max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+                  loading="lazy"
+                  onError={(e) => {
+                    if (e.currentTarget.dataset.errorHandled) {
+                      e.currentTarget.style.opacity = '0';
+                      return;
+                    }
+                    e.currentTarget.dataset.errorHandled = 'true';
+                    e.currentTarget.src = '/subcategories/laundry_care.png';
+                  }}
+                />
+              </div>
+
+              <div className="w-full mt-2.5 sm:mt-3 h-[38px] sm:h-[42px] flex items-start justify-center px-0.5">
+                <span className="font-semibold text-slate-800 text-xs sm:text-[13px] md:text-[14px] text-center leading-snug group-hover:text-emerald-800 transition-colors line-clamp-2">
+                  {itemTitle}
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function HomePage() {
+  const { t, locale } = useLanguage();
+  const { cart, addToCart, updateQuantity, removeItem } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const { showToast } = useToast();
+  const [categories, setCategories] = useState([]);
+  const categoryScrollRef = useRef(null);
+  const [canScrollCatLeft, setCanScrollCatLeft] = useState(false);
+  const [canScrollCatRight, setCanScrollCatRight] = useState(true);
+  const [dealSlideIndex, setDealSlideIndex] = useState(0);
+  const [dealItemsPerSlide, setDealItemsPerSlide] = useState(10);
+  const [dealTouchStart, setDealTouchStart] = useState(null);
+  const [dealTouchEnd, setDealTouchEnd] = useState(null);
+
+  useEffect(() => {
+    const handleDealResize = () => {
+      if (typeof window === 'undefined') return;
+      const width = window.innerWidth;
+      if (width < 640) {
+        setDealItemsPerSlide(4);
+      } else if (width < 1024) {
+        setDealItemsPerSlide(6);
+      } else {
+        setDealItemsPerSlide(10);
+      }
+    };
+    handleDealResize();
+    window.addEventListener('resize', handleDealResize);
+    return () => window.removeEventListener('resize', handleDealResize);
+  }, []);
+  const popularScrollRef = useRef(null);
+  const promoScrollRef = useRef(null);
+  const [canScrollPopularLeft, setCanScrollPopularLeft] = useState(false);
+  const [canScrollPopularRight, setCanScrollPopularRight] = useState(true);
+  const [products, setProducts] = useState([]);
+  const [bestDealsProducts, setBestDealsProducts] = useState([]);
+  const [bestDealsTotal, setBestDealsTotal] = useState(0);
+  const [heroBanners, setHeroBanners] = useState([]);
+  const [heroLoaded, setHeroLoaded] = useState(false);
+  const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  const [heroAutoplay, setHeroAutoplay] = useState(true);
+  const [promoBanners, setPromoBanners] = useState([]);
+  const [categorySections, setCategorySections] = useState([]);
+  const [cmsSections, setCmsSections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [addingId, setAddingId] = useState(null);
+  const [actionId, setActionId] = useState(null);
+  const [productSlideIndex, setProductSlideIndex] = useState(0);
+  const [categorySlideIndex, setCategorySlideIndex] = useState(0);
+  const [trendingSlideIndex, setTrendingSlideIndex] = useState(0);
+  const [variantModalProduct, setVariantModalProduct] = useState(null);
+
+  const checkCategoryScroll = () => {
+    if (categoryScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = categoryScrollRef.current;
+      const maxScroll = scrollWidth - clientWidth;
+      const current = Math.abs(scrollLeft);
+      setCanScrollCatLeft(current > 10);
+      setCanScrollCatRight(current < maxScroll - 10);
+    }
+  };
+
+  const scrollCategories = (direction) => {
+    if (categoryScrollRef.current) {
+      const container = categoryScrollRef.current;
+      const scrollAmount = Math.max(container.clientWidth * 0.75, 260);
+      const isRtl = locale === 'ar';
+      let offset = direction === 'next' ? scrollAmount : -scrollAmount;
+      if (isRtl) offset = -offset;
+      container.scrollBy({ left: offset, behavior: 'smooth' });
+      setTimeout(checkCategoryScroll, 350);
+    }
+  };
+
+  const checkPopularScroll = () => {
+    if (popularScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = popularScrollRef.current;
+      const maxScroll = scrollWidth - clientWidth;
+      const current = Math.abs(scrollLeft);
+      setCanScrollPopularLeft(current > 10);
+      setCanScrollPopularRight(current < maxScroll - 10);
+    }
+  };
+
+  const scrollPopularPicks = (direction) => {
+    if (popularScrollRef.current) {
+      const container = popularScrollRef.current;
+      const scrollAmount = Math.max(container.clientWidth * 0.8, 300);
+      const isRtl = locale === 'ar';
+      let offset = direction === 'next' ? scrollAmount : -scrollAmount;
+      if (isRtl) offset = -offset;
+      container.scrollBy({ left: offset, behavior: 'smooth' });
+      setTimeout(checkPopularScroll, 350);
+    }
+  };
+
+  useEffect(() => {
+    checkCategoryScroll();
+  }, [categories, locale]);
+
+  useEffect(() => {
+    checkPopularScroll();
+    const timer = setTimeout(checkPopularScroll, 300);
+    return () => clearTimeout(timer);
+  }, [products, locale]);
+
+  // Fast priority fetch for Hero Banner to eliminate any render delay
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('falcon_hero_banners');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setHeroBanners(parsed);
+          setHeroLoaded(true);
+        }
+      }
+    } catch (e) { }
+
+    let isSubscribed = true;
+    fetchApi('/hero-banners')
+      .then((heroRes) => {
+        if (!isSubscribed) return;
+        if (heroRes && heroRes.success && Array.isArray(heroRes.data?.banners) && heroRes.data.banners.length > 0) {
+          setHeroBanners(heroRes.data.banners);
+          try {
+            localStorage.setItem('falcon_hero_banners', JSON.stringify(heroRes.data.banners));
+          } catch (e) { }
+        }
+      })
+      .catch((err) => console.error('Failed to load hero banner:', err))
+      .finally(() => {
+        if (isSubscribed) setHeroLoaded(true);
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
+
+  // Hero carousel auto-play rotation
+  useEffect(() => {
+    if (!heroAutoplay) return;
+    const interval = setInterval(() => {
+      setCurrentHeroSlide((prev) => prev + 1);
+    }, 5500);
+    return () => clearInterval(interval);
+  }, [heroAutoplay]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [catRes, prodRes, dealsRes, promoRes, sectionsRes, cmsRes] = await Promise.all([
+          fetchApi('/categories?type=parent'),
+          fetchApi('/products?limit=40'),
+          fetchApi('/products?best_deals_or_store=true&limit=40'),
+          fetchApi('/promo-banners').catch(() => ({ success: false })),
+          fetchApi('/category-sections/active').catch(() => ({ success: false })),
+          fetchApi('/homepage-cms/public').catch(() => ({ success: false })),
+        ]);
+
+        if (catRes.success) {
+          const rawCats = catRes.data?.categories || catRes.data || [];
+          // Strictly show ONLY parent categories (no subcategory or sub-subcategory)
+          const parentsOnly = rawCats.filter((c) => !c.parent_id);
+          setCategories(parentsOnly);
+        }
+        if (prodRes.success) setProducts(prodRes.data?.products?.products || prodRes.data?.products || []);
+        if (dealsRes.success) {
+          const dealsArr = dealsRes.data?.products?.products || dealsRes.data?.products || (Array.isArray(dealsRes.data) ? dealsRes.data : []);
+          setBestDealsProducts(dealsArr);
+          const total = dealsRes.data?.total ?? dealsRes.data?.count ?? dealsArr.length;
+          setBestDealsTotal(total);
+        }
+        if (promoRes && promoRes.success && promoRes.data?.banners?.length > 0) {
+          setPromoBanners(promoRes.data.banners);
+        }
+        if (sectionsRes && sectionsRes.success && sectionsRes.data?.sections?.length > 0) {
+          setCategorySections(sectionsRes.data.sections);
+        }
+        if (cmsRes && cmsRes.success && cmsRes.data?.sections?.length > 0) {
+          setCmsSections(cmsRes.data.sections);
+        }
+      } catch (err) {
+        console.error('Error loading home data:', err);
+        showToast(err.message || 'Error loading page content', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const getCartItem = (productId) => {
+    if (!cart?.items || !productId) return null;
+    return cart.items.find(
+      (item) => item.product_id === productId || item.product?.id === productId || item.productId === productId
+    );
+  };
+
+  const handleAddToCart = async (productId, prodData = null) => {
+    try {
+      setAddingId(productId);
+      setActionId(productId);
+      await addToCart(productId, 1, prodData);
+    } catch (err) {
+      // Toast message managed by CartContext
+    } finally {
+      setAddingId(null);
+      setActionId(null);
+    }
+  };
+
+  const handleIncrement = async (productId, prodData = null) => {
+    const item = getCartItem(productId);
+    if (!item) {
+      await handleAddToCart(productId, prodData);
+      return;
+    }
+    try {
+      setActionId(productId);
+      await updateQuantity(item.id, item.quantity + 1);
+    } catch (err) {
+      // Handled by context
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleDecrement = async (productId) => {
+    const item = getCartItem(productId);
+    if (!item) return;
+    try {
+      setActionId(productId);
+      if (item.quantity <= 1) {
+        await removeItem(item.id);
+      } else {
+        await updateQuantity(item.id, item.quantity - 1);
+      }
+    } catch (err) {
+      // Handled by context
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-16 pb-16 bg-[#fbfcfb]">
+
+      {/* 1. Hero Section (Dynamic Multi-Slide Carousel & Slider with Auto-Play & Navigation) */}
+      {(() => {
+        // Use strictly backend heroBanners data
+        const slides = Array.isArray(heroBanners) ? heroBanners : [];
+
+        if (slides.length === 0) {
+          return null;
+        }
+
+        const safeIndex = ((currentHeroSlide % slides.length) + slides.length) % slides.length;
+        const activeHero = slides[safeIndex] || slides[0] || {};
+
+        const titleText = locale === 'ar'
+          ? (activeHero.title_ar || '')
+          : (activeHero.title_en || '');
+
+        const subtitleText = locale === 'ar'
+          ? (activeHero.subtitle_ar || '')
+          : (activeHero.subtitle_en || '');
+
+        const descText = locale === 'ar'
+          ? (activeHero.desc_ar || '')
+          : (activeHero.desc_en || '');
+
+        const btnText = locale === 'ar'
+          ? (activeHero.btn_text_ar || 'تسوق الآن')
+          : (activeHero.btn_text_en || 'Shop Now');
+
+        const btnLink = activeHero.btn_link || '/products';
+
+        const heroImage = activeHero.image_url ? getImageUrl(activeHero.image_url) : '';
+
+        const heroBg = activeHero.bg_color || '#FAF7F0';
+
+        const handlePrev = () => {
+          setCurrentHeroSlide((prev) => (prev - 1 + slides.length) % slides.length);
+        };
+
+        const handleNext = () => {
+          setCurrentHeroSlide((prev) => (prev + 1) % slides.length);
+        };
+
+        return (
+          <section
+            suppressHydrationWarning
+            style={{ backgroundColor: heroBg }}
+            onMouseEnter={() => setHeroAutoplay(false)}
+            onMouseLeave={() => setHeroAutoplay(true)}
+            className="relative overflow-hidden border-amber-100/60 lg:h-[calc(118vh-127px)] lg:min-h-[460px] lg:max-h-[620px] flex flex-col justify-between pt-2 sm:pt-4 pb-0 transition-colors duration-700 select-none group/hero"
+          >
+            {/* Previous Slide Button */}
+            {slides.length > 1 && (
+              <button
+                type="button"
+                onClick={locale === 'ar' ? handleNext : handlePrev}
+                aria-label={locale === 'ar' ? 'الشريحة السابقة' : 'Previous Slide'}
+                className="absolute left-2 sm:left-5 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/80 hover:bg-white text-slate-800 shadow-md hover:shadow-xl backdrop-blur-xs border border-white/80 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer opacity-80 sm:opacity-0 group-hover/hero:opacity-100 duration-200"
+              >
+                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 rtl:rotate-180" />
+              </button>
+            )}
+
+            {/* Next Slide Button */}
+            {slides.length > 1 && (
+              <button
+                type="button"
+                onClick={locale === 'ar' ? handlePrev : handleNext}
+                aria-label={locale === 'ar' ? 'الشريحة التالية' : 'Next Slide'}
+                className="absolute right-2 sm:right-5 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/80 hover:bg-white text-slate-800 shadow-md hover:shadow-xl backdrop-blur-xs border border-white/80 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer opacity-80 sm:opacity-0 group-hover/hero:opacity-100 duration-200"
+              >
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 rtl:rotate-180" />
+              </button>
+            )}
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col justify-center my-auto">
+              <div
+                key={`slide-${activeHero.id || safeIndex}`}
+                className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center py-1 sm:py-2 animate-in fade-in zoom-in-[0.99] duration-500"
+              >
+
+                {/* Left Column Content */}
+                <div className="lg:col-span-7 space-y-3 sm:space-y-3.5 text-left rtl:text-right">
+
+                  {/* Main Headline */}
+                  <h1 className="text-3xl sm:text-4xl lg:text-[40px] xl:text-[46px] font-black text-black tracking-tight leading-[1.06]">
+                    {titleText}
+                    {subtitleText && (
+                      <>
+                        <br />
+                        <span className="text-[#01813E] inline-block mt-0.5">
+                          {subtitleText}
+                        </span>
+                      </>
+                    )}
+                  </h1>
+
+                  {/* Subheadline */}
+                  <p className="text-[#475569] font-medium text-xs sm:text-sm lg:text-[15px] max-w-lg leading-snug">
+                    {descText}
+                  </p>
+
+                  {/* Shop Now CTA Button */}
+                  <div className="pt-0.5">
+                    <Link
+                      href={btnLink}
+                      className="inline-flex items-center justify-center gap-2.5 px-6 py-2.5 sm:px-7 sm:py-2.5 rounded-full bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer group"
+                    >
+                      <span className="tracking-wide">{btnText}</span>
+                      <ArrowRight className="w-4 h-4 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
+                    </Link>
+                  </div>
+
+                  {/* Trust Badges Row */}
+                  {activeHero.show_badges !== false && (
+                    <div className="pt-2.5 sm:pt-3 border-t border-amber-200/50 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-700">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
+                          <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="font-bold text-slate-900 text-[11px] sm:text-xs">
+                            {locale === 'ar' ? (activeHero.badge_1_title_ar || 'سريع وموثوق') : (activeHero.badge_1_title_en || 'Fast & Reliable')}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {locale === 'ar' ? (activeHero.badge_1_subtitle_ar || 'التوصيل') : (activeHero.badge_1_subtitle_en || 'Delivery')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
+                          <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="font-bold text-slate-900 text-[11px] sm:text-xs">
+                            {locale === 'ar' ? (activeHero.badge_2_title_ar || 'أسعار رائعة') : (activeHero.badge_2_title_en || 'Great Prices')}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {locale === 'ar' ? (activeHero.badge_2_subtitle_ar || 'كل يوم') : (activeHero.badge_2_subtitle_en || 'Everyday')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6F4EA] text-[#043927] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
+                          <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="font-bold text-slate-900 text-[11px] sm:text-xs">
+                            {locale === 'ar' ? (activeHero.badge_3_title_ar || 'آمن ومحمي') : (activeHero.badge_3_title_en || 'Secure')}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {locale === 'ar' ? (activeHero.badge_3_subtitle_ar || 'المدفوعات') : (activeHero.badge_3_subtitle_en || 'Payments')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* Right Column Visual Image */}
+                <div className="lg:col-span-5 relative flex items-center justify-center py-1 sm:py-2 h-full">
+                  <div className="relative w-full flex items-center justify-center h-full max-h-[260px] sm:max-h-[300px] lg:max-h-[330px]">
+                    {heroImage ? (
+                      <img
+                        src={heroImage}
+                        alt={titleText}
+                        className="max-h-[220px] sm:max-h-[270px] lg:max-h-[300px] w-auto h-full object-contain drop-shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                        onError={(e) => {
+                          e.target.style.opacity = '0';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-3xl bg-amber-100/30 animate-pulse flex items-center justify-center border border-amber-200/40">
+                        <Sparkles className="w-8 h-8 text-emerald-600/30" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Bottom Carousel Navigation Dots */}
+            {slides.length > 1 && (
+              <div className="flex items-center justify-center gap-2 pb-2.5 z-20">
+                {slides.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setCurrentHeroSlide(idx)}
+                    aria-label={`Slide ${idx + 1}`}
+                    className={`transition-all duration-300 rounded-full cursor-pointer h-2.5 ${safeIndex === idx
+ ? 'w-7 sm:w-8 bg-[#043927] shadow-xs'
+ : 'w-2.5 bg-slate-300/80 hover:bg-slate-400'
+ }`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Wavy Wave Curve Bottom Decorative Banner */}
+            <WaveDivider className="-mb-1 shrink-0" />
+          </section>
+        );
+      })()}
+
+
+
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+
+        {/* 2. Explore Our Categories Section (Slider) */}
+        <section className="space-y-5 pt-2 select-none">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                {locale === 'ar' ? 'استكشف تصنيفاتنا' : 'Explore Our Categories'}
+              </h2>
+
+            </div>
+
+            {/* Desktop Navigation Arrows in Header */}
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => scrollCategories('prev')}
+                disabled={!canScrollCatLeft}
+                className="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
+                aria-label={locale === 'ar' ? 'السابق' : 'Previous categories'}
+              >
+                <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollCategories('next')}
+                disabled={!canScrollCatRight}
+                className="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
+                aria-label={locale === 'ar' ? 'التالي' : 'Next categories'}
+              >
+                <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+              </button>
+            </div>
+          </div>
+
+          {/* Cards Slider Container with Floating Edge Overlays */}
+          <div className="relative group/categoryCarousel">
+            {/* Left Edge Floating Arrow */}
+            <button
+              type="button"
+              onClick={() => scrollCategories('prev')}
+              disabled={!canScrollCatLeft}
+              className="absolute -left-3.5 sm:-left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 shadow-lg hover:bg-white flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/categoryCarousel:opacity-100 cursor-pointer active:scale-95 disabled:opacity-0 disabled:pointer-events-none hidden sm:flex"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="w-5 h-5 rtl:rotate-180 text-slate-700" />
+            </button>
+
+            {/* Right Edge Floating Arrow */}
+            <button
+              type="button"
+              onClick={() => scrollCategories('next')}
+              disabled={!canScrollCatRight}
+              className="absolute -right-3.5 sm:-right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 shadow-lg hover:bg-white flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/categoryCarousel:opacity-100 cursor-pointer active:scale-95 disabled:opacity-0 disabled:pointer-events-none hidden sm:flex"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="w-5 h-5 rtl:rotate-180 text-slate-700" />
+            </button>
+
+            {/* Horizontal Scroll Track */}
+            <div
+              ref={categoryScrollRef}
+              onScroll={checkCategoryScroll}
+              className="flex items-start gap-4 sm:gap-5 overflow-x-auto scrollbar-none py-2 px-1 scroll-smooth snap-x snap-mandatory"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {(categories && categories.length > 0 ? categories : SAFE_DEFAULT_CATEGORIES).map((cat) => {
+                const titleEn = cat.name_en || cat.title_en || cat.name || 'Category';
+                const titleAr = cat.name_ar || cat.title_ar || titleEn;
+                const catSlug = cat.slug || titleEn.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                const imageSrc = cat.image_url
+                  ? getImageUrl(cat.image_url)
+                  : (cat.img || '/categories/cat_groceries.jpg');
+
+                return (
+                  <Link
+                    key={cat.id || cat._id || catSlug}
+                    href={getCategoryUrl(cat)}
+                    className="group/card bg-[#FFFDF8] hover:bg-[#FFF9EC] rounded-[22px] p-4 flex flex-col items-center justify-between border border-[#F6EEDF] shadow-2xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer min-h-[210px] sm:min-h-[230px] w-[155px] sm:w-[175px] md:w-[190px] shrink-0 snap-start min-w-0"
+                  >
+                    <div className="relative w-full aspect-square max-w-[130px] sm:max-w-[145px] rounded-xl flex items-center justify-center overflow-hidden shrink-0 min-h-0 min-w-0 my-auto p-2">
+                      <img
+                        src={imageSrc}
+                        alt={locale === 'ar' ? titleAr : titleEn}
+                        className="w-full h-full max-w-full max-h-full object-contain drop-shadow-sm group-hover/card:scale-105 transition-transform duration-300 pointer-events-none"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop';
+                        }}
+                      />
+                    </div>
+
+                    <div className="w-full pt-2 h-[42px] sm:h-[46px] flex items-start justify-center px-0.5">
+                      <h3 className="font-bold text-slate-800 text-xs sm:text-sm md:text-base text-center group-hover/card:text-[#043927] transition-colors leading-snug line-clamp-2">
+                        {locale === 'ar' ? titleAr : titleEn}
+                      </h3>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+        {/* 3. Today's Best Deals Section (5-Col Desktop, 3-Col Tablet, 2-Col Mobile) */}
+        <section className="space-y-5 pt-2 select-none">
+          {(() => {
+            // Product Filtering Logic:
+            // Fetch up to 40 products and prioritize is_best_deal / show_on_store
+            const allCandidates = [
+              ...(Array.isArray(bestDealsProducts) ? bestDealsProducts : []),
+              ...(Array.isArray(products) ? products : []),
+            ];
+
+            const seenIds = new Set();
+            const allDeals = [];
+
+            for (const prod of allCandidates) {
+              if (!prod) continue;
+              const isActive = prod.is_active !== false && String(prod.is_active) !== 'false';
+              const notDeleted = !prod.deleted_at && !prod.deletedAt;
+              if (!isActive || !notDeleted) continue;
+
+              const isBestDeal = prod.is_best_deal === true || String(prod.is_best_deal) === 'true';
+              const isShowOnStore = prod.show_on_store === true || String(prod.show_on_store) === 'true' || prod.is_show_front === true || String(prod.is_show_front) === 'true';
+
+              if (isBestDeal || isShowOnStore) {
+                const idKey = String(prod.id || prod._id || prod.sku || prod.name_en || '');
+                if (idKey && !seenIds.has(idKey)) {
+                  seenIds.add(idKey);
+                  allDeals.push(prod);
+                }
+              }
+            }
+
+            // If fewer than 40 flagged deals, backfill with remaining active products up to 40
+            if (allDeals.length < 40) {
+              for (const prod of allCandidates) {
+                if (allDeals.length >= 40) break;
+                if (!prod) continue;
+                const isActive = prod.is_active !== false && String(prod.is_active) !== 'false';
+                const notDeleted = !prod.deleted_at && !prod.deletedAt;
+                if (!isActive || !notDeleted) continue;
+
+                const idKey = String(prod.id || prod._id || prod.sku || prod.name_en || '');
+                if (idKey && !seenIds.has(idKey)) {
+                  seenIds.add(idKey);
+                  allDeals.push(prod);
+                }
+              }
+            }
+
+            const dealsToDisplay = allDeals.slice(0, 40);
+            if (dealsToDisplay.length === 0) return null;
+
+            // Responsive slide chunking:
+            // Desktop: 10 products per slide (5 cols x 2 rows)
+            // Tablet: 6 products per slide (3 cols x 2 rows)
+            // Mobile: 4 products per slide (2 cols x 2 rows)
+            const totalSlides = Math.max(1, Math.ceil(dealsToDisplay.length / dealItemsPerSlide));
+            const safeSlideIndex = Math.min(dealSlideIndex, totalSlides - 1);
+
+            const dealSlides = [];
+            for (let i = 0; i < dealsToDisplay.length; i += dealItemsPerSlide) {
+              dealSlides.push(dealsToDisplay.slice(i, i + dealItemsPerSlide));
+            }
+
+            const isPrevDisabled = safeSlideIndex === 0;
+            const isNextDisabled = safeSlideIndex >= totalSlides - 1;
+
+            const handlePrev = () => {
+              setDealSlideIndex((prev) => Math.max(0, prev - 1));
+            };
+
+            const handleNext = () => {
+              setDealSlideIndex((prev) => Math.min(totalSlides - 1, prev + 1));
+            };
+
+            const handleTouchStart = (e) => {
+              setDealTouchStart(e.targetTouches[0].clientX);
+              setDealTouchEnd(null);
+            };
+
+            const handleTouchMove = (e) => {
+              setDealTouchEnd(e.targetTouches[0].clientX);
+            };
+
+            const handleTouchEnd = () => {
+              if (!dealTouchStart || !dealTouchEnd) return;
+              const distance = dealTouchStart - dealTouchEnd;
+              const isRtl = locale === 'ar';
+              if (distance > 45) {
+                if (isRtl) handlePrev(); else handleNext();
+              } else if (distance < -45) {
+                if (isRtl) handleNext(); else handlePrev();
+              }
+            };
+
+            return (
+              <>
+                {/* Best Deals Heading & Navigation Arrows */}
+                <div className="flex items-center justify-between gap-3 mb-1">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <h2 className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight truncate">
+                      {locale === 'ar' ? 'أفضل عروض اليوم' : 'Best Deals'}
+                    </h2>
+                  </div>
+
+                  {/* Left & Right Navigation Arrows beside heading */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handlePrev}
+                      disabled={isPrevDisabled}
+                      aria-label={locale === 'ar' ? 'السابق' : 'Previous'}
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
+ !isPrevDisabled
+ ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
+ : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-40'
+ }`}
+                    >
+                      <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={isNextDisabled}
+                      aria-label={locale === 'ar' ? 'التالي' : 'Next'}
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
+ !isNextDisabled
+ ? 'bg-white border-slate-300 text-slate-700 hover:bg-[#006E2D] hover:text-white hover:border-[#006E2D] shadow-2xs hover:scale-105 active:scale-95'
+ : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-40'
+ }`}
+                    >
+                      <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2-Row Horizontal Sliding Groups Carousel */}
+                <div
+                  className="w-full overflow-hidden"
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <div
+                    className="flex transition-transform duration-500 ease-in-out w-full"
+                    style={{
+                      transform: locale === 'ar'
+                        ? `translateX(${safeSlideIndex * 100}%)`
+                        : `translateX(-${safeSlideIndex * 100}%)`,
+                    }}
+                  >
+                    {dealSlides.map((slideGroup, slideIdx) => (
+                      <div
+                        key={`deal-group-${slideIdx}`}
+                        className="w-full shrink-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 pb-2 pt-1 px-1"
+                      >
+                        {slideGroup.map((prod, idx) => {
+                    const titleEn = prod.name_en || prod.title_en;
+                    const titleAr = prod.name_ar || prod.title_ar || titleEn;
+                    const title = locale === 'ar' ? titleAr : titleEn;
+
+                    const brandEn = prod.brand;
+                    const brandAr = prod.brand_ar || brandEn;
+                    const brandName = locale === 'ar' ? brandAr : brandEn;
+
+                    let imgRaw = '';
+                    if (Array.isArray(prod.images) && prod.images.length > 0) {
+                      imgRaw = typeof prod.images[0] === 'string' ? prod.images[0] : (prod.images[0]?.image_url || prod.images[0]?.url);
+                    } else if (prod.image_url) {
+                      imgRaw = prod.image_url;
+                    } else if (prod.img) {
+                      imgRaw = prod.img;
+                    }
+
+                    if (!imgRaw && Array.isArray(prod.variants) && prod.variants.length > 0) {
+                      for (const v of prod.variants) {
+                        const vPrimary = (Array.isArray(v.images) && v.images.length > 0)
+                          ? (v.images.find((i) => i.is_primary)?.image_url || v.images[0]?.image_url || (typeof v.images[0] === 'string' ? v.images[0] : null))
+                          : v.image_url;
+                        if (vPrimary) {
+                          imgRaw = vPrimary;
+                          break;
+                        }
+                      }
+                    }
+                    const finalImg = imgRaw ? getImageUrl(imgRaw) : 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+
+                    const hasVariants = Boolean(prod.has_variants && prod.variants && prod.variants.length > 0);
+                    const currentPrice = parseFloat(prod.price || 0);
+                    let finalPrice = currentPrice;
+                    let originalPrice = null;
+
+                    if (hasVariants) {
+                      const activeVars = prod.variants.filter((v) => v.is_active !== false);
+                      const varsToUse = activeVars.length > 0 ? activeVars : prod.variants;
+                      const prices = varsToUse
+                        .map((v) => parseFloat(v.discount_price || v.price))
+                        .filter((p) => !isNaN(p) && p > 0);
+                      if (prices.length > 0) {
+                        finalPrice = Math.min(...prices);
+                      }
+                    } else {
+                      const isDiscounted = prod.discount_price && parseFloat(prod.discount_price) < currentPrice;
+                      finalPrice = isDiscounted ? parseFloat(prod.discount_price) : currentPrice;
+                      originalPrice = isDiscounted ? currentPrice : (prod.purchase_price ? parseFloat(prod.purchase_price) : null);
+                    }
+
+                    const specs = hasVariants
+                      ? `${prod.variants.length} ${locale === 'ar' ? 'خيارات متاحة' : 'Variants Available'}`
+                      : (prod.unit_value && prod.unit_type && prod.pack_size
+                        ? `${prod.unit_value} ${prod.unit_type} (${prod.pack_size})`
+                        : locale === 'ar'
+                          ? prod.specs_ar
+                          : prod.specs_en);
+                    const hasRatings = (prod.reviews_count !== undefined && prod.reviews_count !== null && Number(prod.reviews_count) > 0) || (prod.rating !== undefined && prod.rating !== null && Number(prod.rating) > 0);
+                    const ratingVal = hasRatings && prod.rating ? Number(prod.rating).toFixed(1) : null;
+                    const reviewsVal = hasRatings ? Number(prod.reviews_count || prod.reviews || 0).toLocaleString() : 0;
+
+                    const totalVariantStock = hasVariants && Array.isArray(prod.variants)
+                      ? prod.variants.reduce((acc, v) => acc + parseInt(v.stock_quantity || '0', 10), 0)
+                      : 0;
+                    const isOutOfStock = hasVariants
+                      ? (prod.variants.length > 0 && totalVariantStock <= 0)
+                      : (prod.stock_quantity !== undefined && prod.stock_quantity !== null && parseInt(prod.stock_quantity, 10) <= 0);
+
+                    return (
+                      <Link
+                        key={prod.id ? `deal-${prod.id}` : `deal-${slideIdx}-${idx}`}
+                        href={prod.id ? `/products/${prod.id}` : '/products'}
+                        data-deal-card="true"
+                        className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-2.5 sm:p-3 flex flex-col justify-between relative cursor-pointer w-full min-w-0 max-w-full select-none"
+                      >
+                        {/* Top Badges & Wishlist */}
+                        <div className="flex items-center justify-between z-10 mb-0.5 h-5">
+                          {isOutOfStock ? (
+                            <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                              <Ban className="w-2.5 h-2.5 text-white" />
+                              <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
+                            </span>
+                          ) : prod.is_best_seller === true ? (
+                            <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                              <Star className="w-2.5 h-2.5 fill-current text-white" />
+                              <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>
+                            </span>
+                          ) : <span />}
+
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleWishlist(prod);
+                            }}
+                            className="text-slate-300 hover:text-rose-500 transition-colors cursor-pointer p-0.5 ml-auto"
+                            title="Add to Wishlist"
+                          >
+                            <Heart className={`w-4 h-4 ${isInWishlist(prod.id) ? 'text-rose-500 fill-rose-500' : ''}`} />
+                          </button>
+                        </div>
+
+                        {/* Product Image Container: Strictly Aspect-Square with object-fit contain */}
+                        <div className="relative w-full aspect-[4/3] max-h-[120px] sm:max-h-[135px] rounded-xl p-2 overflow-hidden flex items-center justify-center my-1 shrink-0 min-h-0 min-w-0">
+                          {isOutOfStock && (
+                            <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl">
+                              <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                                {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                              </span>
+                            </div>
+                          )}
+                          <img
+                            src={finalImg}
+                            alt={title}
+                            className={`max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 pointer-events-none ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
+                            loading="lazy"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+                            }}
+                          />
+                        </div>
+
+                        {/* Info Content */}
+                        <div className="space-y-1 pt-0.5 flex-1 flex flex-col justify-between">
+                          <div>
+                            {/* Brand & In Stock Tag */}
+                            <div className="flex items-center justify-between text-[11px] font-medium leading-none mb-1 min-h-[16px]">
+                              <span className="text-slate-400 truncate pr-1">{brandName}</span>
+                              {isOutOfStock ? (
+                                <span className="text-rose-600 font-bold shrink-0">
+                                  {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                                </span>
+                              ) : hasVariants ? (
+                                <span className="text-[#00B074] font-bold shrink-0">
+                                  {locale === 'ar' ? 'متوفر بخيارات' : 'Multi-Variant'}
+                                </span>
+                              ) : (
+                                <span className="text-[#00B074] font-bold shrink-0">
+                                  {locale === 'ar' ? 'متوفر' : 'In Stock'}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Product Title (Consistent 2-line height) */}
+                            <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-tight group-hover:text-[#043927] transition-colors mb-0.5 min-h-[30px] sm:min-h-[34px]">
+                              {title}
+                            </h3>
+
+                            {/* Specs / Tags */}
+                            <p className="text-[10px] text-slate-400 font-normal truncate mb-1">
+                              {specs}
+                            </p>
+
+                            {/* Rating & Reviews */}
+                            <div className="flex items-center justify-between text-[11px] py-1 border-t border-slate-100">
+                              <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
+                                {hasRatings ? (
+                                  <>
+                                    <span className="text-amber-400 font-bold">★</span>
+                                    <span className="font-bold text-slate-700">{ratingVal}</span>
+                                    <span className="text-slate-400">({reviewsVal})</span>
+                                  </>
+                                ) : (
+                                  <span className="text-slate-400 font-medium text-[10px]">
+                                    {locale === 'ar' ? 'لا توجد تقييمات بعد' : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Price & Add to Cart / Quantity Action Row */}
+                          <div className="pt-1.5 border-t border-slate-100 flex flex-col gap-1.5 mt-auto">
+                            <div className="flex items-baseline gap-1.5 whitespace-nowrap min-h-[18px]">
+                              <span className="text-sm sm:text-[15px] font-black text-slate-900 whitespace-nowrap leading-tight">
+                                <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
+                                {finalPrice.toFixed(2)}
+                              </span>
+                              {!hasVariants && originalPrice && (
+                                <span className="text-[10px] text-slate-400 line-through font-normal whitespace-nowrap">
+                                  SAR {originalPrice.toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Quantity Counter, Select Options, or Add to Cart Button */}
+                            {(() => {
+                              if (isOutOfStock) {
+                                return (
+                                  <button
+                                    type="button"
+                                    disabled
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }}
+                                    className="h-8 w-full rounded-xl bg-slate-100 border border-slate-200 text-slate-400 font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 cursor-not-allowed select-none"
+                                  >
+                                    <Ban className="w-3.5 h-3.5 text-slate-400" />
+                                    <span>{locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>
+                                  </button>
+                                );
+                              }
+
+                              if (hasVariants) {
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setVariantModalProduct(prod);
+                                    }}
+                                    className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#008938] active:scale-95 text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                  >
+                                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                                    <span>{locale === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
+                                  </button>
+                                );
+                              }
+
+                              const cartItem = getCartItem(prod.id);
+                              const inCart = cartItem && cartItem.quantity > 0;
+                              const isBusy = addingId === prod.id || actionId === prod.id;
+
+                              if (inCart) {
+                                return (
+                                  <div
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }}
+                                    className="h-8 w-full bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between p-0.5 px-1 shadow-2xs"
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleDecrement(prod.id);
+                                      }}
+                                      disabled={isBusy}
+                                      className="w-6.5 h-6.5 rounded-lg bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                                      title={cartItem.quantity === 1 ? (locale === 'ar' ? 'حذف' : 'Remove') : (locale === 'ar' ? 'إنقاص' : 'Decrease')}
+                                    >
+                                      <Minus className="w-3 h-3 stroke-[2.5]" />
+                                    </button>
+
+                                    <span className="font-bold text-xs text-[#043927] px-1 select-none">
+                                      {cartItem.quantity}
+                                    </span>
+
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleIncrement(prod.id, prod);
+                                      }}
+                                      disabled={isBusy || (prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity)}
+                                      className="w-6.5 h-6.5 rounded-lg bg-white hover:bg-emerald-100 text-slate-700 hover:text-[#043927] flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
+                                      title={prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity ? (locale === 'ar' ? 'تم الوصول للحد الأقصى للمخزون' : 'Max stock reached') : (locale === 'ar' ? 'زيادة' : 'Increase')}
+                                    >
+                                      <Plus className="w-3 h-3 stroke-[2.5]" />
+                                    </button>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleAddToCart(prod.id, prod);
+                                  }}
+                                  disabled={isBusy}
+                                  className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all hover:scale-[1.01] cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
+                                >
+                                  {isBusy ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <ShoppingBag className="w-3.5 h-3.5" />
+                                      <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
+                                    </>
+                                  )}
+                                </button>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      </Link>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          );
+          })()}
+        </section>
+
+        {/* 4. Promotional Cards Banner Section (Everyday Groceries, Home Needs, Snack Time) */}
+        <section className="pt-2">
+          {(() => {
+            const promoScroll = (dir) => {
+              if (promoScrollRef.current) {
+                const w = promoScrollRef.current.offsetWidth / 3;
+                promoScrollRef.current.scrollBy({ left: dir === 'left' ? -w : w, behavior: 'smooth' });
+              }
+            };
+            const cards = promoBanners.length > 0 ? promoBanners : PROMO_CARDS_BANNER;
+            if (cards.length <= 3) {
+              // Just use grid if 3 or fewer
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+                  {cards.map((card) => {
+                    const bgStyle = card.bg_color ? { backgroundColor: card.bg_color } : {};
+                    const bgClass = card.bg || '';
+                    const imgSrc = getImageUrl(card.image_url || card.img);
+                    const cardTitle = locale === 'ar' ? (card.title_ar || card.title_en) : (card.title_en || card.title_ar);
+                    const cardDesc = locale === 'ar' ? (card.desc_ar || card.desc_en) : (card.desc_en || card.desc_ar);
+                    const cardBtnText = locale === 'ar'
+                      ? (card.btn_text_ar || card.btn_ar || 'اطلب الآن')
+                      : (card.btn_text_en || card.btn_en || 'Order Now');
+                    const cardHref = card.btn_link || card.href || '/products';
+                    return (
+                      <div
+                        key={card.id}
+                        style={bgStyle}
+                        className={`${bgClass} rounded-[28px] relative overflow-hidden flex justify-between min-h-[200px] sm:min-h-[220px] shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group `}
+                      >
+                        <div className="p-4 sm:p-7 max-w-[62%] flex flex-col justify-between z-10">
+                          <div className="space-y-2">
+                            <h3 className="font-bold text-slate-900 text-xl sm:text-2xl leading-snug tracking-tight">{cardTitle}</h3>
+                            <p className="text-slate-800/80 font-medium text-xs sm:text-sm leading-relaxed">{cardDesc}</p>
+                          </div>
+                          <div className="pt-4">
+                            <Link href={cardHref} className="bg-white text-slate-900 hover:bg-slate-900 hover:text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl shadow-xs hover:shadow-md transition-all hover:scale-105 inline-block cursor-pointer">
+                              {cardBtnText}
+                            </Link>
+                          </div>
+                        </div>
+                        <div className="w-[38%] bg-white rounded-tl-[48px] rounded-bl-none absolute right-0 top-0 bottom-0 flex items-center justify-center p-3 shadow-inner">
+                          <img src={imgSrc} alt={cardTitle} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm" onError={(e) => { e.target.src = '/promo/promo_groceries.png'; }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            }
+            // Carousel for more than 3 cards
+            return (
+              <div className="relative group/promoslider">
+                {/* Left Arrow */}
+                <button
+                  type="button"
+                  onClick={() => promoScroll('left')}
+                  className="absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-md hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/promoslider:opacity-100 cursor-pointer active:scale-95 hidden sm:flex"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
+                </button>
+                {/* Right Arrow */}
+                <button
+                  type="button"
+                  onClick={() => promoScroll('right')}
+                  className="absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-md hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/promoslider:opacity-100 cursor-pointer active:scale-95 hidden sm:flex"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+                </button>
+                <div
+                  ref={promoScrollRef}
+                  className="flex gap-5 sm:gap-6 overflow-x-auto scrollbar-none scroll-smooth py-1"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                  {cards.map((card) => {
+                    const bgStyle = card.bg_color ? { backgroundColor: card.bg_color } : {};
+                    const bgClass = card.bg || '';
+                    const imgSrc = getImageUrl(card.image_url || card.img);
+                    const cardTitle = locale === 'ar' ? (card.title_ar || card.title_en) : (card.title_en || card.title_ar);
+                    const cardDesc = locale === 'ar' ? (card.desc_ar || card.desc_en) : (card.desc_en || card.desc_ar);
+                    const cardBtnText = locale === 'ar'
+                      ? (card.btn_text_ar || card.btn_ar || 'اطلب الآن')
+                      : (card.btn_text_en || card.btn_en || 'Order Now');
+                    const cardHref = card.btn_link || card.href || '/products';
+                    return (
+                      <div
+                        key={card.id}
+                        style={{ ...bgStyle, width: 'calc(33.333% - 14px)', minWidth: '260px', flexShrink: 0 }}
+                        className={`${bgClass} rounded-[28px] relative overflow-hidden flex justify-between min-h-[200px] sm:min-h-[220px] shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group `}
+                      >
+                        <div className="p-6 sm:p-7 max-w-[62%] flex flex-col justify-between z-10">
+                          <div className="space-y-2">
+                            <h3 className="font-bold text-slate-900 text-xl sm:text-2xl leading-snug tracking-tight">{cardTitle}</h3>
+                            <p className="text-slate-800/80 font-medium text-xs sm:text-sm leading-relaxed">{cardDesc}</p>
+                          </div>
+                          <div className="pt-4">
+                            <Link href={cardHref} className="bg-white text-slate-900 hover:bg-slate-900 hover:text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl shadow-xs hover:shadow-md transition-all hover:scale-105 inline-block cursor-pointer">
+                              {cardBtnText}
+                            </Link>
+                          </div>
+                        </div>
+                        <div className="w-[38%] bg-white rounded-tl-[48px] rounded-bl-none absolute right-0 top-0 bottom-0 flex items-center justify-center p-3 shadow-inner">
+                          <img src={imgSrc} alt={cardTitle} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm" onError={(e) => { e.target.src = '/promo/promo_groceries.png'; }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+        </section>
+
+
+        {/* 5. Dynamic Household Essentials & Groceries Sub-Category Showcase Grids */}
+        {categorySections && categorySections.length > 0 ? (
+          <section
+            style={{ backgroundColor: categorySections[0]?.bg_color || '#F6FFF8' }}
+            className="rounded-[28px] sm:rounded-[36px] p-6 sm:p-10 lg:p-12 space-y-10 sm:space-y-12 transition-all duration-300"
+          >
+            {categorySections.map((sec, secIdx) => {
+              const itemsToRender = (sec.items || []).slice(0, sec.max_items || 12);
+              if (itemsToRender.length === 0) return null;
+
+              return (
+                <SubCategorySlider
+                  key={sec.id || 'sec-' + secIdx}
+                  title={locale === 'ar' ? (sec.title_ar || sec.title_en) : (sec.title_en || sec.title_ar)}
+                  items={itemsToRender}
+                  locale={locale}
+                />
+              );
+            })}
+          </section>
+        ) : (
+          <section className="bg-[#F6FFF8] rounded-[28px] sm:rounded-[36px] p-6 sm:p-10 lg:p-12 space-y-10 sm:space-y-12">
+            {/* Sub-Section 1: Household Essentials */}
+            <SubCategorySlider
+              title={locale === 'ar' ? 'المستلزمات المنزلية' : 'Household Essentials'}
+              items={HOUSEHOLD_SUBCATEGORIES}
+              locale={locale}
+            />
+
+            {/* Sub-Section 2: Groceries */}
+            <SubCategorySlider
+              title={locale === 'ar' ? 'البقالة' : 'Groceries'}
+              items={GROCERIES_SUBCATEGORIES}
+              locale={locale}
+            />
+          </section>
+        )}
+
+        {/* 6. Household Essentials Featured Hero Banner Section (Full-Width Background with Overlaid Content) */}
+        {(() => {
+          const householdSection = cmsSections?.find((s) => s.section_key === 'household_featured');
+          if (householdSection && householdSection.is_active === false) return null;
+
+          const cfg = householdSection?.config || {};
+          const btnLink = cfg.btn_link || '/products?category=household';
+
+          // Dynamic Text Content Fields with Multilingual Fallbacks
+          const tagText = locale === 'ar' ? (cfg.category_tag_ar || 'مستلزمات منزلية') : (cfg.category_tag_en || 'HOUSEHOLD ESSENTIALS');
+          const h1Text = locale === 'ar' ? (cfg.headline_ar_1 || 'منزل أكثر نظافة،') : (cfg.headline_en_1 || 'A Cleaner Home,');
+          const h2Text = locale === 'ar' ? (cfg.headline_ar_2 || 'وحياة أكثر سعادة.') : (cfg.headline_en_2 || 'A Happier You.');
+          const descText = locale === 'ar'
+            ? (cfg.desc_ar || 'مستلزمات منزلية عالية الجودة لمنزل أكثر انتعاشاً ونظافة وراحة.')
+            : (cfg.desc_en || 'Quality household essentials for a fresher, cleaner and more comfortable home.');
+          const btnText = locale === 'ar' ? (cfg.btn_text_ar || 'تسوق الآن') : (cfg.btn_text_en || 'Shop Now');
+          const badge1 = locale === 'ar' ? (cfg.badge_1_ar || 'علامات موثوقة') : (cfg.badge_1_en || 'Trusted Brands');
+          const badge2 = locale === 'ar' ? (cfg.badge_2_ar || 'توصيل سريع وموثوق') : (cfg.badge_2_en || 'Fast & Reliable Delivery');
+          const badge3 = locale === 'ar' ? (cfg.badge_3_ar || 'قيمة يومية') : (cfg.badge_3_en || 'Everyday Value');
+
+          // Full-width hero background image source
+          const bgImg = cfg.bg_image_url || cfg.full_banner_url || cfg.image_url || '/banners/household_banner_exact.png';
+
+          // Background color and configurable overlay opacity
+          const bgColor = cfg.bg_color || '#FAF7F0';
+          const overlayOpacity = cfg.overlay_opacity !== undefined ? Number(cfg.overlay_opacity) : 0.78;
+
+          // Helper for hex to rgba
+          const hexToRgba = (hex, alpha) => {
+            if (!hex || typeof hex !== 'string') return `rgba(250, 247, 240, ${alpha})`;
+            let c = hex.replace('#', '');
+            if (c.length === 3) c = c.split('').map(x => x + x).join('');
+            const num = parseInt(c, 16);
+            if (isNaN(num)) return `rgba(250, 247, 240, ${alpha})`;
+            return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
+          };
+
+          // Directional gradient overlay: covers the text side heavily for readability,
+          // then smoothly fades out towards the opposite side so the imagery shows through.
+          const overlayGradient = locale === 'ar'
+            ? `linear-gradient(270deg, ${hexToRgba(bgColor, overlayOpacity)} 0%, ${hexToRgba(bgColor, Math.min(1, overlayOpacity * 0.95))} 40%, ${hexToRgba(bgColor, overlayOpacity * 0.45)} 75%, ${hexToRgba(bgColor, 0)} 100%)`
+            : `linear-gradient(90deg, ${hexToRgba(bgColor, overlayOpacity)} 0%, ${hexToRgba(bgColor, Math.min(1, overlayOpacity * 0.95))} 40%, ${hexToRgba(bgColor, overlayOpacity * 0.45)} 75%, ${hexToRgba(bgColor, 0)} 100%)`;
+
+          return (
+            <section
+              style={{
+                backgroundColor: bgColor,
+                backgroundImage: `url('${getImageUrl(bgImg)}')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+              }}
+              dir={locale === 'ar' ? 'rtl' : 'ltr'}
+              className="rounded-[20px] sm:rounded-[28px] lg:rounded-[32px] overflow-hidden border border-amber-200/50 shadow-xs hover:shadow-md transition-all duration-300 relative group min-h-[320px] sm:min-h-[360px] lg:min-h-[390px] flex items-center"
+            >
+              {/* Directional Readability Overlay Layer */}
+              <div
+                className="absolute inset-0 z-0 pointer-events-none transition-opacity duration-300"
+                style={{
+                  background: overlayGradient,
+                }}
+              />
+
+              {/* Overlaid Banner Content */}
+              <div className="relative z-10 w-full max-w-xl lg:max-w-2xl p-6 sm:p-10 lg:p-12 space-y-4 text-left rtl:text-right">
+                {/* Category Tag */}
+                {tagText && (
+                  <span className="text-[#043927] font-black text-xs sm:text-[13px] uppercase tracking-[0.22em] block">
+                    {tagText}
+                  </span>
+                )}
+
+                {/* Dual-color Headline with Leaf Graphic */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h2 className="text-2xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.14]">
+                    <span className="text-[#043927] block">{h1Text}</span>
+                    <span className="text-[#C68A27] inline-block mt-0.5">{h2Text}</span>
+                  </h2>
+                  <div className="inline-block self-end mb-2">
+                    <svg className="w-6 h-6 text-[#043927] fill-[#043927]" viewBox="0 0 24 24">
+                      <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66l.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Subheadline / Description */}
+                {descText && (
+                  <p className="text-[#475569] font-medium text-sm sm:text-base max-w-lg leading-relaxed">
+                    {descText}
+                  </p>
+                )}
+
+                {/* CTA Button */}
+                <div className="pt-1">
+                  <Link
+                    href={btnLink}
+                    className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all hover:scale-105 cursor-pointer group/btn"
+                  >
+                    <span>{btnText}</span>
+                    <ArrowRight className="w-4 h-4 rtl:rotate-180 group-hover/btn:translate-x-1 rtl:group-hover/btn:-translate-x-1 transition-transform" />
+                  </Link>
+                </div>
+
+                {/* Trust Badges */}
+                {(badge1 || badge2 || badge3) && (
+                  <div className="pt-4 border-t border-[#043927]/15 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-[#043927] font-bold">
+                    {badge1 && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0">
+                          <ShieldCheck className="w-4 h-4 text-[#043927]" />
+                        </div>
+                        <span className="text-[12px] sm:text-[13px]">{badge1}</span>
+                      </div>
+                    )}
+
+                    {badge1 && badge2 && <div className="hidden sm:block w-px h-3.5 bg-[#043927]/25" />}
+
+                    {badge2 && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0">
+                          <Truck className="w-4 h-4 text-[#043927]" />
+                        </div>
+                        <span className="text-[12px] sm:text-[13px]">{badge2}</span>
+                      </div>
+                    )}
+
+                    {badge2 && badge3 && <div className="hidden sm:block w-px h-3.5 bg-[#043927]/25" />}
+
+                    {badge3 && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0">
+                          <Leaf className="w-4 h-4 text-[#043927]" />
+                        </div>
+                        <span className="text-[12px] sm:text-[13px]">{badge3}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
+          );
+        })()}
+
+        {/* 7. Popular Picks Product 2-Row Slider Section */}
+        <section className="space-y-5 pt-2 select-none">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight">
+              {locale === 'ar' ? 'الأكثر شعبية' : 'Popular Picks'}
+            </h2>
+
+            {/* Desktop Navigation Arrows in Header */}
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => scrollPopularPicks('prev')}
+                disabled={!canScrollPopularLeft}
+                className="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
+                aria-label={locale === 'ar' ? 'السابق' : 'Previous popular picks'}
+              >
+                <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollPopularPicks('next')}
+                disabled={!canScrollPopularRight}
+                className="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
+                aria-label={locale === 'ar' ? 'التالي' : 'Next popular picks'}
+              >
+                <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+              </button>
+            </div>
+          </div>
+
+          {/* Cards Slider Container with Floating Edge Overlays */}
+          <div className="relative group/popularCarousel">
+            {/* Left Edge Floating Arrow */}
+            <button
+              type="button"
+              onClick={() => scrollPopularPicks('prev')}
+              disabled={!canScrollPopularLeft}
+              className="absolute -left-3.5 sm:-left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 shadow-lg hover:bg-white flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/popularCarousel:opacity-100 cursor-pointer active:scale-95 disabled:opacity-0 disabled:pointer-events-none hidden sm:flex"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="w-5 h-5 rtl:rotate-180 text-slate-700" />
+            </button>
+
+            {/* Right Edge Floating Arrow */}
+            <button
+              type="button"
+              onClick={() => scrollPopularPicks('next')}
+              disabled={!canScrollPopularRight}
+              className="absolute -right-3.5 sm:-right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 shadow-lg hover:bg-white flex items-center justify-center text-slate-800 transition-all opacity-0 group-hover/popularCarousel:opacity-100 cursor-pointer active:scale-95 disabled:opacity-0 disabled:pointer-events-none hidden sm:flex"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="w-5 h-5 rtl:rotate-180 text-slate-700" />
+            </button>
+
+            {/* 2-Row Horizontal Scroll Track */}
+            <div
+              ref={popularScrollRef}
+              onScroll={checkPopularScroll}
+              className="flex items-stretch gap-4 overflow-x-auto scrollbar-none py-2 px-1 scroll-smooth snap-x snap-mandatory"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {(() => {
+                const apiPopular = products.filter((p) => p.is_popular_pick);
+                const seenIds = new Set(apiPopular.map((p) => String(p.id || p._id || '')));
+                const seenNames = new Set(apiPopular.map((p) => (p.name_en || p.title_en || '').toLowerCase().trim()));
+                const supplemental = POPULAR_PRODUCTS.filter(
+                  (p) => !seenIds.has(String(p.id)) && !seenNames.has((p.name_en || '').toLowerCase().trim())
+                );
+                const displayList = [...apiPopular, ...supplemental];
+
+                // Chunk items into pairs of 2 to display 2 rows per column in the horizontal slider
+                const columns = [];
+                for (let i = 0; i < displayList.length; i += 2) {
+                  columns.push(displayList.slice(i, i + 2));
+                }
+
+                return columns.map((colItems, colIdx) => (
+                  <div
+                    key={`popular-col-${colIdx}`}
+                    className="flex flex-col gap-4 w-[calc((100%-16px)/2)] sm:w-[calc((100%-32px)/3)] md:w-[calc((100%-48px)/4)] lg:w-[calc((100%-64px)/5)] shrink-0 snap-start min-w-0"
+                  >
+                    {colItems.map((prod, idx) => {
+                      const titleEn = prod.name_en || prod.title_en;
+                      const titleAr = prod.name_ar || prod.title_ar || titleEn;
+                      const title = locale === 'ar' ? titleAr : titleEn;
+
+                      const brandEn = prod.brand;
+                      const brandAr = prod.brand_ar || brandEn;
+                      const brandName = locale === 'ar' ? brandAr : brandEn;
+
+                      let imgRaw = '';
+                      if (Array.isArray(prod.images) && prod.images.length > 0) {
+                        imgRaw = typeof prod.images[0] === 'string' ? prod.images[0] : (prod.images[0]?.image_url || prod.images[0]?.url);
+                      } else if (prod.image_url) {
+                        imgRaw = prod.image_url;
+                      } else if (prod.img) {
+                        imgRaw = prod.img;
+                      }
+
+                      if (!imgRaw && Array.isArray(prod.variants) && prod.variants.length > 0) {
+                        for (const v of prod.variants) {
+                          const vPrimary = (Array.isArray(v.images) && v.images.length > 0)
+                            ? (v.images.find((i) => i.is_primary)?.image_url || v.images[0]?.image_url || (typeof v.images[0] === 'string' ? v.images[0] : null))
+                            : v.image_url;
+                          if (vPrimary) {
+                            imgRaw = vPrimary;
+                            break;
+                          }
+                        }
+                      }
+                      const finalImg = imgRaw ? getImageUrl(imgRaw) : 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+
+                      const hasVariants = Boolean(prod.has_variants && prod.variants && prod.variants.length > 0);
+                      const currentPrice = parseFloat(prod.price || 0);
+                      let finalPrice = currentPrice;
+                      let originalPrice = null;
+
+                      if (hasVariants) {
+                        const activeVars = prod.variants.filter((v) => v.is_active !== false);
+                        const varsToUse = activeVars.length > 0 ? activeVars : prod.variants;
+                        const prices = varsToUse
+                          .map((v) => parseFloat(v.discount_price || v.price))
+                          .filter((p) => !isNaN(p) && p > 0);
+                        if (prices.length > 0) {
+                          finalPrice = Math.min(...prices);
+                        }
+                      } else {
+                        const isDiscounted = prod.discount_price && parseFloat(prod.discount_price) < currentPrice;
+                        finalPrice = isDiscounted ? parseFloat(prod.discount_price) : currentPrice;
+                        originalPrice = isDiscounted ? currentPrice : (prod.purchase_price ? parseFloat(prod.purchase_price) : null);
+                      }
+
+                      const specs = hasVariants
+                        ? `${prod.variants.length} ${locale === 'ar' ? 'خيارات متاحة' : 'Variants Available'}`
+                        : (prod.unit_value && prod.unit_type && prod.pack_size
+                          ? `${prod.unit_value} ${prod.unit_type} (${prod.pack_size})`
+                          : locale === 'ar'
+                            ? prod.specs_ar
+                            : prod.specs_en);
+                      const hasRatings = (prod.reviews_count !== undefined && prod.reviews_count !== null && Number(prod.reviews_count) > 0) || (prod.rating !== undefined && prod.rating !== null && Number(prod.rating) > 0);
+                      const ratingVal = hasRatings && prod.rating ? Number(prod.rating).toFixed(1) : null;
+                      const reviewsVal = hasRatings ? Number(prod.reviews_count || prod.reviews || 0).toLocaleString() : 0;
+
+                      const totalVariantStock = hasVariants && Array.isArray(prod.variants)
+                        ? prod.variants.reduce((acc, v) => acc + parseInt(v.stock_quantity || '0', 10), 0)
+                        : 0;
+                      const isOutOfStock = hasVariants
+                        ? (prod.variants.length > 0 && totalVariantStock <= 0)
+                        : (prod.stock_quantity !== undefined && prod.stock_quantity !== null && parseInt(prod.stock_quantity, 10) <= 0);
+
+                      return (
+                        <Link
+                          key={prod.id ? `pop-${prod.id}-${colIdx}-${idx}` : `pop-${colIdx}-${idx}`}
+                          href={prod.id ? `/products/${prod.id}` : '/products'}
+                          className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between relative cursor-pointer flex-1"
+                        >
+                          {/* Top Badges */}
+                          <div className="flex items-center justify-between z-10 mb-1">
+                            {isOutOfStock ? (
+                              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                                <Ban className="w-2.5 h-2.5 text-white" />
+                                <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
+                              </span>
+                            ) : prod.is_best_seller === true ? (
+                              <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+                                <Star className="w-2.5 h-2.5 fill-current text-white" />
+                                <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>
+                              </span>
+                            ) : null}
+
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleWishlist(prod);
+                              }}
+                              className="text-slate-300 hover:text-rose-500 transition-colors cursor-pointer p-0.5 ml-auto"
+                              title="Add to Wishlist"
+                            >
+                              <Heart className={`w-4 h-4 ${isInWishlist(prod.id) ? 'text-rose-500 fill-rose-500' : ''}`} />
+                            </button>
+                          </div>
+
+                          {/* Product Image Container */}
+                          <div className="w-full aspect-[4/3] rounded-xl p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
+                            {isOutOfStock && (
+                              <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl">
+                                <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                                  {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                                </span>
+                              </div>
+                            )}
+                            <img
+                              src={finalImg}
+                              alt={title}
+                              className={`w-full h-full object-contain transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+                              }}
+                            />
+                          </div>
+
+                          {/* Info Content */}
+                          <div className="space-y-1 pt-0.5 flex-1 flex flex-col justify-between">
+                            <div>
+                              {/* Brand & In Stock Tag */}
+                              <div className="flex items-center justify-between text-[11px] font-medium leading-none mb-1">
+                                <span className="text-slate-400 truncate">{brandName}</span>
+                                {isOutOfStock ? (
+                                  <span className="text-rose-600 font-bold shrink-0">
+                                    {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                                  </span>
+                                ) : hasVariants ? (
+                                  <span className="text-[#00B074] font-bold shrink-0">
+                                    {locale === 'ar' ? 'متوفر بخيارات' : 'Multi-Variant'}
+                                  </span>
+                                ) : (
+                                  <span className="text-[#00B074] font-bold shrink-0">
+                                    {locale === 'ar' ? 'متوفر' : 'In Stock'}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Product Title */}
+                              <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-snug group-hover:text-[#043927] transition-colors mb-1">
+                                {title}
+                              </h3>
+
+                              {/* Specs / Tags */}
+                              <p className="text-[10px] text-slate-400 font-normal truncate mb-1">
+                                {specs}
+                              </p>
+
+                              {/* Rating & Reviews */}
+                              <div className="flex items-center justify-between text-[11px] py-1 border-t border-slate-100">
+                                <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
+                                  {hasRatings ? (
+                                    <>
+                                      <span className="text-amber-400 font-bold">★</span>
+                                      <span className="font-bold text-slate-700">{ratingVal}</span>
+                                      <span className="text-slate-400">({reviewsVal})</span>
+                                    </>
+                                  ) : (
+                                    <span className="text-slate-400 font-medium text-[10px]">
+                                      {locale === 'ar' ? '' : ''}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Price & Add to Cart / Quantity Action Row */}
+                            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 mt-auto">
+                              <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                                <span className="text-sm sm:text-[15px] font-black text-slate-900 whitespace-nowrap leading-tight">
+                                  <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
+                                  {finalPrice.toFixed(2)}
+                                </span>
+                                {!hasVariants && originalPrice && (
+                                  <span className="text-[10px] text-slate-400 line-through font-normal whitespace-nowrap">
+                                    SAR {originalPrice.toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Quantity Counter, Select Options, or Add to Cart Button */}
+                              {(() => {
+                                if (isOutOfStock) {
+                                  return (
+                                    <button
+                                      type="button"
+                                      disabled
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                      className="h-8 w-full rounded-xl bg-slate-100 border border-slate-200 text-slate-400 font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 cursor-not-allowed select-none"
+                                    >
+                                      <Ban className="w-3.5 h-3.5 text-slate-400" />
+                                      <span>{locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>
+                                    </button>
+                                  );
+                                }
+
+                                if (hasVariants) {
+                                  return (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setVariantModalProduct(prod);
+                                      }}
+                                      className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#008938] active:scale-95 text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                    >
+                                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                                      <span>{locale === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
+                                    </button>
+                                  );
+                                }
+
+                                const cartItem = getCartItem(prod.id);
+                                const inCart = cartItem && cartItem.quantity > 0;
+                                const isBusy = addingId === prod.id || actionId === prod.id;
+
+                                if (inCart) {
+                                  return (
+                                    <div
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                      className="h-8 w-full bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between p-0.5 px-1 shadow-2xs"
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          handleDecrement(prod.id);
+                                        }}
+                                        disabled={isBusy}
+                                        className="w-6.5 h-6.5 rounded-lg bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                                        title={cartItem.quantity === 1 ? (locale === 'ar' ? 'حذف' : 'Remove') : (locale === 'ar' ? 'إنقاص' : 'Decrease')}
+                                      >
+                                        <Minus className="w-3 h-3 stroke-[2.5]" />
+                                      </button>
+
+                                      <span className="flex-1 text-center text-xs font-black text-slate-900 select-none">
+                                        {isBusy ? (
+                                          <Loader2 className="w-3 h-3 animate-spin mx-auto text-emerald-600" />
+                                        ) : (
+                                          cartItem.quantity
+                                        )}
+                                      </span>
+
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          handleIncrement(prod.id, prod);
+                                        }}
+                                        disabled={isBusy || (prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity)}
+                                        className="w-6.5 h-6.5 rounded-lg bg-[#00B074] hover:bg-[#009663] text-white flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                                        title={prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity ? (locale === 'ar' ? 'تم الوصول للحد الأقصى للمخزون' : 'Max stock reached') : (locale === 'ar' ? 'زيادة' : 'Increase')}
+                                      >
+                                        <Plus className="w-3 h-3 stroke-[2.5]" />
+                                      </button>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleAddToCart(prod.id, prod);
+                                    }}
+                                    disabled={isBusy}
+                                    className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all hover:scale-[1.01] cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
+                                  >
+                                    {isBusy ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <>
+                                        <ShoppingBag className="w-3.5 h-3.5" />
+                                        <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
+                                      </>
+                                    )}
+                                  </button>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        </section>
+
+        {/* 8. Freshness at your Doorstep Banner Section */}
+        <section className="py-10 sm:py-14 text-center space-y-3 max-w-3xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-bold text-[#333333] tracking-tight leading-snug">
+            {locale === 'ar' ? 'الطازج حتى عتبة دارك' : 'Freshness at your Doorstep'}
+          </h2>
+          <p className="text-[#666666] font-normal text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
+            {locale === 'ar'
+              ? 'تسوق البقالة عالية الجودة والفواكه الطازجة والمستلزمات اليومية والوجبات الخفيفة السريعة التي تصل مباشرة إلى منزلك.'
+              : 'Shop Quality groceries, quality fruits, daily essentials and quick snacks delivered straight to your Home.'}
+          </p>
+        </section>
+
+
+
+
+
+        {/* Multi-Variant Add to Cart Selection Modal */}
+        {variantModalProduct && (
+          <VariantSelectionModal
+            product={variantModalProduct}
+            isOpen={Boolean(variantModalProduct)}
+            onClose={() => setVariantModalProduct(null)}
+          />
+        )}
+
+      </div>
+    </div>
+  );
+}

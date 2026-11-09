@@ -1,0 +1,96 @@
+{
+  "nav": {
+    "brand": "Aura Fresh Supermart",
+    "home": "Home",
+    "products": "Products",
+    "about": "About Us",
+    "contact": "Contact Us",
+    "categories": "Grocery Categories",
+    "cart": "Cart",
+    "myOrders": "My Orders",
+    "profile": "Profile",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "driverPortal": "Driver Portal",
+    "adminPanel": "Admin Panel",
+    "switchLang": "العربية"
+  },
+  "home": {
+    "heroTitle": "Fresh Grocery & Daily Produce Delivered to Your Doorstep",
+    "heroSubtitle": "100% Farm-fresh organic fruits, vegetables, dairy, farm eggs & daily essentials delivered with express 30-min delivery, live GPS tracking and ZATCA e-invoicing.",
+    "shopNow": "Shop Fresh Produce",
+    "featuredProducts": "Fresh Produce & Daily Deals",
+    "exploreCategories": "Shop by Grocery Category",
+    "fastDelivery": "30-Min Fast Express Delivery",
+    "securePayment": "Verified Bank Payment",
+    "zatcaInvoice": "ZATCA Compliant E-Invoice"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "subtotal": "Subtotal",
+    "vat": "VAT (15%)",
+    "deliveryFee": "Delivery Fee",
+    "total": "Grand Total",
+    "checkout": "Proceed to Checkout",
+    "freeDeliveryMsg": "Add items worth SAR 500 or more for Free Delivery!"
+  },
+  "checkout": {
+    "title": "Order Checkout",
+    "selectAddress": "Select Delivery Address",
+    "addAddress": "Add New Address",
+    "orderSummary": "Order Summary",
+    "placeOrder": "Place Order & Pay via Bank Transfer",
+    "bankInstructionsTitle": "Bank Transfer Instructions",
+    "bankName": "Bank AlJazira / Al Rajhi Bank",
+    "iban": "SA03 8000 0000 6080 1016 7519",
+    "accountName": "Single Vendor E-Commerce Trading Co.",
+    "submitPayment": "Submit Payment Proof"
+  },
+  "orders": {
+    "title": "Order History",
+    "orderNum": "Order #",
+    "date": "Date",
+    "status": "Status",
+    "total": "Total",
+    "actions": "Actions",
+    "viewDetails": "View Order",
+    "trackDelivery": "Live GPS Tracking",
+    "downloadInvoice": "ZATCA Invoice (PDF)"
+  },
+  "tracking": {
+    "title": "Live Delivery Tracking",
+    "driverAssigned": "Driver Assigned",
+    "outForDelivery": "Out For Delivery",
+    "arrived": "Driver Arrived at Destination",
+    "delivered": "Package Delivered",
+    "lastUpdated": "Last updated position"
+  },
+  "driver": {
+    "title": "Driver Web Portal",
+    "dashboard": "Driver Dashboard",
+    "availability": "Current Status",
+    "online": "Available for Dispatch",
+    "busy": "On Delivery Run",
+    "offline": "Offline",
+    "assignedDeliveries": "Assigned Deliveries",
+    "acceptDelivery": "Accept Delivery",
+    "startDelivery": "Start Delivery (Out For Delivery)",
+    "markArrived": "Mark as Arrived",
+    "markDelivered": "Complete Delivery",
+    "gpsSharingActive": "Live GPS Location Sharing Active"
+  },
+  "admin": {
+    "dashboard": "Admin Control Center",
+    "totalSales": "Total Revenue",
+    "totalOrders": "Total Orders",
+    "activeDrivers": "Active Drivers",
+    "totalCustomers": "Customers",
+    "pendingPayments": "Pending Bank Payments",
+    "verifyPayment": "Verify Payment",
+    "rejectPayment": "Reject Payment",
+    "assignDriver": "Assign Driver",
+    "createDriver": "Create New Driver Account"
+  }
+}

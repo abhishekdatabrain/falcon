@@ -1,0 +1,96 @@
+{
+  "nav": {
+    "brand": "سوبرماركت أورا الطازج",
+    "home": "الرئيسية",
+    "products": "المنتجات",
+    "about": "من نحن",
+    "contact": "اتصل بنا",
+    "categories": "أقسام البقالة",
+    "cart": "سلة التسوق",
+    "myOrders": "طلباتي",
+    "profile": "الحساب",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "logout": "تسجيل الخروج",
+    "driverPortal": "بوابة السائق",
+    "adminPanel": "لوحة التحكم",
+    "switchLang": "English"
+  },
+  "home": {
+    "heroTitle": "مقاضيك البقالة والمواد الطازجة تصلك مباشرة إلى منزلك",
+    "heroSubtitle": "فواكه وخضروات عضوية طازجة 100%، ألبان، بيض مزارع، ومستلزمات يومية مع توصيل سريع خلال 30 دقيقة، وتتبع مباشر عبر GPS وفاتورة معتمدة.",
+    "shopNow": "تسوق المقاضي الطازجة",
+    "featuredProducts": "عروض المنتجات والمقاضي الطازجة",
+    "exploreCategories": "تصفح بقسم المنتجات",
+    "fastDelivery": "توصيل سريع خلال 30 دقيقة",
+    "securePayment": "دفع آمن بالتحويل البنكي",
+    "zatcaInvoice": "فاتورة هيئة الزكاة والضريبة (ZATCA)"
+  },
+  "cart": {
+    "title": "سلة التسوق",
+    "empty": "سلة التسوق فارغة حالياً",
+    "subtotal": "المجموع الفرعي",
+    "vat": "ضريبة القيمة المضافة (15%)",
+    "deliveryFee": "رسوم التوصيل",
+    "total": "المجموع الكلي",
+    "checkout": "متابعة الشراء",
+    "freeDeliveryMsg": "أضف منتجات بقيمة 500 ريال أو أكثر للحصول على توصيل مجاني!"
+  },
+  "checkout": {
+    "title": "إتمام الطلب",
+    "selectAddress": "اختر عنوان التوصيل",
+    "addAddress": "إضافة عنوان جديد",
+    "orderSummary": "ملخص الطلب",
+    "placeOrder": "تأكيد الطلب والدفع عبر التحويل البنكي",
+    "bankInstructionsTitle": "تعليمات التحويل البنكي",
+    "bankName": "مصرف الراجحي / بنك الجزيرة",
+    "iban": "SA03 8000 0000 6080 1016 7519",
+    "accountName": "شركة التجارة الإلكترونية الموحدة",
+    "submitPayment": "إرسال إشعار التحويل البنكي"
+  },
+  "orders": {
+    "title": "سجل الطلبات",
+    "orderNum": "رقم الطلب #",
+    "date": "التاريخ",
+    "status": "الحالة",
+    "total": "المجموع",
+    "actions": "الإجراءات",
+    "viewDetails": "عرض التفاصيل",
+    "trackDelivery": "التتبع المباشر GPS",
+    "downloadInvoice": "الفاتورة الضريبية (PDF)"
+  },
+  "tracking": {
+    "title": "تتبع التوصيل المباشر",
+    "driverAssigned": "تم تعيين السائق",
+    "outForDelivery": "جاري التوصيل",
+    "arrived": "وصل السائق إلى موقع التوصيل",
+    "delivered": "تم التسليم بنجاح",
+    "lastUpdated": "آخر تحديث للموقع"
+  },
+  "driver": {
+    "title": "بوابة السائق الإلكترونية",
+    "dashboard": "لوحة السائق",
+    "availability": "الحالة الحالية",
+    "online": "متاح للتوصيل",
+    "busy": "في رحلة توصيل",
+    "offline": "غير متاح",
+    "assignedDeliveries": "الطلبات المعينة",
+    "acceptDelivery": "قبول مهمة التوصيل",
+    "startDelivery": "بدء التوصيل (خرج للتوصيل)",
+    "markArrived": "تأكيد الوصول",
+    "markDelivered": "إتمام التوصيل",
+    "gpsSharingActive": "مشاركة الموقع الجغرافي نشطة حالياً"
+  },
+  "admin": {
+    "dashboard": "مركز إدارة المنصة",
+    "totalSales": "إجمالي المبيعات",
+    "totalOrders": "إجمالي الطلبات",
+    "activeDrivers": "السائقين النشطين",
+    "totalCustomers": "العملاء",
+    "pendingPayments": "التحويلات البنكية المعلقة",
+    "verifyPayment": "تأكيد التحويل",
+    "rejectPayment": "رفض التحويل",
+    "assignDriver": "تعيين سائق",
+    "createDriver": "إضافة حساب سائق جديد"
+  }
+}

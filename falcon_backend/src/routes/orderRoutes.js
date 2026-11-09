@@ -1,0 +1,32 @@
+const express = require('express');
+const router = express.Router();
+const orderController = require('../controllers/orderController');
+const { authenticate, optionalAuthenticate } = require('../middleware/auth');
+const { authorize, checkPermission } = require('../middleware/rbac');
+const ROLES = require('../constants/roles');
+
+// Public Order Confirmation Route (by UUID)
+router.get('/confirmation/:id', (req, res, next) => orderController.getOrderConfirmation(req, res, next));
+
+// Order Tracking Route (Protected / Ownership Validated)
+router.get('/track/:identifier', optionalAuthenticate, (req, res, next) => orderController.trackOrder(req, res, next));
+
+router.use(authenticate);
+
+// Customer Routes
+router.post('/', authorize(ROLES.CUSTOMER), (req, res, next) => orderController.createOrder(req, res, next));
+router.get('/my-orders', authorize(ROLES.CUSTOMER), (req, res, next) => orderController.getMyOrders(req, res, next));
+
+// Common Protected Route (Customer: own order, Driver: assigned order, Admin: any order)
+router.get('/:id', (req, res, next) => orderController.getOrderById(req, res, next));
+
+// Customer Order Cancellation Route (Strictly Customer Only)
+router.post('/:id/cancel', authorize(ROLES.CUSTOMER), (req, res, next) => orderController.cancelOrder(req, res, next));
+
+// Customer Order Reorder (Order Again) Route
+router.post('/:id/reorder', authorize(ROLES.CUSTOMER), (req, res, next) => orderController.reorder(req, res, next));
+
+// Admin Routes
+router.get('/', authorize(ROLES.ADMIN), checkPermission('orders.view'), (req, res, next) => orderController.getAllOrdersAdmin(req, res, next));
+
+module.exports = router;

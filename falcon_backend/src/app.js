@@ -1,0 +1,90 @@
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
+const morgan = require('morgan');
+const path = require('path');
+require('dotenv').config();
+
+const routes = require('./routes');
+const errorHandler = require('./middleware/errorHandler');
+const { apiLimiter } = require('./middleware/rateLimiter');
+
+const app = express();
+
+// Security Middlewares
+app.use(helmet({
+  contentSecurityPolicy: false, // Allows flexible media/map rendering on frontends
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allows cross-origin image loading for frontend on port 3001
+}));
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, postman) or any localhost origin in dev
+    if (!origin || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) || origin === process.env.CLIENT_URL) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all dev origins
+    }
+  },
+  credentials: true,
+}));
+
+// Request Logging
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+// Body & Cookie Parsers
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(cookieParser());
+
+// CSRF Protection for state-changing customer requests
+const { csrfProtection } = require('./middleware/csrf');
+app.use('/api', csrfProtection);
+
+// Static File Uploads Directory with Cross-Origin headers
+const uploadDir = process.env.UPLOAD_DIR || 'uploads';
+const uploadsPath = path.join(__dirname, '..', uploadDir);
+const staticUploadsHandler = [
+  (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(uploadsPath),
+];
+
+app.use('/uploads', staticUploadsHandler);
+app.use('/api/v1/uploads', staticUploadsHandler);
+app.use('/api/uploads', staticUploadsHandler);
+
+// Subcategories static assets handler (for both /subcategories and /api/v1/subcategories)
+const subcategoriesPath = path.join(uploadsPath, 'subcategories');
+const staticSubcategoriesHandler = [
+  (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(subcategoriesPath),
+];
+app.use('/subcategories', staticSubcategoriesHandler);
+app.use('/api/v1/subcategories', staticSubcategoriesHandler);
+
+// Rate Limiter
+app.use('/api/', apiLimiter);
+
+// API v1 Routing
+app.use('/api/v1', routes);
+
+// Health Check Endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Centralized Error Handling Middleware
+app.use(errorHandler);
+
+module.exports = app;
