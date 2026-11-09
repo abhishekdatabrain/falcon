@@ -28,6 +28,7 @@ app.use(cors({
     }
   },
   credentials: true,
+  exposedHeaders: ['x-new-access-token'],
 }));
 
 // Request Logging

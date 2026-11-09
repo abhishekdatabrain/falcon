@@ -88,7 +88,7 @@ class AuthController {
 
       const csrfToken = setAuthCookies(res, accessToken, refreshToken, user.role);
 
-      return sendSuccess(res, 'Login successful', { user, accessToken, csrfToken });
+      return sendSuccess(res, 'Login successful', { user, accessToken, refreshToken, csrfToken });
     } catch (error) {
       const fieldErrors = {};
       if (error.field && error.field !== 'general') {
@@ -101,8 +101,8 @@ class AuthController {
   async refresh(req, res, next) {
     try {
       const reqRole = (req.headers['x-auth-role'] || '').toUpperCase();
-      let refreshToken = null;
-      if (req.cookies) {
+      let refreshToken = req.body?.refreshToken || req.headers['x-refresh-token'] || null;
+      if (!refreshToken && req.cookies) {
         if (reqRole === 'ADMIN') refreshToken = req.cookies.admin_refresh_token || req.cookies.refresh_token;
         else if (reqRole === 'DRIVER') refreshToken = req.cookies.driver_refresh_token || req.cookies.refresh_token;
         else if (reqRole === 'CUSTOMER') refreshToken = req.cookies.customer_refresh_token || req.cookies.refresh_token;
@@ -114,7 +114,11 @@ class AuthController {
       const { accessToken: newAccessToken, refreshToken: newRefreshToken, role } = await authService.refreshTokens(refreshToken, reqInfo);
 
       const csrfToken = setAuthCookies(res, newAccessToken, newRefreshToken, role || reqRole, req.cookies?.customer_csrf_token);
-      return sendSuccess(res, 'Tokens refreshed successfully', { csrfToken });
+      return sendSuccess(res, 'Tokens refreshed successfully', {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        csrfToken,
+      });
     } catch (error) {
       clearAuthCookies(res, req.headers['x-auth-role']);
       return sendError(res, error.message || 'Token refresh failed', [], 401);
@@ -124,8 +128,8 @@ class AuthController {
   async logout(req, res, next) {
     const role = (req.body?.role || req.headers['x-auth-role'] || req.user?.role || '').toUpperCase();
     try {
-      let refreshToken = null;
-      if (req.cookies) {
+      let refreshToken = req.body?.refreshToken || req.headers['x-refresh-token'] || null;
+      if (!refreshToken && req.cookies) {
         if (role === 'ADMIN') refreshToken = req.cookies.admin_refresh_token;
         else if (role === 'DRIVER') refreshToken = req.cookies.driver_refresh_token;
         else if (role === 'CUSTOMER') refreshToken = req.cookies.customer_refresh_token || req.cookies.refresh_token;

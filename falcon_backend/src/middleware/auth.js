@@ -39,6 +39,11 @@ const getTokensFromReq = (req) => {
     else refreshToken = req.cookies.customer_refresh_token || req.cookies.refresh_token;
   }
 
+  // Support mobile clients passing refresh token in headers or body
+  if (!refreshToken && (req.headers['x-refresh-token'] || req.body?.refreshToken)) {
+    refreshToken = req.headers['x-refresh-token'] || req.body?.refreshToken;
+  }
+
   if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     token = req.headers.authorization.split(' ')[1];
   }
@@ -69,6 +74,7 @@ const authenticate = async (req, res, next) => {
       if (decodedRefresh) {
         const newAccessToken = generateAccessToken({ id: decodedRefresh.id, role: decodedRefresh.role });
         setAuthCookies(res, newAccessToken, refreshToken, decodedRefresh.role);
+        res.setHeader('x-new-access-token', newAccessToken);
         token = newAccessToken;
         decoded = decodedRefresh;
       }
@@ -148,6 +154,7 @@ const optionalAuthenticate = async (req, res, next) => {
       if (decodedRefresh) {
         const newAccessToken = generateAccessToken({ id: decodedRefresh.id, role: decodedRefresh.role });
         setAuthCookies(res, newAccessToken, refreshToken, decodedRefresh.role);
+        res.setHeader('x-new-access-token', newAccessToken);
         token = newAccessToken;
         decoded = decodedRefresh;
       }
