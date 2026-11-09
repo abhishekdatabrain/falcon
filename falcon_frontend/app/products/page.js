@@ -851,7 +851,7 @@ function ProductsCatalogContent() {
                     </button>
                   </div>
 
-                  {/* Product Image Container */  }
+                  {/* Product Image Container */}
                   <div className="w-full aspect-[4/3] rounded-xl p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
                     {isOutOfStock && (
                       <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl">
