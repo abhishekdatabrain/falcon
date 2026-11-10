@@ -243,6 +243,63 @@ export default function ProductDetailPage() {
   const [canScrollRelLeft, setCanScrollRelLeft] = useState(false);
   const [canScrollRelRight, setCanScrollRelRight] = useState(true);
   const [variantModalProduct, setVariantModalProduct] = useState(null);
+  const imageContainerRef = useRef(null);
+  const mainImageRef = useRef(null);
+  const lastTouchTimeRef = useRef(0);
+
+  const canHoverZoom = (e) => {
+    if (typeof window === 'undefined') return false;
+    if (e?.nativeEvent?.sourceCapabilities?.firesTouchEvents) return false;
+    if (Date.now() - lastTouchTimeRef.current < 600) return false;
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  };
+
+  const resetImageZoom = () => {
+    if (mainImageRef.current) {
+      mainImageRef.current.style.transform = 'scale(1)';
+    }
+    if (imageContainerRef.current) {
+      imageContainerRef.current.style.cursor = '';
+    }
+  };
+
+  const updateImageZoom = (e) => {
+    if (!canHoverZoom(e)) return;
+    if (e.target && typeof e.target.closest === 'function' && e.target.closest('button')) {
+      resetImageZoom();
+      return;
+    }
+    const container = imageContainerRef.current;
+    const img = mainImageRef.current;
+    if (!container || !img) return;
+
+    const rect = container.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const clampedX = Math.max(0, Math.min(100, x));
+    const clampedY = Math.max(0, Math.min(100, y));
+
+    img.style.transformOrigin = `${clampedX.toFixed(2)}% ${clampedY.toFixed(2)}%`;
+    img.style.transform = 'scale(2.25)';
+    container.style.cursor = 'zoom-in';
+  };
+
+  const handleImageTouchStart = () => {
+    lastTouchTimeRef.current = Date.now();
+    resetImageZoom();
+  };
+
+  useEffect(() => {
+    if (mainImageRef.current) {
+      mainImageRef.current.style.transform = 'scale(1)';
+      mainImageRef.current.style.transformOrigin = '50% 50%';
+    }
+    if (imageContainerRef.current) {
+      imageContainerRef.current.style.cursor = '';
+    }
+  }, [selectedImg, productId]);
 
   const checkRelatedScroll = () => {
     if (relatedScrollRef.current) {
@@ -548,7 +605,14 @@ export default function ProductDetailPage() {
         <div className="lg:col-span-5 space-y-4">
 
           {/* Hero Image Frame */}
-          <div className="w-full max-w-md aspect-[4/3] max-h-[320px] sm:max-h-[330px] rounded-2xl bg-[#F8F9FA] border border-slate-200/80 relative flex items-center justify-center overflow-hidden shadow-2xs group">
+          <div
+            ref={imageContainerRef}
+            onMouseEnter={updateImageZoom}
+            onMouseMove={updateImageZoom}
+            onMouseLeave={resetImageZoom}
+            onTouchStart={handleImageTouchStart}
+            className="w-full max-w-md aspect-[4/3] max-h-[320px] sm:max-h-[330px] rounded-2xl bg-[#F8F9FA] border border-slate-200/80 relative flex items-center justify-center overflow-hidden shadow-2xs group isolate"
+          >
             {/* Top Left Badge */}
 
             {isOutOfStock ? (
@@ -575,9 +639,10 @@ export default function ProductDetailPage() {
 
             {/* Main Product Image */}
             <img
+              ref={mainImageRef}
               src={getImageUrl(selectedImg || galleryImages[0]) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800'}
               alt={locale === 'ar' ? product.name_ar : product.name_en}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover transition-transform duration-300 ease-out will-change-transform select-none"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800';
