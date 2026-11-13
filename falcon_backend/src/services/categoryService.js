@@ -211,6 +211,22 @@ class CategoryService {
     return result;
   }
 
+  async getDescendantIds(parentIds, onlyActive = false) {
+    if (!parentIds || !parentIds.length) return [];
+    const where = { parent_id: { [Op.in]: parentIds } };
+    if (onlyActive) {
+      where.is_active = true;
+    }
+    const children = await Category.findAll({
+      where,
+      attributes: ['id'],
+    });
+    if (children.length === 0) return [];
+    const childIds = children.map((c) => c.id);
+    const deeper = await this.getDescendantIds(childIds, onlyActive);
+    return [...childIds, ...deeper];
+  }
+
   async createCategory(data) {
     const { name_en, name_ar, slug, image_url, is_active, parent_id, banner, content } = data;
     return await Category.create({
@@ -225,7 +241,7 @@ class CategoryService {
     });
   }
 
-  async updateCategory(id, data) {
+  async updateCategory(id, data = {}) {
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     let category = null;
     if (isUUID) {
@@ -238,7 +254,105 @@ class CategoryService {
       category = await Category.findOne({ where: { slug: data.slug } });
     }
 
-    // Validate CTA URL if provided in banner
+    if (!category) {
+      throw new Error('Category not found');
+    }
+
+    const updatePayload = {};
+
+    // 1. English Name Validation
+    if (data.name_en !== undefined) {
+      const trimmed = String(data.name_en || '').trim();
+      if (!trimmed) {
+        throw new Error('English category name cannot be empty.');
+      }
+      updatePayload.name_en = trimmed;
+    }
+
+    // 2. Arabic Name Validation
+    if (data.name_ar !== undefined) {
+      const trimmed = String(data.name_ar || '').trim();
+      if (!trimmed) {
+        throw new Error('Arabic category name cannot be empty.');
+      }
+      updatePayload.name_ar = trimmed;
+    }
+
+    // 3. Slug Validation & Collision Check
+    if (data.slug !== undefined) {
+      const cleanSlug = String(data.slug || '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      if (!cleanSlug) {
+        throw new Error('Category slug cannot be empty.');
+      }
+      if (cleanSlug !== category.slug) {
+        const existingSlug = await Category.findOne({
+          where: {
+            slug: cleanSlug,
+            id: { [Op.ne]: category.id },
+          },
+        });
+        if (existingSlug) {
+          throw new Error(`The slug "${cleanSlug}" is already in use by category "${existingSlug.name_en}". Please choose a unique slug.`);
+        }
+      }
+      updatePayload.slug = cleanSlug;
+    }
+
+    // 4. Image URL Handling
+    if (data.image_url !== undefined) {
+      updatePayload.image_url = data.image_url && String(data.image_url).trim() ? String(data.image_url).trim() : null;
+    }
+
+    // 5. Active Status Handling
+    if (data.is_active !== undefined) {
+      updatePayload.is_active = Boolean(data.is_active);
+    }
+
+    // 6. Parent ID & Hierarchy Integrity
+    if (data.parent_id !== undefined) {
+      let rawParentId = data.parent_id;
+      if (rawParentId === '' || rawParentId === 'null' || rawParentId === 'none' || rawParentId === 'main') {
+        rawParentId = null;
+      }
+
+      if (rawParentId !== null) {
+        const isParentUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawParentId);
+        if (!isParentUUID) {
+          const parentBySlug = await Category.findOne({ where: { slug: rawParentId } });
+          if (parentBySlug) {
+            rawParentId = parentBySlug.id;
+          } else {
+            throw new Error('Selected parent category does not exist.');
+          }
+        }
+
+        // Cannot be its own parent
+        if (String(rawParentId) === String(category.id)) {
+          throw new Error('A category cannot be its own parent.');
+        }
+
+        // Ensure parent exists
+        const parentCat = await Category.findByPk(rawParentId);
+        if (!parentCat) {
+          throw new Error('Selected parent category does not exist.');
+        }
+
+        // Ensure parent is not a descendant (prevent circular references)
+        const descendantIds = await this.getDescendantIds([category.id]);
+        if (descendantIds.map(String).includes(String(rawParentId))) {
+          throw new Error('Cannot set a child or sub-category as the parent (circular hierarchy).');
+        }
+      }
+
+      updatePayload.parent_id = rawParentId;
+    }
+
+    // 7. Validate Banner CTA URL if provided
     const candidateCtaUrl = data.banner?.cta_url || data.banner?.cta?.link;
     if (candidateCtaUrl && typeof candidateCtaUrl === 'string') {
       const url = candidateCtaUrl.trim();
@@ -259,22 +373,7 @@ class CategoryService {
       }
     }
 
-    if (!category) {
-      // Auto-create category if it was defined in hierarchy but not yet in DB
-      return await Category.create({
-        slug: data.slug || id,
-        name_en: data.name_en || id,
-        name_ar: data.name_ar || id,
-        parent_id: data.parent_id || null,
-        banner: data.banner || {},
-        content: data.content || {},
-        image_url: data.image_url || null,
-        is_active: true,
-      });
-    }
-
-    // Preserve existing banner and content fields when updating
-    const updatePayload = { ...data };
+    // 8. Preserve & Merge Banner / Content JSON fields
     if (data.banner && typeof data.banner === 'object') {
       updatePayload.banner = {
         ...(category.banner || {}),
@@ -288,7 +387,16 @@ class CategoryService {
       };
     }
 
-    return await category.update(updatePayload);
+    await category.update(updatePayload);
+
+    const updated = await Category.findByPk(category.id, {
+      include: [
+        { model: Category, as: 'subcategories' },
+        { model: Category, as: 'parentCategory' },
+      ],
+    });
+
+    return updated || category;
   }
 
   async deleteCategory(id) {

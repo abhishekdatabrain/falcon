@@ -123,16 +123,27 @@ export default function CartPage() {
       <div className="min-h-screen bg-[#F8FAFC] text-slate-900" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <div className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                <Link
+                  href="/products"
+                  className="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                  title={locale === 'ar' ? 'الرجوع للمنتجات' : 'Back to products'}
+                >
+                  <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
+                </Link>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  {locale === 'ar' ? 'سلة التسوق' : 'Shopping Cart'}
+                </h1>
+              </div>
               <Link
                 href="/products"
-                className="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl bg-white hover:bg-emerald-50/80 text-[#043927] hover:text-[#02281b] border border-emerald-200/90 hover:border-emerald-300 font-bold text-xs sm:text-sm transition-all duration-200 shadow-2xs hover:shadow-xs group shrink-0"
+                title={locale === 'ar' ? 'متابعة التسوق' : 'Continue Shopping'}
               >
-                <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
+                <ArrowLeft className="w-4 h-4 rtl:rotate-180 transition-transform duration-200 group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5 text-emerald-600" />
+                <span>{locale === 'ar' ? 'متابعة التسوق' : 'Continue Shopping'}</span>
               </Link>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                {locale === 'ar' ? 'سلة التسوق' : 'Shopping Cart'}
-              </h1>
             </div>
           </div>
         </div>
@@ -167,7 +178,7 @@ export default function CartPage() {
       <div className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
               <Link
                 href="/products"
                 className="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
@@ -192,14 +203,24 @@ export default function CartPage() {
               </div>
             </div>
 
-            <button
-              onClick={() => clearCart()}
-              className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-bold flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer border border-transparent hover:border-rose-200"
-              title={locale === 'ar' ? 'تفريغ السلة' : 'Clear Cart'}
-            >
-              <Trash2 className="w-4 h-4" />
-              <span className="hidden sm:inline">{locale === 'ar' ? 'تفريغ السلة' : 'Clear Cart'}</span>
-            </button>
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <Link
+                href="/products"
+                className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl bg-white hover:bg-emerald-50/80 text-[#043927] hover:text-[#02281b] border border-emerald-200/90 hover:border-emerald-300 font-bold text-xs sm:text-sm transition-all duration-200 shadow-2xs hover:shadow-xs group shrink-0"
+                title={locale === 'ar' ? 'متابعة التسوق' : 'Continue Shopping'}
+              >
+                <ArrowLeft className="w-4 h-4 rtl:rotate-180 transition-transform duration-200 group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5 text-emerald-600" />
+                <span>{locale === 'ar' ? 'متابعة التسوق' : 'Continue Shopping'}</span>
+              </Link>
+              <button
+                onClick={() => clearCart()}
+                className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-bold flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer border border-transparent hover:border-rose-200"
+                title={locale === 'ar' ? 'تفريغ السلة' : 'Clear Cart'}
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="hidden sm:inline">{locale === 'ar' ? 'تفريغ السلة' : 'Clear Cart'}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

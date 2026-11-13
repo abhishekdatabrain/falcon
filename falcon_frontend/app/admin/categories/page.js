@@ -122,7 +122,7 @@ export default function AdminCategoriesPage() {
   const loadCategories = async () => {
     try {
       setLoading(true);
-      const res = await fetchApi('/categories?all=true');
+      const res = await fetchApi(`/categories?all=true&_t=${Date.now()}`);
       if (res.success) {
         setCategories(res.data.categories || []);
       }
@@ -135,21 +135,41 @@ export default function AdminCategoriesPage() {
   };
 
   useEffect(() => {
-    loadCategories();
+    let isMounted = true;
+    const fetchInitial = async () => {
+      try {
+        setLoading(true);
+        const res = await fetchApi(`/categories?all=true&_t=${Date.now()}`);
+        if (isMounted && res.success) {
+          setCategories(res.data.categories || []);
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.error(err);
+          showToast(err.message || 'Failed to load categories', 'error');
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchInitial();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Compute 4 Levels of Hierarchy
   const mainCategories = categories.filter((c) => !c.parent_id);
-  const mainIds = new Set(mainCategories.map((c) => c.id));
+  const mainIds = new Set(mainCategories.map((c) => String(c.id)));
 
-  const subCategories = categories.filter((c) => c.parent_id && mainIds.has(c.parent_id));
-  const subIds = new Set(subCategories.map((c) => c.id));
+  const subCategories = categories.filter((c) => c.parent_id && mainIds.has(String(c.parent_id)));
+  const subIds = new Set(subCategories.map((c) => String(c.id)));
 
-  const subSubCategories = categories.filter((c) => c.parent_id && subIds.has(c.parent_id));
-  const subSubIds = new Set(subSubCategories.map((c) => c.id));
+  const subSubCategories = categories.filter((c) => c.parent_id && subIds.has(String(c.parent_id)));
+  const subSubIds = new Set(subSubCategories.map((c) => String(c.id)));
 
   // Level 4 (Sub-Sub-Subcategories)
-  const subSubSubCategories = categories.filter((c) => c.parent_id && (subSubIds.has(c.parent_id) || (!mainIds.has(c.parent_id) && !subIds.has(c.parent_id) && c.parent_id !== null)));
+  const subSubSubCategories = categories.filter((c) => c.parent_id && (subSubIds.has(String(c.parent_id)) || (!mainIds.has(String(c.parent_id)) && !subIds.has(String(c.parent_id)) && c.parent_id !== null)));
 
   // Filtered lists based on search & dropdown filters
   const filteredParents = mainCategories.filter((cat) => {
@@ -210,7 +230,7 @@ export default function AdminCategoriesPage() {
       
       let finalParentId = null;
       if (formLevel === 'LEVEL_2') {
-        finalParentId = form.parent_main_id || null;
+        finalParentId = form.parent_main_id || form.parent_id || null;
       } else if (formLevel === 'LEVEL_3') {
         finalParentId = form.parent_sub_id || form.parent_id || null;
       } else if (formLevel === 'LEVEL_4') {
@@ -227,9 +247,9 @@ export default function AdminCategoriesPage() {
         name_en: form.name_en.trim(),
         name_ar: form.name_ar.trim(),
         slug: form.slug.trim(),
-        image_url: form.image_url || '',
+        image_url: form.image_url ? form.image_url.trim() : null,
         parent_id: finalParentId,
-        is_active: form.is_active !== undefined ? form.is_active : true,
+        is_active: form.is_active !== undefined ? Boolean(form.is_active) : true,
       };
 
       if (editingCategory) {
@@ -237,13 +257,26 @@ export default function AdminCategoriesPage() {
           method: 'PUT',
           body: JSON.stringify(payload),
         });
-        if (res.success) showToast(locale === 'ar' ? 'تم تحديث القسم بنجاح!' : 'Category updated successfully!', 'success');
+        if (res.success) {
+          showToast(locale === 'ar' ? 'تم تحديث القسم بنجاح!' : 'Category updated successfully!', 'success');
+          const updatedCat = res.data?.category;
+          if (updatedCat) {
+            setCategories((prev) =>
+              prev.map((c) => (String(c.id) === String(editingCategory.id) ? { ...c, ...updatedCat, ...payload } : c))
+            );
+          }
+        }
       } else {
         const res = await fetchApi('/categories', {
           method: 'POST',
           body: JSON.stringify(payload),
         });
-        if (res.success) showToast(locale === 'ar' ? 'تم إنشاء القسم بنجاح!' : 'Category created successfully!', 'success');
+        if (res.success) {
+          showToast(locale === 'ar' ? 'تم إنشاء القسم بنجاح!' : 'Category created successfully!', 'success');
+          if (res.data?.category) {
+            setCategories((prev) => [res.data.category, ...prev]);
+          }
+        }
       }
 
       setShowModal(false);
@@ -306,22 +339,23 @@ export default function AdminCategoriesPage() {
     let subSubParentId = '';
 
     if (cat.parent_id) {
-      if (mainIds.has(cat.parent_id)) {
+      const parentIdStr = String(cat.parent_id);
+      if (mainIds.has(parentIdStr)) {
         level = 'LEVEL_2';
-        mainParentId = cat.parent_id;
-      } else if (subIds.has(cat.parent_id)) {
+        mainParentId = parentIdStr;
+      } else if (subIds.has(parentIdStr)) {
         level = 'LEVEL_3';
-        subParentId = cat.parent_id;
-        const parentSub = subCategories.find((s) => String(s.id) === String(cat.parent_id));
-        if (parentSub) mainParentId = parentSub.parent_id;
+        subParentId = parentIdStr;
+        const parentSub = subCategories.find((s) => String(s.id) === parentIdStr);
+        if (parentSub) mainParentId = String(parentSub.parent_id || '');
       } else {
         level = 'LEVEL_4';
-        subSubParentId = cat.parent_id;
-        const parentSubSub = subSubCategories.find((ss) => String(ss.id) === String(cat.parent_id));
+        subSubParentId = parentIdStr;
+        const parentSubSub = subSubCategories.find((ss) => String(ss.id) === parentIdStr);
         if (parentSubSub) {
-          subParentId = parentSubSub.parent_id;
+          subParentId = String(parentSubSub.parent_id || '');
           const parentSub = subCategories.find((s) => String(s.id) === String(parentSubSub.parent_id));
-          if (parentSub) mainParentId = parentSub.parent_id;
+          if (parentSub) mainParentId = String(parentSub.parent_id || '');
         }
       }
     }
@@ -337,11 +371,13 @@ export default function AdminCategoriesPage() {
       parent_sub_id: subParentId,
       parent_id: level === 'LEVEL_4' ? subSubParentId : (level === 'LEVEL_3' ? subParentId : mainParentId),
     });
+    setFileMeta(null);
     setShowModal(true);
   };
 
   const openAdd = (targetLevel = 'LEVEL_1', targetParentMain = '', targetParentSub = '', targetParentSubSub = '') => {
     setEditingCategory(null);
+    setFileMeta(null);
     setFormLevel(targetLevel);
     setForm({
       name_en: '',
@@ -351,7 +387,7 @@ export default function AdminCategoriesPage() {
       is_active: true,
       parent_main_id: targetParentMain || mainCategories[0]?.id || '',
       parent_sub_id: targetParentSub || '',
-      parent_id: targetParentSubSub || targetParentSub || '',
+      parent_id: targetParentSubSub || targetParentSub || targetParentMain || '',
     });
     setShowModal(true);
   };
@@ -1332,26 +1368,43 @@ export default function AdminCategoriesPage() {
                     if (newLvl === 'LEVEL_1') {
                       setForm((prev) => ({ ...prev, parent_main_id: '', parent_sub_id: '', parent_id: '' }));
                     } else if (newLvl === 'LEVEL_2') {
-                      setForm((prev) => ({ ...prev, parent_main_id: prev.parent_main_id || mainCategories[0]?.id || '', parent_sub_id: '', parent_id: '' }));
-                    } else if (newLvl === 'LEVEL_3') {
-                      const firstMainId = mainCategories[0]?.id || '';
-                      const subsForFirstMain = subCategories.filter((s) => String(s.parent_id) === String(firstMainId));
+                      const firstMain = mainCategories.find((p) => !editingCategory || String(p.id) !== String(editingCategory.id));
+                      const mainId = prev.parent_main_id || firstMain?.id || '';
                       setForm((prev) => ({
                         ...prev,
-                        parent_main_id: prev.parent_main_id || firstMainId,
-                        parent_sub_id: prev.parent_sub_id || subsForFirstMain[0]?.id || '',
-                        parent_id: prev.parent_id || subsForFirstMain[0]?.id || '',
+                        parent_main_id: mainId,
+                        parent_sub_id: '',
+                        parent_id: mainId,
+                      }));
+                    } else if (newLvl === 'LEVEL_3') {
+                      const firstMain = mainCategories.find((p) => !editingCategory || String(p.id) !== String(editingCategory.id));
+                      const mainId = prev.parent_main_id || firstMain?.id || '';
+                      const subsForMain = subCategories.filter(
+                        (s) => String(s.parent_id) === String(mainId) && (!editingCategory || String(s.id) !== String(editingCategory.id))
+                      );
+                      const firstSubId = prev.parent_sub_id || subsForMain[0]?.id || '';
+                      setForm((prev) => ({
+                        ...prev,
+                        parent_main_id: mainId,
+                        parent_sub_id: firstSubId,
+                        parent_id: firstSubId,
                       }));
                     } else if (newLvl === 'LEVEL_4') {
-                      const firstMainId = mainCategories[0]?.id || '';
-                      const subsForFirstMain = subCategories.filter((s) => String(s.parent_id) === String(firstMainId));
-                      const firstSubId = subsForFirstMain[0]?.id || '';
-                      const subSubsForFirstSub = subSubCategories.filter((ss) => String(ss.parent_id) === String(firstSubId));
+                      const firstMain = mainCategories.find((p) => !editingCategory || String(p.id) !== String(editingCategory.id));
+                      const mainId = prev.parent_main_id || firstMain?.id || '';
+                      const subsForMain = subCategories.filter(
+                        (s) => String(s.parent_id) === String(mainId) && (!editingCategory || String(s.id) !== String(editingCategory.id))
+                      );
+                      const firstSubId = prev.parent_sub_id || subsForMain[0]?.id || '';
+                      const subSubsForSub = subSubCategories.filter(
+                        (ss) => String(ss.parent_id) === String(firstSubId) && (!editingCategory || String(ss.id) !== String(editingCategory.id))
+                      );
+                      const firstSubSubId = prev.parent_id || subSubsForSub[0]?.id || '';
                       setForm((prev) => ({
                         ...prev,
-                        parent_main_id: prev.parent_main_id || firstMainId,
-                        parent_sub_id: prev.parent_sub_id || firstSubId,
-                        parent_id: prev.parent_id || subSubsForFirstSub[0]?.id || '',
+                        parent_main_id: mainId,
+                        parent_sub_id: firstSubId,
+                        parent_id: firstSubSubId,
                       }));
                     }
                   }}
@@ -1373,15 +1426,17 @@ export default function AdminCategoriesPage() {
                   <select
                     required
                     value={form.parent_main_id}
-                    onChange={(e) => setForm({ ...form, parent_main_id: e.target.value })}
+                    onChange={(e) => setForm({ ...form, parent_main_id: e.target.value, parent_id: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl bg-white border border-blue-300 text-slate-900 text-sm font-semibold outline-hidden cursor-pointer"
                   >
                     <option value="">-- Select Main Category --</option>
-                    {mainCategories.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name_en} / {p.name_ar}
-                      </option>
-                    ))}
+                    {mainCategories
+                      .filter((p) => !editingCategory || String(p.id) !== String(editingCategory.id))
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name_en} / {p.name_ar}
+                        </option>
+                      ))}
                   </select>
                 </div>
               )}
@@ -1397,20 +1452,25 @@ export default function AdminCategoriesPage() {
                       value={form.parent_main_id}
                       onChange={(e) => {
                         const newMainId = e.target.value;
-                        const availableSubs = subCategories.filter((s) => String(s.parent_id) === String(newMainId));
+                        const availableSubs = subCategories.filter(
+                          (s) => String(s.parent_id) === String(newMainId) && (!editingCategory || String(s.id) !== String(editingCategory.id))
+                        );
+                        const firstSubId = availableSubs[0]?.id || '';
                         setForm({
                           ...form,
                           parent_main_id: newMainId,
-                          parent_sub_id: availableSubs[0]?.id || '',
-                          parent_id: availableSubs[0]?.id || '',
+                          parent_sub_id: firstSubId,
+                          parent_id: firstSubId,
                         });
                       }}
                       className="w-full px-3.5 py-2 rounded-xl bg-white border border-purple-300 text-slate-900 text-xs font-semibold outline-hidden cursor-pointer"
                     >
                       <option value="">-- Select Main Category --</option>
-                      {mainCategories.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name_en}</option>
-                      ))}
+                      {mainCategories
+                        .filter((p) => !editingCategory || String(p.id) !== String(editingCategory.id))
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>{p.name_en} / {p.name_ar}</option>
+                        ))}
                     </select>
                   </div>
 
@@ -1420,13 +1480,17 @@ export default function AdminCategoriesPage() {
                     </label>
                     <select
                       required
-                      value={form.parent_id}
-                      onChange={(e) => setForm({ ...form, parent_id: e.target.value })}
+                      value={form.parent_sub_id || form.parent_id}
+                      onChange={(e) => setForm({ ...form, parent_sub_id: e.target.value, parent_id: e.target.value })}
                       className="w-full px-3.5 py-2 rounded-xl bg-white border border-purple-300 text-slate-900 text-xs font-bold outline-hidden cursor-pointer text-purple-900"
                     >
                       <option value="">-- Select Sub-Category --</option>
                       {subCategories
-                        .filter((s) => !form.parent_main_id || String(s.parent_id) === String(form.parent_main_id))
+                        .filter(
+                          (s) =>
+                            (!form.parent_main_id || String(s.parent_id) === String(form.parent_main_id)) &&
+                            (!editingCategory || String(s.id) !== String(editingCategory.id))
+                        )
                         .map((s) => (
                           <option key={s.id} value={s.id}>
                             {s.name_en} / {s.name_ar}
@@ -1448,21 +1512,28 @@ export default function AdminCategoriesPage() {
                       value={form.parent_main_id}
                       onChange={(e) => {
                         const newMainId = e.target.value;
-                        const availableSubs = subCategories.filter((s) => String(s.parent_id) === String(newMainId));
-                        const availableSubSubs = subSubCategories.filter((ss) => String(ss.parent_id) === String(availableSubs[0]?.id));
+                        const availableSubs = subCategories.filter(
+                          (s) => String(s.parent_id) === String(newMainId) && (!editingCategory || String(s.id) !== String(editingCategory.id))
+                        );
+                        const firstSubId = availableSubs[0]?.id || '';
+                        const availableSubSubs = subSubCategories.filter(
+                          (ss) => String(ss.parent_id) === String(firstSubId) && (!editingCategory || String(ss.id) !== String(editingCategory.id))
+                        );
                         setForm({
                           ...form,
                           parent_main_id: newMainId,
-                          parent_sub_id: availableSubs[0]?.id || '',
+                          parent_sub_id: firstSubId,
                           parent_id: availableSubSubs[0]?.id || '',
                         });
                       }}
                       className="w-full px-3.5 py-2 rounded-xl bg-white border border-rose-300 text-slate-900 text-xs font-semibold outline-hidden cursor-pointer"
                     >
                       <option value="">-- Select Main Category --</option>
-                      {mainCategories.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name_en}</option>
-                      ))}
+                      {mainCategories
+                        .filter((p) => !editingCategory || String(p.id) !== String(editingCategory.id))
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>{p.name_en} / {p.name_ar}</option>
+                        ))}
                     </select>
                   </div>
 
@@ -1474,7 +1545,9 @@ export default function AdminCategoriesPage() {
                       value={form.parent_sub_id}
                       onChange={(e) => {
                         const newSubId = e.target.value;
-                        const availableSubSubs = subSubCategories.filter((ss) => String(ss.parent_id) === String(newSubId));
+                        const availableSubSubs = subSubCategories.filter(
+                          (ss) => String(ss.parent_id) === String(newSubId) && (!editingCategory || String(ss.id) !== String(editingCategory.id))
+                        );
                         setForm({
                           ...form,
                           parent_sub_id: newSubId,
@@ -1485,7 +1558,11 @@ export default function AdminCategoriesPage() {
                     >
                       <option value="">-- Select Sub-Category --</option>
                       {subCategories
-                        .filter((s) => !form.parent_main_id || String(s.parent_id) === String(form.parent_main_id))
+                        .filter(
+                          (s) =>
+                            (!form.parent_main_id || String(s.parent_id) === String(form.parent_main_id)) &&
+                            (!editingCategory || String(s.id) !== String(editingCategory.id))
+                        )
                         .map((s) => (
                           <option key={s.id} value={s.id}>
                             {s.name_en} / {s.name_ar}
@@ -1506,7 +1583,11 @@ export default function AdminCategoriesPage() {
                     >
                       <option value="">-- Select Sub-Subcategory --</option>
                       {subSubCategories
-                        .filter((ss) => !form.parent_sub_id || String(ss.parent_id) === String(form.parent_sub_id))
+                        .filter(
+                          (ss) =>
+                            (!form.parent_sub_id || String(ss.parent_id) === String(form.parent_sub_id)) &&
+                            (!editingCategory || String(ss.id) !== String(editingCategory.id))
+                        )
                         .map((ss) => (
                           <option key={ss.id} value={ss.id}>
                             {ss.name_en} / {ss.name_ar}

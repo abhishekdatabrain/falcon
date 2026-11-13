@@ -127,11 +127,13 @@ const renderPriceWithDecimals = (val, currency = 'SAR', isRTL = false) => {
 function ExpandableDescription({ text, className = '', locale = 'en' }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
+  const [prevKey, setPrevKey] = useState({ text, locale });
   const textRef = useRef(null);
 
-  useEffect(() => {
+  if (prevKey.text !== text || prevKey.locale !== locale) {
+    setPrevKey({ text, locale });
     setIsExpanded(false);
-  }, [text, locale]);
+  }
 
   useEffect(() => {
     const el = textRef.current;
@@ -487,6 +489,45 @@ export default function ProductDetailPage() {
   const effectivePrice = discountPrice > 0 && discountPrice < currentUnitPrice ? discountPrice : currentUnitPrice;
   const totalPrice = (effectivePrice * quantity).toFixed(2);
 
+  const getPackOrWeightText = () => {
+    const target = activeVariant || product;
+    if (!target) return '';
+    const unitVal = (target.unit_value || '').toString().trim();
+    const unitType = (target.unit_type || '').toString().trim();
+    const packSize = (target.pack_size || '').toString().trim();
+    const unit = (target.unit || '').toString().trim();
+    const weight = (target.weight || '').toString().trim();
+
+    if (unitVal && unitType) {
+      const unitCombo = `${unitVal} ${unitType}`;
+      if (packSize) {
+        if (packSize.toLowerCase().includes(unitVal.toLowerCase()) && packSize.toLowerCase().includes(unitType.toLowerCase())) {
+          return packSize;
+        }
+        return `${unitCombo} (${packSize})`;
+      }
+      return unitCombo;
+    }
+
+    if (packSize) {
+      if (unit && !packSize.toLowerCase().includes(unit.toLowerCase()) && unit.toUpperCase() !== 'PCS') {
+        return `${unit} (${packSize})`;
+      }
+      return packSize;
+    }
+
+    if (unit && unit.toUpperCase() !== 'PCS') {
+      return unit;
+    }
+
+    if (weight) {
+      return weight;
+    }
+
+    return '';
+  };
+  const activePackOrWeight = getPackOrWeightText();
+
   const handleAddToCart = async () => {
     try {
       setAdding(true);
@@ -599,10 +640,10 @@ export default function ProductDetailPage() {
       </div>
 
       {/* 2. Main Product Showcase (Left Gallery + Right Purchase Panel) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 md:gap-10 items-start">
 
         {/* LEFT COLUMN: Main Hero Image + Thumbnails + Feature Bar (6 Columns) */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className="md:col-span-1 lg:col-span-5 space-y-4">
 
           {/* Hero Image Frame */}
           <div
@@ -659,7 +700,7 @@ export default function ProductDetailPage() {
                   key={idx}
                   type="button"
                   onClick={() => setSelectedImg(imgUrl)}
-                  className={`aspect-square rounded-2xl p-1 bg-[#F8F9FA] border-2 transition-all cursor-pointer overflow-hidden flex items-center justify-center ${isSelected ? 'border-[#043927] ring-2 ring-emerald-100 shadow-xs scale-95' : 'border-slate-200/80 hover:border-slate-300 opacity-80 hover:opacity-100'
+                  className={`aspect-square rounded-2xl p-1 bg-[#F8F9FA] border-2 transition-all cursor-pointer overflow-hidden flex items-center justify-center ${isSelected ? 'border-[#0B4F32] ring-2 ring-emerald-100 shadow-xs scale-95' : 'border-slate-200/80 hover:border-slate-300 opacity-80 hover:opacity-100'
  }`}
                 >
                   <img
@@ -686,7 +727,7 @@ export default function ProductDetailPage() {
                   <React.Fragment key={idx}>
                     {idx > 0 && <span className="text-[#F5DE98] font-bold hidden sm:inline select-none">|</span>}
                     <div className="flex items-center gap-1.5">
-                      {renderProductIcon(hl.icon || 'Check', 'w-4 h-4 text-[#043927] shrink-0')}
+                      {renderProductIcon(hl.icon || 'Check', 'w-4 h-4 text-[#0B4F32] shrink-0')}
                       <span>{text}</span>
                     </div>
                   </React.Fragment>
@@ -698,16 +739,16 @@ export default function ProductDetailPage() {
         </div>
 
         {/* RIGHT COLUMN: Product Info & Purchase Controls (6 Columns) */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="md:col-span-1 lg:col-span-7 space-y-6">
 
           {/* Category Tag */}
           <div>
-            <span className="bg-emerald-100/80 text-[#043927] font-bold text-[11px] px-3 py-1 rounded-full uppercase tracking-wider inline-block">
+            <span className="bg-[#E6F4EA] text-[#0B4F32] font-bold text-[11px] px-3 py-1 rounded-full uppercase tracking-wider inline-block">
               {locale === 'ar' ? (product.tag_ar || 'طازج من المزرعة') : (product.tag_en || 'Farm Fresh')}
             </span>
 
             {/* Product Title */}
-            <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-bold text-slate-900 tracking-tight leading-tight mt-2">
+            <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-bold text-[#0F172A] tracking-tight leading-tight mt-2">
               {locale === 'ar' ? product.name_ar : product.name_en}
             </h1>
 
@@ -741,7 +782,7 @@ export default function ProductDetailPage() {
                   return (
                     <span
                       key={idx}
-                      className="bg-[#EBF7F0] text-[#043927] font-bold text-xs px-3.5 py-1.5 rounded-full border border-emerald-200/80 inline-flex items-center gap-1.5 shadow-2xs"
+                      className="bg-[#EBF7F0] text-[#0B4F32] font-bold text-xs px-3.5 py-1.5 rounded-full border border-emerald-200/80 inline-flex items-center gap-1.5 shadow-2xs"
                     >
                       <span className="w-4 h-4 rounded-full bg-[#05A764] text-white flex items-center justify-center shrink-0">
                         {renderProductIcon(badge.icon || 'Check', 'w-2.5 h-2.5 text-white stroke-[3]')}
@@ -757,16 +798,16 @@ export default function ProductDetailPage() {
             {(product.description_ar || product.description_en) && (
               <ExpandableDescription
                 text={locale === 'ar' ? (product.description_ar || product.description_en) : (product.description_en || product.description_ar)}
-                className="text-slate-600 font-medium text-sm sm:text-base leading-relaxed mt-3"
+                className="text-gray-600 font-medium text-sm leading-relaxed mt-3"
                 locale={locale}
               />
             )}
           </div>
 
           {/* Price Box - Single Line Layout */}
-          <div className="flex items-center gap-3 flex-wrap pt-3 border-t border-slate-100">
-            {/* Selling Price (Dark Green Bold) */}
-            <span className="text-[#043927] font-black text-2xl sm:text-3xl tracking-tight inline-flex items-baseline">
+          <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-slate-100">
+            {/* Selling Price */}
+            <span className="text-[#0B4F32] font-extrabold text-2xl sm:text-3xl tracking-tight inline-flex items-baseline">
               {renderPriceWithDecimals(
                 discountPrice || currentUnitPrice,
                 locale === 'ar' ? 'ريال' : 'SAR',
@@ -782,6 +823,14 @@ export default function ProductDetailPage() {
                   locale === 'ar' ? 'ريال' : 'SAR',
                   locale === 'ar'
                 )}
+              </span>
+            )}
+
+            {/* Pack Size / Weight Display */}
+            {activePackOrWeight && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-sm font-medium">
+                <Package className="w-4 h-4 text-[#0B4F32] shrink-0" />
+                <span>{activePackOrWeight}</span>
               </span>
             )}
           </div>
@@ -898,8 +947,8 @@ export default function ProductDetailPage() {
 
           {/* Stock status indicator (for all products) */}
           <div className="text-xs font-semibold text-slate-600 flex items-center gap-1.5 pt-1">
-            <span className={`w-2.5 h-2.5 rounded-full ${isOutOfStock ? 'bg-rose-500 ring-2 ring-rose-200' : 'bg-emerald-500 ring-2 ring-emerald-200'}`} />
-            <span className={isOutOfStock ? 'text-rose-600 font-bold' : 'text-emerald-700 font-bold'}>
+            <span className={`w-2.5 h-2.5 rounded-full ${isOutOfStock ? 'bg-rose-500 ring-2 ring-rose-200' : 'bg-[#16A34A] ring-2 ring-emerald-200'}`} />
+            <span className={isOutOfStock ? 'text-rose-600 font-bold' : 'text-[#16A34A] font-bold'}>
               {isOutOfStock
                 ? (locale === 'ar' ? 'غير متوفر في المخزون حالياً (نفذت الكمية)' : 'Currently Out of Stock')
                 : (locale === 'ar' ? `متوفر في المخزون (${activeStock} متوفرة)` : `In Stock (${activeStock} available)`)}
@@ -945,9 +994,9 @@ export default function ProductDetailPage() {
             <button
               onClick={handleAddToCart}
               disabled={adding || isOutOfStock}
-              className={`flex-1 py-4 px-8 rounded-full text-white font-bold text-base shadow-md transition-all flex items-center justify-center gap-2 group ${isOutOfStock
+              className={`flex-1 py-4 px-8 rounded-xl text-white font-bold text-base shadow-md transition-all flex items-center justify-center gap-2 group ${isOutOfStock
  ? 'bg-slate-400 cursor-not-allowed'
- : 'bg-[#043927] hover:bg-[#02281b] hover:shadow-xl cursor-pointer'
+ : 'bg-[#0B4F32] hover:bg-[#083B25] hover:shadow-xl cursor-pointer'
  }`}
             >
               <ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
