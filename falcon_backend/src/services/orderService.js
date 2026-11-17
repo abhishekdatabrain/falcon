@@ -510,7 +510,13 @@ class OrderService {
       options.transaction = transaction;
     }
 
-    const order = await Order.findByPk(orderId, options);
+    let order = null;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+    if (isUuid) {
+      order = await Order.findByPk(orderId, options);
+    } else {
+      order = await Order.findOne({ where: { order_number: orderId }, ...options });
+    }
     if (!order) {
       throw new Error('Order not found');
     }

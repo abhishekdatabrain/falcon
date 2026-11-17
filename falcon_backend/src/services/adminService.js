@@ -826,15 +826,56 @@ class AdminService {
     return { success: true };
   }
   async getAllNotifications(typeFilter = null) {
-    const { Notification } = require('../models');
+    const { Notification, User, Order } = require('../models');
+    const { Op } = require('sequelize');
+
     const where = {};
     if (typeFilter && typeFilter !== 'ALL') {
       where.type = typeFilter;
     }
-    return await Notification.findAll({
+    const notifs = await Notification.findAll({
       where,
       include: [{ model: User, as: 'user', attributes: ['id', 'email', 'role'] }],
       order: [['createdAt', 'DESC']],
+    });
+
+    const orderNumMap = new Map();
+    notifs.forEach((n) => {
+      const text = `${n.title_en || ''} ${n.body_en || ''} ${n.title_ar || ''} ${n.body_ar || ''}`;
+      const match = text.match(/(?:#)?(ORD-[A-Za-z0-9-]+)/i);
+      if (match) {
+        orderNumMap.set(match[1], null);
+      }
+    });
+
+    if (orderNumMap.size > 0) {
+      try {
+        const orders = await Order.findAll({
+          where: { order_number: { [Op.in]: Array.from(orderNumMap.keys()) } },
+          attributes: ['id', 'order_number'],
+        });
+        orders.forEach((o) => {
+          orderNumMap.set(o.order_number, o.id);
+        });
+      } catch (err) {
+        logger.error('Error resolving orders for notifications:', err);
+      }
+    }
+
+    return notifs.map((n) => {
+      const plain = n.toJSON ? n.toJSON() : { ...n };
+      const text = `${plain.title_en || ''} ${plain.body_en || ''} ${plain.title_ar || ''} ${plain.body_ar || ''}`;
+      const match = text.match(/(?:#)?(ORD-[A-Za-z0-9-]+)/i);
+      if (match) {
+        const orderNum = match[1];
+        const orderId = orderNumMap.get(orderNum);
+        plain.order_number = orderNum;
+        plain.order_id = orderId || null;
+        plain.redirect_url = orderId ? `/admin/orders/${orderId}` : `/admin/orders/${orderNum}`;
+      } else {
+        plain.redirect_url = '/admin/notifications';
+      }
+      return plain;
     });
   }
 
@@ -878,8 +919,17 @@ class AdminService {
     const { Notification } = require('../models');
     const notif = await Notification.findByPk(notificationId);
     if (!notif) throw new Error('Notification not found');
-    await notif.update({ is_read: true });
+    await notif.update({ is_read: true, read_at: new Date() });
     return notif;
+  }
+
+  async markAllNotificationsRead() {
+    const { Notification } = require('../models');
+    const [count] = await Notification.update(
+      { is_read: true, read_at: new Date() },
+      { where: { is_read: false } }
+    );
+    return { count };
   }
 
   async deleteNotification(notificationId) {

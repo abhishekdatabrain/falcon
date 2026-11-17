@@ -763,7 +763,7 @@ export default function HomePage() {
                       <img
                         src={heroImage}
                         alt={titleText}
-                        className="max-h-[220px] sm:max-h-[270px] lg:max-h-[300px] w-auto h-full object-contain drop-shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                        className="max-h-[220px] sm:max-h-[270px] lg:max-h-[300px] w-auto h-full object-contain mix-blend-multiply transition-all duration-500 hover:scale-[1.02]"
                         onError={(e) => {
                           e.target.style.opacity = '0';
                         }}

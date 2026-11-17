@@ -40,6 +40,10 @@ const Notification = sequelize.define('Notification', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  read_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
 }, {
   tableName: 'notifications',
   timestamps: true,

@@ -44,11 +44,12 @@ function ProductsCatalogContent() {
   const subSubcategoryIdParam = searchParams.get('subSubcategoryId') || searchParams.get('subSub') || '';
   const subSubSubcategoryIdParam = searchParams.get('subSubSubcategoryId') || searchParams.get('subSubSub') || '';
   const isBestDealParam = searchParams.get('is_best_deal') || searchParams.get('deals') || '';
+  const searchParam = searchParams.get('search') || searchParams.get('q') || '';
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParam);
   const [selectedCategory, setSelectedCategory] = useState(categoryIdParam);
   const [selectedSubcategory, setSelectedSubcategory] = useState(subcategoryIdParam);
   const [selectedSubSubcategory, setSelectedSubSubcategory] = useState(subSubcategoryIdParam);
@@ -133,13 +134,17 @@ function ProductsCatalogContent() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    if (categoryIdParam !== selectedCategory) setSelectedCategory(categoryIdParam);
-    if (subcategoryIdParam !== selectedSubcategory) setSelectedSubcategory(subcategoryIdParam);
-    if (subSubcategoryIdParam !== selectedSubSubcategory) setSelectedSubSubcategory(subSubcategoryIdParam);
-    if (subSubSubcategoryIdParam !== selectedSubSubSubcategory) setSelectedSubSubSubcategory(subSubSubcategoryIdParam);
-    if (pageParam && pageParam !== currentPage) setCurrentPage(pageParam);
-    if (sortParam && sortParam !== sortOption) setSortOption(sortParam);
-  }, [categoryIdParam, subcategoryIdParam, subSubcategoryIdParam, subSubSubcategoryIdParam, pageParam, sortParam]);
+    const t = setTimeout(() => {
+      if (categoryIdParam !== selectedCategory) setSelectedCategory(categoryIdParam);
+      if (subcategoryIdParam !== selectedSubcategory) setSelectedSubcategory(subcategoryIdParam);
+      if (subSubcategoryIdParam !== selectedSubSubcategory) setSelectedSubSubcategory(subSubcategoryIdParam);
+      if (subSubSubcategoryIdParam !== selectedSubSubSubcategory) setSelectedSubSubSubcategory(subSubSubcategoryIdParam);
+      if (pageParam && pageParam !== currentPage) setCurrentPage(pageParam);
+      if (sortParam && sortParam !== sortOption) setSortOption(sortParam);
+      if (searchParam !== search) setSearch(searchParam);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [categoryIdParam, subcategoryIdParam, subSubcategoryIdParam, subSubSubcategoryIdParam, pageParam, sortParam, searchParam]);
 
   const loadCategories = async () => {
     try {

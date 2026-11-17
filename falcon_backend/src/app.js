@@ -77,8 +77,9 @@ app.use('/api/v1/subcategories', staticSubcategoriesHandler);
 // Rate Limiter
 app.use('/api/', apiLimiter);
 
-// API v1 Routing
+// API v1 Routing (and /api alias)
 app.use('/api/v1', routes);
+app.use('/api', routes);
 
 // Health Check Endpoint
 app.get('/health', (req, res) => {

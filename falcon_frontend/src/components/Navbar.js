@@ -15,14 +15,16 @@ import {
   Menu,
   X,
   ChevronDown,
+  ChevronRight,
   LogOut,
   Tag,
   Sparkles,
   HelpCircle,
-  Package
+  Package,
+  Loader2,
 } from 'lucide-react';
 
-import { fetchApi } from '../services/api';
+import { fetchApi, getImageUrl } from '../services/api';
 import { getCategoryUrl } from '../services/categoryHierarchy';
 
 export default function Navbar() {
@@ -35,9 +37,77 @@ export default function Navbar() {
   const { wishlistCount } = useWishlist();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState({ products: [], categories: [] });
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchContainerRef = React.useRef(null);
+  const mobileSearchContainerRef = React.useRef(null);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [dbCategories, setDbCategories] = useState([]);
+
+  // Live search debounced fetch (300ms, >= 2 characters)
+  React.useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 2) {
+      const resetTimer = setTimeout(() => {
+        setSearchResults({ products: [], categories: [] });
+        setIsSearching(false);
+        setIsSearchOpen(false);
+      }, 0);
+      return () => clearTimeout(resetTimer);
+    }
+
+    const handler = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetchApi(`/products/search?q=${encodeURIComponent(trimmed)}&limit=8`);
+        if (res.success && res.data) {
+          setSearchResults({
+            products: Array.isArray(res.data.products) ? res.data.products : [],
+            categories: Array.isArray(res.data.categories) ? res.data.categories : [],
+          });
+          setIsSearchOpen(true);
+        } else {
+          setSearchResults({ products: [], categories: [] });
+          setIsSearchOpen(true);
+        }
+      } catch (err) {
+        setSearchResults({ products: [], categories: [] });
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Click outside and Escape key handler to close search dropdown
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target) &&
+        (!mobileSearchContainerRef.current || !mobileSearchContainerRef.current.contains(e.target))
+      ) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   React.useEffect(() => {
     fetchApi('/categories?type=parent')
@@ -69,10 +139,170 @@ export default function Navbar() {
   }
 
   const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+    if (e) e.preventDefault();
+    const trimmed = searchQuery.trim();
+    if (trimmed) {
+      setIsSearchOpen(false);
+      setMobileMenuOpen(false);
+      router.push(`/products?search=${encodeURIComponent(trimmed)}`);
     }
+  };
+
+  const handleSelectProduct = (productId) => {
+    setIsSearchOpen(false);
+    setMobileMenuOpen(false);
+    router.push(`/products/${productId}`);
+  };
+
+  const handleSelectCategory = (cat) => {
+    setIsSearchOpen(false);
+    setMobileMenuOpen(false);
+    const url = cat.slug
+      ? `/products?category=${encodeURIComponent(cat.slug)}`
+      : `/products?categoryId=${encodeURIComponent(cat.id)}`;
+    router.push(url);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setSearchResults({ products: [], categories: [] });
+    setIsSearchOpen(false);
+  };
+
+  const renderSearchDropdown = () => {
+    if (!isSearchOpen || searchQuery.trim().length < 2) return null;
+
+    const hasCategories = searchResults.categories && searchResults.categories.length > 0;
+    const hasProducts = searchResults.products && searchResults.products.length > 0;
+    const hasResults = hasCategories || hasProducts;
+
+    return (
+      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden z-50 text-slate-800 text-left rtl:text-right">
+        {/* Loading indicator bar */}
+        {isSearching && (
+          <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+            <span>{locale === 'ar' ? 'جارٍ البحث...' : 'Searching...'}</span>
+          </div>
+        )}
+
+        {/* Categories Section */}
+        {hasCategories && (
+          <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+            <div className="text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-2 px-1">
+              {locale === 'ar' ? 'الأقسام' : 'CATEGORIES'}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {searchResults.categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => handleSelectCategory(cat)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/60 text-xs font-semibold cursor-pointer transition text-left rtl:text-right"
+                >
+                  <Tag className="w-3 h-3 text-emerald-600 shrink-0" />
+                  <span>{locale === 'ar' ? cat.name_ar || cat.name : cat.name_en || cat.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Products Section */}
+        {hasProducts && (
+          <div>
+            <div className="text-[10px] font-bold text-slate-400 tracking-wider uppercase px-4 pt-3 pb-1">
+              {locale === 'ar' ? 'المنتجات' : 'PRODUCTS'}
+            </div>
+            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+              {searchResults.products.map((p) => {
+                const imgUrl = p.thumbnail || p.image;
+                const displayName = locale === 'ar' ? p.name_ar || p.name : p.name_en || p.name;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => handleSelectProduct(p.id)}
+                    className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-slate-50 cursor-pointer transition group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 rounded-lg bg-slate-100 border border-slate-200/80 flex items-center justify-center overflow-hidden shrink-0">
+                        {imgUrl ? (
+                          <img
+                            src={getImageUrl(imgUrl)}
+                            alt={displayName}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                        ) : (
+                          <Package className="w-5 h-5 text-slate-400" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 group-hover:text-emerald-800 transition-colors truncate">
+                          {displayName}
+                        </div>
+                        <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5 truncate">
+                          {p.brand && (
+                            <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px]">
+                              {p.brand}
+                            </span>
+                          )}
+                          {p.unit && <span className="text-slate-400">{p.unit}</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right rtl:text-left shrink-0">
+                      {p.salePrice ? (
+                        <div>
+                          <div className="text-xs font-bold text-emerald-700">
+                            SAR {Number(p.salePrice).toFixed(2)}
+                          </div>
+                          <div className="text-[10px] text-slate-400 line-through">
+                            SAR {Number(p.price).toFixed(2)}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs font-bold text-[#0B4F32]">
+                          SAR {Number(p.price || 0).toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isSearching && !hasResults && (
+          <div className="px-6 py-6 text-center text-slate-500">
+            <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <div className="text-xs font-bold text-slate-700">
+              {locale === 'ar' ? 'لم يتم العثور على نتائج' : 'No products or categories found'}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-0.5">
+              {locale === 'ar'
+                ? `لم نتمكن من العثور على أي نتائج تطابق "${searchQuery}"`
+                : `We couldn't find any matches for "${searchQuery}"`}
+            </div>
+          </div>
+        )}
+
+        {/* View All Results Footer */}
+        <div
+          onClick={handleSearchSubmit}
+          className="px-4 py-2.5 bg-slate-50 hover:bg-emerald-50 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-800 cursor-pointer transition group"
+        >
+          <span>
+            {locale === 'ar'
+              ? `عرض جميع النتائج لـ "${searchQuery}"`
+              : `View all results for "${searchQuery}"`}
+          </span>
+          <ChevronRight className="w-4 h-4 rtl:rotate-180 text-emerald-700 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-transform" />
+        </div>
+      </div>
+    );
   };
 
   const navCategories = [
@@ -119,16 +349,40 @@ export default function Navbar() {
           </div>
 
           {/* Center: Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="hidden sm:flex items-center flex-1 max-w-xl relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 rtl:right-4 rtl:left-auto pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={locale === 'ar' ? 'ابحث عن المنتجات والعلامات التجارية والمزيد...' : 'Search for products, brands and more...'}
-              className="w-full pl-10 pr-4 py-2.5 rtl:pr-10 rtl:pl-4 rounded-full bg-[#032e1f] text-white placeholder-emerald-200/60 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all border border-emerald-700/50 shadow-inner"
-            />
-          </form>
+          <div ref={searchContainerRef} className="hidden sm:flex items-center flex-1 max-w-xl relative">
+            <form onSubmit={handleSearchSubmit} className="w-full relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-4 rtl:right-4 rtl:left-auto top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => {
+                  if (searchQuery.trim().length >= 2) {
+                    setIsSearchOpen(true);
+                  }
+                }}
+                placeholder={locale === 'ar' ? 'ابحث عن المنتجات والعلامات التجارية والمزيد...' : 'Search for products, brands and more...'}
+                className="w-full pl-10 pr-12 rtl:pr-10 rtl:pl-12 py-2.5 rounded-full bg-[#032e1f] text-white placeholder-emerald-200/60 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all border border-emerald-700/50 shadow-inner"
+              />
+              <div className="absolute right-3 rtl:left-3 rtl:right-auto top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                {isSearching && (
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                )}
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="p-1 rounded-full text-emerald-300/80 hover:text-white hover:bg-emerald-900/60 transition"
+                    title={locale === 'ar' ? 'مسح' : 'Clear'}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </form>
+
+            {renderSearchDropdown()}
+          </div>
 
           {/* Right Side Actions: Language, Account, Wishlist, Cart */}
           <div className="flex items-center gap-4 sm:gap-6 text-xs font-bold text-white shrink-0">
@@ -256,16 +510,38 @@ export default function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="sm:hidden bg-[#043927] text-white p-4 space-y-3 border-b border-emerald-800">
-          <form onSubmit={handleSearchSubmit} className="relative mb-3">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products..."
-              className="w-full pl-9 pr-4 py-2 rounded-full bg-[#032e1f] text-white text-xs"
-            />
-          </form>
+          <div ref={mobileSearchContainerRef} className="relative mb-3">
+            <form onSubmit={handleSearchSubmit} className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => {
+                  if (searchQuery.trim().length >= 2) {
+                    setIsSearchOpen(true);
+                  }
+                }}
+                placeholder={locale === 'ar' ? 'ابحث عن المنتجات...' : 'Search products...'}
+                className="w-full pl-9 pr-12 py-2 rounded-full bg-[#032e1f] text-white text-xs placeholder-emerald-200/60 border border-emerald-700/50 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              />
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {isSearching && (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                )}
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="p-1 rounded-full text-emerald-300 hover:text-white"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </form>
+            {renderSearchDropdown()}
+          </div>
 
           {navCategories.map((cat, idx) => (
             <Link

@@ -15,6 +15,16 @@ class ProductController {
     }
   }
 
+  async searchProducts(req, res, next) {
+    try {
+      const { q = '', limit = 8 } = req.query;
+      const result = await productService.searchProducts({ q, limit });
+      return sendSuccess(res, 'Search results retrieved', result);
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
   async getProductById(req, res, next) {
     try {
       const product = await productService.getProductById(req.params.id);

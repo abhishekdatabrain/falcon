@@ -439,6 +439,15 @@ class AdminController {
     }
   }
 
+  async markAllNotificationsRead(req, res, next) {
+    try {
+      const result = await adminService.markAllNotificationsRead();
+      return sendSuccess(res, 'All notifications marked as read', result);
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
   async deleteNotification(req, res, next) {
     try {
       const { notificationId } = req.params;

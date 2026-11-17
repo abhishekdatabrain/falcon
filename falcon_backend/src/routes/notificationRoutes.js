@@ -15,22 +15,30 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.put('/read-all', async (req, res, next) => {
+const handleReadAll = async (req, res, next) => {
   try {
-    await notificationService.markAllAsRead(req.user.id);
-    return sendSuccess(res, 'All notifications marked as read');
+    const result = await notificationService.markAllAsRead(req.user.id, req.user.role);
+    return sendSuccess(res, 'All notifications marked as read', result);
   } catch (error) {
     return sendError(res, error.message, [], 400);
   }
-});
+};
 
-router.put('/:id/read', async (req, res, next) => {
+router.put('/read-all', handleReadAll);
+router.patch('/read-all', handleReadAll);
+
+const handleMarkOne = async (req, res, next) => {
   try {
-    const notification = await notificationService.markAsRead(req.params.id, req.user.id);
+    const notification = await notificationService.markAsRead(req.params.id, req.user.id, req.user.role);
     return sendSuccess(res, 'Notification marked as read', { notification });
   } catch (error) {
     return sendError(res, error.message, [], 400);
   }
-});
+};
+
+router.put('/:id/read', handleMarkOne);
+router.patch('/:id/read', handleMarkOne);
+router.put('/:id', handleMarkOne);
+router.patch('/:id', handleMarkOne);
 
 module.exports = router;

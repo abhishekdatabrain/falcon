@@ -23,7 +23,7 @@ class ProductService {
     const {
       page = 1,
       limit = 12,
-      search,
+      search = query.search || query.q,
       categoryId,
       category_id,
       subcategoryId,
@@ -187,15 +187,16 @@ class ProductService {
       }
     }
 
-    if (search) {
+    const activeSearch = (search || '').toString().trim();
+    if (activeSearch) {
       const searchCondition = {
         [Op.or]: [
-          { name_en: { [Op.iLike]: `%${search}%` } },
-          { name_ar: { [Op.iLike]: `%${search}%` } },
-          { brand: { [Op.iLike]: `%${search}%` } },
-          { sku: { [Op.iLike]: `%${search}%` } },
-          { description_en: { [Op.iLike]: `%${search}%` } },
-          { description_ar: { [Op.iLike]: `%${search}%` } },
+          { name_en: { [Op.iLike]: `%${activeSearch}%` } },
+          { name_ar: { [Op.iLike]: `%${activeSearch}%` } },
+          { brand: { [Op.iLike]: `%${activeSearch}%` } },
+          { sku: { [Op.iLike]: `%${activeSearch}%` } },
+          { description_en: { [Op.iLike]: `%${activeSearch}%` } },
+          { description_ar: { [Op.iLike]: `%${activeSearch}%` } },
         ]
       };
       if (!where[Op.and]) where[Op.and] = [];
@@ -370,6 +371,141 @@ class ProductService {
       pagination,
       brands: brandFacets,
       priceRange,
+    };
+  }
+
+  async searchProducts({ q = '', limit = 8 }) {
+    const trimmed = (q || '').toString().trim();
+    if (!trimmed || trimmed.length < 2) {
+      return { products: [], categories: [] };
+    }
+
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 8, 1), 50);
+
+    // 1. Search Categories (Active categories matching name_en, name_ar, or slug)
+    const matchingCategories = await Category.findAll({
+      where: {
+        is_active: true,
+        [Op.or]: [
+          { name_en: { [Op.iLike]: `%${trimmed}%` } },
+          { name_ar: { [Op.iLike]: `%${trimmed}%` } },
+          { slug: { [Op.iLike]: `%${trimmed}%` } },
+        ],
+      },
+      attributes: ['id', 'name_en', 'name_ar', 'slug', 'parent_id'],
+      limit: 6,
+      order: [['name_en', 'ASC']],
+    });
+
+    // 2. Search Products (Active and available products matching name_en, name_ar, sku, brand)
+    const matchingProducts = await Product.findAll({
+      where: {
+        is_active: true,
+        is_available: true,
+        [Op.or]: [
+          { name_en: { [Op.iLike]: `%${trimmed}%` } },
+          { name_ar: { [Op.iLike]: `%${trimmed}%` } },
+          { sku: { [Op.iLike]: `%${trimmed}%` } },
+          { brand: { [Op.iLike]: `%${trimmed}%` } },
+        ],
+      },
+      attributes: [
+        'id',
+        'name_en',
+        'name_ar',
+        'sku',
+        'brand',
+        'unit',
+        'unit_type',
+        'unit_value',
+        'pack_size',
+        'price',
+        'discount_price',
+        'stock_quantity',
+        'is_available',
+        'is_featured',
+        'rating',
+        'category_id',
+      ],
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name_en', 'name_ar', 'slug'],
+        },
+        {
+          model: ProductImage,
+          as: 'images',
+          attributes: ['id', 'image_url', 'is_primary', 'display_order'],
+          separate: true,
+          order: [['is_primary', 'DESC'], ['display_order', 'ASC']],
+          limit: 1,
+        },
+        {
+          model: ProductVariant,
+          as: 'variants',
+          separate: true,
+          limit: 1,
+          order: [['price', 'ASC']],
+          include: [
+            {
+              model: ProductVariantImage,
+              as: 'images',
+              order: [['is_primary', 'DESC'], ['sort_order', 'ASC']],
+              limit: 1,
+            },
+          ],
+        },
+      ],
+      limit: limitNum,
+      order: [['is_featured', 'DESC'], ['created_at', 'DESC']],
+    });
+
+    const formattedProducts = matchingProducts.map((p) => {
+      let primaryImage = null;
+      if (p.images && p.images.length > 0 && p.images[0].image_url) {
+        primaryImage = p.images[0].image_url;
+      } else if (p.variants && p.variants.length > 0 && p.variants[0].images && p.variants[0].images.length > 0) {
+        primaryImage = p.variants[0].images[0].image_url;
+      }
+
+      const unitText = p.pack_size || (p.unit_value ? `${p.unit_value} ${p.unit_type || ''}`.trim() : p.unit) || '';
+
+      return {
+        id: p.id,
+        name: p.name_en || p.name_ar,
+        name_en: p.name_en,
+        name_ar: p.name_ar,
+        slug: p.id,
+        price: parseFloat(p.price || 0),
+        salePrice: p.discount_price ? parseFloat(p.discount_price) : null,
+        discount_price: p.discount_price ? parseFloat(p.discount_price) : null,
+        thumbnail: primaryImage,
+        image: primaryImage,
+        unit: unitText,
+        brand: p.brand || '',
+        sku: p.sku,
+        category: p.category ? {
+          id: p.category.id,
+          name: p.category.name_en,
+          name_en: p.category.name_en,
+          name_ar: p.category.name_ar,
+          slug: p.category.slug,
+        } : null,
+      };
+    });
+
+    const formattedCategories = matchingCategories.map((c) => ({
+      id: c.id,
+      name: c.name_en || c.name_ar,
+      name_en: c.name_en,
+      name_ar: c.name_ar,
+      slug: c.slug || c.id,
+    }));
+
+    return {
+      products: formattedProducts,
+      categories: formattedCategories,
     };
   }
 

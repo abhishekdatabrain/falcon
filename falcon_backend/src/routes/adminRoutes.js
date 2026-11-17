@@ -50,7 +50,10 @@ router.delete('/customers/addresses/:addressId', checkPermission('customers.dele
 // Notification Management Routes
 router.get('/notifications', checkPermission('notifications.view'), (req, res, next) => adminController.getNotifications(req, res, next));
 router.post('/notifications', checkPermission('notifications.create'), (req, res, next) => adminController.sendNotification(req, res, next));
+router.put('/notifications/read-all', checkPermission('notifications.view'), (req, res, next) => adminController.markAllNotificationsRead(req, res, next));
+router.patch('/notifications/read-all', checkPermission('notifications.view'), (req, res, next) => adminController.markAllNotificationsRead(req, res, next));
 router.put('/notifications/:notificationId/read', checkPermission('notifications.view'), (req, res, next) => adminController.markNotificationRead(req, res, next));
+router.patch('/notifications/:notificationId/read', checkPermission('notifications.view'), (req, res, next) => adminController.markNotificationRead(req, res, next));
 router.delete('/notifications/:notificationId', checkPermission('notifications.delete'), (req, res, next) => adminController.deleteNotification(req, res, next));
 
 // Current Admin Identity & Permissions

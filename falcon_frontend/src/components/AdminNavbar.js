@@ -16,6 +16,7 @@ import {
   Apple,
   Bell,
   CheckCircle2,
+  CheckCheck,
   Clock,
 } from 'lucide-react';
 
@@ -33,6 +34,75 @@ export default function AdminNavbar({ mobileOpen, setMobileOpen }) {
   const handleLogout = async () => {
     await logout();
     router.push('/admin/login');
+  };
+
+  const handleNotificationClick = async (item) => {
+    // a. Optimistically mark notification as read and decrement unread badge
+    if (!item.is_read) {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === item.id ? { ...n, is_read: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+
+      // b. Call mark-as-read API endpoint
+      try {
+        await fetchApi(`/admin/notifications/${item.id}/read`, {
+          method: 'PATCH',
+        });
+      } catch (err) {
+        try {
+          await fetchApi(`/notifications/${item.id}/read`, {
+            method: 'PATCH',
+          });
+        } catch (fallbackErr) {
+          console.error('Failed to mark notification as read:', fallbackErr);
+        }
+      }
+    }
+
+    // Close the notification dropdown
+    setShowNotifDropdown(false);
+
+    // c. Redirect admin to the corresponding detail page
+    let targetUrl = item.redirect_url;
+    if (!targetUrl) {
+      if (item.order_id) {
+        targetUrl = `/admin/orders/${item.order_id}`;
+      } else {
+        const text = `${item.title_en || ''} ${item.body_en || ''} ${item.title_ar || ''} ${item.body_ar || ''}`;
+        const match = text.match(/(?:#)?(ORD-[A-Za-z0-9-]+)/i);
+        if (match) {
+          targetUrl = `/admin/orders/${match[1]}`;
+        } else {
+          targetUrl = '/admin/notifications';
+        }
+      }
+    }
+
+    router.push(targetUrl);
+  };
+
+  const handleMarkAllAsRead = async (e) => {
+    if (e) e.stopPropagation();
+    if (unreadCount === 0) return;
+
+    // Optimistically mark all notifications as read
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    setUnreadCount(0);
+
+    try {
+      await fetchApi('/admin/notifications/read-all', {
+        method: 'PATCH',
+      });
+    } catch (err) {
+      try {
+        await fetchApi('/notifications/read-all', {
+          method: 'PATCH',
+        });
+      } catch (fallbackErr) {
+        console.error('Failed to mark all notifications as read:', fallbackErr);
+      }
+    }
   };
 
   // Fetch recent notifications for header
@@ -126,18 +196,31 @@ export default function AdminNavbar({ mobileOpen, setMobileOpen }) {
             {showNotifDropdown && (
               <div className="absolute right-0 rtl:right-auto rtl:left-0 mt-2 w-80 sm:w-88 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
                 {/* Dropdown Header */}
-                <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Bell className="w-4 h-4 text-emerald-600" />
                     <span className="font-black text-xs text-slate-900">
                       {locale === 'ar' ? 'الإشعارات والتنبيهات' : 'Notifications'}
                     </span>
                   </div>
-                  {unreadCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-700 border border-rose-200">
-                      {unreadCount} {locale === 'ar' ? 'جديد' : 'new'}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {unreadCount > 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-700 border border-rose-200">
+                        {unreadCount} {locale === 'ar' ? 'جديد' : 'new'}
+                      </span>
+                    )}
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={handleMarkAllAsRead}
+                        type="button"
+                        className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors cursor-pointer flex items-center gap-1"
+                        title={locale === 'ar' ? 'تحديد الكل كمقروء' : 'Mark all as read'}
+                      >
+                        <CheckCheck className="w-3.5 h-3.5" />
+                        <span>{locale === 'ar' ? 'تحديد الكل كمقروء' : 'Mark all as read'}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Notifications List */}
@@ -155,16 +238,17 @@ export default function AdminNavbar({ mobileOpen, setMobileOpen }) {
                       return (
                         <div
                           key={item.id}
-                          className={`p-3.5 hover:bg-slate-50/80 transition-colors ${
- !item.is_read ? 'bg-emerald-50/40' : ''
- }`}
+                          onClick={() => handleNotificationClick(item)}
+                          className={`p-3.5 hover:bg-slate-50 transition-colors cursor-pointer ${
+                            !item.is_read ? 'bg-emerald-50/40' : ''
+                          }`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <span className="font-bold text-xs text-slate-900 line-clamp-1">
                               {title}
                             </span>
                             {!item.is_read && (
-                              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 mt-1" />
+                              <span className="w-2 h-2 rounded-full bg-[#16A34A] shrink-0 mt-1" />
                             )}
                           </div>
                           {body && (
