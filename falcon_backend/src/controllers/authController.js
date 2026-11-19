@@ -5,7 +5,7 @@ const { setAuthCookies, clearAuthCookies } = require('../utils/jwt');
 class AuthController {
   async register(req, res, next) {
     try {
-      let { email, mobile, password, first_name, last_name, username, verificationCode } = req.body;
+      let { email, mobile, password, first_name, last_name, username, verificationCode, vatNo, companyName, crNo, address } = req.body;
       const fieldErrors = {};
 
       if (username) {
@@ -38,12 +38,28 @@ class AuthController {
         });
       }
 
-      const result = await authService.registerCustomer({ email, mobile, password, first_name, last_name, username, verificationCode });
+      const result = await authService.registerCustomer({
+        email,
+        mobile,
+        password,
+        first_name,
+        last_name,
+        username,
+        verificationCode,
+        vatNo,
+        companyName,
+        crNo,
+        address,
+      });
       return sendSuccess(res, 'Registration successful. You can now log in.', {
         userId: result.user.id,
         email: result.user.email,
         mobile: result.user.mobile,
         username: result.user.username,
+        vatNo: result.user.vat_no,
+        companyName: result.user.company_name,
+        crNo: result.user.cr_no,
+        address: result.user.address,
       }, 201);
     } catch (error) {
       return res.status(400).json({

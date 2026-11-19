@@ -6,7 +6,7 @@ import { useAuth } from '../../../src/contexts/AuthContext';
 import { useLanguage } from '../../../src/contexts/LanguageContext';
 import { useToast } from '../../../src/contexts/ToastContext';
 import { fetchApi } from '../../../src/services/api';
-import { Mail, Phone, ChevronDown, Check, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { Mail, Phone, ChevronDown, Check, AlertCircle, CheckCircle2, Loader2, Sparkles, FileText, Building2, Hash, MapPin } from 'lucide-react';
 
 const COUNTRY_CODES = [
   { code: '+966', flag: '🇸🇦' },
@@ -35,6 +35,11 @@ export default function RegisterPage() {
   const [emailAddress, setEmailAddress] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
+  const [hasVat, setHasVat] = useState(false);
+  const [vatNo, setVatNo] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [crNo, setCrNo] = useState('');
+  const [vatAddress, setVatAddress] = useState('');
 
   // States
   const [loading, setLoading] = useState(false);
@@ -260,6 +265,27 @@ export default function RegisterPage() {
       errors.agreedToPolicy = locale === 'ar' ? 'يجب الموافقة على سياسة الخصوصية' : 'You must agree to the Privacy Policy';
     }
 
+    if (hasVat) {
+      const cleanVat = vatNo.trim();
+      if (!cleanVat) {
+        errors.vatNo = locale === 'ar' ? 'الرقم الضريبي مطلوب' : 'VAT No is required';
+      } else if (!/^\d{15}$/.test(cleanVat)) {
+        errors.vatNo = locale === 'ar' ? 'الرقم الضريبي يجب أن يتكون من 15 رقم' : 'VAT No must be a valid 15-digit number';
+      }
+
+      if (!companyName.trim()) {
+        errors.companyName = locale === 'ar' ? 'اسم الشركة مطلوب' : 'Company Name is required';
+      }
+
+      if (!crNo.trim()) {
+        errors.crNo = locale === 'ar' ? 'رقم السجل التجاري مطلوب' : 'CR No is required';
+      }
+
+      if (!vatAddress.trim()) {
+        errors.address = locale === 'ar' ? 'العنوان مطلوب' : 'Address is required';
+      }
+    }
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       const firstError = Object.values(errors)[0];
@@ -277,11 +303,11 @@ export default function RegisterPage() {
       const cleanMobile = mobileNumber.replace(/[^0-9]/g, '');
       const fullMobile = signupMode === 'mobile'
         ? `${countryCode}${cleanMobile.replace(/^0+/, '')}`
-        : `+9665${Math.floor(10000000 + Math.random() * 90000000)}`;
+        : ``;
 
       const fullEmail = signupMode === 'email' && emailAddress.trim()
         ? emailAddress.trim().toLowerCase()
-        : `user_${cleanMobile || Date.now()}@saqrcart.com`;
+        : ``;
 
       const res = await register({
         username: username.trim(),
@@ -291,6 +317,10 @@ export default function RegisterPage() {
         mobile: fullMobile,
         password,
         verificationCode: verificationCode.trim(),
+        vatNo: hasVat ? vatNo.trim() : null,
+        companyName: hasVat ? companyName.trim() : null,
+        crNo: hasVat ? crNo.trim() : null,
+        address: hasVat ? vatAddress.trim() : null,
       });
 
       if (res.success) {
@@ -635,21 +665,21 @@ export default function RegisterPage() {
                   setAgreedToPolicy(e.target.checked);
                   if (fieldErrors.agreedToPolicy) setFieldErrors(prev => ({ ...prev, agreedToPolicy: null }));
                 }}
-                className="mt-1 w-4 h-4 rounded border-slate-300 text-[#00c269] focus:ring-[#00c269] cursor-pointer"
+                className="mt-1 w-4 h-4 rounded border-slate-300 accent-[#00B14F] text-[#00B14F] focus:ring-[#00B14F] cursor-pointer"
               />
               <span className="text-xs sm:text-[13px] text-slate-500 font-normal leading-relaxed">
                 {locale === 'ar' ? (
                   <>
                     لقد قرأت ووافقت على{' '}
-                    <Link href="/privacy" className="text-[#00c269] hover:underline font-medium">
-                      "سياسة الخصوصية"
+                    <Link href="/privacy" className="text-[#00B14F] hover:underline font-medium">
+                      &quot;سياسة الخصوصية&quot;
                     </Link>
                   </>
                 ) : (
                   <>
                     I have read and agree to the{' '}
-                    <Link href="/privacy" className="text-[#00c269] hover:underline font-medium">
-                      "Privacy Policy"
+                    <Link href="/privacy" className="text-[#00B14F] hover:underline font-medium">
+                      &quot;Privacy Policy&quot;
                     </Link>
                   </>
                 )}
@@ -660,11 +690,157 @@ export default function RegisterPage() {
             )}
           </div>
 
+          {/* VAT No (Optional) Checkbox Toggle */}
+          <div className="pt-1 text-left rtl:text-right">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none group">
+              <input
+                type="checkbox"
+                checked={hasVat}
+                onChange={(e) => {
+                  setHasVat(e.target.checked);
+                  if (!e.target.checked) {
+                    setFieldErrors(prev => {
+                      const { vatNo, companyName, crNo, address, ...rest } = prev;
+                      return rest;
+                    });
+                  }
+                }}
+                className="w-4 h-4 rounded border-slate-300 accent-[#00B14F] text-[#00B14F] focus:ring-[#00B14F] cursor-pointer"
+              />
+              <span className="text-sm font-bold text-slate-800 group-hover:text-slate-900 transition-colors">
+                {locale === 'ar' ? 'الرقم الضريبي (اختياري)' : 'VAT No (Optional)'}
+              </span>
+            </label>
+
+            {/* Conditional Expandable Fields (Soft mint-green container) */}
+            {hasVat && (
+              <div className="bg-[#E8F8EE] border border-[#00B14F]/20 rounded-2xl p-3.5 mt-3 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                {/* 1. VAT No */}
+                <div className="space-y-1">
+                  <div
+                    className={`bg-white rounded-xl border flex items-center overflow-hidden transition-all ${
+                      fieldErrors.vatNo
+                        ? 'border-rose-400 ring-1 ring-rose-400'
+                        : 'border-slate-200/80 focus-within:border-[#00B14F]'
+                    }`}
+                  >
+                    <div className="bg-[#F8FAFC] px-3.5 py-3 text-slate-600 border-r border-slate-100 rtl:border-l rtl:border-r-0 shrink-0">
+                      <FileText className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <input
+                      type="text"
+                      name="vatNo"
+                      value={vatNo}
+                      maxLength={15}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 15);
+                        setVatNo(val);
+                        if (fieldErrors.vatNo) setFieldErrors(prev => ({ ...prev, vatNo: null }));
+                      }}
+                      placeholder={locale === 'ar' ? 'أدخل الرقم الضريبي' : 'Enter VAT No'}
+                      className="w-full px-3.5 py-2.5 bg-transparent text-sm text-slate-700 placeholder-slate-400 font-medium focus:outline-none"
+                    />
+                  </div>
+                  {fieldErrors.vatNo && (
+                    <p className="text-[11px] font-medium text-rose-600 px-1">{fieldErrors.vatNo}</p>
+                  )}
+                </div>
+
+                {/* 2. Company Name */}
+                <div className="space-y-1">
+                  <div
+                    className={`bg-white rounded-xl border flex items-center overflow-hidden transition-all ${
+                      fieldErrors.companyName
+                        ? 'border-rose-400 ring-1 ring-rose-400'
+                        : 'border-slate-200/80 focus-within:border-[#00B14F]'
+                    }`}
+                  >
+                    <div className="bg-[#F8FAFC] px-3.5 py-3 text-slate-600 border-r border-slate-100 rtl:border-l rtl:border-r-0 shrink-0">
+                      <Building2 className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <input
+                      type="text"
+                      name="companyName"
+                      value={companyName}
+                      onChange={(e) => {
+                        setCompanyName(e.target.value);
+                        if (fieldErrors.companyName) setFieldErrors(prev => ({ ...prev, companyName: null }));
+                      }}
+                      placeholder={locale === 'ar' ? 'أدخل اسم الشركة' : 'Enter Company Name'}
+                      className="w-full px-3.5 py-2.5 bg-transparent text-sm text-slate-700 placeholder-slate-400 font-medium focus:outline-none"
+                    />
+                  </div>
+                  {fieldErrors.companyName && (
+                    <p className="text-[11px] font-medium text-rose-600 px-1">{fieldErrors.companyName}</p>
+                  )}
+                </div>
+
+                {/* 3. CR No */}
+                <div className="space-y-1">
+                  <div
+                    className={`bg-white rounded-xl border flex items-center overflow-hidden transition-all ${
+                      fieldErrors.crNo
+                        ? 'border-rose-400 ring-1 ring-rose-400'
+                        : 'border-slate-200/80 focus-within:border-[#00B14F]'
+                    }`}
+                  >
+                    <div className="bg-[#F8FAFC] px-3.5 py-3 text-slate-600 border-r border-slate-100 rtl:border-l rtl:border-r-0 shrink-0">
+                      <Hash className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <input
+                      type="text"
+                      name="crNo"
+                      value={crNo}
+                      onChange={(e) => {
+                        setCrNo(e.target.value);
+                        if (fieldErrors.crNo) setFieldErrors(prev => ({ ...prev, crNo: null }));
+                      }}
+                      placeholder={locale === 'ar' ? 'أدخل رقم السجل التجاري' : 'Enter CR No'}
+                      className="w-full px-3.5 py-2.5 bg-transparent text-sm text-slate-700 placeholder-slate-400 font-medium focus:outline-none"
+                    />
+                  </div>
+                  {fieldErrors.crNo && (
+                    <p className="text-[11px] font-medium text-rose-600 px-1">{fieldErrors.crNo}</p>
+                  )}
+                </div>
+
+                {/* 4. Address */}
+                <div className="space-y-1">
+                  <div
+                    className={`bg-white rounded-xl border flex items-center overflow-hidden transition-all ${
+                      fieldErrors.address
+                        ? 'border-rose-400 ring-1 ring-rose-400'
+                        : 'border-slate-200/80 focus-within:border-[#00B14F]'
+                    }`}
+                  >
+                    <div className="bg-[#F8FAFC] px-3.5 py-3 text-slate-600 border-r border-slate-100 rtl:border-l rtl:border-r-0 shrink-0">
+                      <MapPin className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <input
+                      type="text"
+                      name="address"
+                      value={vatAddress}
+                      onChange={(e) => {
+                        setVatAddress(e.target.value);
+                        if (fieldErrors.address) setFieldErrors(prev => ({ ...prev, address: null }));
+                      }}
+                      placeholder={locale === 'ar' ? 'أدخل العنوان' : 'Enter Address'}
+                      className="w-full px-3.5 py-2.5 bg-transparent text-sm text-slate-700 placeholder-slate-400 font-medium focus:outline-none"
+                    />
+                  </div>
+                  {fieldErrors.address && (
+                    <p className="text-[11px] font-medium text-rose-600 px-1">{fieldErrors.address}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Main Sign up button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-[#00c269] hover:bg-[#00ab5d] active:scale-[0.99] text-white font-semibold text-base transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
+            className="w-full py-3.5 rounded-xl bg-[#00B14F] hover:bg-[#009b45] active:scale-[0.99] text-white font-semibold text-base transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

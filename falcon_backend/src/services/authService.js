@@ -8,7 +8,7 @@ const verificationStore = new Map();
 
 class AuthService {
   async registerCustomer(data) {
-    const { email, mobile, password, first_name, last_name, username, verificationCode } = data;
+    const { email, mobile, password, first_name, last_name, username, verificationCode, vatNo, companyName, crNo, address } = data;
 
     if (verificationCode) {
       const emailValid = email ? this.verifyCode(email, verificationCode) : false;
@@ -66,6 +66,10 @@ class AuthService {
         password_hash: hashedPassword,
         role: ROLES.CUSTOMER,
         status: 'ACTIVE',
+        vat_no: vatNo ? String(vatNo).trim() : null,
+        company_name: companyName ? String(companyName).trim() : null,
+        cr_no: crNo ? String(crNo).trim() : null,
+        address: address ? String(address).trim() : null,
       }, { transaction: t });
 
       const customer = await Customer.create({

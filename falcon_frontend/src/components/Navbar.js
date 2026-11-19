@@ -46,6 +46,18 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [dbCategories, setDbCategories] = useState([]);
+  const [activeMegaCategory, setActiveMegaCategory] = useState(null);
+  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+  const megaMenuCloseTimeoutRef = React.useRef(null);
+  const [mobileExpandedCat, setMobileExpandedCat] = useState(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (megaMenuCloseTimeoutRef.current) {
+        clearTimeout(megaMenuCloseTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Live search debounced fetch (300ms, >= 2 characters)
   React.useEffect(() => {
@@ -110,7 +122,7 @@ export default function Navbar() {
   }, []);
 
   React.useEffect(() => {
-    fetchApi('/categories?type=parent')
+    fetchApi('/categories?type=parent&all=true')
       .then((res) => {
         if (res.success) {
           const rawCats = res.data?.categories || res.data || [];
@@ -305,15 +317,232 @@ export default function Navbar() {
     );
   };
 
-  const navCategories = [
-    { name_en: 'Deals & Offers', name_ar: 'العروض والخصومات', href: '/products?deals=true' },
-    ...(dbCategories || []).map((c) => ({
-      name_en: c.name_en,
-      name_ar: c.name_ar,
-      href: getCategoryUrl(c),
-    })),
-    { name_en: 'Help', name_ar: 'المساعدة', href: '/contact' },
-  ];
+  const handleCategoryMouseEnter = (cat) => {
+    if (megaMenuCloseTimeoutRef.current) {
+      clearTimeout(megaMenuCloseTimeoutRef.current);
+      megaMenuCloseTimeoutRef.current = null;
+    }
+    setActiveMegaCategory(cat);
+    setIsMegaMenuOpen(true);
+  };
+
+  const handleNavMouseLeave = () => {
+    if (megaMenuCloseTimeoutRef.current) {
+      clearTimeout(megaMenuCloseTimeoutRef.current);
+    }
+    megaMenuCloseTimeoutRef.current = setTimeout(() => {
+      setIsMegaMenuOpen(false);
+      setActiveMegaCategory(null);
+    }, 150);
+  };
+
+  const handleMegaMenuMouseEnter = () => {
+    if (megaMenuCloseTimeoutRef.current) {
+      clearTimeout(megaMenuCloseTimeoutRef.current);
+      megaMenuCloseTimeoutRef.current = null;
+    }
+  };
+
+  const handleCloseMegaMenu = () => {
+    if (megaMenuCloseTimeoutRef.current) {
+      clearTimeout(megaMenuCloseTimeoutRef.current);
+      megaMenuCloseTimeoutRef.current = null;
+    }
+    setIsMegaMenuOpen(false);
+    setActiveMegaCategory(null);
+  };
+
+  const getCategoryFeaturedImage = (cat) => {
+    if (!cat) return '/categories/cat_groceries.jpg';
+    if (cat.image_url) return getImageUrl(cat.image_url);
+    if (cat.banner?.image_url) return getImageUrl(cat.banner.image_url);
+    if (cat.img) return getImageUrl(cat.img);
+
+    const slug = (cat.slug || cat.name_en || '').toLowerCase();
+    if (slug.includes('frozen')) return '/categories/cat_frozen_food.jpg';
+    if (slug.includes('dairy') || slug.includes('egg') || slug.includes('milk')) return '/categories/cat_dairy.jpg';
+    if (slug.includes('coffee') || slug.includes('beverage') || slug.includes('tea') || slug.includes('drink')) return '/subcategories/tea_coffee.png';
+    if (slug.includes('household') || slug.includes('clean')) return '/categories/cat_household.jpg';
+    if (slug.includes('care') || slug.includes('beauty')) return '/categories/cat_personal_care.jpg';
+    if (slug.includes('snack')) return '/categories/cat_snacks.jpg';
+    return '/categories/cat_groceries.jpg';
+  };
+
+  const renderMegaMenuPanel = () => {
+    if (!isMegaMenuOpen || !activeMegaCategory) return null;
+
+    const subcategories = Array.isArray(activeMegaCategory.subcategories)
+      ? activeMegaCategory.subcategories.filter((s) => s.is_active !== false)
+      : [];
+    const parentTitle = locale === 'ar'
+      ? activeMegaCategory.name_ar || activeMegaCategory.name_en
+      : activeMegaCategory.name_en;
+    const categoryImgSrc = getCategoryFeaturedImage(activeMegaCategory);
+
+    return (
+      <>
+        {/* Subtle backdrop overlay */}
+        <div
+          className="fixed inset-0 top-[115px] bg-black/25 z-40 pointer-events-none transition-opacity duration-200"
+          aria-hidden="true"
+        />
+
+        {/* Mega Menu Dropdown Panel */}
+        <div
+          onMouseEnter={handleMegaMenuMouseEnter}
+          onMouseLeave={handleNavMouseLeave}
+          className="absolute top-full left-0 right-0 w-full bg-white shadow-2xl border-b border-slate-200 z-50 animate-in fade-in slide-in-from-top-1 duration-150 text-left rtl:text-right"
+        >
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 py-7">
+            <div className="flex flex-col lg:flex-row items-stretch gap-8">
+              {/* Left / Center Area: Subcategories Grid */}
+              <div className="flex-1 min-w-0">
+                {subcategories.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-7">
+                    {subcategories.map((sub) => {
+                      const subTitle = locale === 'ar' ? sub.name_ar || sub.name_en : sub.name_en;
+                      const children = Array.isArray(sub.subcategories)
+                        ? sub.subcategories.filter((c) => c.is_active !== false)
+                        : [];
+
+                      return (
+                        <div key={sub.id} className="space-y-2 min-w-0">
+                          {/* L2 Subcategory Heading */}
+                          <Link
+                            href={getCategoryUrl(sub, getCategoryUrl(activeMegaCategory))}
+                            onClick={handleCloseMegaMenu}
+                            className="font-bold text-slate-900 text-[13px] hover:text-emerald-700 transition-colors block leading-tight pb-1.5 border-b border-slate-100 truncate group"
+                            title={subTitle}
+                          >
+                            <span className="group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 inline-block transition-transform">
+                              {subTitle}
+                            </span>
+                          </Link>
+
+                          {/* L3 Child Categories List */}
+                          {children.length > 0 && (
+                            <ul className="space-y-1.5 pt-0.5">
+                              {children.map((child) => {
+                                const childTitle = locale === 'ar'
+                                  ? child.name_ar || child.name_en
+                                  : child.name_en;
+                                return (
+                                  <li key={child.id}>
+                                    <Link
+                                      href={getCategoryUrl(child, getCategoryUrl(sub, getCategoryUrl(activeMegaCategory)))}
+                                      onClick={handleCloseMegaMenu}
+                                      className="text-[12px] text-slate-500 hover:text-emerald-800 hover:font-medium transition-colors block truncate leading-snug py-0.5"
+                                      title={childTitle}
+                                    >
+                                      {childTitle}
+                                    </Link>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/70 p-6 rounded-2xl border border-slate-100">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">
+                        {parentTitle}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {locale === 'ar'
+                          ? 'تصفح جميع المنتجات المتوفرة في هذا القسم'
+                          : 'Browse all products available in this category'}
+                      </p>
+                    </div>
+                    <Link
+                      href={getCategoryUrl(activeMegaCategory)}
+                      onClick={handleCloseMegaMenu}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white text-xs font-bold transition-all shadow-xs"
+                    >
+                      <span>{locale === 'ar' ? 'عرض جميع المنتجات' : 'View all products'}</span>
+                      <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Side: Category Featured Image Card */}
+              <div className="hidden lg:flex w-64 xl:w-72 shrink-0 flex-col">
+                <Link
+                  href={getCategoryUrl(activeMegaCategory)}
+                  onClick={handleCloseMegaMenu}
+                  className="group/catCard relative flex flex-col h-full bg-gradient-to-b from-slate-50 to-emerald-50/30 rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 hover:border-emerald-300"
+                >
+                  {/* Category Image Container */}
+                  <div className="relative w-full h-44 xl:h-48 overflow-hidden bg-white flex items-center justify-center p-3">
+                    <img
+                      src={categoryImgSrc}
+                      alt={parentTitle}
+                      className="w-full h-full object-cover group-hover/catCard:scale-105 transition-transform duration-500 rounded-xl"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/categories/cat_groceries.jpg';
+                      }}
+                    />
+
+                  </div>
+
+                  {/* Card Info */}
+                  <div className="p-4 flex flex-col justify-between flex-1 bg-white/70">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm group-hover/catCard:text-[#043927] transition-colors leading-snug line-clamp-1">
+                        {parentTitle}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                        {locale === 'ar'
+                          ? `اكتشف أفضل عروض ومنتجات قسم ${parentTitle}`
+                          : `Explore the best deals and curated products in ${parentTitle}`}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-[#043927] flex items-center gap-1 group-hover/catCard:underline">
+                        <span>{locale === 'ar' ? 'تسوق الآن' : 'Shop Now'}</span>
+                        <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180 group-hover/catCard:translate-x-0.5 rtl:group-hover/catCard:-translate-x-0.5 transition-transform" />
+                      </span>
+                      {subcategories.length > 0 && (
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          {subcategories.length} {locale === 'ar' ? 'أقسام فرعية' : 'subcategories'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            {/* Mega Menu Footer Banner */}
+            <div className="mt-7 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span className="font-medium">
+                {subcategories.length}{' '}
+                {locale === 'ar' ? 'أقسام فرعية متوفرة' : 'subcategories available'}
+              </span>
+              <Link
+                href={getCategoryUrl(activeMegaCategory)}
+                onClick={handleCloseMegaMenu}
+                className="font-bold text-[#043927] hover:text-[#02281b] flex items-center gap-1 hover:underline transition-all"
+              >
+                <span>
+                  {locale === 'ar'
+                    ? `استكشف جميع منتجات ${parentTitle}`
+                    : `Explore all ${parentTitle} products`}
+                </span>
+                <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  };
 
   return (
     <header className="sticky top-0 z-50 shadow-md">
@@ -403,7 +632,7 @@ export default function Navbar() {
                   className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors cursor-pointer"
                 >
                   <User className="w-4.5 h-4.5" />
-                  <span className="hidden md:inline-block max-w-[90px] truncate">{user.name || user.email}</span>
+                  <span className="hidden md:inline-block max-w-[90px] truncate">{user.username || user.email}</span>
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
               ) : (
@@ -482,34 +711,79 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Sub-header Category Navigation Bar */}
-      <div className="bg-white text-slate-800 py-2.5 px-4 sm:px-6 lg:px-8 border-b border-slate-200 shadow-xs">
-        <div className="max-w-7xl mx-auto flex items-center gap-6 overflow-x-auto scrollbar-none font-medium text-xs whitespace-nowrap">
-          {/* All Categories Button */}
-          <Link
-            href="/products"
-            className="flex items-center gap-1.5 hover:text-emerald-700 text-slate-900 font-bold pr-3 border-r border-slate-200 rtl:border-l rtl:border-r-0 rtl:pl-3 rtl:pr-0"
-          >
-            <Menu className="w-4 h-4 text-slate-700" />
-            <span>{locale === 'ar' ? 'جميع الاقسام' : 'All'}</span>
-          </Link>
-
-          {/* Nav Categories List */}
-          {navCategories.map((cat, idx) => (
+      {/* Sub-header Category Navigation Bar with Mega Menu */}
+      <div
+        onMouseLeave={handleNavMouseLeave}
+        className="relative bg-white text-slate-800 border-b border-slate-200 shadow-xs z-40"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-1 sm:gap-3 overflow-x-auto scrollbar-none text-xs whitespace-nowrap py-1">
+            {/* All Categories Button */}
             <Link
-              key={idx}
-              href={cat.href}
-              className="text-slate-700 hover:text-emerald-800 hover:font-semibold transition-colors py-0.5"
+              href="/products"
+              onMouseEnter={handleCloseMegaMenu}
+              className="flex items-center gap-1.5 text-slate-900 hover:text-black font-bold py-2 px-2.5 rounded-md hover:bg-slate-100 transition-colors shrink-0 border-r border-slate-200 rtl:border-l rtl:border-r-0 rtl:pl-3 rtl:pr-1"
             >
-              {locale === 'ar' ? cat.name_ar : cat.name_en}
+              <Menu className="w-4 h-4 text-slate-800" />
+              <span>{locale === 'ar' ? 'جميع الأقسام' : 'All'}</span>
             </Link>
-          ))}
+
+            {/* Deals & Offers */}
+            <Link
+              href="/products?deals=true"
+              onMouseEnter={handleCloseMegaMenu}
+              className="relative py-2 px-2.5 text-rose-600 hover:text-rose-700 font-bold transition-colors shrink-0"
+            >
+              <span>{locale === 'ar' ? 'العروض والخصومات' : 'Deals & Offers'}</span>
+            </Link>
+
+            {/* Dynamic Parent Categories */}
+            {(dbCategories || []).map((cat) => {
+              const isActive = isMegaMenuOpen && activeMegaCategory?.id === cat.id;
+              const title = locale === 'ar' ? (cat.name_ar || cat.name_en) : (cat.name_en || cat.name_ar);
+              return (
+                <div
+                  key={cat.id}
+                  onMouseEnter={() => handleCategoryMouseEnter(cat)}
+                  className="relative shrink-0"
+                >
+                  <Link
+                    href={getCategoryUrl(cat)}
+                    className={`relative block py-2 px-2.5 text-xs transition-colors ${
+                      isActive
+                        ? 'text-black font-bold'
+                        : 'text-slate-700 hover:text-black font-medium'
+                    }`}
+                  >
+                    <span>{title}</span>
+                    {/* Active Black Underline Indicator */}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black rounded-full" />
+                    )}
+                  </Link>
+                </div>
+              );
+            })}
+
+            {/* Help / Contact */}
+            <Link
+              href="/contact"
+              onMouseEnter={handleCloseMegaMenu}
+              className="relative py-2 px-2.5 text-slate-600 hover:text-black font-medium transition-colors shrink-0"
+            >
+              <span>{locale === 'ar' ? 'المساعدة' : 'Help'}</span>
+            </Link>
+          </div>
         </div>
+
+        {/* Dynamic Mega Menu Dropdown Panel */}
+        {renderMegaMenuPanel()}
       </div>
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="sm:hidden bg-[#043927] text-white p-4 space-y-3 border-b border-emerald-800">
+        <div className="sm:hidden bg-[#043927] text-white p-4 space-y-3 border-b border-emerald-800 max-h-[calc(100vh-80px)] overflow-y-auto">
+          {/* Mobile Search */}
           <div ref={mobileSearchContainerRef} className="relative mb-3">
             <form onSubmit={handleSearchSubmit} className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -543,16 +817,102 @@ export default function Navbar() {
             {renderSearchDropdown()}
           </div>
 
-          {navCategories.map((cat, idx) => (
+          {/* Mobile Navigation List with Collapsible Accordions */}
+          <div className="space-y-1 pt-1">
             <Link
-              key={idx}
-              href={cat.href}
+              href="/products?deals=true"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-xs font-semibold text-emerald-100 hover:text-white"
+              className="block py-2 px-2 text-xs font-bold text-amber-300 hover:text-amber-200"
             >
-              {locale === 'ar' ? cat.name_ar : cat.name_en}
+              {locale === 'ar' ? 'العروض والخصومات' : 'Deals & Offers'}
             </Link>
-          ))}
+
+            <Link
+              href="/products"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 px-2 text-xs font-bold text-emerald-100 hover:text-white"
+            >
+              {locale === 'ar' ? 'جميع المنتجات' : 'All Products'}
+            </Link>
+
+            {/* Dynamic Parent Categories */}
+            {(dbCategories || []).map((cat) => {
+              const isExpanded = mobileExpandedCat === cat.id;
+              const title = locale === 'ar' ? (cat.name_ar || cat.name_en) : (cat.name_en || cat.name_ar);
+              const subs = (cat.subcategories || []).filter((s) => s.is_active !== false);
+
+              return (
+                <div key={cat.id} className="border-b border-emerald-800/60 pb-1">
+                  <div className="flex items-center justify-between py-1.5 px-2">
+                    <Link
+                      href={getCategoryUrl(cat)}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-xs font-semibold text-white hover:text-emerald-300 flex-1 truncate"
+                    >
+                      {title}
+                    </Link>
+                    {subs.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setMobileExpandedCat(isExpanded ? null : cat.id)}
+                        className="p-1 text-emerald-200 hover:text-white transition-transform"
+                        aria-label="Toggle subcategories"
+                      >
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+                    )}
+                  </div>
+
+                  {isExpanded && subs.length > 0 && (
+                    <div className="pl-4 rtl:pr-4 rtl:pl-0 space-y-2 py-2 bg-[#032e1f]/60 rounded-lg my-1">
+                      {subs.map((sub) => {
+                        const subTitle = locale === 'ar' ? (sub.name_ar || sub.name_en) : (sub.name_en || sub.name_ar);
+                        const childSubs = (sub.subcategories || []).filter((c) => c.is_active !== false);
+
+                        return (
+                          <div key={sub.id} className="space-y-1">
+                            <Link
+                              href={getCategoryUrl(sub, getCategoryUrl(cat))}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="block text-[11px] font-bold text-emerald-200 hover:text-white px-2 py-0.5"
+                            >
+                              {subTitle}
+                            </Link>
+
+                            {childSubs.length > 0 && (
+                              <div className="pl-3 rtl:pr-3 rtl:pl-0 space-y-1">
+                                {childSubs.map((child) => {
+                                  const childTitle = locale === 'ar' ? (child.name_ar || child.name_en) : (child.name_en || child.name_ar);
+                                  return (
+                                    <Link
+                                      key={child.id}
+                                      href={getCategoryUrl(child, getCategoryUrl(sub, getCategoryUrl(cat)))}
+                                      onClick={() => setMobileMenuOpen(false)}
+                                      className="block text-[11px] text-emerald-100/70 hover:text-white px-2 py-0.5"
+                                    >
+                                      {childTitle}
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            <Link
+              href="/contact"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 px-2 text-xs font-semibold text-emerald-100 hover:text-white"
+            >
+              {locale === 'ar' ? 'المساعدة' : 'Help'}
+            </Link>
+          </div>
         </div>
       )}
     </header>

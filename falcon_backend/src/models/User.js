@@ -44,6 +44,22 @@ const User = sequelize.define('User', {
     allowNull: false,
     defaultValue: 'ACTIVE',
   },
+  vat_no: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  company_name: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  cr_no: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  address: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
 }, {
   tableName: 'users',
   timestamps: true,

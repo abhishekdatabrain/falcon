@@ -355,6 +355,10 @@ export default function HomePage() {
   const categoryScrollRef = useRef(null);
   const [canScrollCatLeft, setCanScrollCatLeft] = useState(false);
   const [canScrollCatRight, setCanScrollCatRight] = useState(true);
+  const isDraggingCatRef = useRef(false);
+  const startXCatRef = useRef(0);
+  const scrollLeftCatRef = useRef(0);
+  const hasMovedCatRef = useRef(false);
   const [dealSlideIndex, setDealSlideIndex] = useState(0);
   const [dealItemsPerSlide, setDealItemsPerSlide] = useState(10);
   const [dealTouchStart, setDealTouchStart] = useState(null);
@@ -420,6 +424,41 @@ export default function HomePage() {
     }
   };
 
+  const handleCatMouseDown = (e) => {
+    if (!categoryScrollRef.current) return;
+    isDraggingCatRef.current = true;
+    hasMovedCatRef.current = false;
+    startXCatRef.current = e.pageX - categoryScrollRef.current.offsetLeft;
+    scrollLeftCatRef.current = categoryScrollRef.current.scrollLeft;
+    categoryScrollRef.current.style.scrollBehavior = 'auto';
+    categoryScrollRef.current.style.cursor = 'grabbing';
+  };
+
+  const handleCatMouseMove = (e) => {
+    if (!isDraggingCatRef.current || !categoryScrollRef.current) return;
+    const x = e.pageX - categoryScrollRef.current.offsetLeft;
+    const walk = (x - startXCatRef.current) * 1.3;
+    if (Math.abs(walk) > 4) {
+      hasMovedCatRef.current = true;
+    }
+    categoryScrollRef.current.scrollLeft = scrollLeftCatRef.current - walk;
+  };
+
+  const handleCatMouseUp = () => {
+    if (!isDraggingCatRef.current || !categoryScrollRef.current) return;
+    isDraggingCatRef.current = false;
+    categoryScrollRef.current.style.scrollBehavior = 'smooth';
+    categoryScrollRef.current.style.cursor = 'grab';
+  };
+
+  const handleCatMouseLeave = () => {
+    if (isDraggingCatRef.current && categoryScrollRef.current) {
+      isDraggingCatRef.current = false;
+      categoryScrollRef.current.style.scrollBehavior = 'smooth';
+      categoryScrollRef.current.style.cursor = 'grab';
+    }
+  };
+
   const checkPopularScroll = () => {
     if (popularScrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = popularScrollRef.current;
@@ -459,8 +498,10 @@ export default function HomePage() {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setHeroBanners(parsed);
-          setHeroLoaded(true);
+          setTimeout(() => {
+            setHeroBanners(parsed);
+            setHeroLoaded(true);
+          }, 0);
         }
       }
     } catch (e) { }
@@ -815,30 +856,16 @@ export default function HomePage() {
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                 {locale === 'ar' ? 'استكشف تصنيفاتنا' : 'Explore Our Categories'}
               </h2>
-
             </div>
 
-            {/* Desktop Navigation Arrows in Header */}
-            <div className="hidden sm:flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => scrollCategories('prev')}
-                disabled={!canScrollCatLeft}
-                className="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
-                aria-label={locale === 'ar' ? 'السابق' : 'Previous categories'}
-              >
-                <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollCategories('next')}
-                disabled={!canScrollCatRight}
-                className="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 flex items-center justify-center text-slate-700 transition-all cursor-pointer hover:shadow-xs active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none"
-                aria-label={locale === 'ar' ? 'التالي' : 'Next categories'}
-              >
-                <ChevronRight className="w-5 h-5 rtl:rotate-180" />
-              </button>
-            </div>
+            {/* View All Button */}
+            <Link
+              href="/categories"
+              className="group inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#043927] hover:text-[#02281b] transition-all py-1.5 px-3 rounded-xl hover:bg-emerald-50/80 cursor-pointer"
+            >
+              <span>{locale === 'ar' ? 'عرض الكل' : 'View All'}</span>
+              <ArrowRight className="w-4 h-4 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
+            </Link>
           </div>
 
           {/* Cards Slider Container with Floating Edge Overlays */}
@@ -869,8 +896,11 @@ export default function HomePage() {
             <div
               ref={categoryScrollRef}
               onScroll={checkCategoryScroll}
-              className="flex items-start gap-4 sm:gap-5 overflow-x-auto scrollbar-none py-2 px-1 scroll-smooth snap-x snap-mandatory"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              onMouseDown={handleCatMouseDown}
+              onMouseMove={handleCatMouseMove}
+              onMouseUp={handleCatMouseUp}
+              onMouseLeave={handleCatMouseLeave}
+              className="flex items-start gap-4 sm:gap-5 overflow-x-auto py-2.5 px-1 scroll-smooth cursor-grab select-none touch-pan-x"
             >
               {(categories && categories.length > 0 ? categories : SAFE_DEFAULT_CATEGORIES).map((cat) => {
                 const titleEn = cat.name_en || cat.title_en || cat.name || 'Category';
@@ -884,13 +914,18 @@ export default function HomePage() {
                   <Link
                     key={cat.id || cat._id || catSlug}
                     href={getCategoryUrl(cat)}
-                    className="group/card bg-[#FFFDF8] hover:bg-[#FFF9EC] rounded-[22px] p-4 flex flex-col items-center justify-between border border-[#F6EEDF] shadow-2xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer min-h-[210px] sm:min-h-[230px] w-[155px] sm:w-[175px] md:w-[190px] shrink-0 snap-start min-w-0"
+                    onClick={(e) => {
+                      if (hasMovedCatRef.current) {
+                        e.preventDefault();
+                      }
+                    }}
+                    className="group/card bg-[#FFFDF8] hover:bg-[#FFF9EC] rounded-[22px] p-3.5 sm:p-4 flex flex-col items-center justify-between border border-[#F6EEDF] shadow-2xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer min-h-[210px] sm:min-h-[230px] w-[155px] sm:w-[175px] md:w-[190px] shrink-0 snap-start min-w-0"
                   >
-                    <div className="relative w-full aspect-square max-w-[130px] sm:max-w-[145px] rounded-xl flex items-center justify-center overflow-hidden shrink-0 min-h-0 min-w-0 my-auto p-2">
+                    <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden shrink-0 bg-white shadow-2xs border border-slate-100/80 my-auto flex items-center justify-center">
                       <img
                         src={imageSrc}
                         alt={locale === 'ar' ? titleAr : titleEn}
-                        className="w-full h-full max-w-full max-h-full object-contain drop-shadow-sm group-hover/card:scale-105 transition-transform duration-300 pointer-events-none"
+                        className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-300 pointer-events-none"
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop';
@@ -898,7 +933,7 @@ export default function HomePage() {
                       />
                     </div>
 
-                    <div className="w-full pt-2 h-[42px] sm:h-[46px] flex items-start justify-center px-0.5">
+                    <div className="w-full pt-2.5 h-[42px] sm:h-[46px] flex items-start justify-center px-0.5">
                       <h3 className="font-bold text-slate-800 text-xs sm:text-sm md:text-base text-center group-hover/card:text-[#043927] transition-colors leading-snug line-clamp-2">
                         {locale === 'ar' ? titleAr : titleEn}
                       </h3>

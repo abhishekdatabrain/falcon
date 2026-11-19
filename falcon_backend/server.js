@@ -38,6 +38,10 @@ const startServer = async () => {
           WHERE "code" IS NULL OR "code" = '';
         `);
         await sequelize.query(`ALTER TABLE ${tablePrefix}"addresses" ADD COLUMN IF NOT EXISTS "deleted_at" TIMESTAMP WITH TIME ZONE;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"users" ADD COLUMN IF NOT EXISTS "vat_no" VARCHAR(255);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"users" ADD COLUMN IF NOT EXISTS "company_name" VARCHAR(255);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"users" ADD COLUMN IF NOT EXISTS "cr_no" VARCHAR(255);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"users" ADD COLUMN IF NOT EXISTS "address" TEXT;`);
       } catch (alterErr) {
         // Table doesn't exist yet or already configured
       }
