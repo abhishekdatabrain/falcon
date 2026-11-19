@@ -624,7 +624,7 @@ export default function Navbar() {
               {locale === 'ar' ? 'English' : 'العربية'}
             </button>
 
-            {/* User Account / Auth Dropdown */}
+            {/* User Account / Auth Dropdown  */}
             <div className="relative">
               {isCustomer ? (
                 <button
