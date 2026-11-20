@@ -51,15 +51,24 @@ class AuthController {
         crNo,
         address,
       });
+      const hasBusiness = Boolean(
+        result.user.vat_no || result.user.company_name || result.user.cr_no || result.user.address
+      );
+      const business_profile = hasBusiness
+        ? {
+            vat_no: result.user.vat_no || null,
+            company_name: result.user.company_name || null,
+            cr_no: result.user.cr_no || null,
+            address: result.user.address || null,
+          }
+        : null;
+
       return sendSuccess(res, 'Registration successful. You can now log in.', {
         userId: result.user.id,
         email: result.user.email,
         mobile: result.user.mobile,
         username: result.user.username,
-        vatNo: result.user.vat_no,
-        companyName: result.user.company_name,
-        crNo: result.user.cr_no,
-        address: result.user.address,
+        business_profile,
       }, 201);
     } catch (error) {
       return res.status(400).json({
@@ -162,12 +171,25 @@ class AuthController {
 
   async me(req, res, next) {
     try {
+      const hasBusiness = Boolean(
+        req.user.vat_no || req.user.company_name || req.user.cr_no || req.user.address
+      );
+      const business_profile = hasBusiness
+        ? {
+            vat_no: req.user.vat_no || null,
+            company_name: req.user.company_name || null,
+            cr_no: req.user.cr_no || null,
+            address: req.user.address || null,
+          }
+        : null;
+
       const user = {
         id: req.user.id,
         email: req.user.email,
         mobile: req.user.mobile,
         username: req.user.username || null,
         role: req.user.role,
+        business_profile,
         profile: req.user.customer || req.user.driver || req.user.admin,
       };
 

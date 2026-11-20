@@ -7,6 +7,7 @@ const ROLES = require('../constants/roles');
 
 router.get('/', (req, res, next) => productController.getProducts(req, res, next));
 router.get('/search', (req, res, next) => productController.searchProducts(req, res, next));
+router.get('/export', authenticate, authorize(ROLES.ADMIN), (req, res, next) => productController.exportProducts(req, res, next));
 router.get('/:id', (req, res, next) => productController.getProductById(req, res, next));
 
 // Admin Product Management Routes

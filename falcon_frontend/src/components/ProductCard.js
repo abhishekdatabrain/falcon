@@ -16,6 +16,7 @@ import { useWishlist } from '../contexts/WishlistContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getImageUrl } from '../services/api';
 import VariantSelectionModal from './VariantSelectionModal';
+import ProductImageCarousel from './ProductImageCarousel';
 
 const DEFAULT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&auto=format&fit=crop';
 
@@ -194,26 +195,16 @@ export default function ProductCard({ product, categoryTitle = '' }) {
         </button>
       </div>
 
-      {/* Product Image Link */}
+      {/* Product Image Link with Auto-Carousel */}
       <Link
         href={`/products/${product.id}`}
-        className="w-full aspect-[4/3] rounded-xl p-2 overflow-hidden flex items-center justify-center my-1.5 relative cursor-pointer group-hover:bg-[#F3F4F6] transition-colors"
+        className="w-full my-1.5 block cursor-pointer"
       >
-        {isOutOfStock && (
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl">
-            <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-              {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
-            </span>
-          </div>
-        )}
-        <img
-          src={resolvedImage}
+        <ProductImageCarousel
+          product={product}
           alt={prodTitle}
-          className={`w-full h-full object-contain transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
-          }}
+          isOutOfStock={isOutOfStock}
+          aspectRatio="aspect-[4/3]"
         />
       </Link>
 

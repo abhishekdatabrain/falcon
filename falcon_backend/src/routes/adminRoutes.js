@@ -41,6 +41,7 @@ router.post('/invoices/:invoiceId/report-zatca', checkPermission('zatca.create')
 // Customer Management Routes
 router.post('/customers', checkPermission('customers.create'), (req, res, next) => adminController.createCustomer(req, res, next));
 router.get('/customers', checkPermission('customers.view'), (req, res, next) => adminController.getCustomers(req, res, next));
+router.get('/customers/export', checkPermission('customers.view'), (req, res, next) => adminController.exportCustomers(req, res, next));
 router.get('/customers/:customerId', checkPermission('customers.view'), (req, res, next) => adminController.getCustomerById(req, res, next));
 router.put('/customers/:customerId', checkPermission('customers.edit'), (req, res, next) => adminController.updateCustomer(req, res, next));
 router.put('/customers/:customerId/status', checkPermission('customers.edit'), (req, res, next) => adminController.toggleCustomerStatus(req, res, next));

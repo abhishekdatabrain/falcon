@@ -202,6 +202,27 @@ class AdminController {
     }
   }
 
+  async exportCustomers(req, res, next) {
+    try {
+      const { search, status } = req.query;
+      const { buffer, total } = await adminService.exportCustomersToExcel({ search, status });
+
+      if (!buffer || total === 0) {
+        return sendError(res, 'No customers found matching the selected filters to export', [], 404);
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `Saqrcart_Customers_${today}.xlsx`;
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', buffer.length);
+      return res.send(buffer);
+    } catch (error) {
+      return sendError(res, error.message || 'Failed to export customers to Excel', [], 500);
+    }
+  }
+
   async toggleCustomerStatus(req, res, next) {
     try {
       const { customerId } = req.params;

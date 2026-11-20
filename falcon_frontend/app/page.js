@@ -10,6 +10,7 @@ import { getCategoryUrl } from '../src/services/categoryHierarchy';
 import { ShoppingBag, Truck, ShieldCheck, FileCheck, ArrowRight, Star, Sparkles, CheckCircle2, Leaf, Tag, ChevronRight, ChevronLeft, Gift, Headphones, Shield, Smartphone, Heart, Flame, TrendingUp, Plus, Minus, Trash2, Loader2, Zap, Ban } from 'lucide-react';
 import WaveDivider from '../src/components/WaveDivider';
 import VariantSelectionModal from '../src/components/VariantSelectionModal';
+import ProductImageCarousel from '../src/components/ProductImageCarousel';
 
 const SAFE_DEFAULT_CATEGORIES = [];
 
@@ -1202,24 +1203,14 @@ export default function HomePage() {
                           </button>
                         </div>
 
-                        {/* Product Image Container: Strictly Aspect-Square with object-fit contain */}
-                        <div className="relative w-full aspect-[4/3] max-h-[120px] sm:max-h-[135px] rounded-xl p-2 overflow-hidden flex items-center justify-center my-1 shrink-0 min-h-0 min-w-0">
-                          {isOutOfStock && (
-                            <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl">
-                              <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                                {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
-                              </span>
-                            </div>
-                          )}
-                          <img
-                            src={finalImg}
+                        {/* Product Image Container with Auto-Carousel */}
+                        <div className="w-full my-1 shrink-0">
+                          <ProductImageCarousel
+                            product={prod}
                             alt={title}
-                            className={`max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 pointer-events-none ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
-                            loading="lazy"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
-                            }}
+                            isOutOfStock={isOutOfStock}
+                            aspectRatio="aspect-[4/3]"
+                            className="max-h-[120px] sm:max-h-[135px]"
                           />
                         </div>
 
@@ -1886,23 +1877,13 @@ export default function HomePage() {
                             </button>
                           </div>
 
-                          {/* Product Image Container */}
-                          <div className="w-full aspect-[4/3] rounded-xl p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
-                            {isOutOfStock && (
-                              <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl">
-                                <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                                  {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
-                                </span>
-                              </div>
-                            )}
-                            <img
-                              src={finalImg}
+                          {/* Product Image Container with Auto-Carousel */}
+                          <div className="w-full my-1.5 shrink-0">
+                            <ProductImageCarousel
+                              product={prod}
                               alt={title}
-                              className={`w-full h-full object-contain transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
-                              }}
+                              isOutOfStock={isOutOfStock}
+                              aspectRatio="aspect-[4/3]"
                             />
                           </div>
 

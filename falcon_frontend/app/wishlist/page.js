@@ -7,6 +7,7 @@ import { useWishlist } from '../../src/contexts/WishlistContext';
 import { useCart } from '../../src/contexts/CartContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { fetchApi, getImageUrl } from '../../src/services/api';
+import ProductImageCarousel from '../../src/components/ProductImageCarousel';
 import {
   Heart,
   ShoppingBag,
@@ -572,20 +573,13 @@ export default function WishlistPage() {
                         </button>
 
                         {/* Product Image */}
-                        <Link href={`/products/${item.id}`} className="w-full h-full flex items-center justify-center">
-                          {item.image_url ? (
-                            <img
-                              src={getImageUrl(item.image_url)}
-                              alt={item.name}
-                              className={`w-full h-full object-contain transition-transform duration-300 group-hover:scale-105 ${
- !item.in_stock ? 'grayscale' : ''
- }`}
-                            />
-                          ) : (
-                            <div className="w-full h-full rounded-xl bg-slate-100 flex items-center justify-center text-slate-300">
-                              <ShoppingBag className="w-8 h-8" />
-                            </div>
-                          )}
+                        <Link href={`/products/${item.id}`} className="w-full h-full block">
+                          <ProductImageCarousel
+                            product={item.rawProduct || item}
+                            alt={item.name}
+                            isOutOfStock={!item.in_stock}
+                            aspectRatio="aspect-auto h-full w-full"
+                          />
                         </Link>
                       </div>
 

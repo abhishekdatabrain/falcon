@@ -2,6 +2,7 @@ const { Product, ProductVariant, ProductVariantImage, ProductImage, Category, Fe
 const { Op } = require('sequelize');
 const fs = require('fs');
 const path = require('path');
+const XLSX = require('xlsx');
 
 const safeDeleteUploadedFile = (url) => {
   if (!url || typeof url !== 'string' || !url.startsWith('/uploads/')) return;
@@ -1169,6 +1170,98 @@ class ProductService {
       limit: 50,
     });
     return logs;
+  }
+
+  async exportProductsToExcel(query = {}) {
+    const exportQuery = {
+      ...query,
+      all: true,
+      page: 1,
+      limit: 100000,
+      onlyActive: query.onlyActive !== undefined
+        ? (query.onlyActive === 'false' ? false : (query.onlyActive === 'true' ? true : query.onlyActive))
+        : false,
+    };
+
+    const { products, total } = await this.getProducts(exportQuery);
+
+    if (!products || products.length === 0) {
+      return { buffer: null, total: 0 };
+    }
+
+    const excelRows = products.map((p) => {
+      const regPrice = p.price !== undefined && p.price !== null ? parseFloat(p.price).toFixed(2) : '0.00';
+      const salePrice = p.discount_price && parseFloat(p.discount_price) > 0 ? parseFloat(p.discount_price).toFixed(2) : '';
+      const purchPrice = p.purchase_price && parseFloat(p.purchase_price) > 0 ? parseFloat(p.purchase_price).toFixed(2) : '';
+      
+      const unitPack = [p.unit_value, p.unit_type, p.pack_size].filter(Boolean).join(' ') || p.unit || '';
+      const desc = p.description_en || p.long_description_en || p.description_title_en || '';
+      
+      const createdStr = p.created_at ? new Date(p.created_at).toISOString().replace('T', ' ').slice(0, 19) : '';
+      const updatedStr = p.updated_at ? new Date(p.updated_at).toISOString().replace('T', ' ').slice(0, 19) : '';
+
+      return {
+        'Product ID': p.id,
+        'Product Name': p.name_en || '',
+        'Arabic Product Name': p.name_ar || '',
+        'SKU': p.sku || '',
+        'Category Level 1': p.category?.name_en || '',
+        'Category Level 2': p.subcategory?.name_en || '',
+        'Category Level 3': p.sub_subcategory?.name_en || '',
+        'Category Level 4': p.sub_sub_subcategory?.name_en || '',
+        'Product Description': desc,
+        'Regular Price': Number(regPrice),
+        'Sale Price': salePrice ? Number(salePrice) : '',
+        'Purchase Price': purchPrice ? Number(purchPrice) : '',
+        'Currency': 'SAR',
+        'Available Stock': p.stock_quantity ?? 0,
+        'Product Status': p.is_active ? 'Active' : 'Inactive',
+        'Featured Status': p.is_featured ? 'Yes' : 'No',
+        'Brand': p.brand || '',
+        'Unit / Pack Size': unitPack,
+        'VAT %': p.vat_percentage ? `${p.vat_percentage}%` : '15%',
+        'Price Includes VAT': p.price_includes_vat ? 'Yes' : 'No',
+        'Has Variants': p.has_variants ? 'Yes' : 'No',
+        'Variants Count': p.variants ? p.variants.length : 0,
+        'Created Date': createdStr,
+        'Updated Date': updatedStr,
+      };
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelRows);
+
+    ws['!cols'] = [
+      { wch: 38 }, // Product ID
+      { wch: 32 }, // Product Name
+      { wch: 30 }, // Arabic Product Name
+      { wch: 18 }, // SKU
+      { wch: 22 }, // Category Level 1
+      { wch: 22 }, // Category Level 2
+      { wch: 22 }, // Category Level 3
+      { wch: 22 }, // Category Level 4
+      { wch: 45 }, // Product Description
+      { wch: 16 }, // Regular Price
+      { wch: 16 }, // Sale Price
+      { wch: 16 }, // Purchase Price
+      { wch: 10 }, // Currency
+      { wch: 16 }, // Available Stock
+      { wch: 15 }, // Product Status
+      { wch: 16 }, // Featured Status
+      { wch: 18 }, // Brand
+      { wch: 20 }, // Unit / Pack Size
+      { wch: 12 }, // VAT %
+      { wch: 18 }, // Price Includes VAT
+      { wch: 14 }, // Has Variants
+      { wch: 14 }, // Variants Count
+      { wch: 22 }, // Created Date
+      { wch: 22 }, // Updated Date
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Products');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    return { buffer, total: products.length };
   }
 }
 

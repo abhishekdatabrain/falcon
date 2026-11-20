@@ -3,6 +3,7 @@ const { hashPassword } = require('../utils/password');
 const ROLES = require('../constants/roles');
 const { ORDER_STATUS } = require('../constants/orderStatus');
 const { DRIVER_STATUS, DRIVER_AVAILABILITY } = require('../constants/driverStatus');
+const XLSX = require('xlsx');
 
 class AdminService {
   async getDashboardMetrics() {
@@ -517,6 +518,138 @@ class AdminService {
         inactive: inactiveCount,
       },
     };
+  }
+
+  async exportCustomersToExcel(options = {}) {
+    const { search, status } = options;
+    const { Op } = require('sequelize');
+
+    const customerWhere = {};
+    const userWhere = {};
+
+    if (status && status !== 'ALL') {
+      userWhere.status = status;
+    }
+
+    if (search && search.trim()) {
+      const q = `%${search.trim()}%`;
+      customerWhere[Op.or] = [
+        { first_name: { [Op.iLike]: q } },
+        { last_name: { [Op.iLike]: q } },
+        { '$user.email$': { [Op.iLike]: q } },
+        { '$user.mobile$': { [Op.iLike]: q } },
+      ];
+    }
+
+    const customers = await Customer.findAll({
+      where: customerWhere,
+      subQuery: false,
+      include: [
+        {
+          model: User,
+          as: 'user',
+          where: Object.keys(userWhere).length > 0 ? userWhere : undefined,
+          attributes: ['id', 'email', 'mobile', 'status', 'created_at'],
+        },
+        {
+          model: Address,
+          as: 'addresses',
+          separate: true,
+          order: [['is_default', 'DESC'], ['createdAt', 'DESC']],
+        },
+        {
+          model: Order,
+          as: 'orders',
+          attributes: ['id', 'grand_total', 'order_status'],
+          separate: true,
+        },
+      ],
+      order: [['createdAt', 'DESC'], ['id', 'DESC']],
+    });
+
+    if (!customers || customers.length === 0) {
+      return { buffer: null, total: 0 };
+    }
+
+    const excelRows = customers.map((c, index) => {
+      const u = c.user || {};
+      const addrs = c.addresses || [];
+      const defAddr = addrs.find((a) => a.is_default) || addrs[0] || null;
+
+      let rawMobile = (u.mobile || '').trim();
+      let countryCode = '+966';
+      let mobileNumber = rawMobile;
+
+      if (rawMobile.startsWith('+966')) {
+        countryCode = '+966';
+        mobileNumber = rawMobile.slice(4).trim();
+      } else if (rawMobile.startsWith('00966')) {
+        countryCode = '+966';
+        mobileNumber = rawMobile.slice(5).trim();
+      } else if (rawMobile.startsWith('966')) {
+        countryCode = '+966';
+        mobileNumber = rawMobile.slice(3).trim();
+      }
+
+      const orders = c.orders || [];
+      const totalOrdersCount = orders.length;
+      const totalSpentVal = orders
+        .filter((o) => o.order_status !== 'CANCELLED')
+        .reduce((sum, o) => sum + parseFloat(o.grand_total || 0), 0);
+
+      const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ') || 'Customer';
+      const createdStr = c.createdAt ? new Date(c.createdAt).toISOString().replace('T', ' ').slice(0, 19) : '';
+
+      return {
+        'Sr. No.': index + 1,
+        'Customer ID': c.id,
+        'Customer Name': fullName,
+        'Email Address': u.email || 'N/A',
+        'Mobile Country Code': countryCode,
+        'Mobile Number': mobileNumber ? String(mobileNumber) : 'N/A',
+        'Account Status': u.status === 'ACTIVE' ? 'Active' : 'Disabled',
+        'Email Verification Status': u.email ? 'Verified' : 'Unverified',
+        'Mobile Verification Status': u.mobile ? 'Verified' : 'Unverified',
+        'Total Saved Addresses': addrs.length,
+        'Default Address': defAddr ? [defAddr.address_line, defAddr.area].filter(Boolean).join(', ') : 'N/A',
+        'City': defAddr?.city || 'N/A',
+        'State': defAddr?.state || 'N/A',
+        'Country': defAddr?.country || 'Saudi Arabia',
+        'Postal Code': defAddr?.postal_code || 'N/A',
+        'Total Orders': totalOrdersCount,
+        'Total Spent (SAR)': parseFloat(totalSpentVal.toFixed(2)),
+        'Registration Date': createdStr,
+      };
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelRows);
+
+    ws['!cols'] = [
+      { wch: 8 },  // Sr. No.
+      { wch: 38 }, // Customer ID
+      { wch: 25 }, // Customer Name
+      { wch: 28 }, // Email Address
+      { wch: 20 }, // Mobile Country Code
+      { wch: 18 }, // Mobile Number
+      { wch: 16 }, // Account Status
+      { wch: 24 }, // Email Verification Status
+      { wch: 24 }, // Mobile Verification Status
+      { wch: 20 }, // Total Saved Addresses
+      { wch: 35 }, // Default Address
+      { wch: 18 }, // City
+      { wch: 18 }, // State
+      { wch: 18 }, // Country
+      { wch: 14 }, // Postal Code
+      { wch: 14 }, // Total Orders
+      { wch: 18 }, // Total Spent (SAR)
+      { wch: 22 }, // Registration Date
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    return { buffer, total: customers.length };
   }
 
   async toggleCustomerStatus(customerId, status) {

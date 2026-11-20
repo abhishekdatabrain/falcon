@@ -86,6 +86,34 @@ class ProductController {
       return sendError(res, error.message, [], 400);
     }
   }
+
+  async exportProducts(req, res, next) {
+    try {
+      const hasExplicitStatus = req.query.status !== undefined || req.query.is_active !== undefined;
+      const onlyActive = hasExplicitStatus
+        ? false
+        : (req.query.onlyActive === 'false' ? false : false);
+
+      const { buffer, total } = await productService.exportProductsToExcel({
+        ...req.query,
+        onlyActive,
+      });
+
+      if (!buffer || total === 0) {
+        return sendError(res, 'No products found matching the selected filters to export', [], 404);
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `SaaRCart_Products_${today}.xlsx`;
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', buffer.length);
+      return res.send(buffer);
+    } catch (error) {
+      return sendError(res, error.message || 'Failed to export products to Excel', [], 500);
+    }
+  }
 }
 
 module.exports = new ProductController();

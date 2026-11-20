@@ -8,6 +8,7 @@ import { useWishlist } from '../../src/contexts/WishlistContext';
 import { fetchApi, getImageUrl } from '../../src/services/api';
 import ProductFilterSidebar from '../../src/components/ProductFilterSidebar';
 import VariantSelectionModal from '../../src/components/VariantSelectionModal';
+import ProductImageCarousel from '../../src/components/ProductImageCarousel';
 import {
   Search,
   ShoppingBag,
@@ -856,33 +857,14 @@ function ProductsCatalogContent() {
                     </button>
                   </div>
 
-                  {/* Product Image Container */}
-                  <div className="w-full aspect-[4/3] rounded-xl p-2 overflow-hidden flex items-center justify-center my-1.5 relative">
-                    {isOutOfStock && (
-                      <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl">
-                        <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                          {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
-                        </span>
-                      </div>
-                    )}
-                    {(() => {
-                      const vFirst = Array.isArray(prod.variants) && prod.variants.length > 0 ? prod.variants[0] : null;
-                      const vImage = vFirst ? ((Array.isArray(vFirst.images) && vFirst.images.length > 0)
-                        ? (vFirst.images.find((i) => i.is_primary)?.image_url || vFirst.images[0]?.image_url || (typeof vFirst.images[0] === 'string' ? vFirst.images[0] : null))
-                        : vFirst.image_url) : null;
-                      const rawProdImg = prod.img || (prod.images && (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.image_url)) || prod.image_url || vImage;
-                      return (
-                        <img
-                          src={getImageUrl(rawProdImg) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400'}
-                          alt={locale === 'ar' ? prod.name_ar || prod.title_ar : prod.name_en || prod.title_en}
-                          className={`w-full h-full object-contain transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover:scale-105'}`}
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
-                          }}
-                        />
-                      );
-                    })()}
+                  {/* Product Image Container with Auto-Carousel */}
+                  <div className="w-full my-1.5">
+                    <ProductImageCarousel
+                      product={prod}
+                      alt={locale === 'ar' ? prod.name_ar || prod.title_ar : prod.name_en || prod.title_en}
+                      isOutOfStock={isOutOfStock}
+                      aspectRatio="aspect-[4/3]"
+                    />
                   </div>
 
                   {/* Info Content */}

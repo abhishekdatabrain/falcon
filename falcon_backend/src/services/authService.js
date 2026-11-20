@@ -188,12 +188,25 @@ class AuthService {
       user_agent: reqInfo.userAgent,
     });
 
+    const hasBusiness = Boolean(
+      user.vat_no || user.company_name || user.cr_no || user.address
+    );
+    const business_profile = hasBusiness
+      ? {
+          vat_no: user.vat_no || null,
+          company_name: user.company_name || null,
+          cr_no: user.cr_no || null,
+          address: user.address || null,
+        }
+      : null;
+
     const userObj = {
       id: user.id,
       username: user.username || null,
       email: user.email,
       mobile: user.mobile,
       role: user.role,
+      business_profile,
       profile: user.customer || user.driver || user.admin,
     };
 

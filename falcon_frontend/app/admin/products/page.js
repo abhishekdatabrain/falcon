@@ -48,6 +48,7 @@ import {
   Flame,
   Clock,
   Droplets,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 const AVAILABLE_LUCIDE_ICONS = [
@@ -114,6 +115,7 @@ export default function AdminProductsPage() {
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [exporting, setExporting] = useState(false);
 
   // Page View Mode: 'list' | 'form'
   const [viewMode, setViewMode] = useState('list');
@@ -345,6 +347,75 @@ export default function AdminProductsPage() {
     setPageSize(newPageSize);
     setCurrentPage(1);
     loadData({}, 1, newPageSize);
+  };
+
+  const handleExportExcel = async () => {
+    if (exporting) return;
+    try {
+      setExporting(true);
+
+      const params = new URLSearchParams();
+      params.append('onlyActive', 'false');
+
+      if (searchQuery && searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
+      if (effectiveCategoryFilter) {
+        params.append('category_id', effectiveCategoryFilter);
+      }
+      if (statusFilter && statusFilter !== 'ALL') {
+        params.append('status', statusFilter.toLowerCase());
+      }
+      if (startDate) {
+        params.append('startDate', startDate);
+      }
+      if (endDate) {
+        params.append('endDate', endDate);
+      }
+
+      const cleanApiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1').replace(/\/$/, '');
+      const exportUrl = `${cleanApiBase}/products/export?${params.toString()}`;
+
+      const res = await fetch(exportUrl, {
+        headers: {
+          'x-auth-role': 'ADMIN',
+        },
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        let errMsg = 'Failed to export products';
+        try {
+          const errData = await res.json();
+          errMsg = errData.message || errMsg;
+        } catch {
+          // Response is not JSON
+        }
+        throw new Error(errMsg);
+      }
+
+      const blob = await res.blob();
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `SaaRCart_Products_${today}.xlsx`;
+
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      showToast(
+        locale === 'ar' ? 'تم تصدير ملف إكسل بنجاح!' : 'Products exported to Excel successfully!',
+        'success'
+      );
+    } catch (err) {
+      showToast(err.message || 'Failed to export products', 'error');
+    } finally {
+      setExporting(false);
+    }
   };
 
   // Compute 4 Levels of Category Hierarchy
@@ -1423,16 +1494,37 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* Add Grocery Item Button (Top Right) */}
-              {canCreate && (
+              {/* Action Buttons (Top Right): Export Excel & Add Item */}
+              <div className="flex items-center gap-2.5 shrink-0">
                 <button
-                  onClick={openAdd}
-                  className="h-11 px-5 rounded-xl flex items-center justify-center gap-2 bg-[#043927] hover:bg-[#02281b] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer whitespace-nowrap shrink-0"
+                  type="button"
+                  onClick={handleExportExcel}
+                  disabled={exporting}
+                  className="h-11 px-4 rounded-xl flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 hover:border-emerald-500 text-xs font-bold shadow-2xs hover:shadow-md transition-all cursor-pointer whitespace-nowrap shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+                  title={locale === 'ar' ? 'تصدير البيانات إلى ملف إكسل' : 'Export Data to Excel (.xlsx)'}
                 >
-                  <Plus className="w-4 h-4 text-emerald-400" />
-                  <span>{locale === 'ar' ? 'إضافة صنف طازج' : 'Add Item'}</span>
+                  {exporting ? (
+                    <RefreshCw className="w-4 h-4 text-emerald-600 animate-spin" />
+                  ) : (
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  )}
+                  <span>
+                    {exporting
+                      ? (locale === 'ar' ? 'جاري التصدير...' : 'Exporting...')
+                      : (locale === 'ar' ? 'تصدير إكسل' : 'Export Excel')}
+                  </span>
                 </button>
-              )}
+
+                {canCreate && (
+                  <button
+                    onClick={openAdd}
+                    className="h-11 px-5 rounded-xl flex items-center justify-center gap-2 bg-[#043927] hover:bg-[#02281b] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    <Plus className="w-4 h-4 text-emerald-400" />
+                    <span>{locale === 'ar' ? 'إضافة صنف طازج' : 'Add Item'}</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Filter Toolbar Container */}

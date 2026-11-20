@@ -27,6 +27,7 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 export default function AdminCustomersPage() {
@@ -42,6 +43,7 @@ export default function AdminCustomersPage() {
   const [totalRecords, setTotalRecords] = useState(0);
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 });
   const [pageSize, setPageSize] = useState(10);
+  const [exporting, setExporting] = useState(false);
 
   // Modals & Form States
   const [showAddModal, setShowAddModal] = useState(false);
@@ -113,6 +115,64 @@ export default function AdminCustomersPage() {
     setPageSize(newPageSize);
     setCurrentPage(1);
     loadCustomers(searchQuery, statusFilter, 1, newPageSize);
+  };
+
+  const handleExportExcel = async () => {
+    if (exporting) return;
+    try {
+      setExporting(true);
+
+      const params = new URLSearchParams();
+      if (searchQuery && searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
+      if (statusFilter && statusFilter !== 'ALL') {
+        params.append('status', statusFilter);
+      }
+
+      const cleanApiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1').replace(/\/$/, '');
+      const exportUrl = `${cleanApiBase}/admin/customers/export?${params.toString()}`;
+
+      const res = await fetch(exportUrl, {
+        headers: {
+          'x-auth-role': 'ADMIN',
+        },
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        let errMsg = 'Failed to export customers';
+        try {
+          const errData = await res.json();
+          errMsg = errData.message || errMsg;
+        } catch {
+          // Non-JSON response
+        }
+        throw new Error(errMsg);
+      }
+
+      const blob = await res.blob();
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `Saqrcart_Customers_${today}.xlsx`;
+
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      showToast(
+        locale === 'ar' ? 'تم تصدير بيانات العملاء إلى إكسل بنجاح!' : 'Customers exported to Excel successfully!',
+        'success'
+      );
+    } catch (err) {
+      showToast(err.message || 'Failed to export customers', 'error');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleCreateCustomer = async (e) => {
@@ -292,24 +352,46 @@ export default function AdminCustomersPage() {
           </div>
         </div>
 
-        {/* Server Search Input */}
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-3" />
-          <input
-            type="text"
-            placeholder={locale === 'ar' ? 'بحث بالاسم، البريد أو الجوال...' : 'Search name, email, or mobile...'}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 text-xs font-semibold rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-hidden transition-all rtl:pl-8 rtl:pr-9"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer rtl:right-auto rtl:left-2.5"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+        {/* Server Search Input & Export Button */}
+        <div className="flex items-center gap-2.5 w-full md:w-auto">
+          <div className="relative w-full md:w-80">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-3" />
+            <input
+              type="text"
+              placeholder={locale === 'ar' ? 'بحث بالاسم، البريد أو الجوال...' : 'Search name, email, or mobile...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 text-xs font-semibold rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-hidden transition-all rtl:pl-8 rtl:pr-9"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer rtl:right-auto rtl:left-2.5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Export Excel Button */}
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            disabled={exporting}
+            className="h-9 px-4 rounded-xl flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 hover:border-emerald-500 text-xs font-bold shadow-2xs hover:shadow-md transition-all cursor-pointer whitespace-nowrap shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+            title={locale === 'ar' ? 'تصدير بيانات العملاء إلى إكسل' : 'Export Customers to Excel (.xlsx)'}
+          >
+            {exporting ? (
+              <RefreshCw className="w-4 h-4 text-emerald-600 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            )}
+            <span>
+              {exporting
+                ? (locale === 'ar' ? 'جاري التصدير...' : 'Exporting...')
+                : (locale === 'ar' ? 'تصدير إكسل' : 'Export Excel')}
+            </span>
+          </button>
         </div>
       </div>
 

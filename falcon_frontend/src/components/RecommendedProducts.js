@@ -17,6 +17,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { fetchApi, getImageUrl } from '../services/api';
 import VariantSelectionModal from './VariantSelectionModal';
+import ProductImageCarousel from './ProductImageCarousel';
 
 const FALLBACK_RECOMMENDED_PRODUCTS = [];
 
@@ -302,25 +303,15 @@ export default function RecommendedProducts() {
 
                   {/* Top Section: Image Box + Info */}
                   <div>
-                    {/* Rounded Image Box */}
-                    <div className="relative w-full h-44 sm:h-48 rounded-[20px] flex items-center justify-center p-3 mb-2.5 overflow-hidden">
-                      {isOutOfStock && (
-                        <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-[20px]">
-                          <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                            {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
-                          </span>
-                        </div>
-                      )}
-                      <Link href={`/products/${item.id}`} className="w-full h-full flex items-center justify-center">
-                        <img
-                          src={getImageUrl(itemImage)}
+                    {/* Rounded Image Box with Auto-Carousel */}
+                    <div className="w-full mb-2.5">
+                      <Link href={`/products/${item.id}`} className="block">
+                        <ProductImageCarousel
+                          product={item}
                           alt={itemName}
-                          className={`max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : 'group-hover/card:scale-105'
- }`}
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400';
-                          }}
+                          isOutOfStock={isOutOfStock}
+                          aspectRatio="aspect-[4/3]"
+                          className="h-44 sm:h-48 rounded-[20px]"
                         />
                       </Link>
                     </div>

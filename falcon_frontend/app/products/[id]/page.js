@@ -7,6 +7,7 @@ import { useCart } from '../../../src/contexts/CartContext';
 import { useWishlist } from '../../../src/contexts/WishlistContext';
 import { fetchApi, getImageUrl } from '../../../src/services/api';
 import VariantSelectionModal from '../../../src/components/VariantSelectionModal';
+import ProductImageCarousel from '../../../src/components/ProductImageCarousel';
 import {
   ShoppingBag,
   Heart,
@@ -35,6 +36,10 @@ import {
   Package,
   Plus,
   Minus,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  X,
 } from 'lucide-react';
 
 const renderProductIcon = (iconName, className = 'w-4 h-4') => {
@@ -61,20 +66,18 @@ const renderProductIcon = (iconName, className = 'w-4 h-4') => {
 
 const renderPriceWithDecimals = (val, currency = 'SAR', isRTL = false) => {
   if (val === undefined || val === null || val === '') return null;
-  const str = String(val);
-  const parts = str.split('.');
-  const intPart = parts[0];
-  const decPart = parts.length > 1 ? parts[1] : null;
+  const num = typeof val === 'number' ? val : parseFloat(val);
+  if (isNaN(num)) return null;
+
+  const [intPart, decPart] = num.toFixed(2).split('.');
 
   if (isRTL) {
     return (
       <span className="inline-flex items-baseline gap-1">
         <span>{intPart}</span>
-        {decPart !== null && (
-          <span style={{ fontSize: '0.62em', verticalAlign: 'baseline' }} className="font-bold">
-            .{decPart}
-          </span>
-        )}
+        <span style={{ fontSize: '0.62em', verticalAlign: 'baseline' }} className="font-bold">
+          .{decPart}
+        </span>
         <span className="text-[0.75em] font-semibold">{currency}</span>
       </span>
     );
@@ -84,11 +87,9 @@ const renderPriceWithDecimals = (val, currency = 'SAR', isRTL = false) => {
     <span className="inline-flex items-baseline">
       <span className="mr-1.5">{currency}</span>
       <span>{intPart}</span>
-      {decPart !== null && (
-        <span style={{ fontSize: '0.62em', verticalAlign: 'baseline' }} className="font-bold">
-          .{decPart}
-        </span>
-      )}
+      <span style={{ fontSize: '0.62em', verticalAlign: 'baseline' }} className="font-bold">
+        .{decPart}
+      </span>
     </span>
   );
 };
@@ -528,6 +529,163 @@ export default function ProductDetailPage() {
   };
   const activePackOrWeight = getPackOrWeightText();
 
+  const activeVariantImages = (activeVariant && Array.isArray(activeVariant.images) && activeVariant.images.length > 0)
+    ? activeVariant.images.map((img) => (typeof img === 'string' ? img : img.image_url)).filter(Boolean)
+    : (activeVariant?.image_url ? [activeVariant.image_url] : []);
+
+  const fallbackProductGallery = Array.isArray(product?.images) && product.images.length > 0
+    ? product.images
+    : (product?.image || product?.image_url ? [product.image || product.image_url] : []);
+
+  const galleryImages = activeVariantImages.length > 0
+    ? activeVariantImages
+    : (fallbackProductGallery.length > 0 ? fallbackProductGallery : ['https://images.unsplash.com/photo-1542838132-92c53300491e?w=800']);
+
+  const currentImgIndex = Math.max(0, galleryImages.indexOf(selectedImg || galleryImages[0]));
+
+  // Full-Screen Image Preview Modal States
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalActiveIndex, setModalActiveIndex] = useState(0);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const handleOpenModal = (index = 0) => {
+    resetImageZoom();
+    const validIdx = typeof index === 'number' && index >= 0 && index < galleryImages.length ? index : 0;
+    setModalActiveIndex(validIdx);
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+    setIsDragging(false);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+    setIsDragging(false);
+  };
+
+  const handleZoomIn = (e) => {
+    if (e?.stopPropagation) e.stopPropagation();
+    setZoomLevel((prev) => Math.min(3, Math.round((prev + 0.25) * 100) / 100));
+  };
+
+  const handleZoomOut = (e) => {
+    if (e?.stopPropagation) e.stopPropagation();
+    setZoomLevel((prev) => {
+      const next = Math.max(1, Math.round((prev - 0.25) * 100) / 100);
+      if (next <= 1) {
+        setPanOffset({ x: 0, y: 0 });
+      }
+      return next;
+    });
+  };
+
+  const handleModalPrev = () => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+    setIsDragging(false);
+    setModalActiveIndex((prev) => (prev > 0 ? prev - 1 : (galleryImages.length > 0 ? galleryImages.length - 1 : 0)));
+  };
+
+  const handleModalNext = () => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+    setIsDragging(false);
+    setModalActiveIndex((prev) => (prev < galleryImages.length - 1 ? prev + 1 : 0));
+  };
+
+  const handleSelectModalThumb = (idx) => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+    setIsDragging(false);
+    setModalActiveIndex(idx);
+    if (galleryImages && galleryImages[idx]) {
+      setSelectedImg(galleryImages[idx]);
+    }
+  };
+
+  const handleModalMouseDown = (e) => {
+    if (zoomLevel <= 1) return;
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+  };
+
+  const handleModalMouseMove = (e) => {
+    if (!isDragging || zoomLevel <= 1) return;
+    e.preventDefault();
+    setPanOffset({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y,
+    });
+  };
+
+  const handleModalMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleModalTouchStart = (e) => {
+    if (zoomLevel <= 1 || e.touches.length !== 1) return;
+    setIsDragging(true);
+    const touch = e.touches[0];
+    setDragStart({ x: touch.clientX - panOffset.x, y: touch.clientY - panOffset.y });
+  };
+
+  const handleModalTouchMove = (e) => {
+    if (!isDragging || zoomLevel <= 1) return;
+    const touch = e.touches[0];
+    setPanOffset({
+      x: touch.clientX - dragStart.x,
+      y: touch.clientY - dragStart.y,
+    });
+  };
+
+  const handleModalTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  const handleModalNextRef = useRef(handleModalNext);
+  const handleModalPrevRef = useRef(handleModalPrev);
+  useEffect(() => {
+    handleModalNextRef.current = handleModalNext;
+    handleModalPrevRef.current = handleModalPrev;
+  });
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        handleCloseModal();
+      } else if (e.key === 'ArrowLeft') {
+        if (locale === 'ar') {
+          handleModalNextRef.current?.();
+        } else {
+          handleModalPrevRef.current?.();
+        }
+      } else if (e.key === 'ArrowRight') {
+        if (locale === 'ar') {
+          handleModalPrevRef.current?.();
+        } else {
+          handleModalNextRef.current?.();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isModalOpen, locale]);
+
   const handleAddToCart = async () => {
     try {
       setAdding(true);
@@ -593,15 +751,6 @@ export default function ProductDetailPage() {
     );
   }
 
-  const activeVariantImages = (activeVariant && Array.isArray(activeVariant.images) && activeVariant.images.length > 0)
-    ? activeVariant.images.map((img) => (typeof img === 'string' ? img : img.image_url)).filter(Boolean)
-    : (activeVariant?.image_url ? [activeVariant.image_url] : []);
-
-  const fallbackProductGallery = Array.isArray(product?.images) && product.images.length > 0
-    ? product.images
-    : (product?.image || product?.image_url ? [product.image || product.image_url] : []);
-
-  const galleryImages = activeVariantImages.length > 0 ? activeVariantImages : fallbackProductGallery;
   const isWish = isInWishlist(product.id);
 
   const categoryObj = typeof product?.category === 'object' && product?.category !== null ? product.category : null;
@@ -648,14 +797,14 @@ export default function ProductDetailPage() {
           {/* Hero Image Frame */}
           <div
             ref={imageContainerRef}
+            onClick={() => handleOpenModal(currentImgIndex)}
             onMouseEnter={updateImageZoom}
             onMouseMove={updateImageZoom}
             onMouseLeave={resetImageZoom}
             onTouchStart={handleImageTouchStart}
-            className="w-full max-w-md aspect-[4/3] max-h-[320px] sm:max-h-[330px] rounded-2xl bg-[#F8F9FA] border border-slate-200/80 relative flex items-center justify-center overflow-hidden shadow-2xs group isolate"
+            className="w-full max-w-md aspect-[4/3] max-h-[320px] sm:max-h-[330px] rounded-2xl bg-[#F8F9FA] border border-slate-200/80 relative flex items-center justify-center overflow-hidden shadow-2xs group isolate cursor-pointer"
           >
             {/* Top Left Badge */}
-
             {isOutOfStock ? (
               <span className="absolute top-4 left-4 bg-rose-600 text-white text-[11px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider shadow-md z-10 flex items-center gap-1.5">
                 <Ban className="w-3.5 h-3.5 text-white" />
@@ -668,14 +817,31 @@ export default function ProductDetailPage() {
               </span>
             )}
 
-
             {/* Top Right Wishlist Heart Button */}
             <button
-              onClick={() => toggleWishlist(product)}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleWishlist(product);
+              }}
               className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 shadow-md border border-slate-100 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all z-10 cursor-pointer hover:scale-110"
               title="Add to Wishlist"
             >
               <Heart className={`w-5 h-5 ${isWish ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
+            </button>
+
+            {/* Bottom Right Preview / Full-Screen Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenModal(currentImgIndex);
+              }}
+              className="absolute bottom-3 right-3 rtl:right-auto rtl:left-3 z-10 px-2.5 py-1.5 rounded-xl bg-white/90 hover:bg-white text-slate-700 hover:text-black text-xs font-semibold shadow-md border border-slate-200/80 flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-all cursor-pointer hover:scale-105"
+              title={locale === 'ar' ? 'عرض ملء الشاشة' : 'Click to preview full screen'}
+            >
+              <Maximize2 className="w-3.5 h-3.5 text-slate-600" />
+              <span className="hidden sm:inline text-[11px] font-bold">{locale === 'ar' ? 'معاينة' : 'Preview'}</span>
             </button>
 
             {/* Main Product Image */}
@@ -683,7 +849,7 @@ export default function ProductDetailPage() {
               ref={mainImageRef}
               src={getImageUrl(selectedImg || galleryImages[0]) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800'}
               alt={locale === 'ar' ? product.name_ar : product.name_en}
-              className="w-full h-full object-cover transition-transform duration-300 ease-out will-change-transform select-none"
+              className="w-full h-full object-cover transition-transform duration-300 ease-out will-change-transform select-none group-hover:scale-105"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800';
@@ -700,13 +866,17 @@ export default function ProductDetailPage() {
                   key={idx}
                   type="button"
                   onClick={() => setSelectedImg(imgUrl)}
-                  className={`aspect-square rounded-2xl p-1 bg-[#F8F9FA] border-2 transition-all cursor-pointer overflow-hidden flex items-center justify-center ${isSelected ? 'border-[#0B4F32] ring-2 ring-emerald-100 shadow-xs scale-95' : 'border-slate-200/80 hover:border-slate-300 opacity-80 hover:opacity-100'
- }`}
+                  className={`group/thumb aspect-square rounded-2xl p-1 bg-[#F8F9FA] border-2 transition-all cursor-pointer overflow-hidden flex items-center justify-center hover:scale-105 ${
+                    isSelected
+                      ? 'border-[#0B4F32] ring-2 ring-emerald-100 shadow-xs scale-95'
+                      : 'border-slate-200/80 hover:border-slate-300 opacity-80 hover:opacity-100'
+                  }`}
+                  title={locale === 'ar' ? `صورة ${idx + 1}` : `Image ${idx + 1}`}
                 >
                   <img
                     src={getImageUrl(imgUrl) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400'}
                     alt={`Thumb ${idx + 1}`}
-                    className="w-full h-full object-cover rounded-xl"
+                    className="w-full h-full object-cover rounded-xl transition-transform duration-300 group-hover/thumb:scale-110"
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
@@ -743,9 +913,9 @@ export default function ProductDetailPage() {
 
           {/* Category Tag */}
           <div>
-            <span className="bg-[#E6F4EA] text-[#0B4F32] font-bold text-[11px] px-3 py-1 rounded-full uppercase tracking-wider inline-block">
+            {/* <span className="bg-[#E6F4EA] text-[#0B4F32] font-bold text-[11px] px-3 py-1 rounded-full uppercase tracking-wider inline-block">
               {locale === 'ar' ? (product.tag_ar || 'طازج من المزرعة') : (product.tag_en || 'Farm Fresh')}
-            </span>
+            </span> */}
 
             {/* Product Title */}
             <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-bold text-[#0F172A] tracking-tight leading-tight mt-2">
@@ -1387,18 +1557,12 @@ export default function ProductDetailPage() {
                     className="w-[190px] sm:w-[215px] md:w-[230px] shrink-0 snap-start group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-3.5 flex flex-col justify-between cursor-pointer min-h-[290px]"
                   >
                     <Link href={`/products/${item.id}`} className="space-y-2 block">
-                      {/* Image */}
-                      <div className="w-full aspect-[4/3] rounded-xl bg-[#F8F9FA] p-2 overflow-hidden flex items-center justify-center">
-                        <img
-                          src={getImageUrl(itemImage) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400'}
-                          alt={itemName}
-                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
-                          }}
-                        />
-                      </div>
+                      {/* Image with Auto-Carousel */}
+                      <ProductImageCarousel
+                        product={item}
+                        alt={itemName}
+                        aspectRatio="aspect-[4/3]"
+                      />
 
                       {/* Info */}
                       <div className="space-y-1">
@@ -1501,6 +1665,182 @@ export default function ProductDetailPage() {
           isOpen={Boolean(variantModalProduct)}
           onClose={() => setVariantModalProduct(null)}
         />
+      )}
+
+      {/* 3. Full-Screen Image Preview Modal */}
+      {isModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={handleCloseModal}
+          className="fixed inset-0 z-50 bg-black/95 flex flex-col justify-between select-none animate-in fade-in duration-200"
+        >
+          {/* Header */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="px-4 sm:px-6 py-3.5 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between gap-4 z-20"
+          >
+            {/* Title & Image Counter */}
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-xs sm:text-sm font-semibold text-white/90 bg-white/15 px-3 py-1 rounded-full shrink-0">
+                {modalActiveIndex + 1} / {galleryImages.length}
+              </span>
+              <h3 className="text-sm sm:text-base font-bold text-white truncate">
+                {locale === 'ar' ? product.name_ar : product.name_en}
+              </h3>
+            </div>
+
+            {/* Zoom Controls & Close Button */}
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+              <div className="flex items-center gap-1 bg-white/10 rounded-xl p-1 border border-white/10">
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 1}
+                  className="p-1.5 rounded-lg text-white hover:bg-white/20 disabled:opacity-40 disabled:hover:bg-transparent transition cursor-pointer"
+                  title="Zoom Out"
+                  aria-label="Zoom Out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-mono font-bold text-white min-w-[44px] text-center px-1">
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= 3}
+                  className="p-1.5 rounded-lg text-white hover:bg-white/20 disabled:opacity-40 disabled:hover:bg-transparent transition cursor-pointer"
+                  title="Zoom In"
+                  aria-label="Zoom In"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                {zoomLevel > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      if (e?.stopPropagation) e.stopPropagation();
+                      setZoomLevel(1);
+                      setPanOffset({ x: 0, y: 0 });
+                    }}
+                    className="p-1.5 rounded-lg text-emerald-400 hover:bg-white/20 transition cursor-pointer"
+                    title="Reset Zoom"
+                    aria-label="Reset Zoom"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                className="p-2 rounded-full text-white/80 hover:text-white hover:bg-white/15 transition-all cursor-pointer"
+                title={locale === 'ar' ? 'إغلاق' : 'Close'}
+                aria-label="Close Preview"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* Center Image Viewport */}
+          <div
+            className="relative flex-1 flex items-center justify-center overflow-hidden p-4 sm:p-8"
+            onMouseMove={handleModalMouseMove}
+            onMouseUp={handleModalMouseUp}
+            onTouchMove={handleModalTouchMove}
+            onTouchEnd={handleModalTouchEnd}
+          >
+            {/* Previous Button */}
+            {galleryImages.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleModalPrev();
+                }}
+                className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 flex items-center justify-center transition-all hover:scale-105 shadow-xl cursor-pointer"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="w-6 h-6 rtl:rotate-180" />
+              </button>
+            )}
+
+            {/* Next Button */}
+            {galleryImages.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleModalNext();
+                }}
+                className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 flex items-center justify-center transition-all hover:scale-105 shadow-xl cursor-pointer"
+                aria-label="Next image"
+              >
+                <ChevronRight className="w-6 h-6 rtl:rotate-180" />
+              </button>
+            )}
+
+            {/* Image Frame with zoom & drag */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={handleModalMouseDown}
+              onTouchStart={handleModalTouchStart}
+              style={{
+                transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
+                cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+              }}
+              className="relative w-full h-full max-w-5xl max-h-[82vh] flex items-center justify-center transition-transform duration-100 ease-out select-none will-change-transform"
+            >
+              <img
+                src={getImageUrl(galleryImages[modalActiveIndex]) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200'}
+                alt={locale === 'ar' ? product.name_ar : product.name_en}
+                className="w-full h-full max-h-[78vh] sm:max-h-[82vh] max-w-[92vw] sm:max-w-[85vw] object-contain rounded-2xl drop-shadow-2xl pointer-events-none"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200';
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Bottom Thumbnail Strip */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="px-4 py-3 bg-black/80 backdrop-blur-md border-t border-white/10 z-20"
+          >
+            <div className="max-w-4xl mx-auto flex items-center justify-center gap-2.5 overflow-x-auto py-1 scrollbar-none">
+              {galleryImages.map((imgUrl, idx) => {
+                const isSelected = idx === modalActiveIndex;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSelectModalThumb(idx)}
+                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer p-0.5 bg-black/50 ${
+                      isSelected
+                        ? 'border-[#00B14F] ring-2 ring-[#00B14F]/50 scale-105 opacity-100'
+                        : 'border-white/20 opacity-60 hover:opacity-100 hover:border-white/40'
+                    }`}
+                  >
+                    <img
+                      src={getImageUrl(imgUrl) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200'}
+                      alt={`Thumbnail ${idx + 1}`}
+                      className="w-full h-full object-cover rounded-lg"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200';
+                      }}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
