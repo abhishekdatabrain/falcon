@@ -25,6 +25,8 @@ import {
   UploadCloud,
   FileSpreadsheet,
   History,
+  Banknote,
+  Heart,
 } from 'lucide-react';
 
 export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPaymentsCount = 0 }) {
@@ -226,6 +228,18 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
           icon: FileText,
           permission: 'invoices.view',
         },
+        {
+          href: '/admin/delivery-charges',
+          label: locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Charges',
+          icon: Truck,
+          permission: 'delivery.view',
+        },
+        {
+          href: '/admin/tip-management',
+          label: locale === 'ar' ? 'إدارة إكرامية السائقين' : 'Tip Management',
+          icon: Heart,
+          permission: 'delivery.view',
+        },
       ],
     },
    
@@ -250,6 +264,12 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
           href: '/admin/deliveries/tracking',
           label: locale === 'ar' ? 'إدارة التوصيل والتتبع المباشر' : 'Delivery Management',
           icon: MapPin,
+          permission: 'delivery.view',
+        },
+        {
+          href: '/admin/deliveries/cod-reconciliation',
+          label: locale === 'ar' ? 'تسوية مبالغ الدفع عند الاستلام (COD)' : 'COD Cash Reconciliation',
+          icon: Banknote,
           permission: 'delivery.view',
         },
       ],

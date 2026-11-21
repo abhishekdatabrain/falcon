@@ -17,7 +17,8 @@ import {
     FileCheck,
     ArrowLeft,
     AlertCircle,
-    Package
+    Package,
+    Heart
 } from 'lucide-react';
 
 function OrderConfirmationContent() {
@@ -223,9 +224,10 @@ function OrderConfirmationContent() {
     // Dynamic Totals
     const subtotalVal = parseFloat(order?.subtotal || itemsList.reduce((acc, i) => acc + parseFloat(i.price), 0));
     const deliveryFeeVal = parseFloat(order?.delivery_fee ?? 0.00);
+    const tipVal = parseFloat(order?.tip_amount ?? 0.00);
     const discountVal = parseFloat(order?.discount_total ?? 0.00);
     const vatVal = parseFloat(order?.tax_total ?? (subtotalVal * 0.15));
-    const grandTotalVal = parseFloat(order?.grand_total ?? (subtotalVal + deliveryFeeVal + vatVal - discountVal));
+    const grandTotalVal = parseFloat(order?.grand_total ?? (subtotalVal + deliveryFeeVal + vatVal + tipVal - discountVal));
 
     const status = (order?.order_status || 'CONFIRMED').toUpperCase();
 
@@ -479,6 +481,16 @@ function OrderConfirmationContent() {
                                     </div>
                                 )}
 
+                                {tipVal > 0 && (
+                                    <div className="flex justify-between text-[#006E2D] font-bold">
+                                        <span className="flex items-center gap-1">
+                                            <Heart className="w-3.5 h-3.5 fill-[#006E2D] text-[#006E2D]" />
+                                            {locale === 'ar' ? 'إكرامية مندوب التوصيل' : 'Delivery Partner Tip'}
+                                        </span>
+                                        <span>SAR {tipVal.toFixed(2)}</span>
+                                    </div>
+                                )}
+
                                 <div className="flex justify-between text-slate-500">
                                     <span>{locale === 'ar' ? 'ضريبة القيمة المضافة (15% مشمولة)' : 'Standard VAT (15% included)'}</span>
                                     <span>SAR {vatVal.toFixed(2)}</span>
@@ -489,10 +501,14 @@ function OrderConfirmationContent() {
                                 <div className="flex items-baseline justify-between pt-1">
                                     <div>
                                         <span className="text-sm font-bold text-slate-900 block">
-                                            {locale === 'ar' ? 'الإجمالي المدفوع' : 'Total Paid'}
+                                            {order?.payment_method === 'COD'
+                                                ? (locale === 'ar' ? 'الإجمالي المستحق (عند الاستلام)' : 'Total Due (COD)')
+                                                : (locale === 'ar' ? 'الإجمالي المدفوع' : 'Total Paid')}
                                         </span>
                                         <span className="text-[10px] text-slate-400 font-medium">
-                                            {locale === 'ar' ? 'طريقة الدفع:' : 'Paid via'} {order?.payment_method || order?.payment?.payment_method || 'Online'}
+                                            {order?.payment_method === 'COD'
+                                                ? (locale === 'ar' ? 'الدفع نقداً عند التوصيل' : 'Cash on Delivery')
+                                                : `${locale === 'ar' ? 'طريقة الدفع:' : 'Paid via'} ${order?.payment_method || order?.payment?.payment_method || 'Online'}`}
                                         </span>
                                     </div>
 

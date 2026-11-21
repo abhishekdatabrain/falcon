@@ -36,7 +36,9 @@ import {
   Check,
   Calendar,
   CreditCard,
+  Banknote,
   Receipt,
+  Heart,
   Menu,
   Search,
   Filter,
@@ -83,6 +85,9 @@ export default function DriverDashboardPage() {
   const [completionNotes, setCompletionNotes] = useState('');
   const [deliveryOtp, setDeliveryOtp] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [codCashCollected, setCodCashCollected] = useState(false);
+  const [codCashInput, setCodCashInput] = useState('');
+  const [codError, setCodError] = useState('');
   const [failureModalDelivery, setFailureModalDelivery] = useState(null);
   const [failureReason, setFailureReason] = useState('Customer unreachable at delivery address');
   const [submittingStatus, setSubmittingStatus] = useState(false);
@@ -313,6 +318,9 @@ export default function DriverDashboardPage() {
         setCompletionNotes('');
         setDeliveryOtp('');
         setOtpError('');
+        setCodCashCollected(false);
+        setCodCashInput('');
+        setCodError('');
         await loadDashboard();
       }
     } catch (err) {
@@ -1048,6 +1056,12 @@ export default function DriverDashboardPage() {
                   }
 
                   const customerPhone = order?.address?.mobile || order?.customer?.user?.mobile || '';
+                  const isCod = String(order?.payment_method || order?.payment?.payment_method || '').toUpperCase() === 'COD';
+                  const isDelivered = status === 'DELIVERED';
+                  const grandTotalNum = parseFloat(order?.grand_total || 0);
+                  const codCollectedNum = del.cod_amount_collected !== null && del.cod_amount_collected !== undefined
+                    ? parseFloat(del.cod_amount_collected)
+                    : grandTotalNum;
 
                   return (
                     <div
@@ -1057,11 +1071,33 @@ export default function DriverDashboardPage() {
                       {/* Order Card Header */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                         <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2.5">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="font-black text-lg text-slate-900 font-mono">
                               #{order?.order_number || del.order_id}
                             </span>
                             {statusBadge}
+                            {/* Payment Method Badge */}
+                            {isCod ? (
+                              <span className="px-2.5 py-1 rounded-xl text-xs font-black bg-amber-50 text-amber-900 border border-amber-300 flex items-center gap-1.5 shadow-2xs">
+                                <Banknote className="w-3.5 h-3.5 text-amber-600 stroke-[2.5]" />
+                                <span>{locale === 'ar' ? 'الدفع عند الاستلام (COD)' : 'Cash on Delivery (COD)'}</span>
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1.5">
+                                <CreditCard className="w-3.5 h-3.5 text-blue-600" />
+                                <span>{locale === 'ar' ? 'مدفوع إلكترونياً' : 'Paid Online'}</span>
+                              </span>
+                            )}
+                            {parseFloat(order?.tip_amount || 0) > 0 && (
+                              <span className="px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-50 text-emerald-900 border border-emerald-300 flex items-center gap-1.5 shadow-2xs">
+                                <Heart className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
+                                <span>
+                                  {locale === 'ar'
+                                    ? `إكرامية لك: ${parseFloat(order.tip_amount).toFixed(2)} ر.س`
+                                    : `Tip: SAR ${parseFloat(order.tip_amount).toFixed(2)}`}
+                                </span>
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
                             <User className="w-3.5 h-3.5 text-slate-400" />
@@ -1077,8 +1113,44 @@ export default function DriverDashboardPage() {
                             {locale === 'ar' ? 'إجمالي الطلب' : 'Grand Total'}
                           </span>
                           <span className="text-xl font-black text-[#043927]">
-                            {parseFloat(order?.grand_total || 0).toFixed(2)} SAR
+                            {grandTotalNum.toFixed(2)} SAR
                           </span>
+
+                          {/* COD Amount to Collect / Online Paid Status */}
+                          {isCod ? (
+                            isDelivered ? (
+                              <div className="mt-1 bg-emerald-50 border border-emerald-200 rounded-xl px-2 py-0.5 text-left sm:text-right">
+                                <span className="text-[10px] text-emerald-700 font-bold block leading-tight">
+                                  {locale === 'ar' ? 'تم تحصيل النقد' : 'Cash Collected'}
+                                </span>
+                                <span className="text-xs font-black text-emerald-950 font-mono">
+                                  SAR {codCollectedNum.toFixed(2)}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="mt-1 bg-amber-50 border border-amber-300 rounded-xl px-2.5 py-1 text-left sm:text-right">
+                                <span className="text-[10px] text-amber-700 font-bold block leading-tight">
+                                  {locale === 'ar' ? 'المطلوب تحصيله نقداً' : 'Cash to Collect'}
+                                </span>
+                                <span className="text-sm font-black text-amber-950 font-mono">
+                                  SAR {grandTotalNum.toFixed(2)}
+                                </span>
+                                {parseFloat(order?.tip_amount || 0) > 0 && (
+                                  <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
+                                    {locale === 'ar'
+                                      ? `(يشمل إكرامية ${parseFloat(order.tip_amount).toFixed(2)} ر.س لك 💚)`
+                                      : `(Includes SAR ${parseFloat(order.tip_amount).toFixed(2)} tip for you 💚)`}
+                                  </span>
+                                )}
+                              </div>
+                            )
+                          ) : (
+                            <div className="mt-1 bg-emerald-50/70 border border-emerald-200/80 rounded-xl px-2 py-0.5 text-left sm:text-right">
+                              <span className="text-[10px] font-bold text-emerald-800 block">
+                                {locale === 'ar' ? 'مدفوع مسبقاً (0.00 ر.س نقد)' : 'Prepaid (0.00 SAR Due)'}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1175,14 +1247,19 @@ export default function DriverDashboardPage() {
                               onClick={() => {
                                 setCompletionConfirmDelivery(del);
                                 setCompletionNotes('');
+                                setDeliveryOtp('');
+                                setOtpError('');
+                                setCodCashCollected(false);
+                                setCodCashInput(grandTotalNum.toFixed(2));
+                                setCodError('');
                               }}
                               className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition-all shadow-xs flex items-center gap-2 cursor-pointer"
                             >
                               <CheckCircle2 className="w-4 h-4" />
                               <span>
-                                {locale === 'ar'
-                                  ? 'إتمام التوصيل والتحقق من PIN'
-                                  : 'Verify PIN & Complete Delivery'}
+                                {isCod
+                                  ? (locale === 'ar' ? 'تحصيل النقد والتحقق من PIN' : 'Collect Cash & Verify PIN')
+                                  : (locale === 'ar' ? 'إتمام التوصيل والتحقق من PIN' : 'Verify PIN & Complete Delivery')}
                               </span>
                             </button>
                           )}
@@ -1209,9 +1286,59 @@ export default function DriverDashboardPage() {
                           )}
 
                           {status === 'DELIVERED' && (
-                            <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-black">
-                              <CheckCircle2 className="w-4 h-4 text-[#05A764]" />
-                              <span>{locale === 'ar' ? 'مكتمل بنجاح' : 'Delivered Successfully'}</span>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {/* Order Status */}
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-black">
+                                <CheckCircle2 className="w-4 h-4 text-[#05A764]" />
+                                <span>{locale === 'ar' ? 'الطلب: تم التوصيل' : 'Order: DELIVERED'}</span>
+                              </div>
+
+                              {/* Payment & Cash Badges for COD */}
+                              {isCod ? (
+                                <>
+                                  <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
+                                    del.cash_handover_status === 'SETTLED' || del.order?.payment?.status === 'PAID'
+                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                      : 'bg-amber-50 text-amber-900 border-amber-300'
+                                  }`}>
+                                    <span>
+                                      {del.cash_handover_status === 'SETTLED' || del.order?.payment?.status === 'PAID'
+                                        ? (locale === 'ar' ? 'الدفع: مدفوع' : 'Payment: PAID')
+                                        : (locale === 'ar' ? 'الدفع: معلق' : 'Payment: PENDING')}
+                                    </span>
+                                  </div>
+
+                                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-300 text-xs font-bold">
+                                    <Banknote className="w-4 h-4 text-amber-600" />
+                                    <span>{locale === 'ar' ? 'النقد: تم التحصيل بواسطة السائق' : 'Cash: Collected by Driver'}</span>
+                                  </div>
+
+                                  <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
+                                    del.cash_handover_status === 'SETTLED'
+                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                      : 'bg-slate-100 text-slate-800 border-slate-300'
+                                  }`}>
+                                    <span>
+                                      {del.cash_handover_status === 'SETTLED'
+                                        ? (locale === 'ar' ? 'التسوية: تمت التسوية' : 'Handover: SETTLED')
+                                        : (locale === 'ar' ? 'التسوية: بانتظار تأكيد الإدارة' : 'Handover: Awaiting Admin Confirmation')}
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold">
+                                  <CreditCard className="w-4 h-4 text-blue-600" />
+                                  <span>{locale === 'ar' ? 'مدفوع إلكترونياً (0.00 ر.س نقد)' : 'Paid Online (No Cash)'}</span>
+                                </div>
+                              )}
+
+                              {(del.end_time || del.updatedAt) && (
+                                <span className="text-[11px] text-slate-400 font-medium">
+                                  {locale === 'ar' ? 'وقت التسليم:' : 'Delivered at:'}{' '}
+                                  {new Date(del.end_time || del.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })},{' '}
+                                  {new Date(del.end_time || del.updatedAt).toLocaleDateString()}
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1306,6 +1433,116 @@ export default function DriverDashboardPage() {
                 </div>
               </div>
 
+              {/* Payment & Collection Details Card */}
+              {(() => {
+                const isDetailCod = String(selectedOrderDetails.order?.payment_method || selectedOrderDetails.order?.payment?.payment_method || '').toUpperCase() === 'COD';
+                const isDetailDelivered = selectedOrderDetails.status === 'DELIVERED';
+                const detailGrandTotal = parseFloat(selectedOrderDetails.order?.grand_total || 0);
+                const isSettled = selectedOrderDetails.cash_handover_status === 'SETTLED' || selectedOrderDetails.order?.payment?.status === 'PAID';
+                const detailPaymentStatus = isDetailCod ? (isSettled ? 'PAID' : 'PENDING') : (selectedOrderDetails.order?.payment?.status || 'PAID');
+
+                return (
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-200/70 pb-2">
+                      <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                        <CreditCard className="w-4 h-4 text-[#05A764]" />
+                        <span>{locale === 'ar' ? 'معلومات الدفع والتحصيل' : 'Payment & Collection Information'}</span>
+                      </div>
+                      {isDetailCod ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                          <Banknote className="w-3 h-3 text-amber-700" />
+                          <span>Cash on Delivery (COD)</span>
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
+                          <CreditCard className="w-3 h-3 text-blue-600" />
+                          <span>Paid Online</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 block uppercase">
+                          {locale === 'ar' ? 'طريقة الدفع' : 'Payment Method'}
+                        </span>
+                        <span className="font-bold text-slate-800">
+                          {isDetailCod ? 'Cash on Delivery (COD)' : 'Online Payment Gateway'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 block uppercase">
+                          {locale === 'ar' ? 'حالة الدفع' : 'Payment Status'}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[11px] ${
+                          detailPaymentStatus === 'PAID'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>{detailPaymentStatus}</span>
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 block uppercase">
+                          {locale === 'ar' ? 'المبلغ المطلوب تحصيله' : 'Amount to Collect'}
+                        </span>
+                        <span className="font-black text-slate-900 font-mono text-sm">
+                          {isDetailCod
+                            ? (isDetailDelivered
+                              ? `SAR ${parseFloat(selectedOrderDetails.cod_amount_collected || detailGrandTotal).toFixed(2)} (Collected)`
+                              : `SAR ${detailGrandTotal.toFixed(2)}`)
+                            : 'SAR 0.00 (Prepaid Online)'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {parseFloat(selectedOrderDetails.order?.tip_amount || 0) > 0 && (
+                      <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between text-xs mt-3">
+                        <div className="flex items-center gap-2">
+                          <Heart className="w-4 h-4 text-emerald-600 fill-emerald-600 shrink-0" />
+                          <span className="font-bold text-emerald-950">
+                            {locale === 'ar' ? 'إكرامية مقدمة لك من العميل:' : 'Customer Delivery Tip (For You):'}
+                          </span>
+                        </div>
+                        <span className="font-black text-sm text-emerald-800 font-mono">
+                          SAR {parseFloat(selectedOrderDetails.order.tip_amount).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+
+                    {isDetailCod && (
+                      <div className="pt-2 border-t border-slate-200/60 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                        <div>
+                          <span className="text-slate-500 font-medium block">
+                            {locale === 'ar' ? 'حالة النقد:' : 'Cash Collection Status:'}
+                          </span>
+                          <span className="font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded inline-block mt-0.5">
+                            {isDetailDelivered ? (locale === 'ar' ? 'تم التحصيل بواسطة السائق' : 'Collected by Driver') : (locale === 'ar' ? 'قيد الانتظار' : 'Pending Collection')}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 font-medium block">
+                            {locale === 'ar' ? 'حالة توريد النقد (التسوية):' : 'Reconciliation / Handover:'}
+                          </span>
+                          <span className={`font-bold px-2 py-0.5 rounded border inline-block mt-0.5 ${
+                            isSettled
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                              : 'bg-amber-50 text-amber-900 border-amber-300'
+                          }`}>
+                            {isSettled
+                              ? (locale === 'ar' ? 'تمت التسوية' : 'SETTLED')
+                              : (locale === 'ar' ? 'بانتظار تأكيد الإدارة' : 'Awaiting Admin Confirmation')}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               <div className="space-y-3">
                 <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                   <Package className="w-4 h-4 text-[#05A764]" />
@@ -1355,6 +1592,15 @@ export default function DriverDashboardPage() {
                   <span>Delivery Fee</span>
                   <span>{parseFloat(selectedOrderDetails.order?.delivery_fee || 0).toFixed(2)} SAR</span>
                 </div>
+                {parseFloat(selectedOrderDetails.order?.tip_amount || 0) > 0 && (
+                  <div className="flex justify-between text-emerald-700 font-bold">
+                    <span className="flex items-center gap-1">
+                      <Heart className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
+                      <span>{locale === 'ar' ? 'إكرامية العميل' : 'Customer Tip'}</span>
+                    </span>
+                    <span>{parseFloat(selectedOrderDetails.order.tip_amount).toFixed(2)} SAR</span>
+                  </div>
+                )}
                 {selectedOrderDetails.order?.tax_amount > 0 && (
                   <div className="flex justify-between text-slate-600">
                     <span>ZATCA VAT (15%)</span>
@@ -1392,102 +1638,223 @@ export default function DriverDashboardPage() {
 
       {/* MODAL 2: Delivery Completion Confirmation Modal (PIN OTP) */}
       {completionConfirmDelivery && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl relative overflow-hidden space-y-6">
-            <div className="h-1.5 bg-gradient-to-r from-emerald-600 to-[#05A764]" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl relative my-auto max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="h-1.5 bg-gradient-to-r from-[#043927] via-[#05A764] to-emerald-400 shrink-0" />
 
-            <div className="px-6 pt-2 text-center space-y-3">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-[#05A764] border border-emerald-200 flex items-center justify-center mx-auto shadow-sm">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-black text-slate-900">
-                {locale === 'ar' ? 'تأكيد إتمام التوصيل' : 'Confirm Delivery Completion'}
-              </h3>
-              <p className="text-xs text-slate-500">
-                {locale === 'ar'
-                  ? `أنت على وشك تحديد الطلب #${completionConfirmDelivery.order?.order_number} كمكتمل وإصدار فاتورة ZATCA الرسمية.`
-                  : `You are about to mark Order #${completionConfirmDelivery.order?.order_number} as DELIVERED and generate the ZATCA e-invoice.`}
-              </p>
-            </div>
-
-            <div className="px-6 space-y-4">
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Customer:</span>
-                  <span className="font-bold text-slate-900">
-                    {completionConfirmDelivery.order?.customer?.first_name}{' '}
-                    {completionConfirmDelivery.order?.customer?.last_name}
-                  </span>
+            {/* Modal Header */}
+            <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#05A764] border border-emerald-200 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-5 h-5" />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Total Collected:</span>
-                  <span className="font-bold text-[#043927]">
-                    {parseFloat(completionConfirmDelivery.order?.grand_total || 0).toFixed(2)} SAR
-                  </span>
-                </div>
-              </div>
-
-              {/* Customer Handover PIN / OTP Verification */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-800 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{locale === 'ar' ? 'رمز تحقق التسليم (PIN من العميل)' : 'Customer Handover PIN / OTP'}</span>
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                    4-Digit PIN Required
-                  </span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    maxLength={6}
-                    value={deliveryOtp}
-                    onChange={(e) => {
-                      setDeliveryOtp(e.target.value);
-                      setOtpError('');
-                    }}
-                    placeholder="Enter 4-digit PIN (e.g. 4821)"
-                    className="w-full pl-9 pr-3.5 py-3 rounded-xl bg-slate-50 border border-slate-300 text-sm font-mono font-bold tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#043927]"
-                  />
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
-                </div>
-                {otpError && (
-                  <p className="text-xs text-rose-600 font-semibold flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{otpError}</span>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 leading-tight">
+                    {locale === 'ar' ? 'تأكيد إتمام التوصيل' : 'Confirm Delivery Completion'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    #{completionConfirmDelivery.order?.order_number}
                   </p>
-                )}
-                <p className="text-[11px] text-slate-400">
-                  {locale === 'ar'
-                    ? 'اطلب رمز PIN المكون من 4 أرقام المعروض على شاشة تتبع العميل لتأكيد التسليم.'
-                    : 'Ask the recipient for the 4-digit PIN shown on their order tracking screen.'}
-                </p>
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">
-                  {locale === 'ar' ? 'ملاحظات إثبات التسليم (اختياري)' : 'Proof of Delivery Notes (Optional)'}
-                </label>
-                <textarea
-                  rows={2}
-                  value={completionNotes}
-                  onChange={(e) => setCompletionNotes(e.target.value)}
-                  placeholder="e.g. Handed over to recipient in person at doorstep"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#043927]"
-                />
-              </div>
-            </div>
-
-            <div className="px-6 pb-6 pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => {
                   setCompletionConfirmDelivery(null);
                   setOtpError('');
                   setDeliveryOtp('');
+                  setCodCashCollected(false);
+                  setCodError('');
                 }}
-                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body (Scrollable) */}
+            {(() => {
+              const isModalCod = String(completionConfirmDelivery.order?.payment_method || completionConfirmDelivery.order?.payment?.payment_method || '').toUpperCase() === 'COD';
+              const modalGrandTotal = parseFloat(completionConfirmDelivery.order?.grand_total || 0);
+
+              return (
+                <div className="overflow-y-auto p-5 space-y-3.5 flex-1 text-slate-800">
+                  {/* Customer & Payment Method Summary Card */}
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">{locale === 'ar' ? 'العميل:' : 'Customer:'}</span>
+                      <span className="font-bold text-slate-900">
+                        {completionConfirmDelivery.order?.customer?.first_name}{' '}
+                        {completionConfirmDelivery.order?.customer?.last_name}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/60">
+                      <span className="text-slate-500 font-medium">{locale === 'ar' ? 'طريقة الدفع:' : 'Payment Method:'}</span>
+                      {isModalCod ? (
+                        <span className="font-black text-amber-900 bg-amber-100/90 px-2.5 py-0.5 rounded-lg text-[11px] border border-amber-300 flex items-center gap-1">
+                          <Banknote className="w-3.5 h-3.5 text-amber-700" />
+                          <span>{locale === 'ar' ? 'الدفع عند الاستلام (COD)' : 'Cash on Delivery (COD)'}</span>
+                        </span>
+                      ) : (
+                        <span className="font-black text-blue-900 bg-blue-100/90 px-2.5 py-0.5 rounded-lg text-[11px] border border-blue-200 flex items-center gap-1">
+                          <CreditCard className="w-3.5 h-3.5 text-blue-600" />
+                          <span>{locale === 'ar' ? 'مدفوع إلكترونياً (مسبقاً)' : 'Paid Online (Prepaid)'}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {parseFloat(completionConfirmDelivery.order?.tip_amount || 0) > 0 && (
+                    <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-300 text-xs font-bold text-emerald-950 flex items-center justify-between shadow-2xs">
+                      <div className="flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-emerald-600 fill-emerald-600 shrink-0" />
+                        <span>
+                          {locale === 'ar'
+                            ? `العميل أضاف إكرامية لك 💚`
+                            : `Customer added a delivery tip for you! 💚`}
+                        </span>
+                      </div>
+                      <span className="font-mono text-sm font-black text-emerald-800">
+                        SAR {parseFloat(completionConfirmDelivery.order.tip_amount).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* COD Cash Collection Confirmation */}
+                  {isModalCod ? (
+                    <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-300/90 space-y-2.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                            <Banknote className="w-4 h-4 text-amber-700 stroke-[2.5]" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wide block leading-none">
+                              {locale === 'ar' ? 'المبلغ المطلوب تحصيله نقداً' : 'Cash to Collect'}
+                            </span>
+                            <span className="text-lg font-black text-[#043927] font-mono leading-tight">
+                              SAR {modalGrandTotal.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-black bg-amber-200/90 text-amber-950 px-2 py-0.5 rounded-md uppercase">
+                          {locale === 'ar' ? 'نقداً فقط' : 'Cash Only'}
+                        </span>
+                      </div>
+
+                      {/* Checkbox confirmation */}
+                      <label className="flex items-start gap-2.5 pt-2 border-t border-amber-200/80 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={codCashCollected}
+                          onChange={(e) => {
+                            setCodCashCollected(e.target.checked);
+                            if (e.target.checked) setCodError('');
+                          }}
+                          className="w-4 h-4 rounded border-amber-400 text-[#006E2D] focus:ring-[#006E2D] mt-0.5 cursor-pointer shrink-0"
+                        />
+                        <span className="text-xs font-bold text-amber-950 leading-snug">
+                          {locale === 'ar'
+                            ? `أؤكد استلام مبلغ ${modalGrandTotal.toFixed(2)} ر.س نقداً كاملاً من العميل.`
+                            : `I confirm that I collected SAR ${modalGrandTotal.toFixed(2)} in cash from the customer.`}
+                        </span>
+                      </label>
+
+                      {codError && (
+                        <p className="text-xs text-rose-600 font-semibold flex items-center gap-1 pt-0.5">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>{codError}</span>
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    /* Online Prepaid Notice (No collection controls) */
+                    <div className="p-3 rounded-2xl bg-blue-50/80 border border-blue-200 text-xs flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                        <CreditCard className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-blue-900 block">
+                          {locale === 'ar' ? 'طلب مدفوع مسبقاً' : 'Prepaid Online Order'}
+                        </span>
+                        <span className="text-[11px] text-blue-700 font-medium block">
+                          {locale === 'ar'
+                            ? 'تم الدفع إلكترونياً. لا تطلب أي مبلغ نقدي من العميل (0.00 ر.س نقد).'
+                            : 'Customer has paid online. Do not collect any cash (SAR 0.00 due).'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Customer Handover PIN / OTP Verification */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-800 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{locale === 'ar' ? 'رمز تحقق التسليم (PIN العميل)' : 'Customer Handover PIN / OTP'}</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        4-Digit PIN Required
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={deliveryOtp}
+                        onChange={(e) => {
+                          setDeliveryOtp(e.target.value);
+                          setOtpError('');
+                        }}
+                        placeholder="Enter 4-digit PIN (e.g. 4821)"
+                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm font-mono font-bold tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#043927]"
+                      />
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    </div>
+                    {otpError && (
+                      <p className="text-xs text-rose-600 font-semibold flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{otpError}</span>
+                      </p>
+                    )}
+                    <p className="text-[10px] text-slate-400">
+                      {locale === 'ar'
+                        ? 'اطلب رمز PIN المكون من 4 أرقام المعروض على شاشة تتبع العميل لتأكيد التسليم.'
+                        : 'Ask recipient for the 4-digit PIN shown on their order tracking screen.'}
+                    </p>
+                  </div>
+
+                  {/* Proof Notes */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">
+                      {locale === 'ar' ? 'ملاحظات إثبات التسليم (اختياري)' : 'Proof of Delivery Notes (Optional)'}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={completionNotes}
+                      onChange={(e) => setCompletionNotes(e.target.value)}
+                      placeholder="e.g. Handed over to recipient in person at doorstep"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#043927]"
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Modal Footer (Pinned at bottom) */}
+            <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/80 flex items-center justify-end gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setCompletionConfirmDelivery(null);
+                  setOtpError('');
+                  setDeliveryOtp('');
+                  setCodCashCollected(false);
+                  setCodError('');
+                }}
+                className="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all cursor-pointer shadow-2xs"
               >
                 {locale === 'ar' ? 'إلغاء' : 'Cancel'}
               </button>
@@ -1496,20 +1863,41 @@ export default function DriverDashboardPage() {
                 type="button"
                 disabled={submittingStatus}
                 onClick={() => {
+                  const isModalCod = String(completionConfirmDelivery.order?.payment_method || completionConfirmDelivery.order?.payment?.payment_method || '').toUpperCase() === 'COD';
+                  const modalGrandTotal = parseFloat(completionConfirmDelivery.order?.grand_total || 0);
+
+                  if (isModalCod && !codCashCollected) {
+                    setCodError(
+                      locale === 'ar'
+                        ? 'يرجى تأكيد تحصيل المبلغ نقداً من العميل بتحديد المربع أعلاه'
+                        : 'Please confirm that you have collected the cash from the customer'
+                    );
+                    return;
+                  }
+
                   if (!deliveryOtp.trim()) {
                     setOtpError(locale === 'ar' ? 'يرجى إدخال رمز PIN' : 'Please enter the 4-digit customer PIN');
                     return;
                   }
-                  handleStatusUpdate(completionConfirmDelivery.id, 'DELIVERED', { otp: deliveryOtp });
+
+                  handleStatusUpdate(completionConfirmDelivery.id, 'DELIVERED', {
+                    otp: deliveryOtp,
+                    codCollected: isModalCod,
+                    cashAmount: isModalCod ? modalGrandTotal : null,
+                  });
                 }}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                className="px-5 py-2.5 rounded-xl bg-[#006E2D] hover:bg-[#048b53] text-white text-xs font-black transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-70"
               >
                 {submittingStatus ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{locale === 'ar' ? 'تأكيد التسليم' : 'Verify PIN & Complete'}</span>
+                    <span>
+                      {String(completionConfirmDelivery.order?.payment_method || completionConfirmDelivery.order?.payment?.payment_method || '').toUpperCase() === 'COD'
+                        ? (locale === 'ar' ? 'تأكيد تحصيل النقد وإتمام التوصيل' : 'Confirm Cash Collection & Complete Delivery')
+                        : (locale === 'ar' ? 'تأكيد التسليم' : 'Verify PIN & Complete')}
+                    </span>
                   </>
                 )}
               </button>

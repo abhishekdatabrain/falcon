@@ -43,6 +43,7 @@ import {
   ExternalLink,
   ArrowUpDown,
   AlertTriangle,
+  Heart,
 } from 'lucide-react';
 
 export default function AdminOrdersPage() {
@@ -864,8 +865,16 @@ export default function AdminOrdersPage() {
                       </td>
 
                       {/* 4. Total Amount */}
-                      <td className="px-5 py-3.5 whitespace-nowrap font-mono font-black text-xs text-slate-900">
-                        {parseFloat(ord.grand_total || 0).toFixed(2)} SAR
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <div className="font-mono font-black text-xs text-slate-900">
+                          {parseFloat(ord.grand_total || 0).toFixed(2)} SAR
+                        </div>
+                        {parseFloat(ord.tip_amount || 0) > 0 && (
+                          <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-0.5">
+                            <Heart className="w-2.5 h-2.5 fill-emerald-600" />
+                            <span>Tip: {parseFloat(ord.tip_amount).toFixed(2)} SAR</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* 5. Payment Method */}
@@ -875,20 +884,35 @@ export default function AdminOrdersPage() {
 
                       {/* 6. Payment Status */}
                       <td className="px-5 py-3.5 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          {renderPaymentBadge(pay)}
-                          {pay.status !== 'PAID' && pay.status !== 'VERIFIED' && (
-                            <button
-                              onClick={() => {
-                                setPaymentModalOrder(ord);
-                                setVerifyGateway(ord.payment_method || 'Razorpay');
-                                setVerifyTxnId(pay.transaction_id || '');
-                              }}
-                              className="px-1.5 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-bold transition-all cursor-pointer"
-                              title="Verify Payment"
-                            >
-                              Verify
-                            </button>
+                        <div className="flex flex-col gap-1 items-start">
+                          <div className="flex items-center gap-1.5">
+                            {renderPaymentBadge(pay)}
+                            {!String(ord.payment_method || pay.payment_method || '').toUpperCase().includes('COD') && pay.status !== 'PAID' && pay.status !== 'VERIFIED' && (
+                              <button
+                                onClick={() => {
+                                  setPaymentModalOrder(ord);
+                                  setVerifyGateway(ord.payment_method || 'Razorpay');
+                                  setVerifyTxnId(pay.transaction_id || '');
+                                }}
+                                className="px-1.5 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-bold transition-all cursor-pointer"
+                                title="Verify Payment"
+                              >
+                                Verify
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Cash Status for COD orders */}
+                          {String(ord.payment_method || pay.payment_method || '').toUpperCase().includes('COD') && (
+                            ord.delivery?.cash_handover_status === 'SETTLED' ? (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                                Cash: SETTLED
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                                Cash: Awaiting Admin Confirmation
+                              </span>
+                            )
                           )}
                         </div>
                       </td>
@@ -1102,6 +1126,18 @@ export default function AdminOrdersPage() {
                         <strong className="text-slate-900 font-mono">{selectedOrder.payment?.transaction_id || 'PENDING'}</strong>
                       </div>
                     </div>
+                    {String(selectedOrder.payment_method || '').toUpperCase().includes('COD') && (
+                      <div className="pt-2 border-t border-indigo-200/60 flex items-center justify-between text-xs">
+                        <span className="text-[10px] text-indigo-950 font-bold">Cash Reconciliation Status</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          selectedOrder.delivery?.cash_handover_status === 'SETTLED'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-amber-100 text-amber-800 border border-amber-300'
+                        }`}>
+                          {selectedOrder.delivery?.cash_handover_status === 'SETTLED' ? 'SETTLED' : 'Awaiting Admin Confirmation'}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Products */}
@@ -1119,9 +1155,38 @@ export default function AdminOrdersPage() {
                       ))}
                     </div>
 
-                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center font-bold">
-                      <span>Grand Total:</span>
-                      <span className="font-mono text-emerald-700 text-sm">{parseFloat(selectedOrder.grand_total || 0).toFixed(2)} SAR</span>
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Items Subtotal:</span>
+                        <span className="font-mono font-bold text-slate-800">{parseFloat(selectedOrder.subtotal || 0).toFixed(2)} SAR</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Delivery Fee ({selectedOrder.delivery_method || 'Express'}):</span>
+                        <span className="font-mono font-bold text-slate-800">{parseFloat(selectedOrder.delivery_fee || 0).toFixed(2)} SAR</span>
+                      </div>
+                      {parseFloat(selectedOrder.discount_total || 0) > 0 && (
+                        <div className="flex justify-between text-emerald-600">
+                          <span>Discount ({selectedOrder.coupon_code || ''}):</span>
+                          <span className="font-mono font-bold">- {parseFloat(selectedOrder.discount_total).toFixed(2)} SAR</span>
+                        </div>
+                      )}
+                      {parseFloat(selectedOrder.tip_amount || 0) > 0 && (
+                        <div className="flex justify-between text-emerald-700 font-bold bg-emerald-50/80 p-1.5 rounded-lg border border-emerald-200">
+                          <span className="flex items-center gap-1">
+                            <Heart className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
+                            <span>Delivery Partner Tip:</span>
+                          </span>
+                          <span className="font-mono font-bold">{parseFloat(selectedOrder.tip_amount).toFixed(2)} SAR</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-slate-600">
+                        <span>VAT (15%):</span>
+                        <span className="font-mono font-bold text-slate-800">{parseFloat(selectedOrder.tax_total || 0).toFixed(2)} SAR</span>
+                      </div>
+                      <div className="flex justify-between items-center font-bold text-sm pt-2 border-t border-slate-200">
+                        <span className="text-slate-900">Grand Total:</span>
+                        <span className="font-mono text-emerald-700 font-black">{parseFloat(selectedOrder.grand_total || 0).toFixed(2)} SAR</span>
+                      </div>
                     </div>
                   </div>
                 </>
