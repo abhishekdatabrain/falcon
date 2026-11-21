@@ -76,15 +76,17 @@ class InvoiceController {
       if (!invoice) return sendError(res, 'Invoice not found', [], 404);
 
       const uploadDir = process.env.UPLOAD_DIR || 'uploads';
-      let absPath = invoice.pdf_file_url
-        ? path.join(__dirname, '..', '..', invoice.pdf_file_url.replace('/uploads/', `${uploadDir}/`))
-        : null;
-
-      if (!absPath || !fs.existsSync(absPath)) {
-        const pdfUrl = await zatcaInvoiceService.generatePdfInvoiceFile(invoice, invoice.items || [], invoice.qr_code_payload, invoice.original_invoice);
+      // Always regenerate to ensure latest reference design template is delivered
+      const pdfUrl = await zatcaInvoiceService.generatePdfInvoiceFile(
+        invoice,
+        invoice.items || [],
+        invoice.qr_code_payload,
+        invoice.original_invoice
+      );
+      if (invoice.pdf_file_url !== pdfUrl) {
         await invoice.update({ pdf_file_url: pdfUrl });
-        absPath = path.join(__dirname, '..', '..', pdfUrl.replace('/uploads/', `${uploadDir}/`));
       }
+      const absPath = path.join(__dirname, '..', '..', pdfUrl.replace('/uploads/', `${uploadDir}/`));
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="Invoice-${invoice.invoice_number}.pdf"`);

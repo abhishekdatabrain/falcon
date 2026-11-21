@@ -116,10 +116,17 @@ class DeliverySlotService {
       order: [['display_order', 'ASC'], ['created_at', 'ASC']],
     });
 
+    let deliveryCharges = null;
+    try {
+      const deliverySettingService = require('./deliverySettingService');
+      deliveryCharges = await deliverySettingService.getActiveDeliverySettings();
+    } catch (_) {}
+
     return {
       settings,
       dates,
       slots,
+      deliveryCharges,
     };
   }
 

@@ -22,6 +22,8 @@ const homepageCmsRoutes = require('./homepageCmsRoutes');
 const categoryBannerRoutes = require('./categoryBannerRoutes');
 const couponRoutes = require('./couponRoutes');
 const deliverySlotRoutes = require('./deliverySlotRoutes');
+const deliverySettingRoutes = require('./deliverySettingRoutes');
+const tipSettingRoutes = require('./tipSettingRoutes');
 const bulkUploadRoutes = require('./bulkUploadRoutes');
 
 router.use('/auth', authRoutes);
@@ -47,5 +49,7 @@ router.use('/homepage-cms', homepageCmsRoutes);
 router.use('/category-banner', categoryBannerRoutes);
 router.use('/coupons', couponRoutes);
 router.use('/delivery-slots', deliverySlotRoutes);
+router.use('/delivery-settings', deliverySettingRoutes);
+router.use('/tip-settings', tipSettingRoutes);
 
 module.exports = router;

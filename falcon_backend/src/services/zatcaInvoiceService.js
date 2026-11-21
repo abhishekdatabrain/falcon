@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
+const { amountToWordsSAR } = require('../utils/numberToWords');
 
 class ZatcaInvoiceService {
   /**
@@ -483,533 +484,500 @@ class ZatcaInvoiceService {
 
   /**
    * Generates high-fidelity PDF Document for Invoices and Credit Notes
+   * Exact visual replica of the reference Saqrcart Tax Invoice design.
    */
- 
-
-async generatePdfInvoiceFile(invoice, items, qrPayload, originalInvoice = null) {
-  const uploadDir = process.env.UPLOAD_DIR || 'uploads';
-  const absoluteUploadDir = path.join(__dirname, '..', '..', uploadDir);
-
-  if (!fs.existsSync(absoluteUploadDir)) {
-    fs.mkdirSync(absoluteUploadDir, { recursive: true });
-  }
-
-  const isCreditNote = invoice.invoice_type === 'CREDIT_NOTE';
-  const filename = `invoice-${invoice.invoice_number}.pdf`;
-  const filePath = path.join(absoluteUploadDir, filename);
-
-  const qrImageDataUrl = await QRCode.toDataURL(qrPayload || 'PROFORMA INVOICE', {
-    errorCorrectionLevel: 'M',
-    margin: 1,
-    width: 120,
-  });
-
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({
-      size: 'A4',
-      margin: 25,
-      autoFirstPage: true,
-      bufferPages: true,
-    });
-
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
-
-    let settled = false;
-
-    const fail = (error) => {
-      if (settled) return;
-      settled = true;
-      stream.destroy();
-      fs.unlink(filePath, () => reject(error));
-    };
-
-    stream.on('finish', () => {
-      if (settled) return;
-      settled = true;
-      resolve(`/uploads/${filename}`);
-    });
-
-    stream.on('error', fail);
-    doc.on('error', fail);
-
-    try {
-      const startX = 30;
-      const pageWidth = doc.page.width - 60;
-      const pageBottom = doc.page.height - 30;
-
-      const GREEN = '#043927';
-      const DARK = '#0F172A';
-      const MUTED = '#64748B';
-      const BORDER = '#E2E8F0';
-      const LIGHT = '#F8FAFC';
-      const RED = '#DC2626';
-
-      const money = (value) => {
-        const number = Number(value ?? 0);
-        return `${Number.isFinite(number) ? number.toFixed(2) : '0.00'} SAR`;
-      };
-
-      const clean = (value, fallback = '') =>
-        String(value ?? fallback)
-          .replace(/[^\x20-\x7E]/g, '')
-          .trim();
-
-      const text = (value, x, y, options = {}) => {
-        const {
-          size = 8,
-          color = DARK,
-          bold = false,
-          width,
-          align = 'left',
-          ...rest
-        } = options;
-
-        doc
-          .font(bold ? 'Helvetica-Bold' : 'Helvetica')
-          .fontSize(size)
-          .fillColor(color)
-          .text(String(value), x, y, {
-            ...(width ? { width } : {}),
-            align,
-            lineBreak: false,
-            ...rest,
-          });
-      };
-
-      const box = (x, y, width, height, fill = LIGHT, stroke = BORDER) => {
-        doc.roundedRect(x, y, width, height, 7).fillAndStroke(fill, stroke);
-      };
-
-      // ================= 1. HEADER =================
-
-      const headerY = 25;
-      const headerHeight = 64;
-
-      doc
-        .roundedRect(startX, headerY, pageWidth, headerHeight, 8)
-        .fill(isCreditNote ? '#991B1B' : GREEN);
-
-      text('FALCON FRESH MARKET', startX + 14, 36, {
-        size: 17,
-        bold: true,
-        color: '#FFFFFF',
-      });
-
-      // Always show this heading.
-      text('PROFORMA INVOICE', startX + 14, 59, {
-        size: 12,
-        bold: true,
-        color: '#F59E0B',
-      });
-
-      text('Kingdom of Saudi Arabia - E-Commerce Platform', startX + 245, 72, {
-        size: 7,
-        color: '#D1FAE5',
-        width: pageWidth - 260,
-        align: 'right',
-      });
-
-      // ================= 2. SELLER & QR =================
-
-      const sellerY = 98;
-      const sellerWidth = pageWidth - 140;
-      const sellerHeight = 74;
-
-      box(startX, sellerY, sellerWidth, sellerHeight);
-
-      text('SELLER / TAXPAYER DETAILS', startX + 10, sellerY + 8, {
-        size: 9,
-        bold: true,
-        color: GREEN,
-      });
-
-      text(
-        clean(invoice.seller_name, 'Falcon E-Commerce Trading Co.'),
-        startX + 10,
-        sellerY + 23,
-        { size: 8.5, bold: true, width: sellerWidth - 20 }
-      );
-
-      text(
-        `VAT Reg. No: ${clean(invoice.seller_vat_number, '300000000000003')} | CR No: 1010892341`,
-        startX + 10,
-        sellerY + 37,
-        { size: 7.5, color: MUTED }
-      );
-
-      text(
-        'King Fahd Rd, Al-Malqa District, Riyadh 13521, KSA',
-        startX + 10,
-        sellerY + 50,
-        { size: 7.5, color: MUTED }
-      );
-
-      text('Cold-Chain Refrigerated Delivery', startX + 10, sellerY + 62, {
-        size: 7,
-        color: '#059669',
-        bold: true,
-      });
-
-      const qrX = startX + sellerWidth + 8;
-      const qrWidth = pageWidth - sellerWidth - 8;
-
-      box(qrX, sellerY, qrWidth, sellerHeight, '#FFFFFF', '#10B981');
-
-      doc.image(qrImageDataUrl, qrX + (qrWidth - 48) / 2, sellerY + 5, {
-        width: 48,
-        height: 48,
-      });
-
-      text('REFERENCE QR', qrX + 5, sellerY + 59, {
-        size: 7,
-        bold: true,
-        color: GREEN,
-        width: qrWidth - 10,
-        align: 'center',
-      });
-
-      // ================= 3. INVOICE / BUYER =================
-
-      const metaY = 180;
-      const cardHeight = 77;
-      const cardGap = 8;
-      const cardWidth = (pageWidth - cardGap) / 2;
-      const buyerX = startX + cardWidth + cardGap;
-
-      box(startX, metaY, cardWidth, cardHeight);
-      box(buyerX, metaY, cardWidth, cardHeight);
-
-      text('INVOICE INFORMATION', startX + 10, metaY + 8, {
-        size: 8.5,
-        bold: true,
-        color: GREEN,
-      });
-
-      const dateValue = invoice.issue_date_time
-        ? new Date(invoice.issue_date_time)
-        : new Date();
-
-      const formattedDate = Number.isNaN(dateValue.getTime())
-        ? '-'
-        : dateValue.toLocaleString('en-US', {
-            timeZone: 'Asia/Riyadh',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          });
-
-      const infoRow = (label, value, y, x = startX, valueColor = DARK) => {
-        text(label, x + 10, y, {
-          size: 7.3,
-          color: MUTED,
-        });
-
-        text(clean(value, '-'), x + 96, y, {
-          size: 7.3,
-          bold: true,
-          color: valueColor,
-          width: cardWidth - 104,
-        });
-      };
-
-      infoRow('Doc Number:', invoice.invoice_number, metaY + 24);
-      infoRow('Issue Date:', formattedDate, metaY + 37);
-      infoRow('ICV Counter:', `#${invoice.invoice_counter ?? 1}`, metaY + 50);
-
-      infoRow('Status:', 'PROFORMA - TRIAL', metaY + 63, startX, '#059669');
-
-      text('CUSTOMER / BUYER DETAILS', buyerX + 10, metaY + 8, {
-        size: 8.5,
-        bold: true,
-        color: GREEN,
-      });
-
-      infoRow('Buyer Name:', invoice.buyer_name || 'Valued Customer', metaY + 24, buyerX);
-      infoRow('Fulfillment:', 'Home Express Delivery', metaY + 37, buyerX);
-      infoRow('Destination:', 'Riyadh, Saudi Arabia', metaY + 50, buyerX);
-      infoRow('Customer Type:', 'Individual Consumer (B2C)', metaY + 63, buyerX);
-
-      // ================= 4. PRODUCTS =================
-
-      const tableY = 266;
-      const tableHeaderHeight = 22;
-      const rowHeight = 22;
-
-      const safeItems = Array.isArray(items) && items.length
-        ? items
-        : [{
-            item_name_en: 'Fresh Grocery Item',
-            quantity: 1,
-            unit_price: invoice.total_excluding_vat,
-            vat_amount: invoice.vat_total,
-            total_with_vat: invoice.total_including_vat,
-          }];
-
-      // One-page layout: check available height before drawing.
-      // Larger orders should use a separate multi-page layout.
-      const estimatedSummaryY = tableY + tableHeaderHeight
-        + safeItems.length * rowHeight + 9;
-
-      const estimatedFooterBottom = estimatedSummaryY + 103 + 12 + 52 + 34;
-
-      if (estimatedFooterBottom > pageBottom) {
-        throw new Error(
-          `Invoice contains ${safeItems.length} products and cannot fit on one A4 page. Use a multi-page invoice layout for this order.`
-        );
-      }
-
-      doc.roundedRect(startX, tableY, pageWidth, tableHeaderHeight, 5).fill(GREEN);
-
-      text('ITEM DESCRIPTION', startX + 10, tableY + 6, {
-        size: 8,
-        bold: true,
-        color: '#FFFFFF',
-      });
-
-      text('QTY', startX + 224, tableY + 6, {
-        size: 8,
-        bold: true,
-        color: '#FFFFFF',
-        width: 30,
-        align: 'center',
-      });
-
-      text('UNIT PRICE', startX + 260, tableY + 6, {
-        size: 8,
-        bold: true,
-        color: '#FFFFFF',
-        width: 77,
-        align: 'right',
-      });
-
-      text('VAT (15%)', startX + 343, tableY + 6, {
-        size: 8,
-        bold: true,
-        color: '#FFFFFF',
-        width: 70,
-        align: 'right',
-      });
-
-      text('TOTAL', startX + 418, tableY + 6, {
-        size: 8,
-        bold: true,
-        color: '#FFFFFF',
-        width: 82,
-        align: 'right',
-      });
-
-      let currentY = tableY + tableHeaderHeight;
-
-      safeItems.forEach((item, index) => {
-        if (index % 2 === 1) {
-          doc.rect(startX, currentY, pageWidth, rowHeight).fill(LIGHT);
-        }
-
-        const itemName = clean(
-          item.item_name_en || item.name,
-          'Fresh Grocery Item'
-        ).substring(0, 39);
-
-        const qty = Number(item.quantity ?? 1);
-        const unitPrice = Number(item.unit_price ?? 0);
-        const vat = Number(item.vat_amount ?? 0);
-        const total = Number(
-          item.total_with_vat ?? unitPrice * qty + vat
-        );
-
-        text(itemName, startX + 10, currentY + 6, {
-          size: 8,
-          bold: true,
-          width: 212,
-        });
-
-        text(qty, startX + 224, currentY + 6, {
-          size: 8,
-          width: 30,
-          align: 'center',
-        });
-
-        text(money(unitPrice), startX + 260, currentY + 6, {
-          size: 8,
-          width: 77,
-          align: 'right',
-        });
-
-        text(money(vat), startX + 343, currentY + 6, {
-          size: 8,
-          width: 70,
-          align: 'right',
-        });
-
-        text(money(total), startX + 418, currentY + 6, {
-          size: 8,
-          bold: true,
-          color: GREEN,
-          width: 82,
-          align: 'right',
-        });
-
-        doc
-          .moveTo(startX, currentY + rowHeight)
-          .lineTo(startX + pageWidth, currentY + rowHeight)
-          .strokeColor(BORDER)
-          .lineWidth(0.5)
-          .stroke();
-
-        currentY += rowHeight;
-      });
-
-      // ================= 5. FINANCIAL SUMMARY =================
-
-      const summaryY = currentY + 9;
-      const summaryWidth = 246;
-      const summaryX = startX + pageWidth - summaryWidth;
-      const summaryHeight = 103;
-
-      box(summaryX, summaryY, summaryWidth, summaryHeight);
-
-      const subtotal = Number(invoice.total_excluding_vat ?? 0);
-      const vatTotal = Number(invoice.vat_total ?? 0);
-      const deliveryFee = Number(invoice.delivery_fee ?? 0);
-      const grandTotal = Number(invoice.total_including_vat ?? 0);
-
-      const summaryRow = (label, value, y, color = DARK) => {
-        text(label, summaryX + 10, y, {
-          size: 7.5,
-          color: MUTED,
-        });
-
-        text(money(value), summaryX + 128, y, {
-          size: 8,
-          bold: true,
-          color,
-          width: 108,
-          align: 'right',
-        });
-      };
-
-      summaryRow('Subtotal (Excl. VAT):', subtotal, summaryY + 10);
-      summaryRow('Delivery Fee:', deliveryFee, summaryY + 25, '#059669');
-      summaryRow('VAT (15%):', vatTotal, summaryY + 40);
-
-      doc
-        .roundedRect(summaryX + 6, summaryY + 60, summaryWidth - 12, 35, 5)
-        .fill(GREEN);
-
-      text('GRAND TOTAL:', summaryX + 13, summaryY + 72, {
-        size: 9,
-        bold: true,
-        color: '#F59E0B',
-      });
-
-      text(money(grandTotal), summaryX + 111, summaryY + 70, {
-        size: 11,
-        bold: true,
-        color: '#FFFFFF',
-        width: 119,
-        align: 'right',
-      });
-
-      // ================= 6. FRESHNESS BOX =================
-
-      const guaranteeWidth = summaryX - startX - 9;
-
-      box(
-        startX,
-        summaryY,
-        guaranteeWidth,
-        summaryHeight,
-        '#ECFDF5',
-        '#A7F3D0'
-      );
-
-      text('100% FRESHNESS & COLD-CHAIN', startX + 10, summaryY + 13, {
-        size: 8.5,
-        bold: true,
-        color: GREEN,
-      });
-
-      text(
-        'Fresh grocery items are carefully packed and handled for safe delivery.',
-        startX + 10,
-        summaryY + 35,
-        {
-          size: 8,
-          color: '#065F46',
-          width: guaranteeWidth - 20,
-          lineBreak: true,
-        }
-      );
-
-      // ================= 7. COMPACT FOOTER =================
-
-      const footerY = summaryY + summaryHeight + 12;
-
-      doc
-        .moveTo(startX, footerY)
-        .lineTo(startX + pageWidth, footerY)
-        .strokeColor('#CBD5E1')
-        .lineWidth(0.7)
-        .stroke();
-
-      text(
-        'This document is generated for trial and reference purposes only.',
-        startX,
-        footerY + 8,
-        {
-          size: 7,
-          color: MUTED,
-          width: pageWidth,
-          align: 'center',
-        }
-      );
-
-      text(
-        'Falcon Fresh Market KSA - Commercial Registration: 1010892341',
-        startX,
-        footerY + 22,
-        {
-          size: 7,
-          bold: true,
-          color: GREEN,
-          width: pageWidth,
-          align: 'center',
-        }
-      );
-
-      // ================= 8. TRIAL NOTE =================
-
-      const noteY = footerY + 52;
-      const noteHeight = 34;
-
-      doc
-        .roundedRect(startX, noteY, pageWidth, noteHeight, 6)
-        .fillAndStroke('#FEF2F2', '#FCA5A5');
-
-      text(
-        'Note :- This is not valid invoice only for trial',
-        startX + 10,
-        noteY + 11,
-        {
-          size: 10,
-          bold: true,
-          color: RED,
-          width: pageWidth - 20,
-          align: 'center',
-        }
-      );
-
-      // ================= 9. FINISH =================
-
-      doc.end();
-    } catch (error) {
-      fail(error);
+  async generatePdfInvoiceFile(invoice, items, qrPayload, originalInvoice = null) {
+    const uploadDir = process.env.UPLOAD_DIR || 'uploads';
+    const absoluteUploadDir = path.join(__dirname, '..', '..', uploadDir);
+
+    if (!fs.existsSync(absoluteUploadDir)) {
+      fs.mkdirSync(absoluteUploadDir, { recursive: true });
     }
-  });
-}
+
+    const isCreditNote = invoice.invoice_type === 'CREDIT_NOTE';
+    const filename = `invoice-${invoice.invoice_number}.pdf`;
+    const filePath = path.join(absoluteUploadDir, filename);
+
+    // Resolve associated order with customer, user, and address if not already attached
+    let order = invoice.order;
+    if (!order && invoice.order_id) {
+      try {
+        order = await Order.findByPk(invoice.order_id, {
+          include: [
+            { model: Customer, as: 'customer', include: [{ model: User, as: 'user' }] },
+            'address',
+            { model: OrderItem, as: 'items' },
+          ],
+        });
+      } catch (_) {}
+    }
+
+    const qrImageDataUrl = await QRCode.toDataURL(qrPayload || 'SAQRCART TAX INVOICE', {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: 140,
+    });
+
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margin: 28,
+        autoFirstPage: true,
+        bufferPages: true,
+      });
+
+      const stream = fs.createWriteStream(filePath);
+      doc.pipe(stream);
+
+      let settled = false;
+
+      const fail = (error) => {
+        if (settled) return;
+        settled = true;
+        stream.destroy();
+        fs.unlink(filePath, () => reject(error));
+      };
+
+      stream.on('finish', () => {
+        if (settled) return;
+        settled = true;
+        resolve(`/uploads/${filename}`);
+      });
+
+      stream.on('error', fail);
+      doc.on('error', fail);
+
+      try {
+        const startX = 28;
+        const pageWidth = 539; // 595.28 - 56
+        const pageBottom = doc.page.height - 25;
+
+        // Visual Palette matching reference design
+        const PRIMARY_GREEN = isCreditNote ? '#991B1B' : '#00482B';
+        const ACCENT_ORANGE = '#EAA023';
+        const TEXT_DARK = '#0F172A';
+        const TEXT_MUTED = '#475569';
+        const TEXT_SLATE = '#1E293B';
+        const BORDER_COLOR = '#D1D5DB';
+        const DIVIDER_COLOR = '#E2E8F0';
+        const DISCOUNT_GREEN = '#007A3D';
+
+        const clean = (value, fallback = '') =>
+          String(value ?? fallback)
+            .replace(/[^\x20-\x7E]/g, '')
+            .trim();
+
+        const text = (value, x, y, options = {}) => {
+          const {
+            size = 8,
+            color = TEXT_DARK,
+            bold = false,
+            width,
+            align = 'left',
+            ...rest
+          } = options;
+
+          doc
+            .font(bold ? 'Helvetica-Bold' : 'Helvetica')
+            .fontSize(size)
+            .fillColor(color)
+            .text(String(value), x, y, {
+              ...(width ? { width } : {}),
+              align,
+              lineBreak: false,
+              ...rest,
+            });
+        };
+
+        // ================= 1. HEADER =================
+        const headerY = 24;
+        const headerHeight = 44;
+
+        doc.roundedRect(startX, headerY, pageWidth, headerHeight, 6).fill(PRIMARY_GREEN);
+
+        // Logo: "saqr" in white + "cart" in orange + " |"
+        doc.font('Helvetica-Bold').fontSize(20).fillColor('#FFFFFF')
+          .text('saqr', startX + 16, headerY + 11, { continued: true });
+        doc.font('Helvetica-Bold').fontSize(20).fillColor(ACCENT_ORANGE)
+          .text('cart', { continued: true });
+        doc.font('Helvetica').fontSize(19).fillColor('#CBD5E1')
+          .text('  |');
+
+        // Right side: "TAX INVOICE" + Invoice No
+        const titleText = isCreditNote ? 'CREDIT NOTE' : 'TAX INVOICE';
+        text(titleText, startX + 260, headerY + 8, {
+          size: 16,
+          bold: true,
+          color: '#FFFFFF',
+          width: pageWidth - 276,
+          align: 'right',
+        });
+
+        text(`Invoice No: ${invoice.invoice_number}`, startX + 260, headerY + 28, {
+          size: 8.5,
+          color: '#FFFFFF',
+          width: pageWidth - 276,
+          align: 'right',
+        });
+
+        // ================= 2. BOX 1: SELLER, INVOICE DETAILS & QR =================
+        const box1Y = headerY + headerHeight + 8; // 76
+        const box1Height = 84;
+
+        doc.roundedRect(startX, box1Y, pageWidth, box1Height, 6)
+          .fillAndStroke('#FFFFFF', BORDER_COLOR);
+
+        // 2A: Sold By / Seller (Left)
+        const sellerX = startX + 12;
+        text('Sold By / Seller', sellerX, box1Y + 9, { size: 8.5, bold: true, color: TEXT_DARK });
+        text('saqrcart', sellerX, box1Y + 22, { size: 8.5, bold: true, color: TEXT_DARK });
+        text(`VAT Reg. No.: ${clean(invoice.seller_vat_number, '300000000000003')}`, sellerX, box1Y + 34, { size: 7.5, color: TEXT_SLATE });
+        text('CR No.: 1010892341', sellerX, box1Y + 46, { size: 7.5, color: TEXT_SLATE });
+        text('King Fahd Rd, Al-Malqa District, Riyadh 13521, Saudi Arabia', sellerX, box1Y + 58, { size: 7.2, color: TEXT_MUTED });
+        text('Email: support@saqrcart.sa   |   Phone: +966 11 234 5678', sellerX, box1Y + 70, { size: 7.2, color: TEXT_MUTED });
+
+        // 2B: Invoice Details (Middle)
+        const invDetailsX = startX + 248;
+        text('Invoice Details', invDetailsX, box1Y + 9, { size: 8.5, bold: true, color: TEXT_DARK });
+
+        const dateValue = invoice.issue_date_time ? new Date(invoice.issue_date_time) : new Date();
+        const formattedDate = dateValue.toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        });
+
+        const orderIdText = order?.order_number || (`ORD-${invoice.invoice_number.replace(/^INV-/, '')}`);
+        const invoiceTypeText = isCreditNote ? 'Credit Note' : 'Tax Invoice';
+
+        // Payment Method formatting
+        const rawPaymentMethod = String(order?.payment_method || invoice.payment_method || 'COD').toUpperCase();
+        let paymentMethodText = 'Cash on Delivery (COD)';
+        if (rawPaymentMethod === 'COD' || rawPaymentMethod.includes('CASH')) {
+          paymentMethodText = 'Cash on Delivery (COD)';
+        } else if (rawPaymentMethod === 'MADA') {
+          paymentMethodText = 'Mada (Online)';
+        } else if (rawPaymentMethod === 'CARD' || rawPaymentMethod === 'VISA' || rawPaymentMethod === 'MASTER') {
+          paymentMethodText = 'Credit Card (Online)';
+        } else if (rawPaymentMethod === 'ONLINE') {
+          paymentMethodText = 'Pay Online';
+        }
+
+        // Delivery Method formatting
+        const rawDeliverySpeed = String(order?.delivery_method || '').toUpperCase();
+        const deliveryMethodText = rawDeliverySpeed === 'STANDARD' ? 'Standard Schedule' : 'Express Delivery';
+        const deliveryMethodTag = rawDeliverySpeed === 'STANDARD' ? 'Standard' : 'Express';
+
+        const drawAlignedRow = (label, value, y, colX = invDetailsX, labelWidth = 78) => {
+          text(label, colX, y, { size: 7.5, color: TEXT_SLATE });
+          text(':', colX + labelWidth, y, { size: 7.5, color: TEXT_MUTED });
+          text(clean(value, '-'), colX + labelWidth + 7, y, { size: 7.5, bold: true, color: TEXT_DARK });
+        };
+
+        drawAlignedRow('Invoice Date', formattedDate, box1Y + 22);
+        drawAlignedRow('Order ID', orderIdText, box1Y + 34);
+        drawAlignedRow('Invoice Type', invoiceTypeText, box1Y + 46);
+        drawAlignedRow('Payment Method', paymentMethodText, box1Y + 58);
+        drawAlignedRow('Delivery Method', deliveryMethodText, box1Y + 70);
+
+        // 2C: Reference QR (Right)
+        const qrDividerX = startX + 448;
+        doc.moveTo(qrDividerX, box1Y + 8).lineTo(qrDividerX, box1Y + box1Height - 8)
+          .strokeColor(DIVIDER_COLOR).lineWidth(0.8).stroke();
+
+        const qrSize = 50;
+        const qrAreaWidth = pageWidth - 448;
+        const qrX = qrDividerX + (qrAreaWidth - qrSize) / 2;
+        const qrY = box1Y + 10;
+
+        doc.image(qrImageDataUrl, qrX, qrY, { width: qrSize, height: qrSize });
+        text('Reference QR', qrDividerX, box1Y + 64, {
+          size: 7.5,
+          bold: true,
+          color: TEXT_DARK,
+          width: qrAreaWidth,
+          align: 'center',
+        });
+
+        // ================= 3. BOX 2: CUSTOMER & DELIVERY DETAILS =================
+        const box2Y = box1Y + box1Height + 7; // 167
+        const box2Height = 68;
+
+        doc.roundedRect(startX, box2Y, pageWidth, box2Height, 6)
+          .fillAndStroke('#FFFFFF', BORDER_COLOR);
+
+        // 3A: Bill To / Customer Details (Left)
+        const custX = startX + 12;
+        text('Bill To / Customer Details', custX, box2Y + 8, { size: 8.5, bold: true, color: TEXT_DARK });
+
+        const buyerName = clean(
+          (order?.customer ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim() : '') ||
+          order?.address?.full_name ||
+          invoice.buyer_name ||
+          'Valued Customer'
+        );
+
+        const buyerMobile = clean(
+          order?.customer?.user?.mobile ||
+          order?.address?.mobile ||
+          '+9668076352576'
+        );
+
+        const addressCity = clean(order?.address?.city || 'Riyadh');
+        const addressCountry = clean(order?.address?.country || 'Saudi Arabia');
+        const buyerAddress = `${addressCity}, ${addressCountry}`;
+
+        const isB2B = Boolean(order?.customer?.user?.vat_no || order?.customer?.user?.company_name);
+        const customerTypeText = isB2B ? 'Business Customer (B2B)' : 'Individual Consumer (B2C)';
+
+        drawAlignedRow('Customer Name', buyerName, box2Y + 22, custX, 78);
+        drawAlignedRow('Mobile Number', buyerMobile, box2Y + 34, custX, 78);
+        drawAlignedRow('Address', buyerAddress, box2Y + 46, custX, 78);
+        drawAlignedRow('Customer Type', customerTypeText, box2Y + 58, custX, 78);
+
+        // 3B: Delivery Details (Right)
+        const delivX = startX + 262;
+        text('Delivery Details', delivX, box2Y + 8, { size: 8.5, bold: true, color: TEXT_DARK });
+
+        const fulfillmentText = rawDeliverySpeed === 'STANDARD'
+          ? 'Home Standard Scheduled Delivery'
+          : 'Home Express Delivery';
+        const destinationText = `${addressCity}, ${addressCountry}`;
+
+        drawAlignedRow('Fulfillment', fulfillmentText, box2Y + 22, delivX, 70);
+        drawAlignedRow('Destination', destinationText, box2Y + 34, delivX, 70);
+
+        // ================= 4. PRODUCTS TABLE =================
+        const tableY = box2Y + box2Height + 9; // 244
+        const tableHeaderHeight = 24;
+        const rowHeight = 22;
+
+        // Table Column Specifications (sum = 539)
+        const cols = [
+          { key: 'srNo', label: 'Sr. No.', width: 36, align: 'center' },
+          { key: 'desc', label: 'Item Description', width: 175, align: 'left', padLeft: 6 },
+          { key: 'qty', label: 'Qty', width: 34, align: 'center' },
+          { key: 'unit', label: 'Unit Price (SAR)', width: 58, align: 'right', padRight: 4 },
+          { key: 'disc', label: 'Discount (SAR)', width: 54, align: 'right', padRight: 4 },
+          { key: 'vatRate', label: 'VAT (15%)', width: 46, align: 'center' },
+          { key: 'vatAmt', label: 'VAT Amount (SAR)', width: 60, align: 'right', padRight: 4 },
+          { key: 'total', label: 'Total Amount (SAR)', width: 76, align: 'right', padRight: 6 },
+        ];
+
+        // Draw Table Header
+        doc.roundedRect(startX, tableY, pageWidth, tableHeaderHeight, 4).fill(PRIMARY_GREEN);
+
+        let curHeaderX = startX;
+        cols.forEach((col) => {
+          const textX = curHeaderX + (col.padLeft || 0);
+          const textWidth = col.width - (col.padLeft || 0) - (col.padRight || 0);
+          text(col.label, textX, tableY + 7, {
+            size: 7.5,
+            bold: true,
+            color: '#FFFFFF',
+            width: textWidth,
+            align: col.align,
+          });
+          curHeaderX += col.width;
+        });
+
+        // Normalize line items
+        const rawItems = (items && items.length > 0)
+          ? items
+          : (order?.items && order.items.length > 0)
+            ? order.items
+            : [{
+                item_name_en: 'Fresh Grocery Item',
+                quantity: 1,
+                unit_price: invoice.total_excluding_vat || 50.00,
+                vat_rate: 15.00,
+                vat_amount: invoice.vat_total || 7.50,
+                total_with_vat: invoice.total_including_vat || 57.50,
+              }];
+
+        let currentY = tableY + tableHeaderHeight;
+
+        rawItems.forEach((it, idx) => {
+          const itemName = clean(it.item_name_en || it.product_name_en || it.name || 'Organic Whole Milk (2 L)');
+          const qty = Number(it.quantity ?? 1);
+          const unitPrice = Number(it.unit_price ?? 0);
+          const discount = Number(it.discount_amount ?? 0);
+          const vatRate = Number(it.vat_rate ?? 15);
+          const vatAmount = Number(it.vat_amount ?? it.tax_amount ?? (unitPrice * qty * 0.15));
+          const totalAmount = Number(it.total_with_vat ?? it.total_price ?? (unitPrice * qty - discount + vatAmount));
+
+          // Draw Row Border Box
+          doc.rect(startX, currentY, pageWidth, rowHeight).strokeColor(BORDER_COLOR).lineWidth(0.5).stroke();
+
+          // Draw vertical column separators
+          let vX = startX;
+          for (let i = 0; i < cols.length - 1; i++) {
+            vX += cols[i].width;
+            doc.moveTo(vX, currentY).lineTo(vX, currentY + rowHeight).strokeColor(BORDER_COLOR).lineWidth(0.5).stroke();
+          }
+
+          // Values inside row cells
+          let cellX = startX;
+
+          // 1. Sr. No.
+          text(String(idx + 1), cellX, currentY + 6, { size: 7.5, color: TEXT_DARK, align: 'center', width: cols[0].width });
+          cellX += cols[0].width;
+
+          // 2. Item Description
+          text(itemName.substring(0, 36), cellX + 6, currentY + 6, { size: 7.5, color: TEXT_DARK, width: cols[1].width - 10 });
+          cellX += cols[1].width;
+
+          // 3. Qty
+          text(String(qty), cellX, currentY + 6, { size: 7.5, color: TEXT_DARK, align: 'center', width: cols[2].width });
+          cellX += cols[2].width;
+
+          // 4. Unit Price (SAR)
+          text(unitPrice.toFixed(2), cellX, currentY + 6, { size: 7.5, color: TEXT_DARK, align: 'right', width: cols[3].width - 4 });
+          cellX += cols[3].width;
+
+          // 5. Discount (SAR)
+          text(discount.toFixed(2), cellX, currentY + 6, { size: 7.5, color: TEXT_DARK, align: 'right', width: cols[4].width - 4 });
+          cellX += cols[4].width;
+
+          // 6. VAT (15%)
+          text(`${vatRate.toFixed(0)}%`, cellX, currentY + 6, { size: 7.5, color: TEXT_DARK, align: 'center', width: cols[5].width });
+          cellX += cols[5].width;
+
+          // 7. VAT Amount (SAR)
+          text(vatAmount.toFixed(2), cellX, currentY + 6, { size: 7.5, color: TEXT_DARK, align: 'right', width: cols[6].width - 4 });
+          cellX += cols[6].width;
+
+          // 8. Total Amount (SAR)
+          text(totalAmount.toFixed(2), cellX, currentY + 6, { size: 7.5, color: TEXT_DARK, align: 'right', width: cols[7].width - 6 });
+
+          currentY += rowHeight;
+        });
+
+        const subtotal = Number(order?.subtotal ?? invoice.total_excluding_vat ?? 0);
+        const discountTotal = Number(order?.discount_total ?? 0);
+        const deliveryFee = Number(order?.delivery_fee ?? invoice.delivery_fee ?? 0);
+        const tipAmount = Number(order?.tip_amount ?? 0);
+        const vatTotal = Number(order?.tax_total ?? invoice.vat_total ?? 0);
+        const grandTotal = Number(order?.grand_total ?? invoice.total_including_vat ?? 0);
+        const hasTip = tipAmount > 0;
+
+        // ================= 5. INVOICE SUMMARY BOX =================
+        const summaryY = currentY + 10;
+        const summaryWidth = 228;
+        const summaryX = startX + pageWidth - summaryWidth; // startX + 311
+        const summaryHeight = hasTip ? 112 : 98;
+
+        doc.roundedRect(summaryX, summaryY, summaryWidth, summaryHeight, 6)
+          .fillAndStroke('#FFFFFF', BORDER_COLOR);
+
+        // Summary Rows
+        const drawSummaryRow = (label, valStr, y, valColor = TEXT_DARK) => {
+          text(label, summaryX + 12, y, { size: 8, color: TEXT_DARK });
+          text(valStr, summaryX + 110, y, {
+            size: 8,
+            bold: true,
+            color: valColor,
+            align: 'right',
+            width: summaryWidth - 122,
+          });
+        };
+
+        let curY = summaryY + 10;
+        drawSummaryRow('Subtotal (Excl. VAT)', `${subtotal.toFixed(2)} SAR`, curY);
+        curY += 14;
+        drawSummaryRow('Discount', `${discountTotal.toFixed(2)} SAR`, curY, DISCOUNT_GREEN);
+        curY += 14;
+        drawSummaryRow(`Delivery Charge (${deliveryMethodTag})`, `${deliveryFee.toFixed(2)} SAR`, curY);
+        curY += 14;
+        if (hasTip) {
+          drawSummaryRow('Delivery Partner Tip', `${tipAmount.toFixed(2)} SAR`, curY);
+          curY += 14;
+        }
+        drawSummaryRow('VAT (15%)', `${vatTotal.toFixed(2)} SAR`, curY);
+        curY += 15;
+
+        // Grand Total Banner
+        const gtY = curY;
+        const gtHeight = 27;
+        doc.roundedRect(summaryX + 3, gtY, summaryWidth - 6, gtHeight, 4).fill(PRIMARY_GREEN);
+
+        text('Grand Total', summaryX + 12, gtY + 7, { size: 11, bold: true, color: '#FFFFFF' });
+        text(`${grandTotal.toFixed(2)} SAR`, summaryX + 90, gtY + 6, {
+          size: 13,
+          bold: true,
+          color: '#FFFFFF',
+          align: 'right',
+          width: summaryWidth - 104,
+        });
+
+        // ================= 6. AMOUNT IN WORDS BOX =================
+        const wordsY = summaryY + summaryHeight + 9;
+        const wordsHeight = 22;
+
+        doc.roundedRect(startX, wordsY, pageWidth, wordsHeight, 5)
+          .fillAndStroke('#FFFFFF', BORDER_COLOR);
+
+        const wordsText = amountToWordsSAR(grandTotal);
+
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor(TEXT_DARK)
+          .text('Amount in Words: ', startX + 10, wordsY + 6, { continued: true });
+        doc.font('Helvetica').fontSize(7.5).fillColor(TEXT_DARK)
+          .text(wordsText);
+
+        // ================= 7. FOOTER SECTION =================
+        const footerY = wordsY + wordsHeight + 14;
+
+        doc.moveTo(startX, footerY).lineTo(startX + pageWidth, footerY)
+          .strokeColor(DIVIDER_COLOR).lineWidth(0.8).stroke();
+
+        // Left Footer: Saqrcart Brand & Registration
+        doc.font('Helvetica-Bold').fontSize(12.5).fillColor(PRIMARY_GREEN)
+          .text('saqr', startX, footerY + 8, { continued: true });
+        doc.font('Helvetica-Bold').fontSize(12.5).fillColor(ACCENT_ORANGE)
+          .text('cart');
+
+        text('Commercial Registration: 1010892341   |   VAT Reg. No.: 300000000000003', startX, footerY + 23, {
+          size: 6.8,
+          color: TEXT_MUTED,
+        });
+
+        // Right Footer: Terms & Conditions
+        const termsX = startX + 250;
+        const termsWidth = pageWidth - 250;
+
+        text('Terms & Conditions:', termsX, footerY + 8, {
+          size: 7,
+          bold: true,
+          color: TEXT_DARK,
+        });
+
+        text('•  This is a computer-generated tax invoice and does not require a physical signature.', termsX, footerY + 19, {
+          size: 6.5,
+          color: TEXT_MUTED,
+          width: termsWidth,
+        });
+
+        text('•  Goods are sold and delivered as per the applicable terms and conditions.', termsX, footerY + 28, {
+          size: 6.5,
+          color: TEXT_MUTED,
+          width: termsWidth,
+        });
+
+        text('•  For any queries, contact our support team at support@saqrcart.sa.', termsX, footerY + 37, {
+          size: 6.5,
+          color: TEXT_MUTED,
+          width: termsWidth,
+        });
+
+        doc.end();
+      } catch (error) {
+        fail(error);
+      }
+    });
+  }
 
 
 

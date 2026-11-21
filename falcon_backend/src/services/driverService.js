@@ -1,6 +1,7 @@
-const { Driver, Delivery, Order, Customer, Address, OrderItem, Product, DriverAssignment, DriverLocation, OrderStatusHistory, User, sequelize } = require('../models');
+const { Driver, Delivery, Order, Customer, Address, OrderItem, Product, DriverAssignment, DriverLocation, OrderStatusHistory, User, Payment, sequelize } = require('../models');
 const { ORDER_STATUS, VALID_STATUS_TRANSITIONS } = require('../constants/orderStatus');
 const { DRIVER_AVAILABILITY } = require('../constants/driverStatus');
+const PAYMENT_STATUS = require('../constants/paymentStatus');
 const ROLES = require('../constants/roles');
 const zatcaInvoiceService = require('./zatcaInvoiceService');
 
@@ -27,6 +28,7 @@ class DriverService {
             { model: Customer, as: 'customer', include: [{ model: User, as: 'user', attributes: ['email', 'mobile'] }] },
             { model: Address, as: 'address', paranoid: false },
             { model: OrderItem, as: 'items', include: [{ model: Product, as: 'product' }] },
+            { model: Payment, as: 'payment' },
           ],
         },
       ],
@@ -99,13 +101,36 @@ class DriverService {
       throw new Error(`Invalid delivery status transition from ${currentStatus} to ${targetStatus}`);
     }
 
-    // OTP Verification for DELIVERED
+    const isCod = String(delivery.order.payment_method || '').toUpperCase() === 'COD';
+    let exactGrandTotal = 0;
+
+    // OTP & COD Verification for DELIVERED
     if (targetStatus === ORDER_STATUS.DELIVERED) {
       if (delivery.otp) {
         const inputOtp = String(meta.otp || '').trim();
         const expectedOtp = String(delivery.otp).trim();
         if (!inputOtp || inputOtp !== expectedOtp) {
           throw new Error('Invalid delivery PIN / OTP. Please enter the correct 4-digit code provided by the customer.');
+        }
+      }
+
+      // COD Collection Security & Verification
+      if (isCod) {
+        if (!meta.codCollected) {
+          throw new Error('Cash collection confirmation is required to complete Cash on Delivery (COD) orders.');
+        }
+
+        exactGrandTotal = Math.round(parseFloat(delivery.order.grand_total || 0) * 100) / 100;
+        if (meta.cashAmount !== undefined && meta.cashAmount !== null && meta.cashAmount !== '') {
+          const submittedCash = Math.round(parseFloat(meta.cashAmount) * 100) / 100;
+          if (isNaN(submittedCash) || Math.abs(submittedCash - exactGrandTotal) > 0.01) {
+            throw new Error(`Collected cash amount must match order total exactly: SAR ${exactGrandTotal.toFixed(2)}`);
+          }
+        }
+
+        // Prevent duplicate collection if already delivered
+        if (delivery.status === ORDER_STATUS.DELIVERED && delivery.cod_collected_at) {
+          throw new Error('COD cash payment for this order has already been collected and confirmed.');
         }
       }
     }
@@ -119,6 +144,39 @@ class DriverService {
         updatePayload.otp_verified_at = new Date();
         if (meta.notes) updatePayload.proof_notes = meta.notes;
         if (meta.proof_image) updatePayload.proof_image = meta.proof_image;
+
+        // Record COD collection on delivery
+        if (isCod) {
+          updatePayload.cod_amount_collected = exactGrandTotal;
+          updatePayload.cod_collected_at = new Date();
+          updatePayload.cod_driver_id = driverId;
+          updatePayload.cod_collection_status = 'COLLECTED_BY_DRIVER';
+          updatePayload.cash_handover_status = 'AWAITING_ADMIN_CONFIRMATION';
+
+          // COD Payment status MUST remain PENDING until physical cash handover is confirmed by Admin
+          const existingPayment = await Payment.findOne({
+            where: { order_id: delivery.order.id },
+            transaction: t,
+            lock: t.LOCK.UPDATE,
+          });
+
+          if (existingPayment) {
+            await existingPayment.update({
+              status: PAYMENT_STATUS.PENDING,
+              amount: exactGrandTotal,
+              payment_method: 'COD',
+              payment_gateway: 'COD',
+            }, { transaction: t });
+          } else {
+            await Payment.create({
+              order_id: delivery.order.id,
+              amount: exactGrandTotal,
+              status: PAYMENT_STATUS.PENDING,
+              payment_method: 'COD',
+              payment_gateway: 'COD',
+            }, { transaction: t });
+          }
+        }
       } else if (targetStatus === ORDER_STATUS.DELIVERY_FAILED) {
         updatePayload.failure_reason = meta.failure_reason || meta.notes || 'Customer unavailable / delivery could not be completed';
       }
@@ -126,7 +184,9 @@ class DriverService {
       await delivery.update(updatePayload, { transaction: t });
       await delivery.order.update({ order_status: targetStatus }, { transaction: t });
 
-      const historyNotes = meta.notes || meta.failure_reason || `Delivery status updated by driver to ${targetStatus}`;
+      const historyNotes = meta.notes || meta.failure_reason || (isCod && targetStatus === ORDER_STATUS.DELIVERED
+        ? `Delivery completed. Cash SAR ${exactGrandTotal.toFixed(2)} collected by driver. Payment remains PENDING awaiting admin cash reconciliation.`
+        : `Delivery status updated by driver to ${targetStatus}`);
 
       await OrderStatusHistory.create({
         order_id: delivery.order.id,
@@ -161,6 +221,11 @@ class DriverService {
       data: {
         otpVerified: targetStatus === ORDER_STATUS.DELIVERED,
         failureReason: meta.failure_reason || null,
+        codCollected: isCod && targetStatus === ORDER_STATUS.DELIVERED,
+        codAmount: isCod && targetStatus === ORDER_STATUS.DELIVERED ? exactGrandTotal : null,
+        paymentStatus: isCod && targetStatus === ORDER_STATUS.DELIVERED ? PAYMENT_STATUS.PENDING : undefined,
+        codCollectionStatus: isCod && targetStatus === ORDER_STATUS.DELIVERED ? 'COLLECTED_BY_DRIVER' : undefined,
+        cashHandoverStatus: isCod && targetStatus === ORDER_STATUS.DELIVERED ? 'AWAITING_ADMIN_CONFIRMATION' : undefined,
       },
     });
 

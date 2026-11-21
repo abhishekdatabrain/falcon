@@ -42,6 +42,27 @@ const startServer = async () => {
         await sequelize.query(`ALTER TABLE ${tablePrefix}"users" ADD COLUMN IF NOT EXISTS "company_name" VARCHAR(255);`);
         await sequelize.query(`ALTER TABLE ${tablePrefix}"users" ADD COLUMN IF NOT EXISTS "cr_no" VARCHAR(255);`);
         await sequelize.query(`ALTER TABLE ${tablePrefix}"users" ADD COLUMN IF NOT EXISTS "address" TEXT;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "cod_collection_status" VARCHAR(50);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "handover_confirmed_at" TIMESTAMP WITH TIME ZONE;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "handover_confirmed_by_admin_id" UUID;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "handover_reference" VARCHAR(100);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "handover_received_amount" DECIMAL(10, 2);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"orders" ADD COLUMN IF NOT EXISTS "delivery_method" VARCHAR(50);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"orders" ADD COLUMN IF NOT EXISTS "tip_amount" DECIMAL(10, 2) NOT NULL DEFAULT 0.00;`);
+        await sequelize.query(`
+          CREATE TABLE IF NOT EXISTS ${tablePrefix}"tip_settings" (
+            "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            "is_enabled" BOOLEAN NOT NULL DEFAULT true,
+            "show_on_checkout" BOOLEAN NOT NULL DEFAULT true,
+            "presets" JSONB NOT NULL DEFAULT '[{"id":"1","amount":5,"is_enabled":true},{"id":"2","amount":10,"is_enabled":true},{"id":"3","amount":15,"is_enabled":true}]'::jsonb,
+            "allow_custom" BOOLEAN NOT NULL DEFAULT true,
+            "min_custom_amount" DECIMAL(10, 2) NOT NULL DEFAULT 1.00,
+            "max_custom_amount" DECIMAL(10, 2) NOT NULL DEFAULT 500.00,
+            "updated_by_admin_id" UUID,
+            "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+            "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+          );
+        `);
       } catch (alterErr) {
         // Table doesn't exist yet or already configured
       }
@@ -655,6 +676,58 @@ const startServer = async () => {
           },
         ]);
         logger.info('✓ Default Delivery Slots seeded successfully.');
+      }
+
+      // Auto-seed Delivery Settings if table is empty
+      const { DeliverySetting } = require('./src/models');
+      const settingCount = await DeliverySetting.count();
+      if (settingCount === 0) {
+        logger.info('No Delivery Settings found in DB. Auto-seeding initial delivery methods (Express & Standard)...');
+        await DeliverySetting.bulkCreate([
+          {
+            method_type: 'EXPRESS',
+            name_en: 'Express Delivery',
+            name_ar: 'توصيل سريع',
+            is_enabled: true,
+            base_fee: 12.00,
+            estimated_delivery_minutes: 90,
+            min_order_amount: 0.00,
+            free_delivery_threshold: null,
+            zone_rules: null,
+          },
+          {
+            method_type: 'STANDARD',
+            name_en: 'Standard Schedule',
+            name_ar: 'توصيل قياسي مجدول',
+            is_enabled: true,
+            base_fee: 0.00,
+            estimated_delivery_minutes: null,
+            min_order_amount: 0.00,
+            free_delivery_threshold: 100.00,
+            zone_rules: null,
+          },
+        ]);
+        logger.info('✓ Default Delivery Settings seeded successfully.');
+      }
+
+      // Auto-seed Tip Settings if table is empty
+      const { TipSetting } = require('./src/models');
+      const tipSettingCount = await TipSetting.count().catch(() => 0);
+      if (tipSettingCount === 0) {
+        logger.info('No Tip Settings found in DB. Auto-seeding initial default tip configuration...');
+        await TipSetting.create({
+          is_enabled: true,
+          show_on_checkout: true,
+          presets: [
+            { id: '1', amount: 5, is_enabled: true },
+            { id: '2', amount: 10, is_enabled: true },
+            { id: '3', amount: 15, is_enabled: true },
+          ],
+          allow_custom: true,
+          min_custom_amount: 1.00,
+          max_custom_amount: 500.00,
+        });
+        logger.info('✓ Default Tip Settings seeded successfully.');
       }
     } catch (syncErr) {
       logger.warn('Sequelize sync/seed warning: %s', syncErr.message);

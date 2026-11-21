@@ -34,6 +34,8 @@ const HomepageSection = require('./HomepageSection');
 const HomepageSetting = require('./HomepageSetting');
 const Coupon = require('./Coupon');
 const DeliverySlot = require('./DeliverySlot');
+const DeliverySetting = require('./DeliverySetting');
+const TipSetting = require('./TipSetting');
 const Role = require('./Role');
 const Permission = require('./Permission');
 const RolePermission = require('./RolePermission');
@@ -221,6 +223,9 @@ RolePermission.belongsTo(Permission, { foreignKey: 'permission_id', as: 'permiss
 User.hasMany(AuditLog, { foreignKey: 'user_id', as: 'audit_logs' });
 AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+DeliverySetting.belongsTo(User, { foreignKey: 'updated_by_admin_id', as: 'updated_by' });
+TipSetting.belongsTo(User, { foreignKey: 'updated_by_admin_id', as: 'updated_by' });
+
 module.exports = {
   sequelize,
   User,
@@ -258,6 +263,8 @@ module.exports = {
   HomepageSetting,
   Coupon,
   DeliverySlot,
+  DeliverySetting,
+  TipSetting,
   Role,
   Permission,
   RolePermission,

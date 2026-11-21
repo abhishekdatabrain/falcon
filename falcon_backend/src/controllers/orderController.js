@@ -16,7 +16,7 @@ class OrderController {
         }
       }
       const customerId = customer.id;
-      const { addressId, notes, paymentMethod, couponCode, deliveryDate, deliverySlot, deliverySpeed } = req.body;
+      const { addressId, notes, paymentMethod, couponCode, deliveryDate, deliverySlot, deliverySpeed, tipAmount } = req.body;
 
       const order = await orderService.createOrderFromCart(
         customerId,
@@ -26,9 +26,14 @@ class OrderController {
         couponCode,
         deliveryDate,
         deliverySlot,
-        deliverySpeed
+        deliverySpeed,
+        tipAmount
       );
-      return sendSuccess(res, 'Order placed successfully. Please submit bank payment confirmation.', { order }, 201);
+      const isCod = String(paymentMethod || '').toUpperCase() === 'COD';
+      const successMsg = isCod
+        ? 'Order placed successfully with Cash on Delivery!'
+        : 'Order placed and payment authorized successfully!';
+      return sendSuccess(res, successMsg, { order }, 201);
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }

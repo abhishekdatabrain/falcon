@@ -45,6 +45,11 @@ const Order = sequelize.define('Order', {
     allowNull: false,
     defaultValue: 0.00,
   },
+  tip_amount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    defaultValue: 0.00,
+  },
   discount_total: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
@@ -61,6 +66,11 @@ const Order = sequelize.define('Order', {
   delivery_slot: {
     type: DataTypes.STRING(100),
     allowNull: true,
+  },
+  delivery_method: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+    defaultValue: 'EXPRESS',
   },
   grand_total: {
     type: DataTypes.DECIMAL(10, 2),

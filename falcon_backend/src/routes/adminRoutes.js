@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const rbacController = require('../controllers/rbacController');
+const deliverySettingController = require('../controllers/deliverySettingController');
+const tipSettingController = require('../controllers/tipSettingController');
 const { authenticate } = require('../middleware/auth');
 const { authorize, checkPermission } = require('../middleware/rbac');
 const ROLES = require('../constants/roles');
@@ -28,6 +30,12 @@ router.post('/orders/:orderId/assign-driver', checkPermission('orders.assign'), 
 router.post('/orders/:orderId/verify-payment', checkPermission('payments.approve'), (req, res, next) => adminController.verifyOrderPayment(req, res, next));
 router.post('/orders/:orderId/refund-payment', checkPermission('refunds.refund'), (req, res, next) => adminController.refundOrderPayment(req, res, next));
 router.get('/deliveries', checkPermission('delivery.view'), (req, res, next) => adminController.getDeliveries(req, res, next));
+router.get('/cod-reconciliation', checkPermission('delivery.view'), (req, res, next) => adminController.getCodReconciliation(req, res, next));
+router.post('/cod-reconciliation/confirm', checkPermission('payments.approve'), (req, res, next) => adminController.confirmCodCashHandover(req, res, next));
+router.get('/delivery-charges', checkPermission('delivery.view'), (req, res, next) => deliverySettingController.getAdminDeliverySettings(req, res, next));
+router.put('/delivery-charges', checkPermission('delivery.edit'), (req, res, next) => deliverySettingController.updateDeliverySettings(req, res, next));
+router.get('/tip-management', checkPermission('delivery.view'), (req, res, next) => tipSettingController.getAdminTipSettings(req, res, next));
+router.put('/tip-management', checkPermission('delivery.edit'), (req, res, next) => tipSettingController.updateTipSettings(req, res, next));
 
 // Invoice & ZATCA Management Routes
 router.get('/invoices', checkPermission('invoices.view'), (req, res, next) => adminController.getInvoices(req, res, next));

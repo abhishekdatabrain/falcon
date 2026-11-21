@@ -62,6 +62,44 @@ const Delivery = sequelize.define('Delivery', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  cod_amount_collected: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+  },
+  cod_collected_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  cod_driver_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+  },
+  cash_handover_status: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+    defaultValue: 'PENDING_HANDOVER',
+  },
+  cod_collection_status: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+    defaultValue: 'NOT_COLLECTED',
+  },
+  handover_confirmed_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  handover_confirmed_by_admin_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+  },
+  handover_reference: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+  },
+  handover_received_amount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+  },
 }, {
   tableName: 'deliveries',
   timestamps: true,

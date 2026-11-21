@@ -1232,6 +1232,378 @@ class AdminService {
       });
     });
   }
+
+  /**
+   * Driver-wise COD Cash Reconciliation
+   * Fetches delivered COD orders awaiting physical cash receipt confirmation by admin
+   */
+  async getCodReconciliation(options = {}) {
+    const { Op } = require('sequelize');
+    const { driverId, tab = 'PENDING' } = options;
+
+    const deliveryWhere = {
+      status: ORDER_STATUS.DELIVERED,
+    };
+
+    if (tab === 'SETTLED') {
+      deliveryWhere.cash_handover_status = 'SETTLED';
+    } else {
+      // Pending confirmation (default)
+      deliveryWhere[Op.or] = [
+        { cash_handover_status: 'AWAITING_ADMIN_CONFIRMATION' },
+        { cash_handover_status: 'PENDING_HANDOVER' },
+        { cash_handover_status: null },
+      ];
+    }
+
+    if (driverId && driverId !== 'ALL') {
+      deliveryWhere.driver_id = driverId;
+    }
+
+    const orderWhere = {
+      payment_method: { [Op.iLike]: '%COD%' },
+      order_status: ORDER_STATUS.DELIVERED,
+    };
+
+    const deliveries = await Delivery.findAll({
+      where: deliveryWhere,
+      include: [
+        {
+          model: Order,
+          as: 'order',
+          where: orderWhere,
+          required: true,
+          include: [
+            {
+              model: Customer,
+              as: 'customer',
+              include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile'] }],
+            },
+            {
+              model: Payment,
+              as: 'payment',
+              required: false,
+            },
+            {
+              model: Address,
+              as: 'address',
+              paranoid: false,
+            },
+            {
+              model: OrderItem,
+              as: 'items',
+              include: [{ model: Product, as: 'product' }],
+            },
+          ],
+        },
+        {
+          model: Driver,
+          as: 'driver',
+          required: true,
+          include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile', 'status'] }],
+        },
+      ],
+      order: [['end_time', 'DESC'], ['createdAt', 'DESC']],
+    });
+
+    const driversMap = new Map();
+    let overallPendingCount = 0;
+    let overallCashAwaiting = 0;
+
+    for (const del of deliveries) {
+      const drv = del.driver;
+      if (!drv) continue;
+      const dId = drv.id;
+      const drvUser = drv.user || {};
+      const driverName = drvUser.email ? drvUser.email.split('@')[0] : (drv.name || `Driver ${dId.slice(0, 6)}`);
+
+      if (!driversMap.has(dId)) {
+        driversMap.set(dId, {
+          driverId: dId,
+          driverName,
+          driverEmail: drvUser.email || '',
+          driverMobile: drvUser.mobile || '',
+          vehicleDetails: drv.vehicle_details || '',
+          licenseNumber: drv.license_number || '',
+          pendingCount: 0,
+          totalCashCollected: 0,
+          totalCashAwaiting: 0,
+          orders: [],
+        });
+      }
+
+      const driverGroup = driversMap.get(dId);
+      const grandTotal = parseFloat(del.order?.grand_total || 0);
+      const collectedAmount = parseFloat(del.cod_amount_collected || grandTotal);
+
+      driverGroup.pendingCount += 1;
+      driverGroup.totalCashCollected = Math.round((driverGroup.totalCashCollected + collectedAmount) * 100) / 100;
+      driverGroup.totalCashAwaiting = Math.round((driverGroup.totalCashAwaiting + collectedAmount) * 100) / 100;
+
+      overallPendingCount += 1;
+      overallCashAwaiting = Math.round((overallCashAwaiting + collectedAmount) * 100) / 100;
+
+      driverGroup.orders.push({
+        deliveryId: del.id,
+        orderId: del.order.id,
+        orderNumber: del.order.order_number,
+        customerName: del.order.customer ? `${del.order.customer.first_name || ''} ${del.order.customer.last_name || ''}`.trim() : 'Customer',
+        customerMobile: del.order.customer?.user?.mobile || del.order.address?.phone || '',
+        customerEmail: del.order.customer?.user?.email || '',
+        deliveryAddress: del.order.address ? `${del.order.address.address_line || ''}, ${del.order.address.city || ''}` : '',
+        deliveryDate: del.end_time || del.updatedAt || del.createdAt,
+        grandTotal: grandTotal,
+        codAmountCollected: collectedAmount,
+        paymentStatus: del.order.payment?.status || 'PENDING',
+        paymentMethod: del.order.payment_method || 'COD',
+        cashHandoverStatus: del.cash_handover_status || 'AWAITING_ADMIN_CONFIRMATION',
+        codCollectionStatus: del.cod_collection_status || 'COLLECTED_BY_DRIVER',
+        handoverReference: del.handover_reference || null,
+        itemCount: del.order.items?.length || 0,
+      });
+    }
+
+    return {
+      summary: {
+        totalDriversWithPendingCash: driversMap.size,
+        totalOrdersAwaitingConfirmation: overallPendingCount,
+        totalCashAwaitingConfirmation: overallCashAwaiting,
+      },
+      drivers: Array.from(driversMap.values()),
+    };
+  }
+
+  /**
+   * Bulk Confirm Cash Received & Mark Selected Orders Paid
+   * Atomic database transaction with tamper-proof audit trail
+   */
+  async confirmCodCashHandover({ req, driverId, orderIds, receivedAmount, notes }) {
+    const { Op } = require('sequelize');
+    const PAYMENT_STATUS = require('../constants/paymentStatus');
+    const auditService = require('./auditService');
+    const { emitOrderStatusUpdate } = require('../sockets/socketManager');
+
+    if (!driverId) {
+      throw new Error('Driver ID is required for COD reconciliation settlement.');
+    }
+
+    if (!Array.isArray(orderIds) || orderIds.length === 0) {
+      throw new Error('Please select at least one delivered COD order to confirm cash receipt.');
+    }
+
+    const adminUserId = req?.user?.id;
+    const adminEmail = req?.user?.email || 'admin@platform.com';
+    const adminName = req?.user?.admin?.name || req?.user?.name || adminEmail.split('@')[0] || 'Admin';
+
+    // Resolve Admin record ID for foreign key constraint on payments.verified_by_admin_id -> admins(id)
+    let adminRecordId = null;
+    if (adminUserId) {
+      let adminRec = await Admin.findOne({ where: { user_id: adminUserId } });
+      if (!adminRec && (req?.user?.role === 'ADMIN' || req?.user?.role === 'admin' || req?.user?.isSuperAdmin)) {
+        try {
+          adminRec = await Admin.create({
+            user_id: adminUserId,
+            name: adminName || 'System Administrator',
+          });
+        } catch (e) {
+          adminRec = await Admin.findOne({ where: { user_id: adminUserId } });
+        }
+      }
+      if (adminRec && adminRec.id) {
+        adminRecordId = adminRec.id;
+      }
+    }
+
+    // Safety verification: verify adminRecordId actually exists in admins table before foreign key assignment
+    if (adminRecordId) {
+      const validAdmin = await Admin.findByPk(adminRecordId).catch(() => null);
+      if (!validAdmin) {
+        adminRecordId = null;
+      }
+    }
+
+    // 1. Fetch all deliveries and orders for the selected orderIds
+    const deliveries = await Delivery.findAll({
+      where: {
+        order_id: { [Op.in]: orderIds },
+      },
+      include: [
+        {
+          model: Order,
+          as: 'order',
+          include: [{ model: Payment, as: 'payment' }],
+        },
+        {
+          model: Driver,
+          as: 'driver',
+          include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile'] }],
+        },
+      ],
+    });
+
+    if (deliveries.length !== orderIds.length) {
+      throw new Error(`Found ${deliveries.length} delivery records for ${orderIds.length} requested order IDs. Some orders may not have valid delivery assignments.`);
+    }
+
+    // 2. Validate all orders belong to the specified driverId (prevent mixing drivers)
+    for (const del of deliveries) {
+      if (String(del.driver_id) !== String(driverId)) {
+        throw new Error('Security Violation: Admin cannot settle orders from multiple drivers in a single handover. All selected orders must belong strictly to the selected driver.');
+      }
+      if (del.status !== ORDER_STATUS.DELIVERED || del.order?.order_status !== ORDER_STATUS.DELIVERED) {
+        throw new Error(`Order #${del.order?.order_number || del.order_id} is not marked as DELIVERED. Only successfully delivered orders can be settled.`);
+      }
+      if (del.cash_handover_status === 'SETTLED' || del.order?.payment?.status === PAYMENT_STATUS.PAID) {
+        throw new Error(`Order #${del.order?.order_number || del.order_id} has already been settled and marked as PAID. Duplicate settlement prevented.`);
+      }
+    }
+
+    // 3. Calculate exact total expected
+    let expectedTotal = 0;
+    for (const del of deliveries) {
+      const orderTotal = Math.round(parseFloat(del.order?.grand_total || 0) * 100) / 100;
+      expectedTotal = Math.round((expectedTotal + orderTotal) * 100) / 100;
+    }
+
+    // 4. Validate submitted cash amount against expected backend total
+    const submittedAmount = Math.round(parseFloat(receivedAmount) * 100) / 100;
+    if (isNaN(submittedAmount) || Math.abs(submittedAmount - expectedTotal) > 0.01) {
+      throw new Error(`Cash amount mismatch: Expected SAR ${expectedTotal.toFixed(2)}, but received amount was entered as SAR ${isNaN(submittedAmount) ? '0.00' : submittedAmount.toFixed(2)}. Settlement cannot proceed with mismatched amounts.`);
+    }
+
+    // 5. Generate unique handover reference
+    const timestamp = Date.now().toString().slice(-6);
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const handoverReference = `COD-HND-${timestamp}-${randomSuffix}`;
+    const settlementDate = new Date();
+
+    // 6. Execute updates inside a database transaction
+    const result = await sequelize.transaction(async (t) => {
+      const updatedOrders = [];
+
+      for (const del of deliveries) {
+        const order = del.order;
+        const exactOrderTotal = Math.round(parseFloat(order.grand_total || 0) * 100) / 100;
+
+        // A. Update Payment to PAID
+        let payment = order.payment;
+        if (payment) {
+          await payment.update({
+            status: PAYMENT_STATUS.PAID,
+            amount: exactOrderTotal,
+            payment_method: 'COD',
+            payment_gateway: 'COD_CASH',
+            transaction_id: payment.transaction_id || `COD-PAY-${handoverReference}-${order.id.slice(0, 6)}`,
+            verified_at: settlementDate,
+            verified_by_admin_id: adminRecordId || null,
+            gateway_raw_response: {
+              settlementType: 'ADMIN_PHYSICAL_CASH_HANDOVER',
+              handoverReference,
+              adminId: adminRecordId || adminUserId,
+              adminEmail,
+              driverId,
+              confirmedAt: settlementDate.toISOString(),
+            },
+          }, { transaction: t });
+        } else {
+          payment = await Payment.create({
+            order_id: order.id,
+            amount: exactOrderTotal,
+            status: PAYMENT_STATUS.PAID,
+            payment_method: 'COD',
+            payment_gateway: 'COD_CASH',
+            transaction_id: `COD-PAY-${handoverReference}-${order.id.slice(0, 6)}`,
+            verified_at: settlementDate,
+            verified_by_admin_id: adminRecordId || null,
+            gateway_raw_response: {
+              settlementType: 'ADMIN_PHYSICAL_CASH_HANDOVER',
+              handoverReference,
+              adminId: adminRecordId || adminUserId,
+              adminEmail,
+              driverId,
+              confirmedAt: settlementDate.toISOString(),
+            },
+          }, { transaction: t });
+        }
+
+        // B. Update Delivery to SETTLED
+        await del.update({
+          cash_handover_status: 'SETTLED',
+          handover_confirmed_at: settlementDate,
+          handover_confirmed_by_admin_id: adminUserId,
+          handover_reference: handoverReference,
+          handover_received_amount: exactOrderTotal,
+        }, { transaction: t });
+
+        // C. Record OrderStatusHistory
+        await OrderStatusHistory.create({
+          order_id: order.id,
+          from_status: ORDER_STATUS.DELIVERED,
+          to_status: ORDER_STATUS.DELIVERED,
+          changed_by_user_id: adminUserId,
+          notes: `COD cash physical handover confirmed by Admin (${adminName}). Handover Ref: ${handoverReference}. Payment marked as PAID. Amount: SAR ${exactOrderTotal.toFixed(2)}.`,
+        }, { transaction: t });
+
+        updatedOrders.push({
+          orderId: order.id,
+          orderNumber: order.order_number,
+          amount: exactOrderTotal,
+        });
+      }
+
+      // D. Create immutable AuditLog entry
+      await auditService.log({
+        req,
+        userId: adminUserId,
+        adminName,
+        adminEmail,
+        action: 'COD_CASH_HANDOVER_SETTLED',
+        module: 'fleet_finance',
+        entityType: 'DeliveryHandover',
+        entityId: handoverReference,
+        details: {
+          handoverReference,
+          adminId: adminUserId,
+          adminEmail,
+          driverId,
+          driverEmail: deliveries[0]?.driver?.user?.email || null,
+          settledOrderCount: orderIds.length,
+          orderIds,
+          settledOrders: updatedOrders,
+          totalAmount: expectedTotal,
+          receivedAmount: submittedAmount,
+          settledAt: settlementDate.toISOString(),
+          notes: notes || 'Admin physical cash verification and settlement',
+        },
+      });
+
+      return {
+        handoverReference,
+        driverId,
+        orderCount: orderIds.length,
+        settledAmount: expectedTotal,
+        settledOrders: updatedOrders,
+        settledAt: settlementDate,
+      };
+    });
+
+    // Notify connected clients via Socket
+    for (const ord of result.settledOrders) {
+      emitOrderStatusUpdate({
+        orderId: ord.orderId,
+        status: ORDER_STATUS.DELIVERED,
+        orderStatus: ORDER_STATUS.DELIVERED,
+        notes: `COD cash payment confirmed by Admin [Handover: ${result.handoverReference}]`,
+        data: {
+          paymentStatus: PAYMENT_STATUS.PAID,
+          cashHandoverStatus: 'SETTLED',
+          handoverReference: result.handoverReference,
+        },
+      });
+    }
+
+    return result;
+  }
 }
 
 module.exports = new AdminService();

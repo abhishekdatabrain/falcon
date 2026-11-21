@@ -19,6 +19,20 @@ const crypto = require('crypto');
 const auditService = require('./auditService');
 
 class PaymentService {
+  async _resolveAdminId(adminId, userId) {
+    try {
+      if (adminId) {
+        const adminRec = await Admin.findByPk(adminId);
+        if (adminRec) return adminRec.id;
+      }
+      if (userId) {
+        const adminRec = await Admin.findOne({ where: { user_id: userId } });
+        if (adminRec) return adminRec.id;
+      }
+    } catch (e) {}
+    return null;
+  }
+
   async submitPaymentConfirmation(orderId, customerId, bankName, paymentReference, proofFileUrl) {
     const order = await Order.findOne({ where: { id: orderId, customer_id: customerId } });
     if (!order) {
@@ -371,6 +385,8 @@ class PaymentService {
       throw new Error('Order not found');
     }
 
+    const resolvedAdminId = autoVerify ? await this._resolveAdminId(adminId) : null;
+
     return await sequelize.transaction(async (t) => {
       let payment = await Payment.findOne({ where: { order_id: orderId }, transaction: t });
       const initialStatus = autoVerify ? PAYMENT_STATUS.PAID : PAYMENT_STATUS.SUBMITTED;
@@ -384,7 +400,7 @@ class PaymentService {
           payment_gateway: 'Bank Transfer',
           transaction_id: paymentReference,
           verified_at: autoVerify ? new Date() : null,
-          verified_by_admin_id: autoVerify ? adminId : null,
+          verified_by_admin_id: resolvedAdminId,
         }, { transaction: t });
       } else {
         await payment.update({
@@ -394,7 +410,7 @@ class PaymentService {
           transaction_id: paymentReference,
           rejection_reason: null,
           verified_at: autoVerify ? new Date() : null,
-          verified_by_admin_id: autoVerify ? adminId : null,
+          verified_by_admin_id: resolvedAdminId,
         }, { transaction: t });
       }
 
@@ -452,6 +468,7 @@ class PaymentService {
 
     const effectiveTxnId = transactionId || payment.transaction_id || `txn_${gateway.toLowerCase()}_${Date.now()}`;
     const effectiveMethod = paymentMethod || payment.payment_method || (gateway === 'Cashfree' ? 'Cashfree' : gateway === 'Razorpay' ? 'Razorpay' : 'Card');
+    const resolvedAdminId = await this._resolveAdminId(adminId, userId);
 
     return await sequelize.transaction(async (t) => {
       await payment.update({
@@ -460,13 +477,13 @@ class PaymentService {
         payment_gateway: gateway,
         transaction_id: effectiveTxnId,
         gateway_raw_response: gatewayResponse || {
-          verifiedBy: adminId ? 'Admin' : 'Gateway Callback',
+          verifiedBy: resolvedAdminId ? 'Admin' : 'Gateway Callback',
           verifiedAt: new Date().toISOString(),
           gateway,
           transactionId: effectiveTxnId,
         },
         verified_at: new Date(),
-        verified_by_admin_id: adminId || null,
+        verified_by_admin_id: resolvedAdminId,
         rejection_reason: null,
       }, { transaction: t });
 
@@ -524,11 +541,13 @@ class PaymentService {
       throw new Error('Payment is already marked as Failed / Rejected.');
     }
 
+    const resolvedAdminId = await this._resolveAdminId(adminId, userId);
+
     return await sequelize.transaction(async (t) => {
       await payment.update({
         status: PAYMENT_STATUS.REJECTED,
         rejection_reason: rejectionReason,
-        verified_by_admin_id: adminId || null,
+        verified_by_admin_id: resolvedAdminId,
       }, { transaction: t });
 
       const prevStatus = payment.order.order_status;

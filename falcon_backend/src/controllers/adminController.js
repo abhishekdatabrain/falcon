@@ -312,15 +312,17 @@ class AdminController {
       if (!invoice) return sendError(res, 'Invoice not found', [], 404);
 
       const uploadDir = process.env.UPLOAD_DIR || 'uploads';
-      let absPath = invoice.pdf_file_url
-        ? path.join(__dirname, '..', '..', invoice.pdf_file_url.replace('/uploads/', `${uploadDir}/`))
-        : null;
-
-      if (!absPath || !fs.existsSync(absPath)) {
-        const pdfUrl = await zatcaInvoiceService.generatePdfInvoiceFile(invoice, invoice.items || [], invoice.qr_code_payload, invoice.original_invoice);
+      // Always regenerate to ensure latest reference design template is delivered
+      const pdfUrl = await zatcaInvoiceService.generatePdfInvoiceFile(
+        invoice,
+        invoice.items || [],
+        invoice.qr_code_payload,
+        invoice.original_invoice
+      );
+      if (invoice.pdf_file_url !== pdfUrl) {
         await invoice.update({ pdf_file_url: pdfUrl });
-        absPath = path.join(__dirname, '..', '..', pdfUrl.replace('/uploads/', `${uploadDir}/`));
       }
+      const absPath = path.join(__dirname, '..', '..', pdfUrl.replace('/uploads/', `${uploadDir}/`));
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="Invoice-${invoice.invoice_number}.pdf"`);
@@ -526,6 +528,33 @@ class AdminController {
       }
       const user = await adminService.createRbacUser({ email, mobile, password, role, name, department });
       return sendSuccess(res, 'User created with assigned role successfully', { user }, 201);
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  // --- COD Cash Reconciliation Endpoints ---
+  async getCodReconciliation(req, res, next) {
+    try {
+      const { driverId, tab } = req.query;
+      const data = await adminService.getCodReconciliation({ driverId, tab });
+      return sendSuccess(res, 'COD cash reconciliation records retrieved successfully', data);
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
+
+  async confirmCodCashHandover(req, res, next) {
+    try {
+      const { driverId, orderIds, receivedAmount, notes } = req.body;
+      const result = await adminService.confirmCodCashHandover({
+        req,
+        driverId,
+        orderIds,
+        receivedAmount,
+        notes,
+      });
+      return sendSuccess(res, 'COD cash handover verified and marked as PAID successfully', result);
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }

@@ -24,6 +24,8 @@ const {
 const { Op } = require('sequelize');
 const cartService = require('./cartService');
 const couponService = require('./couponService');
+const deliverySettingService = require('./deliverySettingService');
+const tipSettingService = require('./tipSettingService');
 const emailService = require('./emailService');
 const notificationService = require('./notificationService');
 const logger = require('../utils/logger');
@@ -35,7 +37,7 @@ const ROLES = require('../constants/roles');
 const recentReorderLocks = new Map();
 
 class OrderService {
-  async createOrderFromCart(customerId, addressId, notes = '', paymentMethod = 'COD', couponCode = null, deliveryDate = null, deliverySlot = null, deliverySpeed = 'express') {
+  async createOrderFromCart(customerId, addressId, notes = '', paymentMethod = 'COD', couponCode = null, deliveryDate = null, deliverySlot = null, deliverySpeed = 'express', tipAmount = 0.00) {
     let address = null;
     const isUuid = typeof addressId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(addressId);
     if (addressId && isUuid) {
@@ -45,36 +47,8 @@ class OrderService {
     }
 
     if (!address) {
-      // Find any existing default or recent address for this customer
-      address = await Address.findOne({
-        where: { customer_id: customerId },
-        order: [['is_default', 'DESC'], ['created_at', 'DESC']],
-      });
+      throw new Error('Please select or provide a valid delivery address');
     }
-
-    // if (!address) {
-    //   // Auto-create a default address for the customer if none exists
-    //   const customer = await Customer.findByPk(customerId, {
-    //     include: [{ model: User, as: 'user' }],
-    //   });
-    //   const customerName = customer
-    //     ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Customer'
-    //     : 'Customer';
-    //   const customerMobile = customer?.user?.mobile || '+966 50 123 4567';
-
-    //   address = await Address.create({
-    //     customer_id: customerId,
-    //     full_name: customerName,
-    //     mobile: customerMobile,
-    //     country: 'Saudi Arabia',
-    //     state: 'Riyadh Province',
-    //     city: 'Riyadh',
-    //     area: 'Al-Olaya District',
-    //     address_line: 'Building 42, King Fahd Road, Al-Olaya District',
-    //     postal_code: '13211',
-    //     is_default: true,
-    //   });
-    // }
 
     const cartTotals = await cartService.calculateCartTotals(customerId);
     if (!cartTotals.items || cartTotals.items.length === 0) {
@@ -91,9 +65,19 @@ class OrderService {
       }
     }
 
-    const deliveryFee = deliverySpeed === 'standard' ? 0.00 : 12.00;
+    // Validate and sanitize delivery partner tip against active admin configuration
+    const validTip = await tipSettingService.validateTipAmount(tipAmount);
+
+    const deliveryCalc = await deliverySettingService.calculateDeliveryFee(deliverySpeed, cartTotals.subtotal);
+    const deliveryFee = deliveryCalc.fee;
+    const deliveryMethodSnapshot = deliveryCalc.methodType; // 'EXPRESS' or 'STANDARD'
     const taxTotal = Math.round(cartTotals.subtotal * 0.15 * 100) / 100;
-    const calculatedGrandTotal = Math.max(0, Math.round((cartTotals.subtotal + taxTotal + deliveryFee - discountTotal) * 100) / 100);
+    const calculatedGrandTotal = Math.max(0, Math.round((cartTotals.subtotal + taxTotal + deliveryFee - discountTotal + validTip) * 100) / 100);
+
+    const isCod = String(paymentMethod || '').toUpperCase() === 'COD';
+    if (isCod && calculatedGrandTotal > 5000) {
+      throw new Error('Cash on Delivery is limited to orders up to SAR 5,000. Please choose Pay Online.');
+    }
 
     // Atomic Database Transaction
     const createdOrder = await sequelize.transaction(async (t) => {
@@ -131,10 +115,12 @@ class OrderService {
         subtotal: cartTotals.subtotal,
         tax_total: taxTotal,
         delivery_fee: deliveryFee,
+        delivery_method: deliveryMethodSnapshot,
         discount_total: discountTotal,
         coupon_code: appliedCoupon ? appliedCoupon.code : null,
         delivery_date: deliveryDate || null,
         delivery_slot: deliverySlot || null,
+        tip_amount: validTip,
         grand_total: calculatedGrandTotal,
         order_status: ORDER_STATUS.CONFIRMED,
         payment_method: paymentMethod || 'COD',
@@ -193,13 +179,13 @@ class OrderService {
         }
       }
 
-      // 5. Create Payment Record
+      // 5. Create Payment Record (Pending for COD until delivery; Paid for Online)
       await Payment.create({
         order_id: order.id,
         amount: calculatedGrandTotal,
-        status: PAYMENT_STATUS.PAID,
+        status: isCod ? PAYMENT_STATUS.PENDING : PAYMENT_STATUS.PAID,
         payment_method: paymentMethod || 'COD',
-        payment_gateway: paymentMethod || 'COD',
+        payment_gateway: isCod ? 'COD' : (paymentMethod || 'Online'),
       }, { transaction: t });
 
       // 6. Record Status History
@@ -207,7 +193,7 @@ class OrderService {
         order_id: order.id,
         from_status: null,
         to_status: ORDER_STATUS.PENDING_PAYMENT,
-        notes: `Order placed by customer via ${paymentMethod || 'COD'}.`,
+        notes: isCod ? 'Order placed by customer via Cash on Delivery (COD).' : `Order placed and paid online via ${paymentMethod || 'Online'}.`,
       }, { transaction: t });
 
       // 7. Clear Customer Cart
