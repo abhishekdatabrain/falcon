@@ -16,6 +16,7 @@ const DEFAULT_SETTINGS = {
 class TipSettingService {
   /**
    * Ensure default settings exist in DB if table is empty.
+   * 
    */
   async ensureDefaults() {
     const existing = await TipSetting.findOne();
