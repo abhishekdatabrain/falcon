@@ -63,6 +63,21 @@ const startServer = async () => {
             "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
           );
         `);
+        await sequelize.query(`
+          CREATE TABLE IF NOT EXISTS ${tablePrefix}"device_tokens" (
+            "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            "user_id" UUID NOT NULL REFERENCES ${tablePrefix}"users"("id") ON DELETE CASCADE,
+            "token" VARCHAR(500) NOT NULL UNIQUE,
+            "platform" VARCHAR(20) NOT NULL DEFAULT 'android',
+            "device_name" VARCHAR(100),
+            "is_active" BOOLEAN NOT NULL DEFAULT true,
+            "last_used_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+            "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+          );
+        `);
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS "device_tokens_user_id_idx" ON ${tablePrefix}"device_tokens" ("user_id");`);
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS "device_tokens_is_active_idx" ON ${tablePrefix}"device_tokens" ("is_active");`);
       } catch (alterErr) {
         // Table doesn't exist yet or already configured
       }

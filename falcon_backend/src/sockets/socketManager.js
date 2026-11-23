@@ -109,6 +109,16 @@ const initSocketServer = (server) => {
       }
     });
 
+    // Join User Personal Room: user:{userId}
+    socket.on('join_user_room', ({ userId }) => {
+      if (!userId) return;
+      if (socket.user && (socket.user.id === userId || socket.user.role === ROLES.ADMIN)) {
+        const roomName = `user:${userId}`;
+        socket.join(roomName);
+        logger.info(`Socket ${socket.id} joined personal user room ${roomName}`);
+      }
+    });
+
     // Driver GPS Location Update Broadcast Event
     socket.on('driver_location_update', async (data) => {
       const { deliveryId, orderId, latitude, longitude, speed, heading, temp } = data || {};
@@ -258,10 +268,52 @@ const emitDriverLocationUpdate = (payload) => {
   io.to('admin_room').emit('driver_location_update', data);
 };
 
+/**
+ * Emit New Order Placed event to Admin room and Customer room
+ */
+const emitNewOrderPlaced = (order) => {
+  if (!io || !order) return;
+  const payload = {
+    orderId: order.id,
+    orderNumber: order.order_number,
+    customerId: order.customer_id,
+    customerUserId: order.customer?.user_id,
+    customerName: order.customer
+      ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim() || 'Customer'
+      : 'Customer',
+    grandTotal: parseFloat(order.grand_total || 0),
+    deliveryMethod: order.delivery_method || 'EXPRESS',
+    orderStatus: order.order_status,
+    paymentMethod: order.payment_method,
+    itemsCount: Array.isArray(order.items) ? order.items.length : 0,
+    timestamp: new Date().toISOString(),
+  };
+
+  // Broadcast to Admin Panel
+  io.to('admin_room').emit('new_order_placed', payload);
+
+  // Broadcast to Customer Personal Room
+  if (order.customer?.user_id) {
+    io.to(`user:${order.customer.user_id}`).emit('order_placed', payload);
+  }
+
+  // Also broadcast to specific order room
+  io.to(`order:${order.id}`).emit('order_status_update', {
+    orderId: order.id,
+    status: order.order_status,
+    orderStatus: order.order_status,
+    data: payload,
+    timestamp: new Date().toISOString(),
+  });
+
+  logger.info(`Emitted new_order_placed for order ${order.order_number} to admin_room and user room`);
+};
+
 module.exports = {
   initSocketServer,
   getIO,
   emitOrderAssigned,
   emitOrderStatusUpdate,
   emitDriverLocationUpdate,
+  emitNewOrderPlaced,
 };

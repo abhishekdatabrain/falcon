@@ -229,6 +229,31 @@ class DriverService {
       },
     });
 
+    // Native Push Notification (FCM / Mobile) for Delivery Status Transitions
+    try {
+      const pushNotificationService = require('./pushNotificationService');
+      const { Order, Customer, Driver, User } = require('../models');
+      Order.findByPk(delivery.order.id, {
+        include: [{ model: Customer, as: 'customer', attributes: ['user_id'] }],
+        attributes: ['id', 'order_number', 'customer_id'],
+      }).then(async (ord) => {
+        if (!ord) return;
+        const driverRecord = await Driver.findByPk(driverId, {
+          include: [{ model: User, as: 'user', attributes: ['username'] }],
+        }).catch(() => null);
+        const driverName = driverRecord?.user?.username || 'Delivery Partner';
+
+        pushNotificationService.sendDeliveryStatusPush({
+          orderId: ord.id,
+          orderNumber: ord.order_number,
+          status: targetStatus,
+          customerUserId: ord.customer?.user_id,
+          driverName,
+          failureReason: meta.failure_reason,
+        });
+      }).catch(() => {});
+    } catch (_) {}
+
     return result;
   }
 

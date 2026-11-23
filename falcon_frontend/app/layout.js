@@ -12,11 +12,17 @@ import Footer from '../src/components/Footer';
 export const metadata = {
   title: 'saqrcart | Your Store for Retail & Wholesale',
   description: 'Premium e-commerce grocery and essentials platform with real-time GPS tracking and ZATCA e-invoicing.',
+  verification: {
+    google: 'hyETrRTUphcSC769_9PNa5DatqyKb9lhWExb0VnSrfg',
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" dir="ltr">
+      <head>
+        <meta name="google-site-verification" content="hyETrRTUphcSC769_9PNa5DatqyKb9lhWExb0VnSrfg" />
+      </head>
       <body className="antialiased min-h-screen flex flex-col justify-between">
         <LanguageProvider>
           <AuthProvider>

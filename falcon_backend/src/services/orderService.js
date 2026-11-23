@@ -28,6 +28,7 @@ const deliverySettingService = require('./deliverySettingService');
 const tipSettingService = require('./tipSettingService');
 const emailService = require('./emailService');
 const notificationService = require('./notificationService');
+const pushNotificationService = require('./pushNotificationService');
 const logger = require('../utils/logger');
 const { ORDER_STATUS, VALID_STATUS_TRANSITIONS } = require('../constants/orderStatus');
 const PAYMENT_STATUS = require('../constants/paymentStatus');
@@ -38,6 +39,63 @@ const recentReorderLocks = new Map();
 
 class OrderService {
   async createOrderFromCart(customerId, addressId, notes = '', paymentMethod = 'COD', couponCode = null, deliveryDate = null, deliverySlot = null, deliverySpeed = 'express', tipAmount = 0.00) {
+    // Validate delivery method availability and time slot consistency
+    const cleanSpeed = String(deliverySpeed || 'express').toLowerCase();
+    const activeDeliverySettings = await deliverySettingService.getActiveDeliverySettings();
+    if (cleanSpeed === 'express' && activeDeliverySettings.express?.is_enabled === false) {
+      throw new Error('Express delivery is currently disabled. Please select Standard Schedule.');
+    }
+    if (cleanSpeed === 'standard' && activeDeliverySettings.standard?.is_enabled === false) {
+      throw new Error('Standard schedule is currently disabled. Please select Express Delivery.');
+    }
+
+    if (deliverySlot) {
+      const { DeliverySlot } = require('../models');
+      const { Op } = require('sequelize');
+      const matchedSlot = await DeliverySlot.findOne({
+        where: {
+          [Op.or]: [
+            { slot_label_en: deliverySlot },
+            { slot_label_ar: deliverySlot },
+          ],
+          is_active: true,
+        },
+      });
+
+      if (matchedSlot) {
+        if (cleanSpeed === 'express' && !matchedSlot.is_express) {
+          throw new Error(`The selected slot "${deliverySlot}" is for Standard Delivery and cannot be used with Express Delivery.`);
+        }
+        if (cleanSpeed === 'standard' && matchedSlot.is_express) {
+          throw new Error(`The selected slot "${deliverySlot}" is for Express Delivery and cannot be used with Standard Delivery.`);
+        }
+      }
+
+      // Check slot expiration if scheduled for today
+      const isDateToday = (dStr) => {
+        if (!dStr) return false;
+        const low = String(dStr).toLowerCase();
+        if (low.includes('today') || low.includes('اليوم')) return true;
+        const todayIso = new Date().toISOString().slice(0, 10);
+        return low.includes(todayIso);
+      };
+
+      if (isDateToday(deliveryDate)) {
+        const timeMatch = String(deliverySlot).match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm|ص|م)?/);
+        if (timeMatch) {
+          let h = parseInt(timeMatch[1], 10);
+          const m = parseInt(timeMatch[2], 10);
+          const mer = (timeMatch[3] || '').toUpperCase();
+          if ((mer === 'PM' || mer === 'م') && h < 12) h += 12;
+          if ((mer === 'AM' || mer === 'ص') && h === 12) h = 0;
+          const now = new Date();
+          if (now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m)) {
+            throw new Error(`The selected delivery slot "${deliverySlot}" has already passed for today. Please select an upcoming slot.`);
+          }
+        }
+      }
+    }
+
     let address = null;
     const isUuid = typeof addressId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(addressId);
     if (addressId && isUuid) {
@@ -222,6 +280,38 @@ class OrderService {
         `Your order is confirmed! Estimated delivery: ${createdOrder.delivery_date || 'Today'}${slotText}.`,
         `تم تأكيد طلبك بنجاح! موعد التوصيل المتوقع: ${createdOrder.delivery_date || 'اليوم'}${slotText}.`
       ).catch(() => { });
+    }
+
+    // In-app notification for Store Admins
+    User.findAll({ where: { role: ROLES.ADMIN }, attributes: ['id'] })
+      .then((adminUsers) => {
+        const grandTotalStr = parseFloat(createdOrder.grand_total || 0).toFixed(2);
+        for (const adm of adminUsers) {
+          notificationService.createNotification(
+            adm.id,
+            'NEW_ORDER_RECEIVED',
+            `New Order Received #${createdOrder.order_number}`,
+            `طلب جديد مستلم #${createdOrder.order_number}`,
+            `New order #${createdOrder.order_number} for SAR ${grandTotalStr} received.`,
+            `تم استلام طلب جديد #${createdOrder.order_number} بقيمة ${grandTotalStr} ر.س.`
+          ).catch(() => {});
+        }
+      })
+      .catch((err) => {
+        logger.error('Failed to create admin in-app notification:', err);
+      });
+
+    // Trigger Native Push Notification (FCM / Mobile & Web Push)
+    pushNotificationService.sendOrderPlacedPush(createdOrder).catch((pushErr) => {
+      logger.error('Background order placed push notification error:', pushErr);
+    });
+
+    // Real-time Socket.IO emission to admin_room and user room
+    try {
+      const { emitNewOrderPlaced } = require('../sockets/socketManager');
+      emitNewOrderPlaced(createdOrder);
+    } catch (sockErr) {
+      logger.error('Socket emission for new order failed:', sockErr);
     }
 
     return createdOrder;
@@ -899,6 +989,23 @@ class OrderService {
       notes: notes || `Order status updated to ${newStatus}`,
     });
 
+    try {
+      const pushNotificationService = require('./pushNotificationService');
+      const customerUserId = order.customer?.user_id;
+      if (['OUT_FOR_DELIVERY', 'DELIVERED', 'DELIVERY_FAILED'].includes(newStatus)) {
+        pushNotificationService.sendDeliveryStatusPush({
+          orderId: order.id,
+          orderNumber: order.order_number,
+          status: newStatus,
+          customerUserId,
+          driverName: order.delivery?.driver ? `${order.delivery.driver.first_name || ''} ${order.delivery.driver.last_name || ''}`.trim() : null,
+          failureReason: notes,
+        }).catch((e) => logger.warn(`[PushNotification] Status push failed: ${e.message}`));
+      }
+    } catch (pushErr) {
+      logger.warn(`[PushNotification] Delivery status push hook error: ${pushErr.message}`);
+    }
+
     return updatedOrder;
   }
 
@@ -1229,6 +1336,20 @@ class OrderService {
       });
     } catch (socketErr) {
       logger.error('Socket emission failed on order cancellation:', socketErr);
+    }
+
+    // Outside Transaction: Push Notification for Order Cancellation
+    try {
+      const pushNotificationService = require('./pushNotificationService');
+      pushNotificationService.sendOrderCancelledPush({
+        orderId: cancellationResult.orderId,
+        orderNumber: cancellationResult.orderNumber,
+        customerUserId: userId,
+        reason,
+        refundStatus: cancellationResult.calculatedRefundStatus,
+      }).catch((e) => logger.warn(`[PushNotification] Cancellation push notification failed: ${e.message}`));
+    } catch (pushErr) {
+      logger.warn(`[PushNotification] Cancellation push hook error: ${pushErr.message}`);
     }
 
     return await this.getOrderById(cancellationResult.orderId, userId, role);

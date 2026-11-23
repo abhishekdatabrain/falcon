@@ -400,6 +400,9 @@ class AdminService {
       return delivery;
     });
 
+    const finalOtp = result.otp || generatedOtp;
+    const driverName = driver.user?.username || driver.license_number || 'Delivery Partner';
+
     // Emit real-time WebSocket events across Driver, Admin, and Customer rooms
     emitOrderAssigned(driverId, {
       orderId: order.id,
@@ -418,13 +421,14 @@ class AdminService {
       data: {
         orderNumber: order.order_number,
         driverId,
+        driverName,
+        otp: finalOtp,
       },
     });
 
     // Send email to customer with driver assignment details and delivery verification OTP (PIN)
     const emailService = require('./emailService');
     const logger = require('../utils/logger');
-    const finalOtp = result.otp || generatedOtp;
 
     emailService.sendDriverAssignedEmail({
       order,
@@ -445,6 +449,19 @@ class AdminService {
         `Your order #${order.order_number} has been assigned to a driver. Your delivery verification PIN is ${finalOtp}. Please share this code with the driver upon delivery.`,
         `تم تعيين سائق لطلبك #${order.order_number}. رمز التحقق الخاص بك هو ${finalOtp}. يرجى مشاركة هذا الرمز مع السائق عند الاستلام.`
       ).catch(() => {});
+
+      // Native Push Notification (FCM / Mobile) for Driver Assigned & Handover PIN
+      try {
+        const pushNotificationService = require('./pushNotificationService');
+        const driverName = driver.user?.username || driver.license_number || 'Delivery Partner';
+        pushNotificationService.sendDriverAssignedPush({
+          orderId: order.id,
+          orderNumber: order.order_number,
+          customerUserId,
+          driverName,
+          otp: finalOtp,
+        });
+      } catch (_) {}
     }
 
     return result;

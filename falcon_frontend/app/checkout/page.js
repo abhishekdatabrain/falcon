@@ -88,6 +88,17 @@ export default function CheckoutPage() {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
   const [scheduleDates, setScheduleDates] = useState([]);
   const [scheduleSlots, setScheduleSlots] = useState([]);
+
+  // Separate Express and Standard delivery schedules and states
+  const [expressDates, setExpressDates] = useState([]);
+  const [expressSlots, setExpressSlots] = useState([]);
+  const [expressSelectedDate, setExpressSelectedDate] = useState('');
+  const [expressSelectedSlot, setExpressSelectedSlot] = useState('');
+
+  const [standardDates, setStandardDates] = useState([]);
+  const [standardSlots, setStandardSlots] = useState([]);
+  const [standardSelectedDate, setStandardSelectedDate] = useState('');
+  const [standardSelectedSlot, setStandardSelectedSlot] = useState('');
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [driverInstructions, setDriverInstructions] = useState('');
   const [outOfStockPref, setOutOfStockPref] = useState('call'); // 'call' | 'best_match' | 'no_replace'
@@ -226,8 +237,43 @@ export default function CheckoutPage() {
     }
   };
 
+  const triggerBrowserPushNotification = (order) => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    const orderNumber = order?.order_number || `#${order?.id || ''}`;
+    const grandTotal = parseFloat(order?.grand_total || 0).toFixed(2);
+    const title = locale === 'ar'
+      ? `تم تأكيد طلبك بنجاح! #${orderNumber}`
+      : `Order Confirmed! #${orderNumber}`;
+    const body = locale === 'ar'
+      ? `شكراً لك! تم استلام طلبك بقيمة ${grandTotal} ر.س وجارٍ تحضيره.`
+      : `Thank you! Your order of SAR ${grandTotal} has been confirmed and is being prepared.`;
+
+    const send = () => {
+      try {
+        new Notification(title, {
+          body,
+          icon: '/saqrcart-logo.png',
+          badge: '/saqrcart-logo.png',
+        });
+      } catch (_) {}
+    };
+
+    if (Notification.permission === 'granted') {
+      send();
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then((perm) => {
+        if (perm === 'granted') {
+          send();
+        }
+      });
+    }
+  };
+
   const handleExecuteCodOrder = async () => {
     if (loading || isSubmittingRef.current) return;
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
     isSubmittingRef.current = true;
     setLoading(true);
 
@@ -268,19 +314,49 @@ export default function CheckoutPage() {
         return;
       }
 
-      if (deliverySpeed === 'standard') {
-        const slotToUse = selectedTimeSlot || (scheduleSlots[0] ? (locale === 'ar' ? (scheduleSlots[0].slot_label_ar || scheduleSlots[0].slot_label_en) : (scheduleSlots[0].slot_label_en || scheduleSlots[0].slot_label_ar)) : '1:00 PM - 3:00 PM');
-        if (!slotToUse || isSlotExpired(slotToUse, selectedDate)) {
-          showToast(
-            locale === 'ar'
-              ? 'فترة التوصيل المحددة انتهى وقتها، يرجى اختيار فترة قادمة متاحة'
-              : 'The selected delivery slot has already passed. Please choose an upcoming slot.',
-            'error'
-          );
-          isSubmittingRef.current = false;
-          setLoading(false);
-          return;
-        }
+      const activeDate = deliverySpeed === 'express' ? expressSelectedDate : standardSelectedDate;
+      const activeSlot = deliverySpeed === 'express' ? expressSelectedSlot : standardSelectedSlot;
+      const activeSlotsList = deliverySpeed === 'express' ? expressSlots : standardSlots;
+
+      if (!activeSlot) {
+        showToast(
+          deliverySpeed === 'express'
+            ? (locale === 'ar' ? 'يرجى اختيار فترة توصيل سريع متاحة للمتابعة' : 'Please select an available Express delivery slot to proceed.')
+            : (locale === 'ar' ? 'يرجى اختيار فترة توصيل قياسي متاحة للمتابعة' : 'Please select an available Standard delivery slot to proceed.'),
+          'error'
+        );
+        isSubmittingRef.current = false;
+        setLoading(false);
+        return;
+      }
+
+      if (isSlotExpired(activeSlot, activeDate)) {
+        showToast(
+          locale === 'ar'
+            ? 'فترة التوصيل المحددة انتهى وقتها، يرجى اختيار فترة قادمة متاحة'
+            : 'The selected delivery slot has already passed. Please choose an upcoming slot.',
+          'error'
+        );
+        isSubmittingRef.current = false;
+        setLoading(false);
+        return;
+      }
+
+      const isSlotValidForMethod = activeSlotsList.some((s) => {
+        const lbl = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+        return lbl === activeSlot || s.slot_label_en === activeSlot || s.slot_label_ar === activeSlot;
+      });
+
+      if (!isSlotValidForMethod) {
+        showToast(
+          deliverySpeed === 'express'
+            ? (locale === 'ar' ? 'الفترة المحددة غير صالحة للتوصيل السريع' : 'The selected slot is not valid for Express delivery.')
+            : (locale === 'ar' ? 'الفترة المحددة غير صالحة للتوصيل القياسي' : 'The selected slot is not valid for Standard delivery.'),
+          'error'
+        );
+        isSubmittingRef.current = false;
+        setLoading(false);
+        return;
       }
 
       const res = await fetchApi('/orders', {
@@ -292,14 +368,15 @@ export default function CheckoutPage() {
           outOfStockPref,
           paymentMethod: 'COD',
           couponCode: appliedCoupon ? appliedCoupon.code : null,
-          deliveryDate: selectedDate || (scheduleDates[0] ? (locale === 'ar' ? scheduleDates[0].label_ar : scheduleDates[0].label_en) : 'Today'),
-          deliverySlot: selectedTimeSlot || (scheduleSlots[0] ? (locale === 'ar' ? (scheduleSlots[0].slot_label_ar || scheduleSlots[0].slot_label_en) : (scheduleSlots[0].slot_label_en || scheduleSlots[0].slot_label_ar)) : '1:00 PM - 3:00 PM'),
+          deliveryDate: activeDate,
+          deliverySlot: activeSlot,
           tipAmount,
         }),
       });
 
       if (res.success && res.data?.order) {
         const orderId = res.data.order.id;
+        triggerBrowserPushNotification(res.data.order);
         await clearCart(false);
         await fetchCart().catch(() => {});
         showToast(
@@ -341,17 +418,43 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (deliverySpeed === 'standard') {
-      const slotToUse = selectedTimeSlot || (scheduleSlots[0] ? (locale === 'ar' ? (scheduleSlots[0].slot_label_ar || scheduleSlots[0].slot_label_en) : (scheduleSlots[0].slot_label_en || scheduleSlots[0].slot_label_ar)) : '1:00 PM - 3:00 PM');
-      if (!slotToUse || isSlotExpired(slotToUse, selectedDate)) {
-        showToast(
-          locale === 'ar'
-            ? 'فترة التوصيل المحددة انتهى وقتها، يرجى اختيار فترة قادمة متاحة'
-            : 'The selected delivery slot has already passed. Please choose an upcoming slot.',
-          'error'
-        );
-        return;
-      }
+    const activeDate = deliverySpeed === 'express' ? expressSelectedDate : standardSelectedDate;
+    const activeSlot = deliverySpeed === 'express' ? expressSelectedSlot : standardSelectedSlot;
+    const activeSlotsList = deliverySpeed === 'express' ? expressSlots : standardSlots;
+
+    if (!activeSlot) {
+      showToast(
+        deliverySpeed === 'express'
+          ? (locale === 'ar' ? 'يرجى اختيار فترة توصيل سريع متاحة للمتابعة' : 'Please select an available Express delivery slot to proceed.')
+          : (locale === 'ar' ? 'يرجى اختيار فترة توصيل قياسي متاحة للمتابعة' : 'Please select an available Standard delivery slot to proceed.'),
+        'error'
+      );
+      return;
+    }
+
+    if (isSlotExpired(activeSlot, activeDate)) {
+      showToast(
+        locale === 'ar'
+          ? 'فترة التوصيل المحددة انتهى وقتها، يرجى اختيار فترة قادمة متاحة'
+          : 'The selected delivery slot has already passed. Please choose an upcoming slot.',
+        'error'
+      );
+      return;
+    }
+
+    const isSlotValidForMethod = activeSlotsList.some((s) => {
+      const lbl = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+      return lbl === activeSlot || s.slot_label_en === activeSlot || s.slot_label_ar === activeSlot;
+    });
+
+    if (!isSlotValidForMethod) {
+      showToast(
+        deliverySpeed === 'express'
+          ? (locale === 'ar' ? 'الفترة المحددة غير صالحة للتوصيل السريع' : 'The selected slot is not valid for Express delivery.')
+          : (locale === 'ar' ? 'الفترة المحددة غير صالحة للتوصيل القياسي' : 'The selected slot is not valid for Standard delivery.'),
+        'error'
+      );
+      return;
     }
 
     if (paymentMethod === 'online') {
@@ -434,18 +537,46 @@ export default function CheckoutPage() {
         return;
       }
 
-      if (deliverySpeed === 'standard') {
-        const slotToUse = selectedTimeSlot || (scheduleSlots[0] ? (locale === 'ar' ? (scheduleSlots[0].slot_label_ar || scheduleSlots[0].slot_label_en) : (scheduleSlots[0].slot_label_en || scheduleSlots[0].slot_label_ar)) : '1:00 PM - 3:00 PM');
-        if (!slotToUse || isSlotExpired(slotToUse, selectedDate)) {
-          setShowPaymentGatewayModal(false);
-          showToast(
-            locale === 'ar'
-              ? 'فترة التوصيل المحددة انتهى وقتها، يرجى اختيار فترة قادمة متاحة'
-              : 'The selected delivery slot has already passed. Please choose an upcoming slot.',
-            'error'
-          );
-          return;
-        }
+      const activeDate = deliverySpeed === 'express' ? expressSelectedDate : standardSelectedDate;
+      const activeSlot = deliverySpeed === 'express' ? expressSelectedSlot : standardSelectedSlot;
+      const activeSlotsList = deliverySpeed === 'express' ? expressSlots : standardSlots;
+
+      if (!activeSlot) {
+        setShowPaymentGatewayModal(false);
+        showToast(
+          deliverySpeed === 'express'
+            ? (locale === 'ar' ? 'يرجى اختيار فترة توصيل سريع متاحة للمتابعة' : 'Please select an available Express delivery slot to proceed.')
+            : (locale === 'ar' ? 'يرجى اختيار فترة توصيل قياسي متاحة للمتابعة' : 'Please select an available Standard delivery slot to proceed.'),
+          'error'
+        );
+        return;
+      }
+
+      if (isSlotExpired(activeSlot, activeDate)) {
+        setShowPaymentGatewayModal(false);
+        showToast(
+          locale === 'ar'
+            ? 'فترة التوصيل المحددة انتهى وقتها، يرجى اختيار فترة قادمة متاحة'
+            : 'The selected delivery slot has already passed. Please choose an upcoming slot.',
+          'error'
+        );
+        return;
+      }
+
+      const isSlotValidForMethod = activeSlotsList.some((s) => {
+        const lbl = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+        return lbl === activeSlot || s.slot_label_en === activeSlot || s.slot_label_ar === activeSlot;
+      });
+
+      if (!isSlotValidForMethod) {
+        setShowPaymentGatewayModal(false);
+        showToast(
+          deliverySpeed === 'express'
+            ? (locale === 'ar' ? 'الفترة المحددة غير صالحة للتوصيل السريع' : 'The selected slot is not valid for Express delivery.')
+            : (locale === 'ar' ? 'الفترة المحددة غير صالحة للتوصيل القياسي' : 'The selected slot is not valid for Standard delivery.'),
+          'error'
+        );
+        return;
       }
 
       const res = await fetchApi('/orders', {
@@ -457,14 +588,15 @@ export default function CheckoutPage() {
           outOfStockPref,
           paymentMethod,
           couponCode: appliedCoupon ? appliedCoupon.code : null,
-          deliveryDate: selectedDate || (scheduleDates[0] ? (locale === 'ar' ? scheduleDates[0].label_ar : scheduleDates[0].label_en) : 'Today'),
-          deliverySlot: selectedTimeSlot || (scheduleSlots[0] ? (locale === 'ar' ? (scheduleSlots[0].slot_label_ar || scheduleSlots[0].slot_label_en) : (scheduleSlots[0].slot_label_en || scheduleSlots[0].slot_label_ar)) : '1:00 PM - 3:00 PM'),
+          deliveryDate: activeDate,
+          deliverySlot: activeSlot,
           tipAmount,
         }),
       });
 
       if (res.success && res.data?.order) {
         const orderId = res.data.order.id;
+        triggerBrowserPushNotification(res.data.order);
         await clearCart(false);
         await fetchCart().catch(() => {});
         setShowPaymentGatewayModal(false);
@@ -567,21 +699,24 @@ export default function CheckoutPage() {
   };
 
   // Check if a given date label represents "Today"
-  const isDateToday = (dateLabel = selectedDate) => {
-    if (!dateLabel) return true;
-    const found = scheduleDates.find(
-      (d) => dateLabel === d.label_en || dateLabel === d.label_ar || dateLabel === d.key || dateLabel === d.date
+  const isDateToday = (dateLabel) => {
+    const targetDate = dateLabel || (deliverySpeed === 'express' ? expressSelectedDate : standardSelectedDate);
+    if (!targetDate) return true;
+    const allDates = [...expressDates, ...standardDates, ...scheduleDates];
+    const found = allDates.find(
+      (d) => targetDate === d.label_en || targetDate === d.label_ar || targetDate === d.key || targetDate === d.date
     );
     if (found) {
       return Boolean(found.is_today);
     }
-    const lower = String(dateLabel).toLowerCase();
+    const lower = String(targetDate).toLowerCase();
     return lower.includes('today') || lower.includes('اليوم');
   };
 
   // Check if a time slot is passed/expired for the currently (or specified) selected date
-  const isSlotExpired = (slotLabel, dateToCheck = selectedDate) => {
-    if (!isDateToday(dateToCheck)) {
+  const isSlotExpired = (slotLabel, dateToCheck) => {
+    const targetDate = dateToCheck || (deliverySpeed === 'express' ? expressSelectedDate : standardSelectedDate);
+    if (!isDateToday(targetDate)) {
       return false; // Tomorrow or later days are never expired
     }
     const parsed = parseSlotStartTime(slotLabel);
@@ -598,26 +733,93 @@ export default function CheckoutPage() {
     return false;
   };
 
-  // Handle Date Selection and auto-shift slot if expired
+  // Handle Date Selection and auto-shift slot if expired for the selected method
   const handleSelectDate = (dateLabel) => {
-    setSelectedDate(dateLabel);
-    if (isSlotExpired(selectedTimeSlot, dateLabel)) {
-      const availableList = scheduleSlots.length > 0 ? scheduleSlots : [
-        { slot_label_en: '1:00 PM - 3:00 PM', slot_label_ar: '1:00 م - 3:00 م' },
-        { slot_label_en: '4:00 PM - 6:00 PM', slot_label_ar: '4:00 م - 6:00 م' },
-        { slot_label_en: '7:00 PM - 9:00 PM', slot_label_ar: '7:00 م - 9:00 م' },
-      ];
-      const validSlot = availableList.find((s) => {
-        const label = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
-        return !isSlotExpired(label, dateLabel);
+    if (deliverySpeed === 'express') {
+      setExpressSelectedDate(dateLabel);
+      if (isSlotExpired(expressSelectedSlot, dateLabel)) {
+        const validSlot = expressSlots.find((s) => {
+          const label = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+          return !isSlotExpired(label, dateLabel);
+        });
+        setExpressSelectedSlot(validSlot ? (locale === 'ar' ? (validSlot.slot_label_ar || validSlot.slot_label_en) : (validSlot.slot_label_en || validSlot.slot_label_ar)) : '');
+      }
+    } else {
+      setStandardSelectedDate(dateLabel);
+      if (isSlotExpired(standardSelectedSlot, dateLabel)) {
+        const validSlot = standardSlots.find((s) => {
+          const label = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+          return !isSlotExpired(label, dateLabel);
+        });
+        setStandardSelectedSlot(validSlot ? (locale === 'ar' ? (validSlot.slot_label_ar || validSlot.slot_label_en) : (validSlot.slot_label_en || validSlot.slot_label_ar)) : '');
+      }
+    }
+  };
+
+  // Handle Slot Selection with expired check
+  const handleSelectSlot = (slotLabel) => {
+    const activeDate = deliverySpeed === 'express' ? expressSelectedDate : standardSelectedDate;
+    if (isSlotExpired(slotLabel, activeDate)) {
+      showToast(
+        locale === 'ar'
+          ? 'انتهى وقت هذه الفترة لليوم، يرجى اختيار موعد آخر'
+          : 'This time slot has already passed today. Please pick an upcoming slot.',
+        'warning'
+      );
+      return;
+    }
+    if (deliverySpeed === 'express') {
+      setExpressSelectedSlot(slotLabel);
+    } else {
+      setStandardSelectedSlot(slotLabel);
+    }
+  };
+
+  // Handle switching delivery methods with state isolation and slot validation
+  const handleSwitchDeliverySpeed = (newSpeed) => {
+    if (newSpeed === 'express') {
+      if (deliverySettings?.express?.is_enabled === false) {
+        showToast(
+          locale === 'ar' ? 'التوصيل السريع غير متاح حالياً' : 'Express delivery is currently unavailable',
+          'error'
+        );
+        return;
+      }
+      setDeliverySpeed('express');
+      // Validate that expressSelectedSlot is valid and not expired for expressSelectedDate
+      const targetDate = expressSelectedDate || (expressDates[0] ? (locale === 'ar' ? expressDates[0].label_ar : expressDates[0].label_en) : '');
+      const isSlotStillValid = expressSelectedSlot && expressSlots.some((s) => {
+        const lbl = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+        return (lbl === expressSelectedSlot || s.slot_label_en === expressSelectedSlot || s.slot_label_ar === expressSelectedSlot) && !isSlotExpired(expressSelectedSlot, targetDate);
       });
-      if (validSlot) {
-        const validLabel = locale === 'ar'
-          ? (validSlot.slot_label_ar || validSlot.slot_label_en)
-          : (validSlot.slot_label_en || validSlot.slot_label_ar);
-        setSelectedTimeSlot(validLabel);
-      } else {
-        setSelectedTimeSlot('');
+      if (!isSlotStillValid) {
+        const firstValid = expressSlots.find((s) => {
+          const lbl = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+          return !isSlotExpired(lbl, targetDate);
+        });
+        setExpressSelectedSlot(firstValid ? (locale === 'ar' ? (firstValid.slot_label_ar || firstValid.slot_label_en) : (firstValid.slot_label_en || firstValid.slot_label_ar)) : '');
+      }
+    } else {
+      if (deliverySettings?.standard?.is_enabled === false) {
+        showToast(
+          locale === 'ar' ? 'التوصيل القياسي غير متاح حالياً' : 'Standard schedule is currently unavailable',
+          'error'
+        );
+        return;
+      }
+      setDeliverySpeed('standard');
+      // Validate that standardSelectedSlot is valid and not expired for standardSelectedDate
+      const targetDate = standardSelectedDate || (standardDates[0] ? (locale === 'ar' ? standardDates[0].label_ar : standardDates[0].label_en) : '');
+      const isSlotStillValid = standardSelectedSlot && standardSlots.some((s) => {
+        const lbl = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+        return (lbl === standardSelectedSlot || s.slot_label_en === standardSelectedSlot || s.slot_label_ar === standardSelectedSlot) && !isSlotExpired(standardSelectedSlot, targetDate);
+      });
+      if (!isSlotStillValid) {
+        const firstValid = standardSlots.find((s) => {
+          const lbl = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+          return !isSlotExpired(lbl, targetDate);
+        });
+        setStandardSelectedSlot(firstValid ? (locale === 'ar' ? (firstValid.slot_label_ar || firstValid.slot_label_en) : (firstValid.slot_label_en || firstValid.slot_label_ar)) : '');
       }
     }
   };
@@ -634,22 +836,39 @@ export default function CheckoutPage() {
           setScheduleDates(dates);
           setScheduleSlots(slots);
 
-          const defaultDate = dates.length > 0 ? (locale === 'ar' ? dates[0].label_ar : dates[0].label_en) : '';
-          setSelectedDate((curr) => curr || defaultDate);
+          // Extract Express and Standard schedules from backend or filter slots
+          const expSlots = res.data.express?.slots || slots.filter((s) => s.is_express);
+          const stdSlots = res.data.standard?.slots || slots.filter((s) => !s.is_express);
+          const expDates = res.data.express?.dates || (dates.length > 0 ? dates.slice(0, 2) : []);
+          const stdDates = res.data.standard?.dates || dates;
 
-          setSelectedTimeSlot((curr) => {
-            if (curr && !isSlotExpired(curr, defaultDate)) return curr;
-            // Find first available slot whose time has not passed
-            const validSlot = slots.find((s) => {
-              const label = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
-              return !isSlotExpired(label, defaultDate);
+          setExpressSlots(expSlots);
+          setStandardSlots(stdSlots);
+          setExpressDates(expDates);
+          setStandardDates(stdDates);
+
+          // Initial Express date and slot
+          const defaultExpDate = expDates.length > 0 ? (locale === 'ar' ? expDates[0].label_ar : expDates[0].label_en) : '';
+          setExpressSelectedDate((curr) => curr || defaultExpDate);
+          setExpressSelectedSlot((curr) => {
+            if (curr && !isSlotExpired(curr, defaultExpDate)) return curr;
+            const validExp = expSlots.find((s) => {
+              const lbl = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+              return !isSlotExpired(lbl, defaultExpDate);
             });
-            if (validSlot) {
-              return locale === 'ar'
-                ? (validSlot.slot_label_ar || validSlot.slot_label_en)
-                : (validSlot.slot_label_en || validSlot.slot_label_ar);
-            }
-            return '';
+            return validExp ? (locale === 'ar' ? (validExp.slot_label_ar || validExp.slot_label_en) : (validExp.slot_label_en || validExp.slot_label_ar)) : '';
+          });
+
+          // Initial Standard date and slot
+          const defaultStdDate = stdDates.length > 0 ? (locale === 'ar' ? stdDates[0].label_ar : stdDates[0].label_en) : '';
+          setStandardSelectedDate((curr) => curr || defaultStdDate);
+          setStandardSelectedSlot((curr) => {
+            if (curr && !isSlotExpired(curr, defaultStdDate)) return curr;
+            const validStd = stdSlots.find((s) => {
+              const lbl = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
+              return !isSlotExpired(lbl, defaultStdDate);
+            });
+            return validStd ? (locale === 'ar' ? (validStd.slot_label_ar || validStd.slot_label_en) : (validStd.slot_label_en || validStd.slot_label_ar)) : '';
           });
 
           // Fetch dynamic delivery charges configuration
@@ -769,6 +988,12 @@ export default function CheckoutPage() {
   const standardFee = isStandardFree ? 0.00 : standardBaseFee;
 
   const deliveryFee = deliverySpeed === 'express' ? expressFee : standardFee;
+
+  // Active delivery schedule values for active method
+  const activeDates = deliverySpeed === 'express' ? expressDates : standardDates;
+  const activeSlots = deliverySpeed === 'express' ? expressSlots : standardSlots;
+  const activeSelectedDate = deliverySpeed === 'express' ? expressSelectedDate : standardSelectedDate;
+  const activeSelectedSlot = deliverySpeed === 'express' ? expressSelectedSlot : standardSelectedSlot;
 
   // Calculate dynamic coupon discount based on applied coupon & subtotal
   const promoDiscount = appliedCoupon
@@ -992,11 +1217,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Option A: Express Delivery */}
                 <div
-                  onClick={() => {
-                    if (deliverySettings?.express?.is_enabled !== false) {
-                      setDeliverySpeed('express');
-                    }
-                  }}
+                  onClick={() => handleSwitchDeliverySpeed('express')}
                   className={`rounded-2xl p-4 transition-all relative ${
                     deliverySettings?.express?.is_enabled === false
                       ? 'bg-slate-50 border border-slate-200 opacity-60 cursor-not-allowed select-none'
@@ -1041,11 +1262,7 @@ export default function CheckoutPage() {
 
                 {/* Option B: Standard Schedule */}
                 <div
-                  onClick={() => {
-                    if (deliverySettings?.standard?.is_enabled !== false) {
-                      setDeliverySpeed('standard');
-                    }
-                  }}
+                  onClick={() => handleSwitchDeliverySpeed('standard')}
                   className={`rounded-2xl p-4 transition-all relative ${
                     deliverySettings?.standard?.is_enabled === false
                       ? 'bg-slate-50 border border-slate-200 opacity-60 cursor-not-allowed select-none'
@@ -1097,92 +1314,72 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Scheduled Windows Available (Dynamic from Admin Panel) */}
+              {/* Scheduled Windows Available (Separated for Express vs Standard) */}
               <div className="space-y-3 pt-2">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                  {locale === 'ar' ? 'فترات التوصيل المتاحة:' : 'SCHEDULED WINDOWS AVAILABLE:'}
+                  {deliverySpeed === 'express'
+                    ? (locale === 'ar' ? 'فترات التوصيل السريع المتاحة:' : 'EXPRESS DELIVERY WINDOWS AVAILABLE:')
+                    : (locale === 'ar' ? 'فترات التوصيل المجدولة المتاحة:' : 'SCHEDULED WINDOWS AVAILABLE:')}
                 </span>
 
                 {/* Date Pills Row */}
                 <div className="flex flex-wrap items-center gap-2">
-                  {scheduleLoading && scheduleDates.length === 0 ? (
+                  {scheduleLoading && activeDates.length === 0 ? (
                     <div className="flex items-center gap-2 text-xs text-slate-400 py-1 font-medium">
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
                       <span>{locale === 'ar' ? 'جاري تحميل التواريخ...' : 'Loading dates...'}</span>
                     </div>
-                  ) : scheduleDates.length > 0 ? (
-                    scheduleDates.map((d) => {
+                  ) : activeDates.length > 0 ? (
+                    activeDates.map((d) => {
                       const label = locale === 'ar' ? d.label_ar : d.label_en;
-                      const isSelected = selectedDate === label || selectedDate === d.label_en || selectedDate === d.label_ar;
+                      const isSelected = activeSelectedDate === label || activeSelectedDate === d.label_en || activeSelectedDate === d.label_ar;
                       return (
                         <button
                           key={d.key || d.date}
                           type="button"
                           onClick={() => handleSelectDate(label)}
                           className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
- isSelected
- ? 'bg-slate-900 text-white shadow-2xs'
- : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
- }`}
+                            isSelected
+                              ? 'bg-slate-900 text-white shadow-2xs'
+                              : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
+                          }`}
                         >
                           {label}
                         </button>
                       );
                     })
                   ) : (
-                    ['Today, 24 Oct', 'Tomorrow, 25 Oct', 'Sat, 26 Oct', 'Sun, 27 Oct'].map((d) => (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => handleSelectDate(d)}
-                        className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
- selectedDate === d
- ? 'bg-slate-900 text-white shadow-2xs'
- : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700'
- }`}
-                      >
-                        {d}
-                      </button>
-                    ))
+                    <span className="text-xs text-slate-400 font-medium">
+                      {locale === 'ar' ? 'لا توجد تواريخ متاحة' : 'No dates available'}
+                    </span>
                   )}
                 </div>
 
                 {/* Time Slots Container */}
                 <div className="bg-[#F5F6F8] rounded-2xl p-3.5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {scheduleLoading && scheduleSlots.length === 0 ? (
+                  {scheduleLoading && activeSlots.length === 0 ? (
                     <div className="col-span-full py-4 flex items-center justify-center gap-2 text-xs text-slate-400 font-medium">
                       <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
                       <span>{locale === 'ar' ? 'جاري تحميل فترات التوصيل...' : 'Loading time slots...'}</span>
                     </div>
-                  ) : scheduleSlots.length > 0 ? (
-                    scheduleSlots.map((s) => {
+                  ) : activeSlots.length > 0 ? (
+                    activeSlots.map((s) => {
                       const slotLabel = locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar);
                       const tagLabel = locale === 'ar' ? (s.tag_ar || s.tag_en) : (s.tag_en || s.tag_ar);
-                      const expired = isSlotExpired(slotLabel);
-                      const isSelected = !expired && (selectedTimeSlot === slotLabel || selectedTimeSlot === s.slot_label_en || selectedTimeSlot === s.slot_label_ar);
+                      const expired = isSlotExpired(slotLabel, activeSelectedDate);
+                      const isSelected = !expired && (activeSelectedSlot === slotLabel || activeSelectedSlot === s.slot_label_en || activeSelectedSlot === s.slot_label_ar);
 
                       return (
                         <div
                           key={s.id || slotLabel}
-                          onClick={() => {
-                            if (expired) {
-                              showToast(
-                                locale === 'ar'
-                                  ? 'انتهى وقت هذه الفترة لليوم، يرجى اختيار موعد آخر'
-                                  : 'This time slot has already passed today. Please pick an upcoming slot.',
-                                'warning'
-                              );
-                              return;
-                            }
-                            setSelectedTimeSlot(slotLabel);
-                          }}
+                          onClick={() => handleSelectSlot(slotLabel)}
                           className={`p-3 rounded-xl text-center transition-all border relative ${
- expired
- ? 'bg-slate-100/90 border-slate-200 text-slate-400 cursor-not-allowed select-none opacity-60'
- : isSelected
- ? 'bg-white border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs cursor-pointer'
- : 'bg-white border-slate-200/80 hover:border-slate-300 cursor-pointer'
- }`}
+                            expired
+                              ? 'bg-slate-100/90 border-slate-200 text-slate-400 cursor-not-allowed select-none opacity-60'
+                              : isSelected
+                                ? 'bg-white border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs cursor-pointer'
+                                : 'bg-white border-slate-200/80 hover:border-slate-300 cursor-pointer'
+                          }`}
                         >
                           <span className={`font-bold text-xs block ${expired ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
                             {slotLabel}
@@ -1194,10 +1391,10 @@ export default function CheckoutPage() {
                           ) : tagLabel ? (
                             <span
                               className={`text-[10px] font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full ${
- s.is_express
- ? 'bg-emerald-50 text-emerald-700'
- : 'bg-slate-100 text-slate-600'
- }`}
+                                s.is_express
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}
                             >
                               {tagLabel}
                             </span>
@@ -1206,69 +1403,24 @@ export default function CheckoutPage() {
                       );
                     })
                   ) : (
-                    [
-                      { slot: '1:00 PM - 3:00 PM', tag: 'Express Available', isExpress: true },
-                      { slot: '4:00 PM - 6:00 PM', tag: 'Standard Slot', isExpress: false },
-                      { slot: '7:00 PM - 9:00 PM', tag: 'Evening Chill Slot', isExpress: false }
-                    ].map((s) => {
-                      const expired = isSlotExpired(s.slot);
-                      const isSelected = !expired && selectedTimeSlot === s.slot;
-
-                      return (
-                        <div
-                          key={s.slot}
-                          onClick={() => {
-                            if (expired) {
-                              showToast(
-                                locale === 'ar'
-                                  ? 'انتهى وقت هذه الفترة لليوم، يرجى اختيار موعد آخر'
-                                  : 'This time slot has already passed today. Please pick an upcoming slot.',
-                                'warning'
-                              );
-                              return;
-                            }
-                            setSelectedTimeSlot(s.slot);
-                          }}
-                          className={`p-3 rounded-xl text-center transition-all border relative ${
- expired
- ? 'bg-slate-100/90 border-slate-200 text-slate-400 cursor-not-allowed select-none opacity-60'
- : isSelected
- ? 'bg-white border-[#05A764] ring-2 ring-[#05A764]/20 shadow-2xs cursor-pointer'
- : 'border-slate-200/80 hover:border-slate-300 bg-white cursor-pointer'
- }`}
-                        >
-                          <span className={`font-bold text-xs block ${expired ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                            {s.slot}
-                          </span>
-                          {expired ? (
-                            <span className="text-[10px] font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full bg-slate-200 text-slate-500">
-                              {locale === 'ar' ? 'انتهى الوقت' : 'Time Passed'}
-                            </span>
-                          ) : (
-                            <span
-                              className={`text-[10px] font-bold mt-0.5 inline-block px-2 py-0.5 rounded-full ${
- s.isExpress
- ? 'bg-emerald-50 text-emerald-700'
- : 'bg-slate-100 text-slate-600'
- }`}
-                            >
-                              {s.tag}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })
+                    <div className="col-span-full py-5 text-center text-xs text-slate-500 font-medium">
+                      {deliverySpeed === 'express'
+                        ? (locale === 'ar' ? 'لا توجد فترات توصيل سريع متاحة حالياً' : 'No Express delivery slots currently available.')
+                        : (locale === 'ar' ? 'لا توجد فترات توصيل مجدولة متاحة حالياً' : 'No Standard delivery slots currently available.')}
+                    </div>
                   )}
                 </div>
 
                 {/* If all slots for today have ended, show warning */}
-                {isDateToday() && (scheduleSlots.length > 0 ? scheduleSlots : [
-                  { slot_label_en: '1:00 PM - 3:00 PM' },
-                  { slot_label_en: '4:00 PM - 6:00 PM' },
-                  { slot_label_en: '7:00 PM - 9:00 PM' }
-                ]).every((s) => isSlotExpired(s.slot_label_en || s.slot)) && (
+                {isDateToday(activeSelectedDate) && activeSlots.length > 0 && activeSlots.every((s) => isSlotExpired(locale === 'ar' ? (s.slot_label_ar || s.slot_label_en) : (s.slot_label_en || s.slot_label_ar), activeSelectedDate)) && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs text-amber-800 font-bold">
-                    {locale === 'ar' ? '⚠️ انتهت جميع مواعيد التوصيل لليوم، يرجى اختيار موعد ليوم الغد للمتابعة' : '⚠️ All delivery slots for today have ended. Please select tomorrow to schedule your order.'}
+                    {deliverySpeed === 'express'
+                      ? (locale === 'ar'
+                          ? '⚠️ انتهت جميع مواعيد التوصيل السريع لليوم، يرجى اختيار موعد ليوم الغد للمتابعة'
+                          : '⚠️ All Express delivery slots for today have ended. Please select tomorrow to schedule your order.')
+                      : (locale === 'ar'
+                          ? '⚠️ انتهت جميع مواعيد التوصيل المجدول لليوم، يرجى اختيار موعد ليوم الغد للمتابعة'
+                          : '⚠️ All Standard delivery slots for today have ended. Please select tomorrow to schedule your order.')}
                   </div>
                 )}
               </div>

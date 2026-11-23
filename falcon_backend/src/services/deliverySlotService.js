@@ -122,11 +122,34 @@ class DeliverySlotService {
       deliveryCharges = await deliverySettingService.getActiveDeliverySettings();
     } catch (_) {}
 
+    const expressSlots = slots.filter((s) => s.is_express);
+    const standardSlots = slots.filter((s) => !s.is_express);
+
+    // Express dates: If same-day is enabled and cutoff not passed, Today + upcoming express days (e.g. 2 days)
+    const expressDaysAhead = Math.min(settings.days_ahead || 4, settings.express_days_ahead || 2);
+    const expressDates = this.generateCalendarDates(
+      expressDaysAhead,
+      settings.same_day_delivery_enabled,
+      settings.same_day_cutoff_time
+    );
+
+    const standardDates = dates;
+
     return {
       settings,
       dates,
       slots,
       deliveryCharges,
+      express: {
+        dates: expressDates,
+        slots: expressSlots,
+        deliverySetting: deliveryCharges?.express || null,
+      },
+      standard: {
+        dates: standardDates,
+        slots: standardSlots,
+        deliverySetting: deliveryCharges?.standard || null,
+      },
     };
   }
 

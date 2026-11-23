@@ -69,7 +69,28 @@ function OrderConfirmationContent() {
             }
 
             if (res && res.success && res.data?.order) {
-                setOrder(res.data.order);
+                const ord = res.data.order;
+                setOrder(ord);
+
+                // Ensure browser desktop notification fires if allowed
+                if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                    try {
+                        const notifKey = `shown_notif_${ord.id}`;
+                        if (!sessionStorage.getItem(notifKey)) {
+                            sessionStorage.setItem(notifKey, '1');
+                            new Notification(
+                                locale === 'ar' ? `تم تأكيد طلبك بنجاح! #${ord.order_number}` : `Order Confirmed! #${ord.order_number}`,
+                                {
+                                    body: locale === 'ar'
+                                        ? `شكراً لك! تم استلام طلبك بقيمة ${parseFloat(ord.grand_total || 0).toFixed(2)} ر.س وجارٍ تحضيره.`
+                                        : `Thank you! Your order of SAR ${parseFloat(ord.grand_total || 0).toFixed(2)} has been placed successfully.`,
+                                    icon: '/saqrcart-logo.png',
+                                    badge: '/saqrcart-logo.png',
+                                }
+                            );
+                        }
+                    } catch (_) {}
+                }
             } else {
                 setOrder(null);
             }

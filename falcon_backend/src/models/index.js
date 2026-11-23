@@ -23,6 +23,7 @@ const Invoice = require('./Invoice');
 const InvoiceItem = require('./InvoiceItem');
 const Feedback = require('./Feedback');
 const Notification = require('./Notification');
+const DeviceToken = require('./DeviceToken');
 const RefreshToken = require('./RefreshToken');
 const Wishlist = require('./Wishlist');
 const StockLog = require('./StockLog');
@@ -64,6 +65,9 @@ RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 User.hasMany(Notification, { foreignKey: 'user_id', as: 'notifications', onDelete: 'CASCADE' });
 Notification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+User.hasMany(DeviceToken, { foreignKey: 'user_id', as: 'device_tokens', onDelete: 'CASCADE' });
+DeviceToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 // --- Customer Associations ---
 Customer.hasMany(Address, { foreignKey: 'customer_id', as: 'addresses', onDelete: 'CASCADE' });
@@ -253,6 +257,7 @@ module.exports = {
   InvoiceItem,
   Feedback,
   Notification,
+  DeviceToken,
   RefreshToken,
   Wishlist,
   HeroBanner,
