@@ -180,7 +180,7 @@ export default function Footer() {
               <li><Link href="/about" className="hover:text-white transition-colors">{locale === 'ar' ? 'من نحن' : 'About Us'}</Link></li>
               <li><Link href="/products?on_sale=true" className="hover:text-white transition-colors">{locale === 'ar' ? 'العروض والخصومات' : 'Deals & Offers'}</Link></li>
               <li><Link href="/about" className="hover:text-white transition-colors">{locale === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}</Link></li>
-              <li><Link href="/about" className="hover:text-white transition-colors">{locale === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}</Link></li>
+              <li><Link href="/terms" className="hover:text-white transition-colors">{locale === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}</Link></li>
             </ul>
           </div>
 

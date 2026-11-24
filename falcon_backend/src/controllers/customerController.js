@@ -134,6 +134,24 @@ class CustomerController {
       return sendError(res, error.message, [], 400);
     }
   }
+
+  async deleteAccount(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const { password } = req.body || {};
+      await customerService.deleteCustomerAccount(userId, password);
+
+      // Clear all authentication cookies
+      res.clearCookie('customer_access_token', { path: '/' });
+      res.clearCookie('customer_refresh_token', { path: '/' });
+      res.clearCookie('token', { path: '/' });
+      res.clearCookie('refreshToken', { path: '/' });
+
+      return sendSuccess(res, 'Account deleted and personal data anonymized successfully');
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
 }
 
 module.exports = new CustomerController();

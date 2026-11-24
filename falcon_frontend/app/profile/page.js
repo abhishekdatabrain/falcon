@@ -40,6 +40,8 @@ import {
   Upload,
   Loader2,
   RefreshCw,
+  Trash2,
+  X,
 } from 'lucide-react';
 
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
@@ -65,6 +67,7 @@ export default function ProfilePage() {
   // Profile data & Form State
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [dob, setDob] = useState('');
@@ -85,6 +88,11 @@ export default function ProfilePage() {
   // Communication Toggles
   const [whatsappAlerts, setWhatsappAlerts] = useState(true);
   const [smsAlerts, setSmsAlerts] = useState(true);
+
+  // Delete Account State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Dynamic Backend Stats
   const [stats, setStats] = useState({
@@ -120,6 +128,7 @@ export default function ProfilePage() {
         const p = profRes.data.profile;
         setFirstName(p.first_name || p.user?.first_name || user?.first_name || user?.name?.split(' ')[0] || '');
         setLastName(p.last_name || p.user?.last_name || user?.last_name || (user?.name ? user.name.split(' ').slice(1).join(' ') : ''));
+        setUsername(p.user?.username || user?.username || '');
         setEmail(p.user?.email || user?.email || '');
         setMobile(p.user?.mobile || p.mobile || user?.mobile || '');
         setDob(p.dob || '');
@@ -155,6 +164,7 @@ export default function ProfilePage() {
       } else if (user) {
         setFirstName(user?.first_name || user?.name?.split(' ')[0] || '');
         setLastName(user?.last_name || (user?.name ? user.name.split(' ').slice(1).join(' ') : ''));
+        setUsername(user?.username || '');
         setEmail(user?.email || '');
         setMobile(user?.mobile || '');
       }
@@ -276,6 +286,7 @@ export default function ProfilePage() {
       const payload = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
+        username: username.trim(),
         email: email.trim(),
         mobile: mobile.trim(),
         dob,
@@ -298,7 +309,7 @@ export default function ProfilePage() {
       if (res.success && res.data?.profile) {
         const p = res.data.profile;
         if (p.stats) setStats(p.stats);
-        if (checkUser) checkUser();
+        if (checkUser) await checkUser();
         showToast(
           locale === 'ar' ? 'تم حفظ ملف التعريف والتفضيلات بنجاح! 🎉' : 'Profile & preferences saved successfully! 🎉',
           'success'
@@ -329,7 +340,45 @@ export default function ProfilePage() {
   const strengthPercentage = Math.round((completedBadges / badgeCriteria.length) * 100);
 
   // Full Name formatting
-  const fullName = [firstName, lastName].filter(Boolean).join(' ') || (user?.name || (user?.email ? user.email.split('@')[0] : 'Falcon Member'));
+  const fullName = [firstName, lastName].filter(Boolean).join(' ') || username || (user?.name || (user?.email ? user.email.split('@')[0] : 'Falcon Member'));
+
+  // Handle Delete Account
+  const handleDeleteAccount = async () => {
+    if (isDeletingAccount) return;
+    setIsDeletingAccount(true);
+    try {
+      const res = await fetchApi('/customers/account', {
+        method: 'DELETE',
+        body: JSON.stringify({ password: deletePassword || undefined }),
+      });
+
+      if (res && res.success) {
+        showToast(
+          locale === 'ar'
+            ? 'تم حذف الحساب بنجاح وإلغاء تنشيط بياناتك الشخصية.'
+            : 'Your account has been deleted successfully.',
+          'success'
+        );
+        setShowDeleteModal(false);
+        if (logout) {
+          await logout();
+        }
+        router.push('/');
+      } else {
+        showToast(
+          res?.message || (locale === 'ar' ? 'فشل حذف الحساب' : 'Failed to delete account'),
+          'error'
+        );
+      }
+    } catch (err) {
+      showToast(
+        err.message || (locale === 'ar' ? 'حدث خطأ أثناء حذف الحساب' : 'An error occurred while deleting account'),
+        'error'
+      );
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] text-slate-900 pb-28 select-none">
@@ -709,6 +758,25 @@ export default function ProfilePage() {
               {/* Form Input Fields Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
                 
+                {/* Username */}
+                <div className="space-y-1 sm:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-slate-700 font-bold">
+                      {locale === 'ar' ? 'اسم المستخدم (المعرف)' : 'Username'}
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {locale === 'ar' ? 'يستخدم للظهور وشريط التنقل' : 'Display handle in navbar & profile'}
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={username}
+                    placeholder={locale === 'ar' ? 'أدخل اسم المستخدم' : 'Enter username'}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-zA-Z0-9_.-]/g, ''))}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
+                  />
+                </div>
+
                 {/* First Name */}
                 <div className="space-y-1">
                   <label className="block text-slate-700 font-bold">
@@ -1087,11 +1155,155 @@ export default function ProfilePage() {
 
             </div>
 
+            {/* SECTION 5: DANGER ZONE - DELETE ACCOUNT */}
+            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-rose-200/90 shadow-2xs space-y-4">
+              <div className="flex items-center justify-between border-b border-rose-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600">
+                    <Trash2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-sm sm:text-base text-rose-900">
+                      {locale === 'ar' ? 'منطقة الخطر • حذف الحساب' : 'Danger Zone • Delete Account'}
+                    </h2>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      {locale === 'ar'
+                        ? 'حذف الحساب نهائياً وإلغاء تنشيط بياناتك الشخصية.'
+                        : 'Permanently deactivate and delete your SaqrCart account and personal data.'}
+                    </p>
+                  </div>
+                </div>
+
+                <span className="text-[10px] font-black text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full uppercase border border-rose-200">
+                  ⚠️ Irreversible
+                </span>
+              </div>
+
+              <div className="bg-rose-50/50 rounded-2xl p-4 border border-rose-100 space-y-3">
+                <p className="text-xs text-rose-950 leading-relaxed font-medium">
+                  {locale === 'ar'
+                    ? 'عند حذف حسابك، سيتم إلغاء تنشيط بياناتك الشخصية، وإفراغ سلة المشتريات، وحذف عناوين التوصيل وقوائم الرغبات نهائياً. لا يمكن التراجع عن هذا الإجراء.'
+                    : 'Once your account is deleted, your personal profile will be anonymized, active carts cleared, and saved addresses/wishlists permanently removed. This action cannot be undone.'}
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2 border-t border-rose-100">
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {locale === 'ar'
+                      ? 'ملاحظة: إذا كان لديك طلب نشط قيد التوصيل، يجب انتظار استلامه أولاً.'
+                      : 'Note: If you have active orders currently in progress, they must be completed or cancelled first.'}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeletePassword('');
+                      setShowDeleteModal(true);
+                    }}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs hover:shadow transition-all flex items-center gap-2 cursor-pointer shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{locale === 'ar' ? 'حذف الحساب نهائياً' : 'Delete My Account'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
 
         </div>
 
       </div>
+
+      {/* DELETE ACCOUNT CONFIRMATION MODAL */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200 space-y-5 animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-900">
+                    {locale === 'ar' ? 'تأكيد حذف الحساب' : 'Confirm Account Deletion'}
+                  </h3>
+                  <p className="text-xs text-rose-600 font-semibold mt-0.5">
+                    {locale === 'ar' ? 'هذا الإجراء نهائي ولا يمكن التراجع عنه' : 'This action is final and cannot be undone'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Warning Details */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 text-xs text-slate-700 space-y-2">
+              <p className="font-bold text-slate-900">
+                {locale === 'ar' ? 'سيترتب على حذف الحساب ما يلي:' : 'Deleting your account will result in:'}
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-slate-600">
+                <li>{locale === 'ar' ? 'تسجيل الخروج فوراً من جميع الأجهزة' : 'Immediate logout from all active devices'}</li>
+                <li>{locale === 'ar' ? 'حذف جميع العناوين المسجلة وقوائم الرغبات' : 'Removal of saved addresses and wishlist items'}</li>
+                <li>{locale === 'ar' ? 'إفراغ سلة المشتريات وإلغاء تنشيط الحساب' : 'Purging active cart and deactivating login'}</li>
+              </ul>
+            </div>
+
+            {/* Password input for verification */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 block">
+                {locale === 'ar' ? 'كلمة المرور (لتأكيد الهوية):' : 'Enter Password (to verify identity):'}
+              </label>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder={locale === 'ar' ? 'أدخل كلمة المرور الخاصة بك' : 'Enter your account password'}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 text-xs text-slate-900 outline-none transition-all"
+              />
+              <p className="text-[10px] text-slate-400">
+                {locale === 'ar' ? 'اختياري إذا قمت بتسجيل الدخول عبر Google أو الهاتف' : 'Optional if authenticated via Social / OTP login'}
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isDeletingAccount}
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+              >
+                {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+              </button>
+
+              <button
+                type="button"
+                disabled={isDeletingAccount}
+                onClick={handleDeleteAccount}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isDeletingAccount ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{locale === 'ar' ? 'جاري الحذف...' : 'Deleting Account...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{locale === 'ar' ? 'نعم، احذف حسابي نهائياً' : 'Yes, Delete My Account'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

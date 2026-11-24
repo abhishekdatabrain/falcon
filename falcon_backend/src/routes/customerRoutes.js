@@ -15,4 +15,7 @@ router.post('/addresses', (req, res, next) => customerController.addAddress(req,
 router.put('/addresses/:addressId', (req, res, next) => customerController.updateAddress(req, res, next));
 router.delete('/addresses/:addressId', (req, res, next) => customerController.deleteAddress(req, res, next));
 
+// Delete Account endpoint (App Store & Saudi PDPL compliance)
+router.delete('/account', (req, res, next) => customerController.deleteAccount(req, res, next));
+
 module.exports = router;

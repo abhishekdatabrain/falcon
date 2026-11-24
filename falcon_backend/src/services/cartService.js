@@ -180,15 +180,13 @@ class CartService {
 
     const taxRate = 0.15; // 15% Saudi Arabia VAT
     const taxTotal = Math.round(subtotal * taxRate * 100) / 100;
-    const deliveryFee = subtotal > 0 ? (subtotal >= 500 ? 0.00 : 25.00) : 0.00; // Free delivery over 500 SAR
     const discountTotal = 0.00;
-    const grandTotal = Math.round((subtotal + taxTotal + deliveryFee - discountTotal) * 100) / 100;
+    const grandTotal = Math.round((subtotal + taxTotal - discountTotal) * 100) / 100;
 
     return {
       items,
       subtotal: Math.round(subtotal * 100) / 100,
       taxTotal,
-      deliveryFee,
       discountTotal,
       grandTotal,
     };

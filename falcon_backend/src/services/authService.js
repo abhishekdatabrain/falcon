@@ -193,11 +193,11 @@ class AuthService {
     );
     const business_profile = hasBusiness
       ? {
-          vat_no: user.vat_no || null,
-          company_name: user.company_name || null,
-          cr_no: user.cr_no || null,
-          address: user.address || null,
-        }
+        vat_no: user.vat_no || null,
+        company_name: user.company_name || null,
+        cr_no: user.cr_no || null,
+        address: user.address || null,
+      }
       : null;
 
     const userObj = {

@@ -183,11 +183,19 @@ class AuthController {
           }
         : null;
 
+      const customerName = req.user.customer
+        ? `${req.user.customer.first_name || ''} ${req.user.customer.last_name || ''}`.trim()
+        : null;
+      const driverName = req.user.driver?.name || null;
+      const adminName = req.user.admin?.name || null;
+      const displayName = customerName || driverName || adminName || req.user.username || (req.user.email ? req.user.email.split('@')[0] : 'User');
+
       const user = {
         id: req.user.id,
         email: req.user.email,
         mobile: req.user.mobile,
         username: req.user.username || null,
+        name: displayName,
         role: req.user.role,
         business_profile,
         profile: req.user.customer || req.user.driver || req.user.admin,
