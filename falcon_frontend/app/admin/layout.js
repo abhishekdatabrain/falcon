@@ -39,6 +39,7 @@ const ROUTE_PERMISSIONS = {
   '/admin/cod-reconciliation': 'delivery.view',
   '/admin/notifications': 'notifications.view',
   '/admin/feedback': 'feedback.view',
+  '/admin/contact-support': 'feedback.view',
   '/admin/coupons': 'coupons.view',
 };
 

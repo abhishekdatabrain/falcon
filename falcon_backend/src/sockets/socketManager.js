@@ -121,7 +121,7 @@ const initSocketServer = (server) => {
 
     // Driver GPS Location Update Broadcast Event
     socket.on('driver_location_update', async (data) => {
-      const { deliveryId, orderId, latitude, longitude, speed, heading, temp } = data || {};
+      const { deliveryId, orderId, latitude, longitude, speed, heading, accuracy, temp, timestamp } = data || {};
       if (!latitude || !longitude) return;
 
       // Only Drivers assigned or Admins can broadcast location
@@ -139,10 +139,39 @@ const initSocketServer = (server) => {
         lng: parseFloat(longitude),
         speed: speed !== undefined && speed !== null ? parseFloat(speed) : 0,
         heading: heading !== undefined && heading !== null ? parseFloat(heading) : 0,
+        accuracy: accuracy !== undefined && accuracy !== null ? parseFloat(accuracy) : null,
         temp: temp || '3.5°C',
         status: 'CONNECTED',
-        timestamp: new Date().toISOString(),
+        timestamp: timestamp || new Date().toISOString(),
       };
+
+      // Persist to database & compute route/ETA via driverService
+      try {
+        const driverService = require('../services/driverService');
+        const driver = await driverService.getDriverProfileByUserId(socket.user.id).catch(() => null);
+        if (driver) {
+          const locationLog = await driverService.logDriverLocation(
+            deliveryId,
+            driver.id,
+            latitude,
+            longitude,
+            speed,
+            heading,
+            accuracy,
+            timestamp,
+            orderId
+          );
+          if (locationLog) {
+            payload.eta_minutes = locationLog.eta_minutes;
+            payload.distance_km = locationLog.distance_km;
+            payload.distance_text = locationLog.distance_text;
+            payload.duration_seconds = locationLog.duration_seconds;
+            payload.polyline = locationLog.polyline;
+          }
+        }
+      } catch (err) {
+        logger.warn(`Socket location update error: ${err.message}`);
+      }
 
       // Verify order status before broadcasting to customer rooms (Requirements 1, 6, 9)
       let canBroadcastToCustomer = true;

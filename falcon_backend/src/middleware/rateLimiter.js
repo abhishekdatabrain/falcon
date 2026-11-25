@@ -37,7 +37,22 @@ const apiLimiter = rateLimit({
   },
 });
 
+const contactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    if (req.method === 'OPTIONS') return true;
+    return isDevOrLocal(req);
+  },
+  handler: (req, res) => {
+    return sendError(res, 'Too many support ticket submissions. Please wait a few minutes and try again.', [], 429);
+  },
+});
+
 module.exports = {
   authLimiter,
   apiLimiter,
+  contactLimiter,
 };

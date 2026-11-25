@@ -901,7 +901,7 @@ export default function HomePage() {
               onMouseMove={handleCatMouseMove}
               onMouseUp={handleCatMouseUp}
               onMouseLeave={handleCatMouseLeave}
-              className="flex items-start gap-4 sm:gap-5 overflow-x-auto py-2.5 px-1 scroll-smooth cursor-grab select-none touch-pan-x"
+              className="flex items-start gap-4 sm:gap-5 overflow-x-auto py-2.5 px-1 scroll-smooth cursor-grab select-none touch-pan-x no-scrollbar"
             >
               {(categories && categories.length > 0 ? categories : SAFE_DEFAULT_CATEGORIES).map((cat) => {
                 const titleEn = cat.name_en || cat.title_en || cat.name || 'Category';

@@ -43,6 +43,10 @@ const RolePermission = require('./RolePermission');
 const AdminUserRole = require('./AdminUserRole');
 const AuditLog = require('./AuditLog');
 const BulkUploadHistory = require('./BulkUploadHistory');
+const ContactSetting = require('./ContactSetting');
+const InquiryCategory = require('./InquiryCategory');
+const OfficeLocation = require('./OfficeLocation');
+const SupportTicket = require('./SupportTicket');
 
 // --- User Associations ---
 User.hasMany(BulkUploadHistory, { foreignKey: 'uploaded_by', as: 'bulk_uploads', onDelete: 'SET NULL' });
@@ -162,8 +166,14 @@ DriverAssignment.belongsTo(Admin, { foreignKey: 'assigned_by_admin_id', as: 'ass
 Order.hasOne(Delivery, { foreignKey: 'order_id', as: 'delivery', onDelete: 'CASCADE' });
 Delivery.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
 
+Order.hasMany(DriverLocation, { foreignKey: 'order_id', as: 'driver_locations', onDelete: 'CASCADE' });
+DriverLocation.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+
 Driver.hasMany(Delivery, { foreignKey: 'driver_id', as: 'deliveries' });
 Delivery.belongsTo(Driver, { foreignKey: 'driver_id', as: 'driver' });
+
+Driver.hasMany(DriverLocation, { foreignKey: 'driver_id', as: 'locations' });
+DriverLocation.belongsTo(Driver, { foreignKey: 'driver_id', as: 'driver' });
 
 Delivery.hasMany(DriverLocation, { foreignKey: 'delivery_id', as: 'locations', onDelete: 'CASCADE' });
 DriverLocation.belongsTo(Delivery, { foreignKey: 'delivery_id', as: 'delivery' });
@@ -230,6 +240,13 @@ AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 DeliverySetting.belongsTo(User, { foreignKey: 'updated_by_admin_id', as: 'updated_by' });
 TipSetting.belongsTo(User, { foreignKey: 'updated_by_admin_id', as: 'updated_by' });
 
+// --- Contact & Support Associations ---
+SupportTicket.belongsTo(Customer, { foreignKey: 'customer_id', as: 'customer' });
+Customer.hasMany(SupportTicket, { foreignKey: 'customer_id', as: 'support_tickets' });
+SupportTicket.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+SupportTicket.belongsTo(InquiryCategory, { foreignKey: 'category_id', as: 'category' });
+InquiryCategory.hasMany(SupportTicket, { foreignKey: 'category_id', as: 'tickets' });
+
 module.exports = {
   sequelize,
   User,
@@ -276,4 +293,8 @@ module.exports = {
   AdminUserRole,
   AuditLog,
   BulkUploadHistory,
+  ContactSetting,
+  InquiryCategory,
+  OfficeLocation,
+  SupportTicket,
 };

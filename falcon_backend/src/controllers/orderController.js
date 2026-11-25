@@ -82,6 +82,21 @@ class OrderController {
     }
   }
 
+  async getLiveTracking(req, res, next) {
+    try {
+      const { id, identifier } = req.params;
+      const tracking = await orderService.getLiveTracking(id || identifier, req.user);
+      return sendSuccess(res, 'Live driver tracking retrieved successfully', { tracking });
+    } catch (error) {
+      const statusCode = error.statusCode || (
+        error.message?.includes('Access denied') ? 403 :
+        error.message?.includes('Authentication required') ? 401 :
+        error.message?.includes('not found') ? 404 : 400
+      );
+      return sendError(res, error.message, [], statusCode);
+    }
+  }
+
   async getOrderById(req, res, next) {
     try {
       const { id } = req.params;

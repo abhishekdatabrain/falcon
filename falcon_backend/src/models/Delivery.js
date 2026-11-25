@@ -100,6 +100,42 @@ const Delivery = sequelize.define('Delivery', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: true,
   },
+  latest_latitude: {
+    type: DataTypes.DECIMAL(10, 8),
+    allowNull: true,
+  },
+  latest_longitude: {
+    type: DataTypes.DECIMAL(11, 8),
+    allowNull: true,
+  },
+  latest_heading: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
+  latest_speed: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
+  latest_accuracy: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
+  latest_location_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  estimated_distance_meters: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  estimated_duration_seconds: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  route_polyline: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
 }, {
   tableName: 'deliveries',
   timestamps: true,

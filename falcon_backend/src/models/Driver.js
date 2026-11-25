@@ -70,6 +70,30 @@ const Driver = sequelize.define('Driver', {
     allowNull: false,
     defaultValue: DRIVER_AVAILABILITY.OFFLINE,
   },
+  current_latitude: {
+    type: DataTypes.DECIMAL(10, 8),
+    allowNull: true,
+  },
+  current_longitude: {
+    type: DataTypes.DECIMAL(11, 8),
+    allowNull: true,
+  },
+  current_heading: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
+  current_speed: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
+  current_accuracy: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
+  last_location_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
 }, {
   tableName: 'drivers',
   timestamps: true,

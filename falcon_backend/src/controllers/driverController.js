@@ -61,22 +61,52 @@ class DriverController {
   async logGpsLocation(req, res, next) {
     try {
       const driver = await driverService.getDriverProfileByUserId(req.user.id);
-      const { deliveryId, latitude, longitude, speed, heading } = req.body;
+      const {
+        driver_id,
+        driverId,
+        order_id,
+        orderId,
+        delivery_id,
+        deliveryId,
+        latitude,
+        lat,
+        longitude,
+        lng,
+        accuracy,
+        heading,
+        speed,
+        timestamp,
+      } = req.body;
 
-      if (!deliveryId || latitude === undefined || longitude === undefined) {
-        return sendError(res, 'deliveryId, latitude, and longitude are required', [], 400);
+      // Security check: driver can only report location for their own driver profile
+      const requestedDriverId = driver_id || driverId;
+      if (requestedDriverId && requestedDriverId !== driver.id && req.user.role !== 'ADMIN') {
+        return sendError(res, 'Access denied. You can only update your own driver location.', [], 403);
       }
 
+      const effectiveLat = latitude !== undefined ? latitude : lat;
+      const effectiveLng = longitude !== undefined ? longitude : lng;
+
+      if (effectiveLat === undefined || effectiveLat === null || effectiveLng === undefined || effectiveLng === null) {
+        return sendError(res, 'Latitude and longitude coordinates are required', [], 400);
+      }
+
+      const effectiveDeliveryId = delivery_id || deliveryId || null;
+      const effectiveOrderId = order_id || orderId || null;
+
       const locationLog = await driverService.logDriverLocation(
-        deliveryId,
+        effectiveDeliveryId,
         driver.id,
-        latitude,
-        longitude,
+        effectiveLat,
+        effectiveLng,
         speed,
-        heading
+        heading,
+        accuracy,
+        timestamp,
+        effectiveOrderId
       );
 
-      return sendSuccess(res, 'GPS snapshot logged', { locationLog });
+      return sendSuccess(res, 'Driver live location updated successfully', { locationLog });
     } catch (error) {
       return sendError(res, error.message, [], 400);
     }

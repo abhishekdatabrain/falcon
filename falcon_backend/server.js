@@ -47,6 +47,25 @@ const startServer = async () => {
         await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "handover_confirmed_by_admin_id" UUID;`);
         await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "handover_reference" VARCHAR(100);`);
         await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "handover_received_amount" DECIMAL(10, 2);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "latest_latitude" DECIMAL(10, 8);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "latest_longitude" DECIMAL(11, 8);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "latest_heading" FLOAT;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "latest_speed" FLOAT;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "latest_accuracy" FLOAT;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "latest_location_at" TIMESTAMP WITH TIME ZONE;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "estimated_distance_meters" INTEGER;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "estimated_duration_seconds" INTEGER;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"deliveries" ADD COLUMN IF NOT EXISTS "route_polyline" TEXT;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"drivers" ADD COLUMN IF NOT EXISTS "current_latitude" DECIMAL(10, 8);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"drivers" ADD COLUMN IF NOT EXISTS "current_longitude" DECIMAL(11, 8);`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"drivers" ADD COLUMN IF NOT EXISTS "current_heading" FLOAT;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"drivers" ADD COLUMN IF NOT EXISTS "current_speed" FLOAT;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"drivers" ADD COLUMN IF NOT EXISTS "current_accuracy" FLOAT;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"drivers" ADD COLUMN IF NOT EXISTS "last_location_at" TIMESTAMP WITH TIME ZONE;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"driver_locations" ADD COLUMN IF NOT EXISTS "order_id" UUID;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"driver_locations" ADD COLUMN IF NOT EXISTS "accuracy" FLOAT;`);
+        await sequelize.query(`ALTER TABLE ${tablePrefix}"driver_locations" ALTER COLUMN "delivery_id" DROP NOT NULL;`);
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS "idx_driver_locations_order_id" ON ${tablePrefix}"driver_locations" ("order_id");`);
         await sequelize.query(`ALTER TABLE ${tablePrefix}"orders" ADD COLUMN IF NOT EXISTS "delivery_method" VARCHAR(50);`);
         await sequelize.query(`ALTER TABLE ${tablePrefix}"orders" ADD COLUMN IF NOT EXISTS "tip_amount" DECIMAL(10, 2) NOT NULL DEFAULT 0.00;`);
         await sequelize.query(`
@@ -78,6 +97,94 @@ const startServer = async () => {
         `);
         await sequelize.query(`CREATE INDEX IF NOT EXISTS "device_tokens_user_id_idx" ON ${tablePrefix}"device_tokens" ("user_id");`);
         await sequelize.query(`CREATE INDEX IF NOT EXISTS "device_tokens_is_active_idx" ON ${tablePrefix}"device_tokens" ("is_active");`);
+        await sequelize.query(`
+          CREATE TABLE IF NOT EXISTS ${tablePrefix}"contact_settings" (
+            "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            "support_email" VARCHAR(255) NOT NULL DEFAULT 'care@saqrcart.com',
+            "support_phone" VARCHAR(255) NOT NULL DEFAULT '800 124 5555',
+            "whatsapp_number" VARCHAR(255) NOT NULL DEFAULT '+966 59 597 4591',
+            "business_address_en" TEXT,
+            "business_address_ar" TEXT,
+            "support_hours_en" VARCHAR(255),
+            "support_hours_ar" VARCHAR(255),
+            "dispatch_hours_en" VARCHAR(255),
+            "dispatch_hours_ar" VARCHAR(255),
+            "live_chat_wait_en" VARCHAR(255),
+            "live_chat_wait_ar" VARCHAR(255),
+            "social_links" JSONB DEFAULT '{"facebook":"","instagram":"","twitter":"","linkedin":""}'::jsonb,
+            "updated_by_admin_id" UUID,
+            "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+            "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+          );
+        `);
+        await sequelize.query(`
+          CREATE TABLE IF NOT EXISTS ${tablePrefix}"inquiry_categories" (
+            "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            "code" VARCHAR(80) NOT NULL UNIQUE,
+            "name_en" VARCHAR(255) NOT NULL,
+            "name_ar" VARCHAR(255) NOT NULL,
+            "description_en" TEXT,
+            "description_ar" TEXT,
+            "is_active" BOOLEAN NOT NULL DEFAULT true,
+            "display_order" INTEGER NOT NULL DEFAULT 0,
+            "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+            "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+          );
+        `);
+        await sequelize.query(`
+          CREATE TABLE IF NOT EXISTS ${tablePrefix}"office_locations" (
+            "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            "name_en" VARCHAR(255) NOT NULL,
+            "name_ar" VARCHAR(255) NOT NULL,
+            "location_type" VARCHAR(50) NOT NULL DEFAULT 'DISPATCH_HUB',
+            "badge_en" VARCHAR(100),
+            "badge_ar" VARCHAR(100),
+            "region_en" VARCHAR(120),
+            "region_ar" VARCHAR(120),
+            "address_en" TEXT NOT NULL,
+            "address_ar" TEXT NOT NULL,
+            "latitude" DECIMAL(10, 8),
+            "longitude" DECIMAL(11, 8),
+            "map_image_url" VARCHAR(255),
+            "service_areas_en" TEXT,
+            "service_areas_ar" TEXT,
+            "support_hours_en" VARCHAR(255),
+            "support_hours_ar" VARCHAR(255),
+            "dispatch_hours_en" VARCHAR(255),
+            "dispatch_hours_ar" VARCHAR(255),
+            "is_active" BOOLEAN NOT NULL DEFAULT true,
+            "display_order" INTEGER NOT NULL DEFAULT 0,
+            "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+            "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+          );
+        `);
+        await sequelize.query(`
+          CREATE TABLE IF NOT EXISTS ${tablePrefix}"support_tickets" (
+            "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            "ticket_number" VARCHAR(50) NOT NULL UNIQUE,
+            "customer_id" UUID,
+            "user_id" UUID,
+            "full_name" VARCHAR(255) NOT NULL,
+            "email" VARCHAR(255) NOT NULL,
+            "mobile" VARCHAR(255) NOT NULL,
+            "order_id" UUID,
+            "order_number" VARCHAR(80),
+            "category_id" UUID,
+            "category_code" VARCHAR(80) NOT NULL,
+            "category_name" VARCHAR(255),
+            "message" TEXT NOT NULL,
+            "attachment_url" VARCHAR(500),
+            "attachment_name" VARCHAR(255),
+            "attachment_type" VARCHAR(100),
+            "attachment_size" INTEGER,
+            "status" VARCHAR(30) NOT NULL DEFAULT 'NEW',
+            "internal_notes" TEXT,
+            "resolved_at" TIMESTAMP WITH TIME ZONE,
+            "updated_by_admin_id" UUID,
+            "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+            "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+          );
+        `);
       } catch (alterErr) {
         // Table doesn't exist yet or already configured
       }

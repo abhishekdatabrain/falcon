@@ -5,11 +5,15 @@ const { setAuthCookies, clearAuthCookies } = require('../utils/jwt');
 class AuthController {
   async register(req, res, next) {
     try {
-      let { email, mobile, password, first_name, last_name, username, verificationCode, vatNo, companyName, crNo, address } = req.body;
+      let { email, mobile, password, first_name, last_name, full_name, username, verificationCode, emailVerificationCode, mobileVerificationCode, vatNo, companyName, crNo, address } = req.body;
       const fieldErrors = {};
 
-      if (username) {
-        const parts = username.trim().split(/\s+/);
+      if (full_name) {
+        const parts = String(full_name).trim().split(/\s+/);
+        if (!first_name) first_name = parts[0] || 'User';
+        if (!last_name) last_name = parts.slice(1).join(' ') || parts[0] || 'Customer';
+      } else if (username) {
+        const parts = String(username).trim().split(/\s+/);
         if (!first_name) first_name = parts[0] || 'User';
         if (!last_name) last_name = parts.slice(1).join(' ') || parts[0] || 'Customer';
       }
@@ -22,12 +26,15 @@ class AuthController {
         email = `user_${cleanMobile}@saqrcart.com`;
       }
 
-      if (!username && !first_name) fieldErrors.username = 'Username is required';
+      if (!full_name && !username && !first_name) fieldErrors.full_name = 'Full name is required';
       if (!first_name) fieldErrors.first_name = 'First name is required';
       if (!last_name) fieldErrors.last_name = 'Last name is required';
       if (!email) fieldErrors.email = 'Email address is required';
       if (!mobile) fieldErrors.mobile = 'Mobile number is required';
       if (!password) fieldErrors.password = 'Password is required';
+      if (!verificationCode && !emailVerificationCode && !mobileVerificationCode) {
+        fieldErrors.verificationCode = 'Verification code is required';
+      }
 
       if (Object.keys(fieldErrors).length > 0) {
         return res.status(400).json({
@@ -44,8 +51,10 @@ class AuthController {
         password,
         first_name,
         last_name,
-        username,
+        username: username || null,
         verificationCode,
+        emailVerificationCode,
+        mobileVerificationCode,
         vatNo,
         companyName,
         crNo,

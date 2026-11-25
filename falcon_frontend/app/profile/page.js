@@ -65,9 +65,7 @@ export default function ProfilePage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Profile data & Form State
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [username, setUsername] = useState('');
+  const [fullNameInput, setFullNameInput] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [dob, setDob] = useState('');
@@ -126,9 +124,11 @@ export default function ProfilePage() {
 
       if (profRes && profRes.success && profRes.data?.profile) {
         const p = profRes.data.profile;
-        setFirstName(p.first_name || p.user?.first_name || user?.first_name || user?.name?.split(' ')[0] || '');
-        setLastName(p.last_name || p.user?.last_name || user?.last_name || (user?.name ? user.name.split(' ').slice(1).join(' ') : ''));
-        setUsername(p.user?.username || user?.username || '');
+        const combinedName = [p.first_name || p.user?.first_name, p.last_name || p.user?.last_name]
+          .filter(Boolean)
+          .join(' ')
+          .trim();
+        setFullNameInput(combinedName || user?.name || '');
         setEmail(p.user?.email || user?.email || '');
         setMobile(p.user?.mobile || p.mobile || user?.mobile || '');
         setDob(p.dob || '');
@@ -162,9 +162,8 @@ export default function ProfilePage() {
           setStats(p.stats);
         }
       } else if (user) {
-        setFirstName(user?.first_name || user?.name?.split(' ')[0] || '');
-        setLastName(user?.last_name || (user?.name ? user.name.split(' ').slice(1).join(' ') : ''));
-        setUsername(user?.username || '');
+        const combinedName = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
+        setFullNameInput(combinedName || user?.name || '');
         setEmail(user?.email || '');
         setMobile(user?.mobile || '');
       }
@@ -283,10 +282,14 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
+      const trimmedName = fullNameInput.trim();
+      const parts = trimmedName ? trimmedName.split(/\s+/) : [];
+      const first_name = parts[0] || '';
+      const last_name = parts.slice(1).join(' ') || '';
+
       const payload = {
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        username: username.trim(),
+        first_name,
+        last_name,
         email: email.trim(),
         mobile: mobile.trim(),
         dob,
@@ -327,8 +330,7 @@ export default function ProfilePage() {
 
   // Dynamic Profile Strength Badge Calculation
   const badgeCriteria = [
-    { label: 'First Name', ok: Boolean(firstName?.trim()) },
-    { label: 'Last Name', ok: Boolean(lastName?.trim()) },
+    { label: 'Full Name', ok: Boolean(fullNameInput?.trim()) },
     { label: 'Email Verified', ok: Boolean(email?.trim()) },
     { label: 'Mobile Phone', ok: Boolean(mobile?.trim()) },
     { label: 'Date of Birth', ok: Boolean(dob?.trim()) },
@@ -340,7 +342,7 @@ export default function ProfilePage() {
   const strengthPercentage = Math.round((completedBadges / badgeCriteria.length) * 100);
 
   // Full Name formatting
-  const fullName = [firstName, lastName].filter(Boolean).join(' ') || username || (user?.name || (user?.email ? user.email.split('@')[0] : 'Falcon Member'));
+  const fullName = fullNameInput.trim() || (user?.name || (user?.email ? user.email.split('@')[0] : 'Falcon Member'));
 
   // Handle Delete Account
   const handleDeleteAccount = async () => {
@@ -460,7 +462,7 @@ export default function ProfilePage() {
                       onError={() => setAvatar('')}
                     />
                   ) : (
-                    <span>{firstName ? firstName[0].toUpperCase() : (fullName ? fullName[0].toUpperCase() : 'M')}</span>
+                    <span>{fullName ? fullName[0].toUpperCase() : 'M'}</span>
                   )}
                   <span className="absolute bottom-0 right-0 w-4 h-4 bg-[#05A764] border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white">
                     ✓
@@ -693,7 +695,7 @@ export default function ProfilePage() {
                       onError={() => setAvatar('')}
                     />
                   ) : (
-                    <span>{firstName ? firstName[0].toUpperCase() : (fullName ? fullName[0].toUpperCase() : 'M')}</span>
+                    <span>{fullName ? fullName[0].toUpperCase() : 'M'}</span>
                   )}
                   <label className="absolute inset-0 bg-slate-950/40 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
                     {uploadingAvatar ? (
@@ -758,49 +760,16 @@ export default function ProfilePage() {
               {/* Form Input Fields Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
                 
-                {/* Username */}
+                {/* Full Name */}
                 <div className="space-y-1 sm:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-slate-700 font-bold">
-                      {locale === 'ar' ? 'اسم المستخدم (المعرف)' : 'Username'}
-                    </label>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      {locale === 'ar' ? 'يستخدم للظهور وشريط التنقل' : 'Display handle in navbar & profile'}
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    value={username}
-                    placeholder={locale === 'ar' ? 'أدخل اسم المستخدم' : 'Enter username'}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-zA-Z0-9_.-]/g, ''))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
-                  />
-                </div>
-
-                {/* First Name */}
-                <div className="space-y-1">
                   <label className="block text-slate-700 font-bold">
-                    {locale === 'ar' ? 'الاسم الأول' : 'First Name'}
+                    {locale === 'ar' ? 'الاسم الكامل' : 'Full Name'}
                   </label>
                   <input
                     type="text"
-                    value={firstName}
-                    placeholder={locale === 'ar' ? 'الاسم الأول' : 'First Name'}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
-                  />
-                </div>
-
-                {/* Last Name */}
-                <div className="space-y-1">
-                  <label className="block text-slate-700 font-bold">
-                    {locale === 'ar' ? 'اسم العائلة' : 'Last Name'}
-                  </label>
-                  <input
-                    type="text"
-                    value={lastName}
-                    placeholder={locale === 'ar' ? 'اسم العائلة' : 'Last Name'}
-                    onChange={(e) => setLastName(e.target.value)}
+                    value={fullNameInput}
+                    placeholder={locale === 'ar' ? 'أدخل الاسم الكامل' : 'Enter full name'}
+                    onChange={(e) => setFullNameInput(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
                   />
                 </div>
@@ -1025,132 +994,6 @@ export default function ProfilePage() {
                   </label>
                 </div>
 
-                {/* Linked Identity Providers Row */}
-                <div className="pt-2">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">
-                    LINKED IDENTITY PROVIDERS
-                  </span>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {/* Apple ID */}
-                    <div className="bg-[#F5F6F8] rounded-xl p-2.5 border border-slate-200/60 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-slate-900 block"> Apple ID</span>
-                        <span className="text-[9px] text-slate-400 font-medium">FaceID 1-Tap</span>
-                      </div>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    </div>
-
-                    {/* Nafath App */}
-                    <div className="bg-[#F5F6F8] rounded-xl p-2.5 border border-slate-200/60 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-slate-900 block">🛡️ Nafath App</span>
-                        <span className="text-[9px] text-slate-400 font-medium">National Verified</span>
-                      </div>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    </div>
-
-                    {/* Google Account */}
-                    <div className="bg-[#F5F6F8] rounded-xl p-2.5 border border-slate-200/60 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-slate-900 block">🌐 Google Account</span>
-                        <span className="text-[9px] text-slate-400 font-medium">
-                          {user?.email?.includes('@gmail.com') ? 'Connected' : 'Not connected'}
-                        </span>
-                      </div>
-                      {user?.email?.includes('@gmail.com') ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => showToast(locale === 'ar' ? 'جاري ربط حساب Google...' : 'Connecting Google account...', 'info')}
-                          className="text-xs text-[#05A764] font-bold hover:underline"
-                        >
-                          Link
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-
-
-
-            {/* SECTION 4: COMMUNICATION CHANNELS */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4 text-[#05A764]" />
-                  <h2 className="font-bold text-sm sm:text-base text-slate-900">
-                    {locale === 'ar' ? 'قنوات التواصل والإشعارات' : 'Communication Channels'}
-                  </h2>
-                </div>
-                <p className="text-[11px] text-slate-400 font-medium">
-                  {locale === 'ar'
-                    ? 'اختر طريقة استلام تحديثات الطلب المباشرة وعروض المزارع ورمز التسليم.'
-                    : 'Choose how you wish to receive live order updates, farm specials, and courier dispatch notifications.'}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {/* WhatsApp Order Tracking */}
-                <div className="bg-[#F5F6F8] rounded-2xl p-3.5 flex items-center justify-between border border-slate-200/60">
-                  <div className="flex items-center gap-3">
-                    <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div>
-                      <h4 className="font-bold text-xs text-slate-900">
-                        {locale === 'ar'
-                          ? 'تتبع الطلبات وتنبيهات الحصاد الطازج عبر واتساب'
-                          : 'WhatsApp Order Tracking & Fresh Harvest Alerts'}
-                      </h4>
-                      <p className="text-[10px] text-slate-500 font-medium leading-tight">
-                        {locale === 'ar'
-                          ? 'استلام رابط تتبع السائق المباشر وخريطة التوصيل واستفسارات استبدال المنتجات عبر واتساب.'
-                          : 'Receive automated live dispatch links, runner live map, and out-of-stock substitution queries via WhatsApp.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
-                    <input
-                      type="checkbox"
-                      checked={whatsappAlerts}
-                      onChange={(e) => setWhatsappAlerts(e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#05A764]" />
-                  </label>
-                </div>
-
-                {/* SMS Delivery PINs */}
-                <div className="bg-[#F5F6F8] rounded-2xl p-3.5 flex items-center justify-between border border-slate-200/60">
-                  <div className="flex items-center gap-3">
-                    <Smartphone className="w-4 h-4 text-[#05A764] shrink-0" />
-                    <div>
-                      <h4 className="font-bold text-xs text-slate-900">
-                        {locale === 'ar' ? 'رمز استلام الطلب ووصول السائق عبر SMS' : 'SMS Delivery PINs & Driver Arrival'}
-                      </h4>
-                      <p className="text-[10px] text-slate-500 font-medium leading-tight">
-                        {locale === 'ar'
-                          ? 'استلام رسائل SMS ذات أولوية تحتوي على رمز التحقق المكون من 4 أرقام لتأكيد الاستلام عند الباب.'
-                          : 'Receive high-priority SMS containing the 4-digit doorstep delivery confirmation code.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
-                    <input
-                      type="checkbox"
-                      checked={smsAlerts}
-                      onChange={(e) => setSmsAlerts(e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#05A764]" />
-                  </label>
-                </div>
               </div>
 
             </div>
@@ -1164,7 +1007,7 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <h2 className="font-bold text-sm sm:text-base text-rose-900">
-                      {locale === 'ar' ? 'منطقة الخطر • حذف الحساب' : 'Danger Zone • Delete Account'}
+                      {locale === 'ar' ? 'منطقة الخطر • حذف الحساب' : 'Delete Account'}
                     </h2>
                     <p className="text-[11px] text-slate-500 font-medium">
                       {locale === 'ar'

@@ -8,9 +8,32 @@ const verificationStore = new Map();
 
 class AuthService {
   async registerCustomer(data) {
-    const { email, mobile, password, first_name, last_name, username, verificationCode, vatNo, companyName, crNo, address } = data;
+    const { email, mobile, password, first_name, last_name, username, verificationCode, emailVerificationCode, mobileVerificationCode, vatNo, companyName, crNo, address } = data;
 
-    if (verificationCode) {
+    if (emailVerificationCode) {
+      const emailValid = email ? this.verifyCode(email, emailVerificationCode) : false;
+      if (!emailValid) {
+        const err = new Error('Invalid or expired email verification code');
+        err.fieldErrors = { emailVerificationCode: 'Invalid or expired email verification code' };
+        throw err;
+      }
+    }
+
+    if (mobileVerificationCode) {
+      const mobileValid = mobile ? this.verifyCode(mobile, mobileVerificationCode) : false;
+      if (!mobileValid) {
+        const err = new Error('Invalid or expired mobile verification code');
+        err.fieldErrors = { mobileVerificationCode: 'Invalid or expired mobile verification code' };
+        throw err;
+      }
+    }
+
+    if (!emailVerificationCode && !mobileVerificationCode) {
+      if (!verificationCode) {
+        const err = new Error('Verification code is required');
+        err.fieldErrors = { verificationCode: 'Verification code is required' };
+        throw err;
+      }
       const emailValid = email ? this.verifyCode(email, verificationCode) : false;
       const mobileValid = (!emailValid && mobile) ? this.verifyCode(mobile, verificationCode) : false;
       const isValid = emailValid || mobileValid;
@@ -374,7 +397,19 @@ class AuthService {
       throw new Error(`Please provide a valid ${type === 'mobile' ? 'mobile number' : 'email address'}`);
     }
 
+    if (type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+      const err = new Error('Please provide a valid email address');
+      err.fieldErrors = { email: 'Please provide a valid email address' };
+      throw err;
+    }
+
     const cleanKey = type === 'mobile' ? raw.replace(/[^0-9+]/g, '') : raw.toLowerCase();
+
+    if (type === 'mobile' && cleanKey.replace(/[^0-9]/g, '').length < 9) {
+      const err = new Error('Please provide a valid mobile number');
+      err.fieldErrors = { mobile: 'Please provide a valid mobile number' };
+      throw err;
+    }
 
     // Check if already registered
     const existing = await User.findOne({
@@ -399,10 +434,14 @@ class AuthService {
       try {
         const mailRes = await emailService.sendVerificationEmail(cleanKey, code);
         if (!mailRes.success) {
+          verificationStore.delete(cleanKey);
           console.error(`[AUTH] Failed to send email to ${cleanKey}:`, mailRes.error);
+          throw new Error(mailRes.error || 'Failed to send verification email. Please check your email address.');
         }
       } catch (mailErr) {
+        verificationStore.delete(cleanKey);
         console.error(`[AUTH] Exception sending email to ${cleanKey}:`, mailErr);
+        throw new Error(mailErr.message || 'Failed to send verification email. Please try again later.');
       }
     }
 

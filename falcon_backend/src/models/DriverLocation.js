@@ -9,9 +9,18 @@ const DriverLocation = sequelize.define('DriverLocation', {
   },
   delivery_id: {
     type: DataTypes.UUID,
-    allowNull: false,
+    allowNull: true,
     references: {
       model: 'deliveries',
+      key: 'id',
+    },
+    onDelete: 'CASCADE',
+  },
+  order_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'orders',
       key: 'id',
     },
     onDelete: 'CASCADE',
@@ -40,6 +49,10 @@ const DriverLocation = sequelize.define('DriverLocation', {
     type: DataTypes.FLOAT,
     allowNull: true,
   },
+  accuracy: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
   temperature: {
     type: DataTypes.STRING,
     allowNull: true,
@@ -55,6 +68,7 @@ const DriverLocation = sequelize.define('DriverLocation', {
   underscored: true,
   indexes: [
     { fields: ['delivery_id'] },
+    { fields: ['order_id'] },
     { fields: ['driver_id'] },
     { fields: ['recorded_at'] },
   ],

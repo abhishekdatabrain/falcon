@@ -1,7 +1,12 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { useToast } from '../../src/contexts/ToastContext';
+import { fetchApi, getImageUrl, getCsrfToken } from '../../src/services/api';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
 import {
   Home,
   MessageSquare,
@@ -10,10 +15,8 @@ import {
   Mail,
   Send,
   MapPin,
-  Clock,
   Truck,
   Headphones,
-  CheckCircle2,
   ExternalLink,
   Upload,
   Map,
@@ -22,15 +25,29 @@ import {
   Store,
   Compass,
   ArrowRight,
-  ShieldCheck,
-  Check
+  Check,
+  Loader2,
+  X,
+  FileText,
+  AlertCircle,
+  Globe,
 } from 'lucide-react';
 
 export default function ContactPage() {
   const { locale } = useLanguage();
+  const { user } = useAuth();
+  const { showToast } = useToast();
   const isAr = locale === 'ar';
+  const formRef = useRef(null);
 
-  const [activeHub, setActiveHub] = useState('riyadh');
+  // Dynamic Backend Data
+  const [loadingData, setLoadingData] = useState(true);
+  const [settings, setSettings] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [activeLocationId, setActiveLocationId] = useState(null);
+
+  // Contact Form State
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -39,31 +56,255 @@ export default function ContactPage() {
     category: '',
     message: '',
     agreed: false,
-    fileAttached: false,
   });
-  const [submitted, setSubmitted] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submittedTicket, setSubmittedTicket] = useState(null);
 
-  const handleSubmit = (e) => {
+  // Attachment Upload State
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [attachment, setAttachment] = useState(null);
+
+  // Pre-fill user details if logged in
+  useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(() => {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || user.name || '',
+        email: prev.email || user.email || '',
+        phone: prev.phone || (user.mobile ? user.mobile.replace(/^\+?966/, '').replace(/^0+/, '') : ''),
+      }));
+    }, 0);
+    return () => clearTimeout(t);
+  }, [user]);
+
+  // Fetch dynamic contact settings, categories & locations
+  useEffect(() => {
+    let isMounted = true;
+    const loadContactData = async () => {
+      try {
+        setLoadingData(true);
+        const res = await fetchApi('/contact/settings');
+        if (!isMounted) return;
+        if (res.success && res.data) {
+          setSettings(res.data.settings || null);
+          setCategories(Array.isArray(res.data.categories) ? res.data.categories : []);
+          const locs = Array.isArray(res.data.locations) ? res.data.locations : [];
+          setLocations(locs);
+          if (locs.length > 0) {
+            setActiveLocationId(locs[0].id);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load dynamic contact data:', err.message);
+      } finally {
+        if (isMounted) setLoadingData(false);
+      }
+    };
+    loadContactData();
+    return () => { isMounted = false; };
+  }, []);
+
+  // File Attachment Upload Handler with real progress
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      showToast(
+        isAr ? 'صيغة الملف غير مدعومة. يرجى رفع JPG أو PNG أو PDF فقط.' : 'Invalid file format. Only JPG, PNG, and PDF files are allowed.',
+        'error'
+      );
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast(
+        isAr ? 'حجم الملف يتجاوز الحد الأقصى 5 ميجابايت.' : 'File size exceeds the maximum 5MB limit.',
+        'error'
+      );
+      e.target.value = '';
+      return;
+    }
+
+    setUploadingFile(true);
+    setUploadProgress(0);
+
+    const payload = new FormData();
+    payload.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_BASE_URL}/upload`, true);
+    xhr.withCredentials = true;
+
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      xhr.setRequestHeader('x-csrf-token', csrfToken);
+    }
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const pct = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(pct);
+      }
+    };
+
+    xhr.onload = () => {
+      setUploadingFile(false);
+      try {
+        const res = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && res.success && res.data?.url) {
+          setAttachment({
+            url: res.data.url,
+            name: res.data.originalname || file.name,
+            type: res.data.mimetype || file.type,
+            size: res.data.sizeBytes || file.size,
+            formattedSize: res.data.formattedSize || `${(file.size / 1024).toFixed(1)} KB`,
+          });
+          showToast(isAr ? 'تم رفع المرفق بنجاح ✓' : 'File uploaded successfully ✓', 'success');
+        } else {
+          showToast(res.message || (isAr ? 'فشل رفع الملف' : 'Failed to upload file'), 'error');
+        }
+      } catch {
+        showToast(isAr ? 'فشل رفع الملف' : 'Failed to upload file', 'error');
+      }
+    };
+
+    xhr.onerror = () => {
+      setUploadingFile(false);
+      showToast(isAr ? 'حدث خطأ أثناء رفع الملف' : 'Network error while uploading file', 'error');
+    };
+
+    xhr.send(payload);
+    e.target.value = '';
+  };
+
+  const handleRemoveAttachment = () => {
+    setAttachment(null);
+    setUploadProgress(0);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({
-        fullName: '',
-        email: '',
-        phone: '',
-        orderId: '',
-        category: '',
-        message: '',
-        agreed: false,
-        fileAttached: false,
+    if (submitting || uploadingFile) return;
+
+    const errors = {};
+    const trimmedName = formData.fullName.trim();
+    const trimmedEmail = formData.email.trim().toLowerCase();
+    const cleanDigits = formData.phone.replace(/[^0-9]/g, '');
+    const trimmedMsg = formData.message.trim();
+
+    if (!trimmedName || trimmedName.length < 2) {
+      errors.fullName = isAr ? 'الاسم الكامل مطلوب' : 'Full name is required (at least 2 characters)';
+    }
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      errors.email = isAr ? 'يرجى إدخال بريد إلكتروني صحيح' : 'Please enter a valid email address';
+    }
+    if (!cleanDigits || cleanDigits.length < 9) {
+      errors.phone = isAr ? 'يرجى إدخال رقم جوال سعودي صحيح' : 'Please enter a valid Saudi mobile number';
+    }
+    if (!formData.category) {
+      errors.category = isAr ? 'يرجى اختيار نوع الاستفسار' : 'Please select an inquiry category';
+    }
+    if (!trimmedMsg || trimmedMsg.length < 10) {
+      errors.message = isAr ? 'يرجى كتابة تفاصيل الرسالة (10 أحرف على الأقل)' : 'Please describe your inquiry (at least 10 characters)';
+    }
+    if (!formData.agreed) {
+      errors.agreed = isAr ? 'يجب الموافقة على سياسة الخصوصية وشروط الخدمة' : 'You must agree to the Privacy Policy and Terms of Service';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      showToast(Object.values(errors)[0], 'error');
+      return;
+    }
+
+    setSubmitting(true);
+    setFieldErrors({});
+
+    try {
+      const fullMobile = `+966${cleanDigits.replace(/^0+/, '')}`;
+      const res = await fetchApi('/contact/tickets', {
+        method: 'POST',
+        body: {
+          full_name: trimmedName,
+          email: trimmedEmail,
+          mobile: fullMobile,
+          order_id: formData.orderId.trim() || null,
+          category_code: formData.category,
+          message: trimmedMsg,
+          attachment_url: attachment?.url || null,
+          attachment_name: attachment?.name || null,
+          attachment_type: attachment?.type || null,
+          attachment_size: attachment?.size || null,
+          agreed: formData.agreed,
+        },
       });
-    }, 6000);
+
+      if (res.success && res.data?.ticket) {
+        setSubmittedTicket(res.data.ticket);
+        showToast(
+          isAr
+            ? `تم إرسال تذكرة الدعم بنجاح (${res.data.ticket.ticket_number})`
+            : `Support ticket submitted successfully (${res.data.ticket.ticket_number})`,
+          'success'
+        );
+        setFormData({
+          fullName: user?.name || '',
+          email: user?.email || '',
+          phone: user?.mobile ? user.mobile.replace(/^\+?966/, '').replace(/^0+/, '') : '',
+          orderId: '',
+          category: '',
+          message: '',
+          agreed: false,
+        });
+        setAttachment(null);
+        setUploadProgress(0);
+      } else {
+        throw new Error(res.message || 'Failed to submit support ticket');
+      }
+    } catch (err) {
+      const fErrors = err.fieldErrors || err.data?.fieldErrors || {};
+      setFieldErrors(fErrors);
+      showToast(err.message || (isAr ? 'فشل إرسال التذكرة' : 'Failed to submit support ticket'), 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Derived dynamic values with safe fallbacks
+  const supportEmail = settings?.support_email || 'care@saqrcart.com';
+  const supportPhone = settings?.support_phone || '800 124 5555';
+  const whatsappNumber = settings?.whatsapp_number || '+966 59 597 4591';
+  const cleanWhatsappDigits = whatsappNumber.replace(/[^0-9]/g, '');
+  const cleanPhoneDigits = supportPhone.replace(/[^0-9+]/g, '');
+  const supportHours = isAr
+    ? (settings?.support_hours_ar || '6:00 ص – 1:00 ص')
+    : (settings?.support_hours_en || '6:00 AM – 1:00 AM');
+  const liveChatWait = isAr
+    ? (settings?.live_chat_wait_ar || 'أقل من 3 دقائق')
+    : (settings?.live_chat_wait_en || '< 3 mins');
+  const socialLinks = settings?.social_links || {};
+  const hasSocialLinks = Object.values(socialLinks).some((v) => Boolean(v && String(v).trim()));
+
+  const activeLocation = locations.find((l) => l.id === activeLocationId) || locations[0] || null;
+  const activeHubsSummary = locations.length > 0
+    ? locations.map((l) => (isAr ? (l.region_ar || l.name_ar) : (l.region_en || l.name_en))).slice(0, 3).join(', ')
+    : (isAr ? 'الرياض، جدة، الدمام' : 'Riyadh, Jeddah, Dammam');
+
+  const getLocationIcon = (type) => {
+    if (type === 'HQ') return <Building2 className="w-4 h-4 text-slate-700" />;
+    if (type === 'DISPATCH_HUB') return <Snowflake className="w-4 h-4 text-[#05A764]" />;
+    return <Store className="w-4 h-4 text-emerald-800" />;
   };
 
   return (
     <div className="min-h-screen bg-[#FBFDFB] pb-24 text-slate-800 space-y-8 sm:space-y-12">
-      
+
       {/* ================= BREADCRUMBS ================= */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <nav className="flex items-center gap-2 text-xs font-medium text-slate-500">
@@ -86,7 +327,7 @@ export default function ContactPage() {
 
         {/* ================= SECTION 1: HEADER & STATUS CARD ================= */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          
+
           {/* Left Title and Description */}
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 bg-[#EAF5EF] border border-[#CDE5D7] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#064E3B]">
@@ -97,207 +338,257 @@ export default function ContactPage() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.15]">
               {isAr ? (
                 <>
-                  تواصل مع فريق خدمة <span className="text-[#05A764]">فرش مارت</span>
+                  تواصل مع فريق خدمة <span className="text-[#05A764]">صقر كارت</span>
                 </>
               ) : (
                 <>
-                  Get in Touch with the <span className="text-[#05A764]">FreshMart</span><br />Care Team
+                  Get in Touch with the <span className="text-[#05A764]">SaaRCart</span><br />Care Team
                 </>
               )}
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
               {isAr
-                ? 'سواء كان لديك استفسار حول طلب قيد التوصيل المبرد، التحقق من طزاجة المزرعة، الاشتراكات المؤسسية، أو انضمام مزرعة محلية — فريقنا المتخصص في خدمتك دائماً.'
-                : 'Whether you have a question about an ongoing cold-chain delivery, farm freshness verification, corporate bulk subscriptions, or local farm onboarding — our dedicated team is at your service.'}
+                ? 'سواء كان لديك استفسار حول طلب قيد التوصيل المبرد، التحقق من طزاجة المنتجات، الطلبات المؤسسية، أو شراكات الموردين — فريقنا المتخصص في خدمتك دائماً.'
+                : 'Whether you have a question about an ongoing delivery, product freshness verification, corporate bulk orders, or supplier onboarding — our dedicated SaaRCart team is at your service.'}
             </p>
           </div>
 
           {/* Right Floating Status Card */}
           <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs space-y-2.5 shrink-0 min-w-[280px] sm:min-w-[320px] text-xs">
-            <div className="flex items-center justify-between gap-4 text-slate-700">
-              <div className="flex items-center gap-2 font-medium">
-                <MessageSquare className="w-4 h-4 text-[#05A764]" />
-                <span>{isAr ? 'وقت انتظار المحادثة:' : 'Live Chat Wait Time:'}</span>
+            {loadingData ? (
+              <div className="space-y-3 animate-pulse">
+                <div className="h-4 bg-slate-100 rounded w-full" />
+                <div className="h-4 bg-slate-100 rounded w-5/6" />
+                <div className="h-4 bg-slate-100 rounded w-4/5" />
               </div>
-              <span className="text-[#05A764] font-black">{isAr ? 'أقل من 3 دقائق' : '< 3 mins'}</span>
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-4 text-slate-700">
+                  <div className="flex items-center gap-2 font-medium">
+                    <MessageSquare className="w-4 h-4 text-[#05A764]" />
+                    <span>{isAr ? 'وقت انتظار المحادثة:' : 'Live Support Wait Time:'}</span>
+                  </div>
+                  <span className="text-[#05A764] font-black">{liveChatWait}</span>
+                </div>
 
-            <div className="flex items-center justify-between gap-4 text-slate-700">
-              <div className="flex items-center gap-2 font-medium">
-                <Truck className="w-4 h-4 text-[#05A764]" />
-                <span>{isAr ? 'المراكز النشطة:' : 'Active Hubs:'}</span>
-              </div>
-              <span className="text-slate-900 font-bold">{isAr ? 'الرياض، جدة، الدمام' : 'Riyadh, Jeddah, Dammam'}</span>
-            </div>
+                <div className="flex items-center justify-between gap-4 text-slate-700">
+                  <div className="flex items-center gap-2 font-medium">
+                    <Truck className="w-4 h-4 text-[#05A764]" />
+                    <span>{isAr ? 'المراكز النشطة:' : 'Active Hubs:'}</span>
+                  </div>
+                  <span className="text-slate-900 font-bold text-right truncate max-w-[160px]">{activeHubsSummary}</span>
+                </div>
 
-            <div className="flex items-center justify-between gap-4 text-slate-700 pt-2 border-t border-slate-100">
-              <div className="flex items-center gap-2 font-medium">
-                <Headphones className="w-4 h-4 text-[#05A764]" />
-                <span>{isAr ? 'الرقم المجاني بالمملكة:' : 'Toll-Free KSA:'}</span>
-              </div>
-              <span className="text-slate-900 font-mono font-black text-sm">800 124 5555</span>
-            </div>
+                <div className="flex items-center justify-between gap-4 text-slate-700 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-2 font-medium">
+                    <Headphones className="w-4 h-4 text-[#05A764]" />
+                    <span>{isAr ? 'الرقم المجاني بالمملكة:' : 'Toll-Free KSA:'}</span>
+                  </div>
+                  <span className="text-slate-900 font-mono font-black text-sm" dir="ltr">{supportPhone}</span>
+                </div>
+              </>
+            )}
           </div>
 
         </div>
 
         {/* ================= SECTION 2: 4 QUICK CONTACT CHANNEL CARDS ================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          
-          {/* Card 1: 24/7 Live Support */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl bg-[#EAF5EF] text-[#05A764] flex items-center justify-center font-bold">
-                  <MessageSquare className="w-4.5 h-4.5" />
+        {loadingData ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-2xl p-5 border border-slate-200/90 h-48 animate-pulse space-y-3">
+                <div className="w-9 h-9 rounded-xl bg-slate-100" />
+                <div className="h-4 bg-slate-100 rounded w-2/3" />
+                <div className="h-3 bg-slate-100 rounded w-full" />
+                <div className="h-8 bg-slate-100 rounded-full w-full mt-4" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+            {/* Card 1: 24/7 Live Support */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-xl bg-[#EAF5EF] text-[#05A764] flex items-center justify-center font-bold">
+                    <MessageSquare className="w-4.5 h-4.5" />
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-[#05A764] text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#05A764] animate-pulse"></span>
+                    <span>{isAr ? 'متصل الآن' : 'ONLINE NOW'}</span>
+                  </span>
                 </div>
-                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-[#05A764] text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#05A764] animate-pulse"></span>
-                  <span>{isAr ? 'متصل الآن' : 'ONLINE NOW'}</span>
-                </span>
+
+                <div>
+                  <h3 className="font-black text-slate-900 text-sm sm:text-base">
+                    {isAr ? 'دعم مباشر 24/7' : '24/7 Direct Support'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-1">
+                    {isAr
+                      ? 'مساعدة فورية لتعديل الطلبات، المنتجات الناقصة، أو التتبع الحي لمندوب التوصيل.'
+                      : 'Instant assistance for order changes, missing items, or live delivery tracking.'}
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <h3 className="font-black text-slate-900 text-sm sm:text-base">
-                  {isAr ? 'دعم مباشر 24/7' : '24/7 Live Support'}
-                </h3>
-                <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-1">
-                  {isAr
-                    ? 'مساعدة فورية لتعديل الطلبات، المنتجات الناقصة، أو التتبع الحي لمندوب التوصيل.'
-                    : 'Instant assistance for order changes, missing items, or live delivery tracking.'}
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  showToast(isAr ? 'يرجى تعبئة نموذج التذكرة أدناه وسنرد عليك فوراً' : 'Submit your inquiry below for immediate assistance', 'info');
+                }}
+                className="w-full py-2.5 rounded-full bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs shadow-2xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>{isAr ? 'افتح تذكرة دعم' : 'Open Support Ticket'}</span>
+                <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => alert(isAr ? 'جاري فتح المحادثة المباشرة...' : 'Opening Live Chat session...')}
-              className="w-full py-2.5 rounded-full bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs shadow-2xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <span>{isAr ? 'بدء المحادثة المباشرة' : 'Start Live Chat'}</span>
-              <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
-            </button>
-          </div>
-
-          {/* Card 2: WhatsApp Care */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl bg-[#EAF5EF] text-[#05A764] flex items-center justify-center font-bold">
-                  <MessageCircle className="w-4.5 h-4.5" />
+            {/* Card 2: WhatsApp Care */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-xl bg-[#EAF5EF] text-[#05A764] flex items-center justify-center font-bold">
+                    <MessageCircle className="w-4.5 h-4.5" />
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {isAr ? 'الأسرع للصور' : 'Fastest for Photos'}
+                  </span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-medium">
-                  {isAr ? 'الأسرع للصور' : 'Fastest for Photos'}
-                </span>
-              </div>
 
-              <div>
-                <h3 className="font-black text-slate-900 text-sm sm:text-base">
-                  {isAr ? 'عناية واتساب' : 'WhatsApp Care'}
-                </h3>
-                <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-1">
-                  {isAr
-                    ? 'إرسال صور العبوات أو إيصالات التوصيل مباشرة إلى موظف الدعم.'
-                    : 'Send pictures of packaging or delivery receipts directly to an agent.'}
-                </p>
-                <div className="pt-2 text-xs font-mono font-bold text-slate-900">
-                  +966 11 800 4545
+                <div>
+                  <h3 className="font-black text-slate-900 text-sm sm:text-base">
+                    {isAr ? 'عناية واتساب' : 'WhatsApp Care'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-1">
+                    {isAr
+                      ? 'إرسال صور العبوات أو إيصالات التوصيل مباشرة إلى موظف الدعم.'
+                      : 'Send pictures of packaging or delivery receipts directly to an agent.'}
+                  </p>
+                  <div className="pt-2 text-xs font-mono font-bold text-slate-900" dir="ltr">
+                    {whatsappNumber}
+                  </div>
                 </div>
               </div>
+
+              <a
+                href={`https://wa.me/${cleanWhatsappDigits}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 rounded-full bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/60"
+              >
+                <span>{isAr ? 'محادثة عبر واتساب' : 'Chat on WhatsApp'}</span>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+              </a>
             </div>
 
-            <a
-              href="https://wa.me/966118004545"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-2.5 rounded-full bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/60"
-            >
-              <span>{isAr ? 'محادثة عبر واتساب' : 'Chat on WhatsApp'}</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-            </a>
-          </div>
-
-          {/* Card 3: Toll-Free Hotline */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl bg-[#EAF5EF] text-[#05A764] flex items-center justify-center font-bold">
-                  <PhoneCall className="w-4.5 h-4.5" />
+            {/* Card 3: Toll-Free Hotline */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-xl bg-[#EAF5EF] text-[#05A764] flex items-center justify-center font-bold">
+                    <PhoneCall className="w-4.5 h-4.5" />
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {supportHours}
+                  </span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-medium">
-                  {isAr ? '6:00 ص – 1:00 ص' : '6:00 AM – 1:00 AM'}
-                </span>
-              </div>
 
-              <div>
-                <h3 className="font-black text-slate-900 text-sm sm:text-base">
-                  {isAr ? 'الرقم المجاني الموحد' : 'Toll-Free Hotline'}
-                </h3>
-                <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-1">
-                  {isAr
-                    ? 'تحدث مباشرة مع فريق خدمة العملاء بالرياض باللغتين العربية والإنجليزية.'
-                    : 'Speak directly with our Riyadh-based Arabic & English customer team.'}
-                </p>
-                <div className="pt-2 text-xs font-mono font-black text-[#043927]">
-                  800 124 5555
+                <div>
+                  <h3 className="font-black text-slate-900 text-sm sm:text-base">
+                    {isAr ? 'الرقم المجاني الموحد' : 'Toll-Free Hotline'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-1">
+                    {isAr
+                      ? 'تحدث مباشرة مع فريق خدمة العملاء باللغتين العربية والإنجليزية.'
+                      : 'Speak directly with our Saudi-based Arabic & English customer care team.'}
+                  </p>
+                  <div className="pt-2 text-xs font-mono font-black text-[#043927]" dir="ltr">
+                    {supportPhone}
+                  </div>
                 </div>
               </div>
+
+              <a
+                href={`tel:${cleanPhoneDigits}`}
+                className="w-full py-2.5 rounded-full bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/60"
+              >
+                <span>{isAr ? 'اتصال مجاني' : 'Call Toll-Free'}</span>
+                <PhoneCall className="w-3.5 h-3.5 text-slate-500" />
+              </a>
             </div>
 
-            <a
-              href="tel:8001245555"
-              className="w-full py-2.5 rounded-full bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/60"
-            >
-              <span>{isAr ? 'اتصال مجاني' : 'Call Toll-Free'}</span>
-              <PhoneCall className="w-3.5 h-3.5 text-slate-500" />
-            </a>
-          </div>
-
-          {/* Card 4: Corporate & Farm Desk */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl bg-[#EAF5EF] text-[#05A764] flex items-center justify-center font-bold">
-                  <Mail className="w-4.5 h-4.5" />
+            {/* Card 4: Corporate & Support Desk */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-xl bg-[#EAF5EF] text-[#05A764] flex items-center justify-center font-bold">
+                    <Mail className="w-4.5 h-4.5" />
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {isAr ? 'رد خلال أقل من ساعتين' : '< 2h Response'}
+                  </span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-medium">
-                  {isAr ? 'رد خلال أقل من ساعتين' : '< 2h Response'}
-                </span>
-              </div>
 
-              <div>
-                <h3 className="font-black text-slate-900 text-sm sm:text-base">
-                  {isAr ? 'مكتب الشركات والمزارع' : 'Corporate & Farm Desk'}
-                </h3>
-                <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-1">
-                  {isAr
-                    ? 'شراكات الموردين، التموين المؤسسي، والاستفسارات الرسمية والتنظيمية.'
-                    : 'Vendor partnerships, bulk business catering, and legal inquiries.'}
-                </p>
-                <div className="pt-2 text-xs font-bold text-slate-900 truncate">
-                  care@freshmart.sa
+                <div>
+                  <h3 className="font-black text-slate-900 text-sm sm:text-base">
+                    {isAr ? 'مكتب الدعم والشركات' : 'Corporate & Care Desk'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-1">
+                    {isAr
+                      ? 'شراكات الموردين، التموين المؤسسي، والاستفسارات الرسمية والتنظيمية.'
+                      : 'Vendor partnerships, bulk business catering, and official inquiries.'}
+                  </p>
+                  <div className="pt-2 text-xs font-bold text-slate-900 truncate">
+                    {supportEmail}
+                  </div>
                 </div>
               </div>
+
+              <a
+                href={`mailto:${supportEmail}`}
+                className="w-full py-2.5 rounded-full bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/60"
+              >
+                <span>{isAr ? 'إرسال بريد إلكتروني' : 'Send an Email'}</span>
+                <Send className="w-3.5 h-3.5 text-slate-500" />
+              </a>
             </div>
 
-            <a
-              href="mailto:care@freshmart.sa"
-              className="w-full py-2.5 rounded-full bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/60"
-            >
-              <span>{isAr ? 'إرسال بريد إلكتروني' : 'Send an Email'}</span>
-              <Send className="w-3.5 h-3.5 text-slate-500" />
-            </a>
           </div>
+        )}
 
-        </div>
+        {/* Social Media Links Bar (Only if configured in Admin Panel) */}
+        {hasSocialLinks && (
+          <div className="flex flex-wrap items-center justify-center gap-3 bg-white rounded-2xl py-3 px-5 border border-slate-200/80 shadow-2xs text-xs">
+            <span className="font-bold text-slate-600 flex items-center gap-1.5">
+              <Globe className="w-4 h-4 text-[#05A764]" />
+              <span>{isAr ? 'تابع صقر كارت:' : 'Connect with SaaRCart:'}</span>
+            </span>
+            {Object.entries(socialLinks).map(([network, url]) =>
+              url && String(url).trim() ? (
+                <a
+                  key={network}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1 rounded-full bg-[#EAF5EF] hover:bg-[#d7eee1] text-[#043927] font-bold capitalize transition-colors flex items-center gap-1"
+                >
+                  <span>{network}</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              ) : null
+            )}
+          </div>
+        )}
 
         {/* ================= SECTION 3: FORM & COVERAGE MAP MAIN GRID ================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div id="contactFormSection" ref={formRef} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* LEFT COLUMN: DIRECT MESSAGE FORM (7 Cols) */}
           <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-2xs space-y-6">
-            
+
             <div className="space-y-1">
               <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#05A764] uppercase tracking-wider">
                 <Compass className="w-3.5 h-3.5" />
@@ -309,27 +600,37 @@ export default function ContactPage() {
               <p className="text-xs text-slate-500 font-normal">
                 {isAr
                   ? 'أرسل استفسار طلبك، ملاحظات الجودة، أو طلب الشراكة أدناه. يقوم فريق العمليات بتسجيل وتتبع كل طلب.'
-                  : 'Submit your order inquiry, quality feedback, or partner request below. Our operations team logs each request with tracking.'}
+                  : 'Submit your order inquiry, quality feedback, or partner request below. Our operations team logs each request with a unique tracking number.'}
               </p>
             </div>
 
-            {submitted ? (
-              <div className="p-8 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-3 animate-in fade-in">
+            {submittedTicket ? (
+              <div className="p-8 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-4 animate-in fade-in">
                 <div className="w-12 h-12 rounded-full bg-[#043927] text-white flex items-center justify-center mx-auto">
-                  <Check className="w-6 h-6 text-[#05A764]" />
+                  <Check className="w-6 h-6 text-[#34D399]" />
                 </div>
                 <h3 className="font-black text-[#043927] text-lg">
-                  {isAr ? 'تم استلام تذكرتك بنجاح!' : 'Support Ticket Dispatched!'}
+                  {isAr ? 'تم استلام تذكرتك بنجاح!' : 'Your Enquiry has been Submitted!'}
                 </h3>
+                <div className="inline-block bg-white border border-emerald-300 rounded-xl px-4 py-2 font-mono font-black text-sm text-[#043927]">
+                  {submittedTicket.ticket_number}
+                </div>
                 <p className="text-xs text-emerald-900 font-medium max-w-md mx-auto leading-relaxed">
                   {isAr
-                    ? `شكراً لك، ${formData.fullName || 'عميلنا العزيز'}. تم تسجيل طلبك في نظام المتابعة. سيتواصل معك فريق الدعم عبر البريد الإلكتروني والرسائل النصية قريباً.`
-                    : `Thank you, ${formData.fullName || 'valued customer'}. Your ticket has been logged with tracking reference #FM-${Math.floor(10000 + Math.random() * 90000)}. Our Riyadh Care team will respond promptly.`}
+                    ? `تم تسجيل طلبك في نظام المتابعة برقم المرجع ${submittedTicket.ticket_number}. سيتواصل معك فريق دعم صقر كارت قريباً.`
+                    : `Your enquiry has been logged in our support system with tracking reference ${submittedTicket.ticket_number}. Our SaaRCart Care team will respond promptly.`}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setSubmittedTicket(null)}
+                  className="px-6 py-2.5 rounded-full bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs transition-colors cursor-pointer"
+                >
+                  {isAr ? 'إرسال استفسار آخر' : 'Submit Another Enquiry'}
+                </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-                
+              <form onSubmit={handleSubmit} className="space-y-4 text-xs" noValidate>
+
                 {/* Row 1: Full Name & Email Address */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -341,9 +642,13 @@ export default function ContactPage() {
                       required
                       placeholder="e.g. Noura Al-Mansoor"
                       value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-1 focus:ring-[#043927] transition-all"
+                      onChange={(e) => {
+                        setFormData({ ...formData, fullName: e.target.value });
+                        if (fieldErrors.fullName) setFieldErrors((p) => ({ ...p, fullName: null }));
+                      }}
+                      className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 border text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 transition-all ${fieldErrors.fullName ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-200 focus:border-[#043927] focus:ring-[#043927]'}`}
                     />
+                    {fieldErrors.fullName && <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.fullName}</p>}
                   </div>
 
                   <div>
@@ -355,9 +660,13 @@ export default function ContactPage() {
                       required
                       placeholder="noura@example.com"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-1 focus:ring-[#043927] transition-all"
+                      onChange={(e) => {
+                        setFormData({ ...formData, email: e.target.value });
+                        if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: null }));
+                      }}
+                      className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 border text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 transition-all ${fieldErrors.email ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-200 focus:border-[#043927] focus:ring-[#043927]'}`}
                     />
+                    {fieldErrors.email && <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.email}</p>}
                   </div>
                 </div>
 
@@ -374,13 +683,20 @@ export default function ContactPage() {
                       </span>
                       <input
                         type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
                         required
                         placeholder="5X XXX XXXX"
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-1 focus:ring-[#043927] transition-all"
+                        onChange={(e) => {
+                          const numeric = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+                          setFormData({ ...formData, phone: numeric });
+                          if (fieldErrors.phone) setFieldErrors((p) => ({ ...p, phone: null }));
+                        }}
+                        className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 border text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 transition-all ${fieldErrors.phone ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-200 focus:border-[#043927] focus:ring-[#043927]'}`}
                       />
                     </div>
+                    {fieldErrors.phone && <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.phone}</p>}
                   </div>
 
                   <div>
@@ -389,36 +705,55 @@ export default function ContactPage() {
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. #FM-89241"
+                      placeholder="e.g. ORD-20261125-0001"
                       value={formData.orderId}
-                      onChange={(e) => setFormData({ ...formData, orderId: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-1 focus:ring-[#043927] transition-all"
+                      onChange={(e) => {
+                        setFormData({ ...formData, orderId: e.target.value });
+                        if (fieldErrors.orderId) setFieldErrors((p) => ({ ...p, orderId: null }));
+                      }}
+                      className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 border text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 transition-all ${fieldErrors.orderId ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-200 focus:border-[#043927] focus:ring-[#043927]'}`}
                     />
-                    <span className="text-[10px] text-slate-400 font-normal block mt-1">
-                      {isAr ? 'موجود في إيصالات التطبيق أو رابط رسالة الشحن' : 'Located in your app receipts or SMS dispatch link'}
-                    </span>
+                    {fieldErrors.orderId ? (
+                      <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.orderId}</p>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-normal block mt-1">
+                        {isAr ? 'موجود في إيصالات التطبيق أو رابط رسالة الشحن' : 'Located in your app receipts or SMS dispatch link'}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Row 3: Inquiry Category */}
+                {/* Row 3: Dynamic Inquiry Category */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
                     {isAr ? 'نوع الاستفسار *' : 'Inquiry Category *'}
                   </label>
-                  <select
-                    required
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-1 focus:ring-[#043927] cursor-pointer transition-all"
-                  >
-                    <option value="">{isAr ? 'اختر موضوعاً لتوجيهه للفريق المختص...' : 'Select a topic to route to the correct team...'}</option>
-                    <option value="ORDER_STATUS">{isAr ? 'حالة الطلب والتتبع المباشر للتوصيل' : 'Active Order Status & Live GPS Tracking'}</option>
-                    <option value="QUALITY">{isAr ? 'طزاجة المزرعة وضمان الجودة 100%' : 'Farm Freshness & 100% Quality Assurance'}</option>
-                    <option value="COLD_CHAIN">{isAr ? 'استفسار عن سلسلة التبريد ودرجات الحرارة' : 'Cold-Chain Temperature Report Inquiry'}</option>
-                    <option value="FARMER">{isAr ? 'شراكات المزارعين والمنتجين المحليين' : 'Farmer & Producer Partnership Onboarding'}</option>
-                    <option value="CORPORATE">{isAr ? 'الطلبات المؤسسية والتموين للشركات' : 'Corporate & Institutional Bulk Catering'}</option>
-                    <option value="PAYMENT">{isAr ? 'المدفوعات والفواتير الضريبية' : 'Payment, Invoicing & VAT Receipts'}</option>
-                  </select>
+                  {loadingData ? (
+                    <div className="h-10 bg-slate-100 rounded-xl animate-pulse" />
+                  ) : categories.length === 0 ? (
+                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{isAr ? 'لا توجد فئات استفسار متاحة حالياً.' : 'No active inquiry categories available right now.'}</span>
+                    </div>
+                  ) : (
+                    <select
+                      required
+                      value={formData.category}
+                      onChange={(e) => {
+                        setFormData({ ...formData, category: e.target.value });
+                        if (fieldErrors.category) setFieldErrors((p) => ({ ...p, category: null }));
+                      }}
+                      className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 border text-slate-900 text-xs font-medium focus:outline-none focus:bg-white focus:ring-1 cursor-pointer transition-all ${fieldErrors.category ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-200 focus:border-[#043927] focus:ring-[#043927]'}`}
+                    >
+                      <option value="">{isAr ? 'اختر موضوعاً لتوجيهه للفريق المختص...' : 'Select a topic to route to the correct team...'}</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.code}>
+                          {isAr ? (cat.name_ar || cat.name_en) : cat.name_en}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {fieldErrors.category && <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.category}</p>}
                 </div>
 
                 {/* Row 4: Message Details */}
@@ -431,9 +766,13 @@ export default function ContactPage() {
                     required
                     placeholder={isAr ? 'يرجى وصف استفسارك، اسم الصنف، أو ملاحظة التوصيل بالتفصيل...' : 'Please describe your inquiry, produce item name, or delivery note in detail...'}
                     value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#043927] focus:ring-1 focus:ring-[#043927] transition-all resize-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, message: e.target.value });
+                      if (fieldErrors.message) setFieldErrors((p) => ({ ...p, message: null }));
+                    }}
+                    className={`w-full px-4 py-2.5 rounded-xl bg-slate-50 border text-slate-900 text-xs font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 transition-all resize-none ${fieldErrors.message ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-200 focus:border-[#043927] focus:ring-[#043927]'}`}
                   />
+                  {fieldErrors.message && <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.message}</p>}
                 </div>
 
                 {/* Row 5: Attach Photos or Invoices */}
@@ -441,52 +780,111 @@ export default function ContactPage() {
                   <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
                     {isAr ? 'إرفاق صور أو فواتير (اختياري، حد أقصى 5 ميجابايت)' : 'Attach Photos or Invoices (Optional, max 5MB)'}
                   </label>
-                  <label className="border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100/70 rounded-2xl p-4 text-center block cursor-pointer transition-colors">
-                    <input
-                      type="file"
-                      className="hidden"
-                      onChange={(e) => setFormData({ ...formData, fileAttached: Boolean(e.target.files && e.target.files[0]) })}
-                    />
-                    <Upload className="w-5 h-5 text-[#05A764] mx-auto mb-1.5" />
-                    <span className="text-xs font-bold text-slate-800 block">
-                      {formData.fileAttached ? (isAr ? 'تم إرفاق الملف بنجاح ✓' : 'File attached successfully ✓') : (isAr ? 'اضغط للرفع أو اسحب الملف هنا' : 'Click to upload or drag and drop')}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-normal block mt-0.5">
-                      {isAr ? 'JPG, PNG, PDF حتى 5 ميجابايت (مفيد للبضائع المتضررة أو إثبات التوصيل)' : 'JPG, PNG, PDF up to 5MB (Helpful for damaged goods or proof of delivery)'}
-                    </span>
-                  </label>
+
+                  {attachment ? (
+                    <div className="border border-emerald-200 bg-emerald-50/50 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-emerald-100 text-[#043927] flex items-center justify-center shrink-0">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 truncate">{attachment.name}</p>
+                          <p className="text-[10px] text-emerald-700 font-semibold">{attachment.formattedSize} • {isAr ? 'تم الرفع بنجاح ✓' : 'Uploaded ✓'}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveAttachment}
+                        className="p-1.5 rounded-lg hover:bg-rose-100 text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
+                        title={isAr ? 'إزالة الملف' : 'Remove attachment'}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100/70 rounded-2xl p-4 text-center block cursor-pointer transition-colors">
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                        className="hidden"
+                        disabled={uploadingFile}
+                        onChange={handleFileSelect}
+                      />
+                      {uploadingFile ? (
+                        <div className="space-y-2 py-1">
+                          <Loader2 className="w-5 h-5 text-[#05A764] mx-auto animate-spin" />
+                          <span className="text-xs font-bold text-slate-700 block">
+                            {isAr ? `جاري الرفع... ${uploadProgress}%` : `Uploading... ${uploadProgress}%`}
+                          </span>
+                          <div className="w-48 mx-auto h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-[#05A764] transition-all" style={{ width: `${uploadProgress}%` }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload className="w-5 h-5 text-[#05A764] mx-auto mb-1.5" />
+                          <span className="text-xs font-bold text-slate-800 block">
+                            {isAr ? 'اضغط للرفع أو اسحب الملف هنا' : 'Click to upload or drag and drop'}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-normal block mt-0.5">
+                            {isAr ? 'JPG, PNG, PDF حتى 5 ميجابايت (مفيد للبضائع المتضررة أو إثبات التوصيل)' : 'JPG, PNG, PDF up to 5MB (Helpful for damaged goods or proof of delivery)'}
+                          </span>
+                        </>
+                      )}
+                    </label>
+                  )}
                 </div>
 
                 {/* Row 6: Agreement Checkbox */}
-                <div className="flex items-start gap-2.5 pt-1">
-                  <input
-                    type="checkbox"
-                    id="contactAgreement"
-                    required
-                    checked={formData.agreed}
-                    onChange={(e) => setFormData({ ...formData, agreed: e.target.checked })}
-                    className="mt-0.5 rounded border-slate-300 text-[#043927] focus:ring-[#043927] cursor-pointer"
-                  />
-                  <label htmlFor="contactAgreement" className="text-[11px] text-slate-600 font-normal cursor-pointer leading-snug">
-                    {isAr ? (
-                      <>
-                        أوافق على معالجة فرش مارت لبياناتي وفقاً لـ <span className="font-bold underline text-slate-800">سياسة الخصوصية</span> و <span className="font-bold underline text-slate-800">شروط الخدمة</span> لسرعة المعالجة.
-                      </>
-                    ) : (
-                      <>
-                        I agree to FreshMart processing my information in accordance with the <span className="font-bold underline text-slate-800">Privacy Policy</span> and <span className="font-bold underline text-slate-800">Terms of Service</span> for prompt resolution.
-                      </>
-                    )}
-                  </label>
+                <div>
+                  <div className="flex items-start gap-2.5 pt-1">
+                    <input
+                      type="checkbox"
+                      id="contactAgreement"
+                      required
+                      checked={formData.agreed}
+                      onChange={(e) => {
+                        setFormData({ ...formData, agreed: e.target.checked });
+                        if (fieldErrors.agreed) setFieldErrors((p) => ({ ...p, agreed: null }));
+                      }}
+                      className="mt-0.5 rounded border-slate-300 accent-[#043927] text-[#043927] focus:ring-[#043927] cursor-pointer"
+                    />
+                    <label htmlFor="contactAgreement" className="text-[11px] text-slate-600 font-normal cursor-pointer leading-snug">
+                      {isAr ? (
+                        <>
+                          أوافق على معالجة صقر كارت لبياناتي وفقاً لـ{' '}
+                          <Link href="/privacy" className="font-bold underline text-slate-800 hover:text-[#043927]">سياسة الخصوصية</Link> و{' '}
+                          <Link href="/terms" className="font-bold underline text-slate-800 hover:text-[#043927]">شروط الخدمة</Link> لسرعة المعالجة.
+                        </>
+                      ) : (
+                        <>
+                          I agree to SaaRCart processing my information in accordance with the{' '}
+                          <Link href="/privacy" className="font-bold underline text-slate-800 hover:text-[#043927]">Privacy Policy</Link> and{' '}
+                          <Link href="/terms" className="font-bold underline text-slate-800 hover:text-[#043927]">Terms of Service</Link> for prompt resolution.
+                        </>
+                      )}
+                    </label>
+                  </div>
+                  {fieldErrors.agreed && <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.agreed}</p>}
                 </div>
 
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-full bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+                  disabled={submitting || uploadingFile}
+                  className="w-full py-3.5 rounded-full bg-[#043927] hover:bg-[#02281b] text-white font-bold text-xs shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Send className="w-3.5 h-3.5 text-[#34D399]" />
-                  <span>{isAr ? 'إرسال تذكرة الدعم' : 'Submit Support Ticket'}</span>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-[#34D399]" />
+                      <span>{isAr ? 'جاري إرسال التذكرة...' : 'Submitting Ticket...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5 text-[#34D399]" />
+                      <span>{isAr ? 'إرسال تذكرة الدعم' : 'Submit Support Ticket'}</span>
+                    </>
+                  )}
                 </button>
 
               </form>
@@ -498,12 +896,12 @@ export default function ContactPage() {
           <div className="lg:col-span-5 space-y-6">
 
             <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-2xs space-y-5">
-              
+
               {/* Header Title with Map Icon */}
               <div className="flex items-center justify-between pb-1">
                 <div>
                   <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
-                    {isAr ? 'شبكة التبريد' : 'COLD-CHAIN NETWORK'}
+                    {isAr ? 'شبكة التبريد والتوزيع' : 'DISPATCH & LOGISTICS NETWORK'}
                   </span>
                   <h3 className="font-black text-slate-900 text-base">
                     {isAr ? 'مراكز التغطية والتنفيذ' : 'Coverage & Fulfillment Centers'}
@@ -514,161 +912,149 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              {/* Riyadh Interactive Map Visual */}
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200 aspect-[16/9] bg-slate-100 shadow-inner">
-                <img
-                  src="/images/contact/riyadh_map.jpg"
-                  alt="Riyadh Cold-Chain Delivery Map"
-                  className="w-full h-full object-cover"
-                />
-                
-                {/* Floating Hub Toggle Badges at Bottom */}
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveHub('riyadh')}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
- activeHub === 'riyadh'
- ? 'bg-[#043927] text-white'
- : 'bg-white/95 text-slate-700 hover:bg-white border border-slate-200'
- }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${activeHub === 'riyadh' ? 'bg-[#34D399]' : 'bg-slate-400'}`}></span>
-                    <span>{isAr ? 'الرياض المركزية' : 'Riyadh Central'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveHub('jeddah')}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
- activeHub === 'jeddah'
- ? 'bg-[#043927] text-white'
- : 'bg-white/95 text-slate-700 hover:bg-white border border-slate-200'
- }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${activeHub === 'jeddah' ? 'bg-[#34D399]' : 'bg-slate-400'}`}></span>
-                    <span>{isAr ? 'جدة الغربية' : 'Jeddah West'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveHub('dammam')}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
- activeHub === 'dammam'
- ? 'bg-[#043927] text-white'
- : 'bg-white/95 text-slate-700 hover:bg-white border border-slate-200'
- }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${activeHub === 'dammam' ? 'bg-[#34D399]' : 'bg-slate-400'}`}></span>
-                    <span>{isAr ? 'الدمام الشرقية' : 'Dammam East'}</span>
-                  </button>
+              {loadingData ? (
+                <div className="space-y-4 animate-pulse">
+                  <div className="aspect-[16/9] rounded-2xl bg-slate-100" />
+                  <div className="h-24 rounded-2xl bg-slate-100" />
+                  <div className="h-24 rounded-2xl bg-slate-100" />
                 </div>
-              </div>
+              ) : locations.length === 0 ? (
+                <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200/80 text-center space-y-2">
+                  <MapPin className="w-6 h-6 text-slate-400 mx-auto" />
+                  <p className="text-xs font-bold text-slate-700">
+                    {isAr ? 'لا توجد مواقع أو مراكز توصيل نشطة حالياً.' : 'No active office or dispatch locations configured.'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Interactive Map Visual (Google Maps Embed if lat/lng present, else Map Image) */}
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 aspect-[16/9] bg-slate-100 shadow-inner">
+                    {activeLocation?.latitude && activeLocation?.longitude ? (
+                      <iframe
+                        title={isAr ? activeLocation.name_ar : activeLocation.name_en}
+                        src={`https://maps.google.com/maps?q=${activeLocation.latitude},${activeLocation.longitude}&z=13&output=embed`}
+                        className="w-full h-full border-0"
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    ) : (
+                      <img
+                        src={activeLocation?.map_image_url ? getImageUrl(activeLocation.map_image_url) : '/images/contact/riyadh_map.jpg'}
+                        alt={isAr ? activeLocation?.name_ar : activeLocation?.name_en || 'Coverage Map'}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
 
-              {/* Location Cards List */}
-              <div className="space-y-4 pt-1">
-                
-                {/* Location 1: Main Central HQ */}
-                <div className={`p-4 rounded-2xl border transition-all space-y-2 ${activeHub === 'riyadh' ? 'bg-emerald-50/40 border-emerald-300 ring-1 ring-emerald-300' : 'bg-slate-50/70 border-slate-200/80'}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-emerald-800 bg-[#EAF5EF] border border-[#CDE5D7] px-2 py-0.5 rounded-md uppercase">
-                      {isAr ? 'المقر الرئيسي المركزي' : 'MAIN CENTRAL HQ'}
-                    </span>
-                    <Building2 className="w-4 h-4 text-slate-700" />
-                  </div>
-
-                  <div>
-                    <h4 className="font-black text-slate-900 text-xs sm:text-sm">
-                      {isAr ? 'المركز الرئيسي للتحكم والعمليات بالرياض' : 'Riyadh Central Dispatch & HQ'}
-                    </h4>
-                    <p className="text-[11px] text-slate-500 font-normal flex items-start gap-1 pt-0.5">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                      <span>{isAr ? 'طريق الملك فهد، حي الملقا، ص.ب 8421، الرياض 13524، المملكة العربية السعودية' : 'King Fahd Road, Al Malqa District, P.O. Box 8421, Riyadh 13524, Saudi Arabia'}</span>
-                    </p>
-                  </div>
-
-                  <div className="bg-white border border-slate-200/80 rounded-xl p-2.5 grid grid-cols-2 gap-2 text-[10px]">
-                    <div>
-                      <span className="text-slate-400 block">{isAr ? 'مكتب العملاء:' : 'Customer Desk:'}</span>
-                      <span className="font-bold text-slate-800">{isAr ? 'الأحد – الخميس: 8:00 ص – 6:00 م' : 'Sun – Thu: 8:00 AM – 6:00 PM'}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">{isAr ? 'أسطول التوزيع:' : 'Dispatch Fleet:'}</span>
-                      <span className="font-black text-[#05A764]">{isAr ? 'يعمل 24/7' : 'Operating 24/7'}</span>
+                    {/* Floating Hub Toggle Badges at Bottom */}
+                    <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-center gap-2 pointer-events-auto">
+                      {locations.map((loc) => {
+                        const isSelected = activeLocation?.id === loc.id;
+                        const label = isAr ? (loc.region_ar || loc.name_ar) : (loc.region_en || loc.name_en);
+                        return (
+                          <button
+                            key={loc.id}
+                            type="button"
+                            onClick={() => setActiveLocationId(loc.id)}
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
+                              isSelected
+                                ? 'bg-[#043927] text-white'
+                                : 'bg-white/95 text-slate-700 hover:bg-white border border-slate-200'
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-[#34D399]' : 'bg-slate-400'}`}></span>
+                            <span>{label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
-                </div>
 
-                {/* Location 2: Jeddah Cold-Chain */}
-                <div className={`p-4 rounded-2xl border transition-all space-y-1.5 ${activeHub === 'jeddah' ? 'bg-emerald-50/40 border-emerald-300 ring-1 ring-emerald-300' : 'bg-slate-50/70 border-slate-200/80'}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md uppercase">
-                      {isAr ? 'المنطقة الغربية' : 'Western Province'}
-                    </span>
-                    <Snowflake className="w-4 h-4 text-[#05A764]" />
+                  {/* Dynamic Location Cards List */}
+                  <div className="space-y-4 pt-1">
+                    {locations.map((loc) => {
+                      const isSelected = activeLocation?.id === loc.id;
+                      return (
+                        <div
+                          key={loc.id}
+                          onClick={() => setActiveLocationId(loc.id)}
+                          className={`p-4 rounded-2xl border transition-all space-y-2 cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-50/40 border-emerald-300 ring-1 ring-emerald-300'
+                              : 'bg-slate-50/70 border-slate-200/80 hover:border-emerald-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md uppercase ${
+                              isSelected
+                                ? 'text-emerald-800 bg-[#EAF5EF] border border-[#CDE5D7]'
+                                : 'text-slate-600 bg-slate-100'
+                            }`}>
+                              {isAr ? (loc.badge_ar || loc.location_type) : (loc.badge_en || loc.location_type)}
+                            </span>
+                            {getLocationIcon(loc.location_type)}
+                          </div>
+
+                          <div>
+                            <h4 className="font-black text-slate-900 text-xs sm:text-sm">
+                              {isAr ? (loc.name_ar || loc.name_en) : loc.name_en}
+                            </h4>
+                            <p className="text-[11px] text-slate-500 font-normal flex items-start gap-1 pt-0.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                              <span>{isAr ? (loc.address_ar || loc.address_en) : loc.address_en}</span>
+                            </p>
+                          </div>
+
+                          {(loc.support_hours_en || loc.dispatch_hours_en) && (
+                            <div className="bg-white border border-slate-200/80 rounded-xl p-2.5 grid grid-cols-2 gap-2 text-[10px]">
+                              <div>
+                                <span className="text-slate-400 block">{isAr ? 'مكتب العملاء:' : 'Customer Desk:'}</span>
+                                <span className="font-bold text-slate-800">
+                                  {isAr ? (loc.support_hours_ar || loc.support_hours_en) : loc.support_hours_en}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block">{isAr ? 'أسطول التوزيع:' : 'Dispatch Fleet:'}</span>
+                                <span className="font-black text-[#05A764]">
+                                  {isAr ? (loc.dispatch_hours_ar || loc.dispatch_hours_en) : loc.dispatch_hours_en}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {(loc.service_areas_en || loc.service_areas_ar) && (
+                            <div className="text-[10px] text-slate-600 font-semibold pt-0.5">
+                              {isAr
+                                ? `نطاق الخدمة: ${loc.service_areas_ar || loc.service_areas_en}`
+                                : `Servicing: ${loc.service_areas_en}`}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-
-                  <div>
-                    <h4 className="font-black text-slate-900 text-xs sm:text-sm">
-                      {isAr ? 'مركز لوجستيات التبريد بجدة' : 'Jeddah Cold-Chain Logistics Hub'}
-                    </h4>
-                    <p className="text-[11px] text-slate-500 font-normal flex items-start gap-1 pt-0.5">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                      <span>{isAr ? 'حي الأندلس، بالقرب من طريق المدينة، جدة 23326' : 'Al Andalus District, Near Madinah Road, Jeddah 23326'}</span>
-                    </p>
-                  </div>
-
-                  <div className="text-[10px] text-slate-600 font-semibold pt-1">
-                    {isAr ? 'نطاق الخدمة: جدة، مكة المكرمة، والمناطق الساحلية للبحر الأحمر' : 'Servicing: Jeddah, Makkah, and Red Sea Coastal Areas'}
-                  </div>
-                </div>
-
-                {/* Location 3: Dammam & Khobar */}
-                <div className={`p-4 rounded-2xl border transition-all space-y-1.5 ${activeHub === 'dammam' ? 'bg-emerald-50/40 border-emerald-300 ring-1 ring-emerald-300' : 'bg-slate-50/70 border-slate-200/80'}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md uppercase">
-                      {isAr ? 'المنطقة الشرقية' : 'Eastern Province'}
-                    </span>
-                    <Store className="w-4 h-4 text-emerald-800" />
-                  </div>
-
-                  <div>
-                    <h4 className="font-black text-slate-900 text-xs sm:text-sm">
-                      {isAr ? 'مركز الدمام والخبر اللوجستي المصغر' : 'Dammam & Khobar Micro-Hub'}
-                    </h4>
-                    <p className="text-[11px] text-slate-500 font-normal flex items-start gap-1 pt-0.5">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                      <span>{isAr ? 'شارع الملك سعود، حي الفيصلية، الدمام 32272' : 'King Saud Street, Al Faisaliyah District, Dammam 32272'}</span>
-                    </p>
-                  </div>
-
-                  <div className="text-[10px] text-slate-600 font-semibold pt-1">
-                    {isAr ? 'نطاق الخدمة: الدمام، الخبر، الظهران ومحور الجبيل الصناعي' : 'Servicing: Dammam, Al Khobar, Dhahran & Jubail industrial corridor'}
-                  </div>
-                </div>
-
-              </div>
+                </>
+              )}
 
             </div>
 
-            {/* Farmer Partnership Dark Banner */}
+            {/* Partner Onboarding Dark Banner */}
             <div className="bg-[#043927] text-white rounded-3xl p-6 shadow-md border border-emerald-900 space-y-3">
               <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">
-                {isAr ? 'انضمام المزارعين المحليين' : 'LOCAL FARMER ONBOARDING'}
+                {isAr ? 'شراكة الموردين والمزارع' : 'LOCAL SUPPLIER ONBOARDING'}
               </span>
               <h3 className="font-black text-white text-base">
-                {isAr ? 'هل أنت مزارع عضوي سعودي؟' : 'Are you a Saudi organic grower?'}
+                {isAr ? 'هل أنت مورد أو مزارع سعودي؟' : 'Are you a Saudi supplier or grower?'}
               </h3>
               <p className="text-xs text-emerald-100/90 font-normal leading-relaxed">
                 {isAr
-                  ? 'شارك مع فرش مارت للتوزيع المباشر بنسبة 100% من المزرعة إلى موائد العائلات السعودية.'
-                  : 'Partner with FreshMart for 100% direct farm-to-table distribution across Saudi homes.'}
+                  ? 'شارك مع صقر كارت للتوزيع المباشر إلى آلاف المنازل والشركات في المملكة العربية السعودية.'
+                  : 'Partner with SaaRCart for direct distribution to thousands of households and businesses across Saudi Arabia.'}
               </p>
               <Link
-                href="/about#farmers"
+                href="/about"
                 className="w-full py-2.5 rounded-full bg-white text-[#043927] hover:bg-emerald-50 font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <span>{isAr ? 'التقديم لشراكة المزارع' : 'Apply for Farmer Partnership'}</span>
+                <span>{isAr ? 'تعرّف على صقر كارت' : 'Learn About SaaRCart'}</span>
                 <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
               </Link>
             </div>

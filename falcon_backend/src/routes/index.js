@@ -25,6 +25,7 @@ const deliverySlotRoutes = require('./deliverySlotRoutes');
 const deliverySettingRoutes = require('./deliverySettingRoutes');
 const tipSettingRoutes = require('./tipSettingRoutes');
 const bulkUploadRoutes = require('./bulkUploadRoutes');
+const contactRoutes = require('./contactRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/customers', customerRoutes);
@@ -51,5 +52,6 @@ router.use('/coupons', couponRoutes);
 router.use('/delivery-slots', deliverySlotRoutes);
 router.use('/delivery-settings', deliverySettingRoutes);
 router.use('/tip-settings', tipSettingRoutes);
+router.use('/contact', contactRoutes);
 
 module.exports = router;

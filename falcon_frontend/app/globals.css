@@ -168,6 +168,15 @@ html[dir="rtl"] span {
   background: #94a3b8;
 }
 
+/* Hide scrollbars while preserving scrollability */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Hide Next.js Development Badge Overlay (N icon) */
 [data-nextjs-toast],
 [data-next-badge],

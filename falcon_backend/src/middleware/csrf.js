@@ -19,6 +19,8 @@ const csrfProtection = (req, res, next) => {
     '/auth/refresh',
     '/auth/logout',
     '/auth/send-code',
+    '/auth/verify-code',
+    '/contact/tickets',
   ];
 
   const reqPath = req.originalUrl || req.path || '';

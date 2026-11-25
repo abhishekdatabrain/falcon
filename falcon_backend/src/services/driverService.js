@@ -271,40 +271,160 @@ class DriverService {
     return driver;
   }
 
-  async logDriverLocation(deliveryId, driverId, latitude, longitude, speed = null, heading = null) {
+  async logDriverLocation(deliveryId, driverId, latitude, longitude, speed = null, heading = null, accuracy = null, timestamp = null, orderId = null) {
     const { emitDriverLocationUpdate } = require('../sockets/socketManager');
-    const delivery = await Delivery.findOne({
-      where: { id: deliveryId, driver_id: driverId },
-      include: ['order'],
-    });
+    const googleRoutesService = require('./googleRoutesService');
 
-    if (!delivery || ![ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.ARRIVED].includes(delivery.order.order_status)) {
-      return null; // GPS tracking operates strictly during active delivery
+    let delivery = null;
+
+    // Resolve delivery via deliveryId or orderId
+    if (deliveryId) {
+      delivery = await Delivery.findOne({
+        where: { id: deliveryId, driver_id: driverId },
+        include: [{ model: Order, as: 'order', include: [{ model: Address, as: 'address', paranoid: false }] }],
+      });
     }
 
+    if (!delivery && orderId) {
+      delivery = await Delivery.findOne({
+        where: { order_id: orderId, driver_id: driverId },
+        include: [{ model: Order, as: 'order', include: [{ model: Address, as: 'address', paranoid: false }] }],
+      });
+    }
+
+    // Fallback: If driver is updating location for active order assigned to them
+    if (!delivery) {
+      delivery = await Delivery.findOne({
+        where: { driver_id: driverId },
+        include: [{
+          model: Order,
+          as: 'order',
+          where: { order_status: [ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.ARRIVED] },
+          include: [{ model: Address, as: 'address', paranoid: false }],
+        }],
+        order: [['updatedAt', 'DESC']],
+      });
+    }
+
+    const recordedAt = timestamp ? new Date(timestamp) : new Date();
+    const parsedLat = parseFloat(latitude);
+    const parsedLng = parseFloat(longitude);
+    const parsedSpeed = speed !== null && speed !== undefined ? parseFloat(speed) : null;
+    const parsedHeading = heading !== null && heading !== undefined ? parseFloat(heading) : null;
+    const parsedAccuracy = accuracy !== null && accuracy !== undefined ? parseFloat(accuracy) : null;
+
+    // Always update driver's current position in drivers table
+    const driver = await Driver.findByPk(driverId);
+    if (driver) {
+      await driver.update({
+        current_latitude: parsedLat,
+        current_longitude: parsedLng,
+        current_heading: parsedHeading,
+        current_speed: parsedSpeed,
+        current_accuracy: parsedAccuracy,
+        last_location_at: recordedAt,
+      });
+    }
+
+    if (!delivery || !delivery.order || ![ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.ARRIVED].includes(delivery.order.order_status)) {
+      // Driver location logged in driver profile; return snapshot without active delivery route
+      return {
+        driver_id: driverId,
+        order_id: delivery?.order_id || orderId || null,
+        latitude: parsedLat,
+        longitude: parsedLng,
+        speed: parsedSpeed,
+        heading: parsedHeading,
+        accuracy: parsedAccuracy,
+        timestamp: recordedAt.toISOString(),
+        is_active_delivery: false,
+      };
+    }
+
+    // Log historical breadcrumb in driver_locations
     const loc = await DriverLocation.create({
-      delivery_id: deliveryId,
+      delivery_id: delivery.id,
+      order_id: delivery.order_id,
       driver_id: driverId,
-      latitude,
-      longitude,
-      speed,
-      heading,
-      recorded_at: new Date(),
+      latitude: parsedLat,
+      longitude: parsedLng,
+      speed: parsedSpeed,
+      heading: parsedHeading,
+      accuracy: parsedAccuracy,
+      recorded_at: recordedAt,
     });
 
-    // Also broadcast location via socket for instant client sync
+    // Compute route ETA and distance to customer destination
+    let routeInfo = null;
+    const destLat = delivery.order.address?.latitude;
+    const destLng = delivery.order.address?.longitude;
+
+    if (destLat && destLng) {
+      routeInfo = await googleRoutesService.computeRouteAndEta(
+        { latitude: parsedLat, longitude: parsedLng },
+        { latitude: destLat, longitude: destLng },
+        delivery.order.id
+      );
+    }
+
+    // Cache latest telemetry & route on delivery record for O(1) query performance
+    const deliveryUpdatePayload = {
+      latest_latitude: parsedLat,
+      latest_longitude: parsedLng,
+      latest_heading: parsedHeading,
+      latest_speed: parsedSpeed,
+      latest_accuracy: parsedAccuracy,
+      latest_location_at: recordedAt,
+    };
+
+    if (routeInfo) {
+      deliveryUpdatePayload.estimated_distance_meters = routeInfo.distance_meters;
+      deliveryUpdatePayload.estimated_duration_seconds = routeInfo.duration_seconds;
+      if (routeInfo.polyline) {
+        deliveryUpdatePayload.route_polyline = routeInfo.polyline;
+      }
+    }
+
+    await delivery.update(deliveryUpdatePayload);
+
+    // Broadcast real-time location via Socket.IO
     emitDriverLocationUpdate({
-      deliveryId,
+      deliveryId: delivery.id,
       orderId: delivery.order.id,
       driverId,
-      latitude,
-      longitude,
-      speed: speed || 0,
-      heading: heading || 0,
+      latitude: parsedLat,
+      longitude: parsedLng,
+      speed: parsedSpeed || 0,
+      heading: parsedHeading || 0,
+      accuracy: parsedAccuracy || 0,
+      eta_minutes: routeInfo?.eta_minutes || null,
+      distance_meters: routeInfo?.distance_meters || null,
+      distance_km: routeInfo?.distance_km || null,
+      distance_text: routeInfo?.distance_text || null,
+      duration_seconds: routeInfo?.duration_seconds || null,
+      polyline: routeInfo?.polyline || null,
+      timestamp: recordedAt.toISOString(),
       temp: '3.5°C',
     });
 
-    return loc;
+    return {
+      id: loc.id,
+      delivery_id: delivery.id,
+      order_id: delivery.order.id,
+      driver_id: driverId,
+      latitude: parsedLat,
+      longitude: parsedLng,
+      speed: parsedSpeed,
+      heading: parsedHeading,
+      accuracy: parsedAccuracy,
+      eta_minutes: routeInfo?.eta_minutes || null,
+      distance_km: routeInfo?.distance_km || null,
+      distance_text: routeInfo?.distance_text || null,
+      duration_seconds: routeInfo?.duration_seconds || null,
+      polyline: routeInfo?.polyline || null,
+      timestamp: recordedAt.toISOString(),
+      is_active_delivery: true,
+    };
   }
 
   async updateDriverProfile(userId, { mobile, email, vehicle_details }) {

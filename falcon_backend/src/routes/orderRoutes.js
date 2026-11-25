@@ -18,6 +18,8 @@ router.post('/', authorize(ROLES.CUSTOMER), (req, res, next) => orderController.
 router.get('/my-orders', authorize(ROLES.CUSTOMER), (req, res, next) => orderController.getMyOrders(req, res, next));
 
 // Common Protected Route (Customer: own order, Driver: assigned order, Admin: any order)
+router.get('/:id/live-tracking', (req, res, next) => orderController.getLiveTracking(req, res, next));
+router.get('/:id/driver-location', (req, res, next) => orderController.getLiveTracking(req, res, next));
 router.get('/:id', (req, res, next) => orderController.getOrderById(req, res, next));
 
 // Customer Order Cancellation Route (Strictly Customer Only)

@@ -362,6 +362,8 @@ class OrderService {
     if (!order) {
       throw new Error('Order not found');
     }
+    const invoiceUrl = `/api/v1/invoices/order/${order.id}/pdf`;
+    order.setDataValue('invoice_url', invoiceUrl);
     return order;
   }
 
@@ -520,7 +522,205 @@ class OrderService {
       }
     }
 
+    orderJson.invoice_url = `/api/v1/invoices/order/${orderJson.id}/pdf`;
+
     return orderJson;
+  }
+
+  async getLiveTracking(identifier, user) {
+    if (!identifier) {
+      throw new Error('Order identifier is required');
+    }
+
+    const cleanIdentifier = String(identifier).trim().replace(/^#/, '');
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanIdentifier);
+
+    const where = isUuid ? { id: cleanIdentifier } : { order_number: cleanIdentifier };
+
+    const order = await Order.findOne({
+      where,
+      include: [
+        {
+          model: Customer,
+          as: 'customer',
+          include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile'] }],
+        },
+        { model: Address, as: 'address', paranoid: false },
+        {
+          model: Delivery,
+          as: 'delivery',
+          include: [
+            {
+              model: Driver,
+              as: 'driver',
+              include: [{ model: User, as: 'user', attributes: ['id', 'email', 'mobile'] }],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!order) {
+      const err = new Error(`Order "${cleanIdentifier}" not found`);
+      err.statusCode = 404;
+      throw err;
+    }
+
+    // REQUIREMENT 8: Strict Location Access Authorization
+    if (!user) {
+      const authErr = new Error('Authentication required to access live tracking');
+      authErr.statusCode = 401;
+      throw authErr;
+    }
+
+    if (user.role === ROLES.CUSTOMER) {
+      const customer = await Customer.findOne({
+        where: {
+          [Op.or]: [{ id: user.id }, { user_id: user.id }],
+        },
+      });
+      if (!customer || order.customer_id !== customer.id) {
+        const forbiddenErr = new Error('Access denied. You can only track your own orders.');
+        forbiddenErr.statusCode = 403;
+        throw forbiddenErr;
+      }
+    } else if (user.role === ROLES.DRIVER) {
+      const driver = await Driver.findOne({
+        where: {
+          [Op.or]: [{ id: user.id }, { user_id: user.id }],
+        },
+      });
+      if (!driver || !order.delivery || order.delivery.driver_id !== driver.id) {
+        const forbiddenErr = new Error('Access denied. You are not assigned to this delivery.');
+        forbiddenErr.statusCode = 403;
+        throw forbiddenErr;
+      }
+    }
+    // ADMIN has unrestricted tracking access
+
+    const destination = order.address
+      ? {
+          full_name: order.address.full_name,
+          address_line: order.address.address_line,
+          city: order.address.city,
+          area: order.address.area,
+          postal_code: order.address.postal_code,
+          latitude: order.address.latitude ? parseFloat(order.address.latitude) : null,
+          longitude: order.address.longitude ? parseFloat(order.address.longitude) : null,
+        }
+      : null;
+
+    const assignedDriver = order.delivery?.driver;
+    const driverData = assignedDriver
+      ? {
+          id: assignedDriver.id,
+          name: assignedDriver.name || assignedDriver.user?.username || 'Delivery Partner',
+          phone: assignedDriver.user?.mobile || null,
+          vehicle_type: assignedDriver.vehicle_type || 'Delivery Vehicle',
+          vehicle_number: assignedDriver.vehicle_number || '',
+          profile_image: assignedDriver.profile_image || null,
+          rating: assignedDriver.average_rating ? parseFloat(assignedDriver.average_rating) : 5.0,
+        }
+      : null;
+
+    const allowedLiveStatuses = [ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.ARRIVED];
+    const canTrackDriver = allowedLiveStatuses.includes(order.order_status);
+
+    if (!canTrackDriver) {
+      return {
+        order_id: order.id,
+        order_number: order.order_number,
+        order_status: order.order_status,
+        can_track_driver: false,
+        tracking_message:
+          order.order_status === ORDER_STATUS.DELIVERED
+            ? 'Order has been delivered.'
+            : [ORDER_STATUS.CANCELLED, ORDER_STATUS.DELIVERY_FAILED].includes(order.order_status)
+            ? 'Delivery is not active.'
+            : 'Live driver tracking will be available once your order is out for delivery.',
+        destination,
+        driver: driverData,
+        live_location: null,
+        route_info: null,
+      };
+    }
+
+    // Retrieve Driver's Latest Coordinates:
+    // 1st: From delivery cached coordinates
+    // 2nd: From driver's current coordinates
+    // 3rd: From latest DriverLocation record
+    let lat = order.delivery?.latest_latitude ? parseFloat(order.delivery.latest_latitude) : null;
+    let lng = order.delivery?.latest_longitude ? parseFloat(order.delivery.latest_longitude) : null;
+    let heading = order.delivery?.latest_heading !== null && order.delivery?.latest_heading !== undefined ? parseFloat(order.delivery.latest_heading) : null;
+    let speed = order.delivery?.latest_speed !== null && order.delivery?.latest_speed !== undefined ? parseFloat(order.delivery.latest_speed) : null;
+    let accuracy = order.delivery?.latest_accuracy !== null && order.delivery?.latest_accuracy !== undefined ? parseFloat(order.delivery.latest_accuracy) : null;
+    let updatedAt = order.delivery?.latest_location_at || null;
+
+    if (lat === null && assignedDriver?.current_latitude) {
+      lat = parseFloat(assignedDriver.current_latitude);
+      lng = parseFloat(assignedDriver.current_longitude);
+      heading = assignedDriver.current_heading !== null ? parseFloat(assignedDriver.current_heading) : null;
+      speed = assignedDriver.current_speed !== null ? parseFloat(assignedDriver.current_speed) : null;
+      accuracy = assignedDriver.current_accuracy !== null ? parseFloat(assignedDriver.current_accuracy) : null;
+      updatedAt = assignedDriver.last_location_at || null;
+    }
+
+    if (lat === null && order.delivery) {
+      const latestBreadcrumb = await DriverLocation.findOne({
+        where: { delivery_id: order.delivery.id },
+        order: [['recorded_at', 'DESC']],
+      });
+      if (latestBreadcrumb) {
+        lat = parseFloat(latestBreadcrumb.latitude);
+        lng = parseFloat(latestBreadcrumb.longitude);
+        heading = latestBreadcrumb.heading;
+        speed = latestBreadcrumb.speed;
+        accuracy = latestBreadcrumb.accuracy;
+        updatedAt = latestBreadcrumb.recorded_at;
+      }
+    }
+
+    // Compute or retrieve Google Routes ETA & Distance
+    let routeInfo = null;
+    if (lat !== null && lng !== null && destination?.latitude && destination?.longitude) {
+      const googleRoutesService = require('./googleRoutesService');
+      routeInfo = await googleRoutesService.computeRouteAndEta(
+        { latitude: lat, longitude: lng },
+        { latitude: destination.latitude, longitude: destination.longitude },
+        order.id
+      );
+    }
+
+    return {
+      order_id: order.id,
+      order_number: order.order_number,
+      order_status: order.order_status,
+      can_track_driver: true,
+      tracking_message: null,
+      destination,
+      driver: driverData,
+      live_location:
+        lat !== null && lng !== null
+          ? {
+              latitude: lat,
+              longitude: lng,
+              heading: heading || 0,
+              speed: speed || 0,
+              accuracy: accuracy || null,
+              updated_at: updatedAt ? new Date(updatedAt).toISOString() : new Date().toISOString(),
+            }
+          : null,
+      route_info: routeInfo
+        ? {
+            eta_minutes: routeInfo.eta_minutes,
+            distance_meters: routeInfo.distance_meters,
+            distance_km: routeInfo.distance_km,
+            distance_text: routeInfo.distance_text,
+            duration_seconds: routeInfo.duration_seconds,
+            polyline: routeInfo.polyline,
+          }
+        : null,
+    };
   }
 
   async getOrderById(orderId, userId = null, role = null, transaction = null) {
@@ -574,6 +774,7 @@ class OrderService {
             { model: Admin, as: 'assigned_by_admin', include: [{ model: User, as: 'user', attributes: ['id', 'email'] }] },
           ],
         },
+        { model: Invoice, as: 'invoice' },
         { model: Feedback, as: 'feedback' },
         { model: User, as: 'cancelled_by_user', attributes: ['id', 'email', 'role'] },
       ],
@@ -632,6 +833,9 @@ class OrderService {
       }
     }
 
+    const invoiceUrl = `/api/v1/invoices/order/${order.id}/pdf`;
+    order.setDataValue('invoice_url', invoiceUrl);
+
     return order;
   }
 
@@ -675,11 +879,18 @@ class OrderService {
             }
           ]
         },
+        { model: Invoice, as: 'invoice' },
         { model: OrderStatusHistory, as: 'status_history' },
         { model: Feedback, as: 'feedback' },
       ],
       order: [['createdAt', 'DESC']],
     });
+
+    orders.forEach((o) => {
+      o.setDataValue('invoice_url', `/api/v1/invoices/order/${o.id}/pdf`);
+    });
+
+    return orders;
   }
 
   async getAllOrders(filters = {}) {
