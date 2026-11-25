@@ -47,6 +47,7 @@ const ContactSetting = require('./ContactSetting');
 const InquiryCategory = require('./InquiryCategory');
 const OfficeLocation = require('./OfficeLocation');
 const SupportTicket = require('./SupportTicket');
+const AboutPageSetting = require('./AboutPageSetting');
 
 // --- User Associations ---
 User.hasMany(BulkUploadHistory, { foreignKey: 'uploaded_by', as: 'bulk_uploads', onDelete: 'SET NULL' });
@@ -297,4 +298,5 @@ module.exports = {
   InquiryCategory,
   OfficeLocation,
   SupportTicket,
+  AboutPageSetting,
 };

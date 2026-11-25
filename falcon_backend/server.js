@@ -185,6 +185,23 @@ const startServer = async () => {
             "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
           );
         `);
+        await sequelize.query(`
+          CREATE TABLE IF NOT EXISTS ${tablePrefix}"about_page_settings" (
+            "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            "hero_section" JSONB NOT NULL DEFAULT '{}'::jsonb,
+            "stats_section" JSONB NOT NULL DEFAULT '[]'::jsonb,
+            "principles_section" JSONB NOT NULL DEFAULT '{}'::jsonb,
+            "farmer_spotlight_section" JSONB NOT NULL DEFAULT '{}'::jsonb,
+            "leadership_section" JSONB NOT NULL DEFAULT '{}'::jsonb,
+            "sustainability_section" JSONB NOT NULL DEFAULT '{}'::jsonb,
+            "timeline_section" JSONB NOT NULL DEFAULT '{}'::jsonb,
+            "cta_section" JSONB NOT NULL DEFAULT '{}'::jsonb,
+            "section_visibility" JSONB NOT NULL DEFAULT '{"hero":true,"stats":true,"principles":true,"farmers":true,"leadership":true,"sustainability":true,"timeline":true,"cta":true}'::jsonb,
+            "updated_by_admin_id" UUID,
+            "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+            "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+          );
+        `);
       } catch (alterErr) {
         // Table doesn't exist yet or already configured
       }

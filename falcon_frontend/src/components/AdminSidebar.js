@@ -83,6 +83,12 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen, pendingPayment
           icon: FolderTree,
           permission: 'cms.view',
         },
+        {
+          href: '/admin/about-page',
+          label: locale === 'ar' ? 'إدارة صفحة من نحن' : 'About Us Page',
+          icon: Sparkles,
+          permission: 'cms.view',
+        },
       ],
     },
     {

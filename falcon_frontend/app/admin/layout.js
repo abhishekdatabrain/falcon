@@ -21,6 +21,7 @@ const ROUTE_PERMISSIONS = {
   '/admin/orders': 'orders.view',
   '/admin/invoices': 'invoices.view',
   '/admin/homepage-cms': 'cms.view',
+  '/admin/about-page': 'cms.view',
   '/admin/hero-banners': 'banners.view',
   '/admin/category-banner': 'banners.view',
   '/admin/category-hierarchy-banners': 'banners.view',
