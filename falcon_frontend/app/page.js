@@ -231,7 +231,7 @@ const GROCERIES_SUBCATEGORIES = [
   },
 ];
 
-function SubCategorySlider({ title, items, locale }) {
+function SubCategorySlider({ title, items, locale, renderCard }) {
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -294,54 +294,21 @@ function SubCategorySlider({ title, items, locale }) {
         </div>
       </div>
 
-      {/* Horizontal Scroll Track - 6 items per row on desktop */}
+      {/* Horizontal Scroll Track - Product cards per row on desktop */}
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="flex items-start gap-3.5 sm:gap-4 overflow-x-auto scrollbar-none py-1.5 px-0.5 scroll-smooth snap-x snap-mandatory"
+        className="flex items-stretch gap-3.5 sm:gap-4 overflow-x-auto scrollbar-none py-1.5 px-0.5 scroll-smooth snap-x snap-mandatory"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {items.map((item) => {
-          const rawImg = item.image_url || item.img || '';
-          const resolvedImg = rawImg.startsWith('blob:') || rawImg.startsWith('data:') || rawImg.startsWith('http')
-            ? rawImg
-            : getImageUrl(rawImg);
-          const titleEn = item.title_en || item.name_en || '';
-          const titleAr = item.title_ar || item.name_ar || titleEn;
-          const itemTitle = locale === 'ar' ? titleAr : titleEn;
-          const itemLink = item.link_url || item.href || `/products?category=${encodeURIComponent(titleEn.toLowerCase())}`;
-
-          return (
-            <Link
-              key={item.id}
-              href={itemLink}
-              className="group flex flex-col items-center cursor-pointer text-center shrink-0 snap-start w-[calc((100%-16px)/2.3)] sm:w-[calc((100%-32px)/3.3)] md:w-[calc((100%-48px)/4.5)] lg:w-[calc((100%-5*16px)/6)] min-w-0"
-            >
-              <div className="relative w-full aspect-square bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center overflow-hidden shrink-0 min-h-0 min-w-0 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
-                <img
-                  src={resolvedImg}
-                  alt={itemTitle}
-                  className="w-full h-full max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 pointer-events-none"
-                  loading="lazy"
-                  onError={(e) => {
-                    if (e.currentTarget.dataset.errorHandled) {
-                      e.currentTarget.style.opacity = '0';
-                      return;
-                    }
-                    e.currentTarget.dataset.errorHandled = 'true';
-                    e.currentTarget.src = '/subcategories/laundry_care.png';
-                  }}
-                />
-              </div>
-
-              <div className="w-full mt-2.5 sm:mt-3 h-[38px] sm:h-[42px] flex items-start justify-center px-0.5">
-                <span className="font-semibold text-slate-800 text-xs sm:text-[13px] md:text-[14px] text-center leading-snug group-hover:text-emerald-800 transition-colors line-clamp-2">
-                  {itemTitle}
-                </span>
-              </div>
-            </Link>
-          );
-        })}
+        {items.map((product) => (
+          <div
+            key={product.id}
+            className="shrink-0 snap-start w-[calc((100%-16px)/1.6)] sm:w-[calc((100%-32px)/2.5)] md:w-[calc((100%-48px)/3.5)] lg:w-[calc((100%-5*16px)/5)] min-w-0 flex"
+          >
+            {renderCard ? renderCard(product) : null}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -394,6 +361,7 @@ export default function HomePage() {
   const [heroAutoplay, setHeroAutoplay] = useState(true);
   const [promoBanners, setPromoBanners] = useState([]);
   const [categorySections, setCategorySections] = useState([]);
+  const [beveragesProducts, setBeveragesProducts] = useState([]);
   const [cmsSections, setCmsSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState(null);
@@ -540,13 +508,14 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [catRes, prodRes, dealsRes, promoRes, sectionsRes, cmsRes] = await Promise.all([
+        const [catRes, prodRes, dealsRes, promoRes, sectionsRes, cmsRes, beveragesRes] = await Promise.all([
           fetchApi('/categories?type=parent'),
           fetchApi('/products?limit=40'),
           fetchApi('/products?best_deals_or_store=true&limit=40'),
           fetchApi('/promo-banners').catch(() => ({ success: false })),
           fetchApi('/category-sections/active').catch(() => ({ success: false })),
           fetchApi('/homepage-cms/public').catch(() => ({ success: false })),
+          fetchApi('/products?category_id=fc1600aa-f20d-477d-a206-958b78fe3944&limit=12').catch(() => ({ success: false })),
         ]);
 
         if (catRes.success) {
@@ -571,6 +540,10 @@ export default function HomePage() {
         if (cmsRes && cmsRes.success && cmsRes.data?.sections?.length > 0) {
           setCmsSections(cmsRes.data.sections);
         }
+        if (beveragesRes && beveragesRes.success) {
+          const bevArr = beveragesRes.data?.products?.products || beveragesRes.data?.products || (Array.isArray(beveragesRes.data) ? beveragesRes.data : []);
+          setBeveragesProducts(Array.isArray(bevArr) ? bevArr : []);
+        }
       } catch (err) {
         console.error('Error loading home data:', err);
         showToast(err.message || 'Error loading page content', 'error');
@@ -580,6 +553,273 @@ export default function HomePage() {
     };
     loadData();
   }, []);
+
+  const renderDealStyleCard = (prod, cardKey) => {
+    const titleEn = prod.name_en || prod.title_en;
+    const titleAr = prod.name_ar || prod.title_ar || titleEn;
+    const title = locale === 'ar' ? titleAr : titleEn;
+
+    const brandEn = prod.brand;
+    const brandAr = prod.brand_ar || brandEn;
+    const brandName = locale === 'ar' ? brandAr : brandEn;
+
+    const hasVariants = Boolean(prod.has_variants && prod.variants && prod.variants.length > 0);
+    const currentPrice = parseFloat(prod.price || 0);
+    let finalPrice = currentPrice;
+    let originalPrice = null;
+
+    if (hasVariants) {
+      const activeVars = prod.variants.filter((v) => v.is_active !== false);
+      const varsToUse = activeVars.length > 0 ? activeVars : prod.variants;
+      const prices = varsToUse
+        .map((v) => parseFloat(v.discount_price || v.price))
+        .filter((p) => !isNaN(p) && p > 0);
+      if (prices.length > 0) {
+        finalPrice = Math.min(...prices);
+      }
+    } else {
+      const isDiscounted = prod.discount_price && parseFloat(prod.discount_price) < currentPrice;
+      finalPrice = isDiscounted ? parseFloat(prod.discount_price) : currentPrice;
+      originalPrice = isDiscounted ? currentPrice : (prod.purchase_price ? parseFloat(prod.purchase_price) : null);
+    }
+
+    const specs = hasVariants
+      ? `${prod.variants.length} ${locale === 'ar' ? 'خيارات متاحة' : 'Variants Available'}`
+      : (prod.unit_value && prod.unit_type && prod.pack_size
+        ? `${prod.unit_value} ${prod.unit_type} (${prod.pack_size})`
+        : locale === 'ar'
+          ? prod.specs_ar
+          : prod.specs_en);
+    const hasRatings = (prod.reviews_count !== undefined && prod.reviews_count !== null && Number(prod.reviews_count) > 0) || (prod.rating !== undefined && prod.rating !== null && Number(prod.rating) > 0);
+    const ratingVal = hasRatings && prod.rating ? Number(prod.rating).toFixed(1) : null;
+    const reviewsVal = hasRatings ? Number(prod.reviews_count || prod.reviews || 0).toLocaleString() : 0;
+
+    const totalVariantStock = hasVariants && Array.isArray(prod.variants)
+      ? prod.variants.reduce((acc, v) => acc + parseInt(v.stock_quantity || '0', 10), 0)
+      : 0;
+    const isOutOfStock = hasVariants
+      ? (prod.variants.length > 0 && totalVariantStock <= 0)
+      : (prod.stock_quantity !== undefined && prod.stock_quantity !== null && parseInt(prod.stock_quantity, 10) <= 0);
+
+    return (
+      <Link
+        key={cardKey}
+        href={prod.id ? `/products/${prod.id}` : '/products'}
+        data-deal-card="true"
+        className="group bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-lg transition-all duration-300 p-2.5 sm:p-3 flex flex-col justify-between relative cursor-pointer w-full min-w-0 max-w-full select-none"
+      >
+        {/* Top Badges & Wishlist */}
+        <div className="flex items-center justify-between z-10 mb-0.5 h-5">
+          {isOutOfStock ? (
+            <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+              <Ban className="w-2.5 h-2.5 text-white" />
+              <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
+            </span>
+          ) : prod.is_best_seller === true ? (
+            <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+              <Star className="w-2.5 h-2.5 fill-current text-white" />
+              <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>
+            </span>
+          ) : <span />}
+
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleWishlist(prod);
+            }}
+            className="text-slate-300 hover:text-rose-500 transition-colors cursor-pointer p-0.5 ml-auto"
+            title="Add to Wishlist"
+          >
+            <Heart className={`w-4 h-4 ${isInWishlist(prod.id) ? 'text-rose-500 fill-rose-500' : ''}`} />
+          </button>
+        </div>
+
+        {/* Product Image Container with Auto-Carousel */}
+        <div className="w-full my-1 shrink-0">
+          <ProductImageCarousel
+            product={prod}
+            alt={title}
+            isOutOfStock={isOutOfStock}
+            aspectRatio="aspect-[4/3]"
+            className="max-h-[120px] sm:max-h-[135px]"
+          />
+        </div>
+
+        {/* Info Content */}
+        <div className="space-y-1 pt-0.5 flex-1 flex flex-col justify-between">
+          <div>
+            {/* Brand & In Stock Tag */}
+            <div className="flex items-center justify-between text-[11px] font-medium leading-none mb-1 min-h-[16px]">
+              <span className="text-slate-400 truncate pr-1">{brandName}</span>
+              {isOutOfStock ? (
+                <span className="text-rose-600 font-bold shrink-0">
+                  {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
+                </span>
+              ) : hasVariants ? (
+                <span className="text-[#00B074] font-bold shrink-0">
+                  {locale === 'ar' ? 'متوفر بخيارات' : 'Multi-Variant'}
+                </span>
+              ) : (
+                <span className="text-[#00B074] font-bold shrink-0">
+                  {locale === 'ar' ? 'متوفر' : 'In Stock'}
+                </span>
+              )}
+            </div>
+
+            {/* Product Title (Consistent 2-line height) */}
+            <h3 className="font-bold text-slate-900 text-xs sm:text-[13px] line-clamp-2 leading-tight group-hover:text-[#043927] transition-colors mb-0.5 min-h-[30px] sm:min-h-[34px]">
+              {title}
+            </h3>
+
+            {/* Specs / Tags */}
+            <p className="text-[10px] text-slate-400 font-normal truncate mb-1">
+              {specs}
+            </p>
+
+            {/* Rating & Reviews */}
+            <div className="flex items-center justify-between text-[11px] py-1 border-t border-slate-100">
+              <div className="flex items-center gap-1 text-slate-400 font-normal text-[10px]">
+                {hasRatings ? (
+                  <>
+                    <span className="text-amber-400 font-bold">★</span>
+                    <span className="font-bold text-slate-700">{ratingVal}</span>
+                    <span className="text-slate-400">({reviewsVal})</span>
+                  </>
+                ) : (
+                  <span className="text-slate-400 font-medium text-[10px]">
+                    {locale === 'ar' ? 'لا توجد تقييمات بعد' : ''}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Price & Add to Cart / Quantity Action Row */}
+          <div className="pt-1.5 border-t border-slate-100 flex flex-col gap-1.5 mt-auto">
+            <div className="flex items-baseline gap-1.5 whitespace-nowrap min-h-[18px]">
+              <span className="text-sm sm:text-[15px] font-black text-slate-900 whitespace-nowrap leading-tight">
+                <span className="text-[10px] font-bold text-slate-500 mr-0.5">SAR</span>
+                {finalPrice.toFixed(2)}
+              </span>
+              {!hasVariants && originalPrice && (
+                <span className="text-[10px] text-slate-400 line-through font-normal whitespace-nowrap">
+                  SAR {originalPrice.toFixed(2)}
+                </span>
+              )}
+            </div>
+
+            {/* Quantity Counter, Select Options, or Add to Cart Button */}
+            {(() => {
+              if (isOutOfStock) {
+                return (
+                  <button
+                    type="button"
+                    disabled
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    className="h-8 w-full rounded-xl bg-slate-100 border border-slate-200 text-slate-400 font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 cursor-not-allowed select-none"
+                  >
+                    <Ban className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>
+                  </button>
+                );
+              }
+
+              if (hasVariants) {
+                return (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setVariantModalProduct(prod);
+                    }}
+                    className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#008938] active:scale-95 text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>{locale === 'ar' ? 'أضف للسلة' : 'Add to Cart'}</span>
+                  </button>
+                );
+              }
+
+              const cartItem = getCartItem(prod.id);
+              const inCart = cartItem && cartItem.quantity > 0;
+              const isBusy = addingId === prod.id || actionId === prod.id;
+
+              if (inCart) {
+                return (
+                  <div
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    className="h-8 w-full bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between p-0.5 px-1 shadow-2xs"
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDecrement(prod.id);
+                      }}
+                      disabled={isBusy}
+                      className="w-6.5 h-6.5 rounded-lg bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                      title={cartItem.quantity === 1 ? (locale === 'ar' ? 'حذف' : 'Remove') : (locale === 'ar' ? 'إنقاص' : 'Decrease')}
+                    >
+                      <Minus className="w-3 h-3 stroke-[2.5]" />
+                    </button>
+
+                    <span className="font-bold text-xs text-[#043927] px-1 select-none">
+                      {cartItem.quantity}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleIncrement(prod.id, prod);
+                      }}
+                      disabled={isBusy || (prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity)}
+                      className="w-6.5 h-6.5 rounded-lg bg-white hover:bg-emerald-100 text-slate-700 hover:text-[#043927] flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
+                      title={prod.stock_quantity !== undefined && prod.stock_quantity !== null && cartItem.quantity >= prod.stock_quantity ? (locale === 'ar' ? 'تم الوصول للحد الأقصى للمخزون' : 'Max stock reached') : (locale === 'ar' ? 'زيادة' : 'Increase')}
+                    >
+                      <Plus className="w-3 h-3 stroke-[2.5]" />
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAddToCart(prod.id, prod);
+                  }}
+                  disabled={isBusy}
+                  className="h-8 w-full rounded-xl bg-[#006E2D] hover:bg-[#009663] text-white font-bold text-[11px] sm:text-xs shadow-2xs transition-all hover:scale-[1.01] cursor-pointer flex items-center justify-center gap-1 disabled:opacity-60"
+                >
+                  {isBusy ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>{locale === 'ar' ? 'أضف' : 'Add to Cart'}</span>
+                    </>
+                  )}
+                </button>
+              );
+            })()}
+          </div>
+        </div>
+      </Link>
+    );
+  };
 
   const getCartItem = (productId) => {
     if (!cart?.items || !productId) return null;
@@ -1513,43 +1753,34 @@ export default function HomePage() {
         </section>
 
 
-        {/* 5. Dynamic Household Essentials & Groceries Sub-Category Showcase Grids */}
-        {categorySections && categorySections.length > 0 ? (
-          <section
-            style={{ backgroundColor: categorySections[0]?.bg_color || '#F6FFF8' }}
-            className="rounded-[28px] sm:rounded-[36px] p-6 sm:p-10 lg:p-12 space-y-10 sm:space-y-12 transition-all duration-300"
-          >
-            {categorySections.map((sec, secIdx) => {
-              const itemsToRender = (sec.items || []).slice(0, sec.max_items || 12);
-              if (itemsToRender.length === 0) return null;
+        {/* 5. Dynamic Parent Category Product Showcase Grids */}
+        {(() => {
+          const sectionsWithProducts = (categorySections || []).filter(
+            (sec) => Array.isArray(sec.products) && sec.products.length > 0
+          );
+          if (sectionsWithProducts.length === 0) return null;
 
-              return (
-                <SubCategorySlider
-                  key={sec.id || 'sec-' + secIdx}
-                  title={locale === 'ar' ? (sec.title_ar || sec.title_en) : (sec.title_en || sec.title_ar)}
-                  items={itemsToRender}
-                  locale={locale}
-                />
-              );
-            })}
-          </section>
-        ) : (
-          <section className="bg-[#F6FFF8] rounded-[28px] sm:rounded-[36px] p-6 sm:p-10 lg:p-12 space-y-10 sm:space-y-12">
-            {/* Sub-Section 1: Household Essentials */}
-            <SubCategorySlider
-              title={locale === 'ar' ? 'المستلزمات المنزلية' : 'Household Essentials'}
-              items={HOUSEHOLD_SUBCATEGORIES}
-              locale={locale}
-            />
+          return (
+            <section
+              style={{ backgroundColor: sectionsWithProducts[0]?.bg_color || '#F6FFF8' }}
+              className="rounded-[28px] sm:rounded-[36px] p-6 sm:p-10 lg:p-12 space-y-10 sm:space-y-12 transition-all duration-300"
+            >
+              {sectionsWithProducts.map((sec, secIdx) => {
+                const productsToRender = sec.products.slice(0, sec.max_items || 12);
 
-            {/* Sub-Section 2: Groceries */}
-            <SubCategorySlider
-              title={locale === 'ar' ? 'البقالة' : 'Groceries'}
-              items={GROCERIES_SUBCATEGORIES}
-              locale={locale}
-            />
-          </section>
-        )}
+                return (
+                  <SubCategorySlider
+                    key={sec.id || 'sec-' + secIdx}
+                    title={locale === 'ar' ? (sec.title_ar || sec.title_en) : (sec.title_en || sec.title_ar)}
+                    items={productsToRender}
+                    locale={locale}
+                    renderCard={(prod) => renderDealStyleCard(prod, `cat-sec-${sec.id || secIdx}-${prod.id}`)}
+                  />
+                );
+              })}
+            </section>
+          );
+        })()}
 
         {/* 6. Household Essentials Featured Hero Banner Section (Full-Width Background with Overlaid Content) */}
         {(() => {
@@ -1693,6 +1924,18 @@ export default function HomePage() {
             </section>
           );
         })()}
+
+        {/* 6.5. Beverages Product Showcase Section */}
+        {beveragesProducts && beveragesProducts.length > 0 && (
+          <section className="bg-[#F6FFF8] rounded-[28px] sm:rounded-[36px] p-6 sm:p-10 lg:p-12 transition-all duration-300">
+            <SubCategorySlider
+              title={locale === 'ar' ? 'المشروبات' : 'Beverages'}
+              items={beveragesProducts}
+              locale={locale}
+              renderCard={(prod) => renderDealStyleCard(prod, `beverages-${prod.id}`)}
+            />
+          </section>
+        )}
 
         {/* 7. Popular Picks Product 2-Row Slider Section */}
         <section className="space-y-5 pt-2 select-none">

@@ -1,48 +1,168 @@
-const { HomepageCategorySection, HomepageCategoryItem, Category, sequelize } = require('../models');
+const {
+  HomepageCategorySection,
+  HomepageCategoryItem,
+  Category,
+  Product,
+  ProductImage,
+  ProductVariant,
+  ProductVariantImage,
+  sequelize,
+} = require('../models');
+const { Op } = require('sequelize');
 const { sendSuccess, sendError } = require('../utils/response');
+
+/**
+ * Resolves the parent Category matching a HomepageCategorySection using its
+ * view_more_link (`?category=...`) or title_en / title_ar, then collects all
+ * descendant category IDs recursively.
+ */
+function resolveSectionCategoryIds(section, allCategories) {
+  const link = (section.view_more_link || '').trim();
+  let paramCat = null;
+  const queryMatch = link.match(/[?&]category=([^&#]+)/i);
+  if (queryMatch && queryMatch[1]) {
+    paramCat = decodeURIComponent(queryMatch[1]).trim().toLowerCase();
+  }
+
+  const titleEn = (section.title_en || '').trim().toLowerCase();
+  const titleAr = (section.title_ar || '').trim();
+
+  const activeCategories = allCategories.filter((c) => c.is_active !== false);
+  let matched = null;
+
+  if (paramCat) {
+    matched = activeCategories.find(
+      (c) => String(c.id).toLowerCase() === paramCat || (c.slug || '').toLowerCase() === paramCat
+    );
+  }
+
+  if (!matched && titleEn) {
+    matched =
+      activeCategories.find((c) => !c.parent_id && (c.name_en || '').trim().toLowerCase() === titleEn) ||
+      activeCategories.find((c) => (c.name_en || '').trim().toLowerCase() === titleEn);
+  }
+
+  if (!matched && titleAr) {
+    matched =
+      activeCategories.find((c) => !c.parent_id && (c.name_ar || '').trim() === titleAr) ||
+      activeCategories.find((c) => (c.name_ar || '').trim() === titleAr);
+  }
+
+  if (!matched) {
+    return { parentCategoryId: null, categoryIds: [] };
+  }
+
+  const collected = new Set([matched.id]);
+  const queue = [matched.id];
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+    for (const cat of activeCategories) {
+      if (cat.parent_id === currentId && !collected.has(cat.id)) {
+        collected.add(cat.id);
+        queue.push(cat.id);
+      }
+    }
+  }
+
+  return { parentCategoryId: matched.id, categoryIds: Array.from(collected) };
+}
 
 class CategorySectionController {
   // Public endpoint: GET /api/v1/category-sections/active
   async getActiveSections(req, res) {
     try {
-      const sections = await HomepageCategorySection.findAll({
-        where: { is_active: true },
-        order: [
-          ['display_order', 'ASC'],
-          ['created_at', 'ASC'],
-        ],
-        include: [
-          {
-            model: HomepageCategoryItem,
-            as: 'items',
-            where: { is_active: true },
-            required: false,
-            order: [
-              ['display_order', 'ASC'],
-              ['created_at', 'ASC'],
-            ],
+      const [sections, allCategories] = await Promise.all([
+        HomepageCategorySection.findAll({
+          where: { is_active: true },
+          order: [
+            ['display_order', 'ASC'],
+            ['created_at', 'ASC'],
+          ],
+          include: [
+            {
+              model: HomepageCategoryItem,
+              as: 'items',
+              where: { is_active: true },
+              required: false,
+              order: [
+                ['display_order', 'ASC'],
+                ['created_at', 'ASC'],
+              ],
+              include: [
+                {
+                  model: Category,
+                  as: 'category',
+                  attributes: ['id', 'name_en', 'name_ar', 'slug', 'image_url'],
+                  required: false,
+                },
+              ],
+            },
+          ],
+        }),
+        Category.findAll({
+          attributes: ['id', 'name_en', 'name_ar', 'slug', 'parent_id', 'is_active'],
+        }),
+      ]);
+
+      // Resolve parent category & fetch actual products (including child categories) per section
+      const formattedSections = await Promise.all(
+        sections.map(async (section) => {
+          const plainSection = section.get({ plain: true });
+          const sortedItems = (plainSection.items || []).sort(
+            (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+          );
+          const maxItems = plainSection.max_items || 12;
+          plainSection.items = sortedItems.slice(0, maxItems);
+
+          const { parentCategoryId, categoryIds } = resolveSectionCategoryIds(plainSection, allCategories);
+          plainSection.category_id = parentCategoryId;
+
+          if (categoryIds.length === 0) {
+            plainSection.products = [];
+            return plainSection;
+          }
+
+          const products = await Product.findAll({
+            where: {
+              is_active: true,
+              is_available: true,
+              [Op.or]: [
+                { category_id: { [Op.in]: categoryIds } },
+                { subcategory_id: { [Op.in]: categoryIds } },
+                { sub_subcategory_id: { [Op.in]: categoryIds } },
+                { sub_sub_subcategory_id: { [Op.in]: categoryIds } },
+              ],
+            },
             include: [
               {
-                model: Category,
-                as: 'category',
-                attributes: ['id', 'name_en', 'name_ar', 'slug', 'image_url'],
+                model: ProductImage,
+                as: 'images',
+                attributes: ['id', 'image_url', 'is_primary', 'display_order'],
+                separate: true,
+                order: [['is_primary', 'DESC'], ['display_order', 'ASC']],
+              },
+              {
+                model: ProductVariant,
+                as: 'variants',
+                where: { is_active: true },
                 required: false,
+                include: [
+                  {
+                    model: ProductVariantImage,
+                    as: 'images',
+                    order: [['is_primary', 'DESC'], ['sort_order', 'ASC']],
+                  },
+                ],
               },
             ],
-          },
-        ],
-      });
+            order: [['is_featured', 'DESC'], ['created_at', 'DESC']],
+            limit: maxItems,
+          });
 
-      // Filter and limit items according to max_items per section
-      const formattedSections = sections.map((section) => {
-        const plainSection = section.get({ plain: true });
-        const sortedItems = (plainSection.items || []).sort(
-          (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
-        );
-        const maxItems = plainSection.max_items || 6;
-        plainSection.items = sortedItems.slice(0, maxItems);
-        return plainSection;
-      });
+          plainSection.products = products.map((p) => p.get({ plain: true }));
+          return plainSection;
+        })
+      );
 
       return sendSuccess(res, 'Active homepage category sections retrieved', {
         sections: formattedSections,

@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   LogOut,
   Tag,
@@ -26,6 +27,7 @@ import {
 
 import { fetchApi, getImageUrl } from '../services/api';
 import { getCategoryUrl } from '../services/categoryHierarchy';
+import { UNDER_CONSTRUCTION_MODE, isAllowedDuringMaintenance } from '../config/siteMode';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -49,12 +51,54 @@ export default function Navbar() {
   const [activeMegaCategory, setActiveMegaCategory] = useState(null);
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const megaMenuCloseTimeoutRef = React.useRef(null);
+  const megaMenuOpenTimeoutRef = React.useRef(null);
   const [mobileExpandedCat, setMobileExpandedCat] = useState(null);
+  const categoryNavRef = React.useRef(null);
+  const [canScrollCatLeft, setCanScrollCatLeft] = useState(false);
+  const [canScrollCatRight, setCanScrollCatRight] = useState(false);
+
+  const updateCategoryScrollButtons = React.useCallback(() => {
+    const el = categoryNavRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= 2) {
+      setCanScrollCatLeft(false);
+      setCanScrollCatRight(false);
+      return;
+    }
+    const current = Math.abs(el.scrollLeft);
+    setCanScrollCatLeft(current > 4);
+    setCanScrollCatRight(current < maxScroll - 4);
+  }, []);
+
+  const scrollCategoryNav = (direction) => {
+    const el = categoryNavRef.current;
+    if (!el) return;
+    const step = 300;
+    const isRtl = locale === 'ar';
+    let offset = direction === 'right' ? step : -step;
+    if (isRtl) offset = -offset;
+    el.scrollBy({ left: offset, behavior: 'smooth' });
+    setTimeout(updateCategoryScrollButtons, 320);
+  };
+
+  React.useEffect(() => {
+    updateCategoryScrollButtons();
+    const timer = setTimeout(updateCategoryScrollButtons, 150);
+    window.addEventListener('resize', updateCategoryScrollButtons);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateCategoryScrollButtons);
+    };
+  }, [dbCategories, locale, updateCategoryScrollButtons]);
 
   React.useEffect(() => {
     return () => {
       if (megaMenuCloseTimeoutRef.current) {
         clearTimeout(megaMenuCloseTimeoutRef.current);
+      }
+      if (megaMenuOpenTimeoutRef.current) {
+        clearTimeout(megaMenuOpenTimeoutRef.current);
       }
     };
   }, []);
@@ -145,8 +189,13 @@ export default function Navbar() {
       .catch(() => { });
   }, []);
 
-  // Hide Navbar on Admin and Driver pages
-  if (pathname?.startsWith('/admin') || pathname?.startsWith('/driver')) {
+  // Hide Navbar on Admin, Driver, and Under Construction pages
+  if (
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/driver') ||
+    pathname?.startsWith('/under-construction') ||
+    (UNDER_CONSTRUCTION_MODE && !isAllowedDuringMaintenance(pathname))
+  ) {
     return null;
   }
 
@@ -258,7 +307,7 @@ export default function Navbar() {
                               {p.brand}
                             </span>
                           )}
-                          {p.unit && <span className="text-slate-400">{p.unit}</span>}
+                          {p.unit_value && <span className="text-slate-400">{p.unit_value} {p.unit_type} {p.pack_size }</span>}
                         </div>
                       </div>
                     </div>
@@ -322,11 +371,32 @@ export default function Navbar() {
       clearTimeout(megaMenuCloseTimeoutRef.current);
       megaMenuCloseTimeoutRef.current = null;
     }
-    setActiveMegaCategory(cat);
-    setIsMegaMenuOpen(true);
+    if (megaMenuOpenTimeoutRef.current) {
+      clearTimeout(megaMenuOpenTimeoutRef.current);
+      megaMenuOpenTimeoutRef.current = null;
+    }
+    if (isMegaMenuOpen && activeMegaCategory?.id === cat.id) {
+      return;
+    }
+    megaMenuOpenTimeoutRef.current = setTimeout(() => {
+      setActiveMegaCategory(cat);
+      setIsMegaMenuOpen(true);
+      megaMenuOpenTimeoutRef.current = null;
+    }, 2000);
+  };
+
+  const handleCategoryMouseLeave = () => {
+    if (megaMenuOpenTimeoutRef.current) {
+      clearTimeout(megaMenuOpenTimeoutRef.current);
+      megaMenuOpenTimeoutRef.current = null;
+    }
   };
 
   const handleNavMouseLeave = () => {
+    if (megaMenuOpenTimeoutRef.current) {
+      clearTimeout(megaMenuOpenTimeoutRef.current);
+      megaMenuOpenTimeoutRef.current = null;
+    }
     if (megaMenuCloseTimeoutRef.current) {
       clearTimeout(megaMenuCloseTimeoutRef.current);
     }
@@ -344,6 +414,10 @@ export default function Navbar() {
   };
 
   const handleCloseMegaMenu = () => {
+    if (megaMenuOpenTimeoutRef.current) {
+      clearTimeout(megaMenuOpenTimeoutRef.current);
+      megaMenuOpenTimeoutRef.current = null;
+    }
     if (megaMenuCloseTimeoutRef.current) {
       clearTimeout(megaMenuCloseTimeoutRef.current);
       megaMenuCloseTimeoutRef.current = null;
@@ -398,7 +472,7 @@ export default function Navbar() {
               {/* Left / Center Area: Subcategories Grid */}
               <div className="flex-1 min-w-0">
                 {subcategories.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-7">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-7">
                     {subcategories.map((sub) => {
                       const subTitle = locale === 'ar' ? sub.name_ar || sub.name_en : sub.name_en;
                       const children = Array.isArray(sub.subcategories)
@@ -406,12 +480,12 @@ export default function Navbar() {
                         : [];
 
                       return (
-                        <div key={sub.id} className="space-y-2 min-w-0">
+                        <div key={sub.id} className="space-y-2.5 min-w-0">
                           {/* L2 Subcategory Heading */}
                           <Link
                             href={getCategoryUrl(sub, getCategoryUrl(activeMegaCategory))}
                             onClick={handleCloseMegaMenu}
-                            className="font-bold text-slate-900 text-[13px] hover:text-emerald-700 transition-colors block leading-tight pb-1.5 border-b border-slate-100 truncate group"
+                            className="font-bold text-slate-900 text-base lg:text-[20px] hover:text-emerald-700 transition-colors block leading-snug pb-2 border-b border-slate-100 truncate group"
                             title={subTitle}
                           >
                             <span className="group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 inline-block transition-transform">
@@ -431,7 +505,7 @@ export default function Navbar() {
                                     <Link
                                       href={getCategoryUrl(child, getCategoryUrl(sub, getCategoryUrl(activeMegaCategory)))}
                                       onClick={handleCloseMegaMenu}
-                                      className="text-[12px] text-slate-500 hover:text-emerald-800 hover:font-medium transition-colors block truncate leading-snug py-0.5"
+                                      className="text-sm lg:text-[16px] text-slate-500 hover:text-emerald-800 hover:font-medium transition-colors block truncate leading-snug py-0.5"
                                       title={childTitle}
                                     >
                                       {childTitle}
@@ -448,10 +522,10 @@ export default function Navbar() {
                 ) : (
                   <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/70 p-6 rounded-2xl border border-slate-100">
                     <div>
-                      <h3 className="font-bold text-slate-900 text-sm">
+                      <h3 className="font-bold text-slate-900 text-lg lg:text-[20px]">
                         {parentTitle}
                       </h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <p className="text-sm lg:text-[15px] text-slate-500 mt-1">
                         {locale === 'ar'
                           ? 'تصفح جميع المنتجات المتوفرة في هذا القسم'
                           : 'Browse all products available in this category'}
@@ -460,7 +534,7 @@ export default function Navbar() {
                     <Link
                       href={getCategoryUrl(activeMegaCategory)}
                       onClick={handleCloseMegaMenu}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white text-xs font-bold transition-all shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#043927] hover:bg-[#02281b] text-white text-sm lg:text-[16px] font-bold transition-all shadow-xs"
                     >
                       <span>{locale === 'ar' ? 'عرض جميع المنتجات' : 'View all products'}</span>
                       <ChevronRight className="w-4 h-4 rtl:rotate-180" />
@@ -493,23 +567,23 @@ export default function Navbar() {
                   {/* Card Info */}
                   <div className="p-4 flex flex-col justify-between flex-1 bg-white/70">
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm group-hover/catCard:text-[#043927] transition-colors leading-snug line-clamp-1">
+                      <h4 className="font-bold text-slate-900 text-lg lg:text-[20px] group-hover/catCard:text-[#043927] transition-colors leading-snug line-clamp-1">
                         {parentTitle}
                       </h4>
-                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                      <p className="text-sm lg:text-[15px] text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
                         {locale === 'ar'
                           ? `اكتشف أفضل عروض ومنتجات قسم ${parentTitle}`
                           : `Explore the best deals and curated products in ${parentTitle}`}
                       </p>
                     </div>
 
-                    <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-[#043927] flex items-center gap-1 group-hover/catCard:underline">
+                    <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <span className="text-sm lg:text-[16px] font-bold text-[#043927] flex items-center gap-1 group-hover/catCard:underline shrink-0">
                         <span>{locale === 'ar' ? 'تسوق الآن' : 'Shop Now'}</span>
-                        <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180 group-hover/catCard:translate-x-0.5 rtl:group-hover/catCard:-translate-x-0.5 transition-transform" />
+                        <ChevronRight className="w-4 h-4 rtl:rotate-180 group-hover/catCard:translate-x-0.5 rtl:group-hover/catCard:-translate-x-0.5 transition-transform" />
                       </span>
                       {subcategories.length > 0 && (
-                        <span className="text-[10px] text-slate-400 font-medium">
+                        <span className="text-xs lg:text-[14px] text-slate-400 font-medium truncate">
                           {subcategories.length} {locale === 'ar' ? 'أقسام فرعية' : 'subcategories'}
                         </span>
                       )}
@@ -520,7 +594,7 @@ export default function Navbar() {
             </div>
 
             {/* Mega Menu Footer Banner */}
-            <div className="mt-7 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div className="mt-7 pt-4 border-t border-slate-100 flex items-center justify-between text-sm lg:text-[15px] text-slate-500">
               <span className="font-medium">
                 {subcategories.length}{' '}
                 {locale === 'ar' ? 'أقسام فرعية متوفرة' : 'subcategories available'}
@@ -528,14 +602,14 @@ export default function Navbar() {
               <Link
                 href={getCategoryUrl(activeMegaCategory)}
                 onClick={handleCloseMegaMenu}
-                className="font-bold text-[#043927] hover:text-[#02281b] flex items-center gap-1 hover:underline transition-all"
+                className="text-sm lg:text-[16px] font-bold text-[#043927] hover:text-[#02281b] flex items-center gap-1 hover:underline transition-all"
               >
                 <span>
                   {locale === 'ar'
                     ? `استكشف جميع منتجات ${parentTitle}`
                     : `Explore all ${parentTitle} products`}
                 </span>
-                <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
+                <ChevronRight className="w-4 h-4 rtl:rotate-180" />
               </Link>
             </div>
           </div>
@@ -716,8 +790,24 @@ export default function Navbar() {
         onMouseLeave={handleNavMouseLeave}
         className="relative bg-white text-slate-800 border-b border-slate-200 shadow-xs z-40"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1 sm:gap-3 overflow-x-auto scrollbar-none text-xs whitespace-nowrap py-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1.5">
+          {canScrollCatLeft && (
+            <button
+              type="button"
+              onClick={() => scrollCategoryNav('left')}
+              aria-label={locale === 'ar' ? 'التمرير لليسار' : 'Scroll categories left'}
+              className="shrink-0 w-7 h-7 rounded-full bg-white border border-slate-200 shadow-2xs hover:bg-slate-50 text-slate-700 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+            >
+              <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
+            </button>
+          )}
+
+          <div
+            ref={categoryNavRef}
+            onScroll={updateCategoryScrollButtons}
+            className="flex-1 min-w-0 flex items-center gap-1 sm:gap-3 overflow-x-auto scrollbar-none text-xs whitespace-nowrap py-1"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             {/* All Categories Button */}
             <Link
               href="/products"
@@ -728,15 +818,6 @@ export default function Navbar() {
               <span>{locale === 'ar' ? 'جميع الأقسام' : 'All'}</span>
             </Link>
 
-            {/* Deals & Offers */}
-            <Link
-              href="/products?deals=true"
-              onMouseEnter={handleCloseMegaMenu}
-              className="relative py-2 px-2.5 text-rose-600 hover:text-rose-700 font-bold transition-colors shrink-0"
-            >
-              <span>{locale === 'ar' ? 'العروض والخصومات' : 'Deals & Offers'}</span>
-            </Link>
-
             {/* Dynamic Parent Categories */}
             {(dbCategories || []).map((cat) => {
               const isActive = isMegaMenuOpen && activeMegaCategory?.id === cat.id;
@@ -745,10 +826,12 @@ export default function Navbar() {
                 <div
                   key={cat.id}
                   onMouseEnter={() => handleCategoryMouseEnter(cat)}
+                  onMouseLeave={handleCategoryMouseLeave}
                   className="relative shrink-0"
                 >
                   <Link
                     href={getCategoryUrl(cat)}
+                    onClick={handleCloseMegaMenu}
                     className={`relative block py-2 px-2.5 text-xs transition-colors ${
                       isActive
                         ? 'text-black font-bold'
@@ -764,16 +847,18 @@ export default function Navbar() {
                 </div>
               );
             })}
-
-            {/* Help / Contact */}
-            <Link
-              href="/contact"
-              onMouseEnter={handleCloseMegaMenu}
-              className="relative py-2 px-2.5 text-slate-600 hover:text-black font-medium transition-colors shrink-0"
-            >
-              <span>{locale === 'ar' ? 'المساعدة' : 'Help'}</span>
-            </Link>
           </div>
+
+          {canScrollCatRight && (
+            <button
+              type="button"
+              onClick={() => scrollCategoryNav('right')}
+              aria-label={locale === 'ar' ? 'التمرير لليمين' : 'Scroll categories right'}
+              className="shrink-0 w-7 h-7 rounded-full bg-white border border-slate-200 shadow-2xs hover:bg-slate-50 text-slate-700 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+            >
+              <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+            </button>
+          )}
         </div>
 
         {/* Dynamic Mega Menu Dropdown Panel */}

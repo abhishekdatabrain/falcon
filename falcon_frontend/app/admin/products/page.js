@@ -2686,7 +2686,7 @@ export default function AdminProductsPage() {
 
                         <div>
                           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                            Discount Price
+                            Price After Discount
                           </label>
                           <div className="relative">
                             <input
@@ -3030,7 +3030,7 @@ export default function AdminProductsPage() {
                                 {/* Discount Price */}
                                 <div className="lg:col-span-4">
                                   <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
-                                    Discount Price (SAR)
+                                    Price After Discount (SAR)
                                   </label>
                                   <div className="relative">
                                     <input

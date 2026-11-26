@@ -484,6 +484,9 @@ class ProductService {
         thumbnail: primaryImage,
         image: primaryImage,
         unit: unitText,
+        unit_value: p.unit_value || null,
+        unit_type: p.unit_type || null,
+        pack_size: p.pack_size || null,
         brand: p.brand || '',
         sku: p.sku,
         category: p.category ? {
@@ -495,7 +498,7 @@ class ProductService {
         } : null,
       };
     });
-
+console.log(formattedProducts,"formattedProducts")
     const formattedCategories = matchingCategories.map((c) => ({
       id: c.id,
       name: c.name_en || c.name_ar,

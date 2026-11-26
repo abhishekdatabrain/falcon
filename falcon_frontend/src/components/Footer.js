@@ -5,13 +5,19 @@ import { usePathname } from 'next/navigation';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Leaf } from 'lucide-react';
 import FooterWaveDivider from './FooterWaveDivider';
+import { UNDER_CONSTRUCTION_MODE, isAllowedDuringMaintenance } from '../config/siteMode';
 
 export default function Footer() {
   const pathname = usePathname();
   const { locale, setLanguage } = useLanguage();
 
-  // Hide global footer on Admin and Driver routes
-  if (pathname?.startsWith('/admin') || pathname?.startsWith('/driver')) {
+  // Hide global footer on Admin, Driver, and Under Construction routes
+  if (
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/driver') ||
+    pathname?.startsWith('/under-construction') ||
+    (UNDER_CONSTRUCTION_MODE && !isAllowedDuringMaintenance(pathname))
+  ) {
     return null;
   }
 
@@ -179,7 +185,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-xs sm:text-sm text-slate-300 font-medium">
               <li><Link href="/about" className="hover:text-white transition-colors">{locale === 'ar' ? 'من نحن' : 'About Us'}</Link></li>
               <li><Link href="/products?on_sale=true" className="hover:text-white transition-colors">{locale === 'ar' ? 'العروض والخصومات' : 'Deals & Offers'}</Link></li>
-              <li><Link href="/about" className="hover:text-white transition-colors">{locale === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}</Link></li>
+              <li><Link href="/privacy-policy" className="hover:text-white transition-colors">{locale === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}</Link></li>
               <li><Link href="/terms" className="hover:text-white transition-colors">{locale === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}</Link></li>
             </ul>
           </div>

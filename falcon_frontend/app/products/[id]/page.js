@@ -802,7 +802,7 @@ export default function ProductDetailPage() {
             onMouseMove={updateImageZoom}
             onMouseLeave={resetImageZoom}
             onTouchStart={handleImageTouchStart}
-            className="w-full max-w-md aspect-[4/3] max-h-[320px] sm:max-h-[330px] rounded-2xl bg-[#F8F9FA] border border-slate-200/80 relative flex items-center justify-center overflow-hidden shadow-2xs group isolate cursor-pointer"
+            className="w-full max-w-md aspect-[4/3] max-h-[320px] sm:max-h-[330px] p-4 rounded-2xl bg-white border border-slate-200/80 relative flex items-center justify-center overflow-hidden shadow-2xs group isolate cursor-pointer"
           >
             {/* Top Left Badge */}
             {isOutOfStock ? (
@@ -849,7 +849,7 @@ export default function ProductDetailPage() {
               ref={mainImageRef}
               src={getImageUrl(selectedImg || galleryImages[0]) || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800'}
               alt={locale === 'ar' ? product.name_ar : product.name_en}
-              className="w-full h-full object-cover transition-transform duration-300 ease-out will-change-transform select-none group-hover:scale-105"
+              className="max-w-full max-h-full object-contain transition-transform duration-300 ease-out will-change-transform select-none"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800';
