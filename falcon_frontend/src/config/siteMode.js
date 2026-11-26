@@ -4,6 +4,13 @@
  */
 export const UNDER_CONSTRUCTION_MODE = true;
 
+export const UNDER_CONSTRUCTION_HOSTS = ['saqrcart.com', 'www.saqrcart.com'];
+
+export function isUnderConstructionHost(rawHost = '') {
+  const host = String(rawHost).split(',')[0].trim().split(':')[0].toLowerCase();
+  return UNDER_CONSTRUCTION_HOSTS.includes(host);
+}
+
 const MAINTENANCE_ALLOWED_PREFIXES = [
   '/admin',
   '/driver',

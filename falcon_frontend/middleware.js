@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
-import { UNDER_CONSTRUCTION_MODE, isAllowedDuringMaintenance } from './src/config/siteMode';
+import {
+  UNDER_CONSTRUCTION_MODE,
+  isUnderConstructionHost,
+  isAllowedDuringMaintenance,
+} from './src/config/siteMode';
 
 export function middleware(request) {
-  if (!UNDER_CONSTRUCTION_MODE) {
+  const rawHost =
+    request.headers.get('x-forwarded-host') ||
+    request.headers.get('host') ||
+    request.nextUrl.hostname ||
+    '';
+
+  if (!UNDER_CONSTRUCTION_MODE || !isUnderConstructionHost(rawHost)) {
     return NextResponse.next();
   }
 

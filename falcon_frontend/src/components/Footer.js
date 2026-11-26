@@ -5,18 +5,28 @@ import { usePathname } from 'next/navigation';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Leaf } from 'lucide-react';
 import FooterWaveDivider from './FooterWaveDivider';
-import { UNDER_CONSTRUCTION_MODE, isAllowedDuringMaintenance } from '../config/siteMode';
+import { UNDER_CONSTRUCTION_MODE, isUnderConstructionHost, isAllowedDuringMaintenance } from '../config/siteMode';
 
 export default function Footer() {
   const pathname = usePathname();
   const { locale, setLanguage } = useLanguage();
+  const isClient = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+  const isSaqrcartMaintenance =
+    isClient &&
+    UNDER_CONSTRUCTION_MODE &&
+    isUnderConstructionHost(window.location.hostname) &&
+    !isAllowedDuringMaintenance(pathname);
 
   // Hide global footer on Admin, Driver, and Under Construction routes
   if (
     pathname?.startsWith('/admin') ||
     pathname?.startsWith('/driver') ||
     pathname?.startsWith('/under-construction') ||
-    (UNDER_CONSTRUCTION_MODE && !isAllowedDuringMaintenance(pathname))
+    isSaqrcartMaintenance
   ) {
     return null;
   }

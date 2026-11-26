@@ -27,7 +27,7 @@ import {
 
 import { fetchApi, getImageUrl } from '../services/api';
 import { getCategoryUrl } from '../services/categoryHierarchy';
-import { UNDER_CONSTRUCTION_MODE, isAllowedDuringMaintenance } from '../config/siteMode';
+import { UNDER_CONSTRUCTION_MODE, isUnderConstructionHost, isAllowedDuringMaintenance } from '../config/siteMode';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -189,12 +189,23 @@ export default function Navbar() {
       .catch(() => { });
   }, []);
 
+  const isClient = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+  const isSaqrcartMaintenance =
+    isClient &&
+    UNDER_CONSTRUCTION_MODE &&
+    isUnderConstructionHost(window.location.hostname) &&
+    !isAllowedDuringMaintenance(pathname);
+
   // Hide Navbar on Admin, Driver, and Under Construction pages
   if (
     pathname?.startsWith('/admin') ||
     pathname?.startsWith('/driver') ||
     pathname?.startsWith('/under-construction') ||
-    (UNDER_CONSTRUCTION_MODE && !isAllowedDuringMaintenance(pathname))
+    isSaqrcartMaintenance
   ) {
     return null;
   }
