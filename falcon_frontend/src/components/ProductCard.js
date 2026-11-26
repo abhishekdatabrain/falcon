@@ -164,20 +164,11 @@ export default function ProductCard({ product, categoryTitle = '' }) {
       {/* Top Badges & Wishlist Header */}
       <div className="flex items-center justify-between z-10 mb-1 gap-1">
         <div className="flex items-center gap-1 flex-wrap">
-          {isOutOfStock ? (
-            <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
-              <Ban className="w-2.5 h-2.5 text-white" />
-              <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
+          {!isOutOfStock && Boolean(product.is_best_seller) && (
+            <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
+              <Star className="w-2.5 h-2.5 fill-current text-white" />
+              <span>{locale === 'ar' ? 'الأكثر مبيعاً' : 'BEST SELLER'}</span>
             </span>
-          ) : (
-            <>
-              {Boolean(product.is_best_seller) && (
-                <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
-                  <Star className="w-2.5 h-2.5 fill-current text-white" />
-                  <span>{locale === 'ar' ? 'الأكثر مبيعاً' : 'BEST SELLER'}</span>
-                </span>
-              )}
-            </>
           )}
         </div>
 

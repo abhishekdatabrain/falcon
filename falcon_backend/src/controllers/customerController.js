@@ -152,6 +152,17 @@ class CustomerController {
       return sendError(res, error.message, [], 400);
     }
   }
+
+  async changePassword(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const { currentPassword, newPassword } = req.body || {};
+      await customerService.changeCustomerPassword(userId, { currentPassword, newPassword });
+      return sendSuccess(res, 'Password changed successfully');
+    } catch (error) {
+      return sendError(res, error.message, [], 400);
+    }
+  }
 }
 
 module.exports = new CustomerController();

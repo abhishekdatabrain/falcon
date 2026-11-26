@@ -436,14 +436,6 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Delivery Fee */}
-                <div className="flex items-center justify-between text-slate-600 font-medium">
-                  <span>{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-                  <span className="text-emerald-700 font-black text-xs uppercase tracking-wide bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                    {locale === 'ar' ? 'مجاني' : 'FREE'}
-                  </span>
-                </div>
-
                 {/* Coupon Discount (if applied) */}
                 {appliedCoupon && (
                   <div className="flex items-center justify-between text-emerald-700 font-bold bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">

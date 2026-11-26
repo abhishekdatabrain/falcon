@@ -9,6 +9,7 @@ router.use(authenticate, authorize(ROLES.CUSTOMER));
 
 router.get('/profile', (req, res, next) => customerController.getProfile(req, res, next));
 router.put('/profile', (req, res, next) => customerController.updateProfile(req, res, next));
+router.put('/change-password', (req, res, next) => customerController.changePassword(req, res, next));
 
 router.get('/addresses', (req, res, next) => customerController.getAddresses(req, res, next));
 router.post('/addresses', (req, res, next) => customerController.addAddress(req, res, next));

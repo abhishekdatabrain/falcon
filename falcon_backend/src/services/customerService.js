@@ -351,6 +351,29 @@ class CustomerService {
 
     return true;
   }
+
+  async changeCustomerPassword(userId, { currentPassword, newPassword }) {
+    if (!currentPassword || !newPassword) {
+      throw new Error('Current password and new password are required');
+    }
+    if (String(newPassword).length < 6) {
+      throw new Error('New password must be at least 6 characters long');
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const isMatch = await bcrypt.compare(String(currentPassword), user.password_hash);
+    if (!isMatch) {
+      throw new Error('Current password is incorrect');
+    }
+
+    const newHash = await bcrypt.hash(String(newPassword), 10);
+    await user.update({ password_hash: newHash });
+    return true;
+  }
 }
 
 module.exports = new CustomerService();

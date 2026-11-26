@@ -610,12 +610,7 @@ export default function HomePage() {
       >
         {/* Top Badges & Wishlist */}
         <div className="flex items-center justify-between z-10 mb-0.5 h-5">
-          {isOutOfStock ? (
-            <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
-              <Ban className="w-2.5 h-2.5 text-white" />
-              <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
-            </span>
-          ) : prod.is_best_seller === true ? (
+          {!isOutOfStock && prod.is_best_seller === true ? (
             <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
               <Star className="w-2.5 h-2.5 fill-current text-white" />
               <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>
@@ -1418,12 +1413,7 @@ export default function HomePage() {
                       >
                         {/* Top Badges & Wishlist */}
                         <div className="flex items-center justify-between z-10 mb-0.5 h-5">
-                          {isOutOfStock ? (
-                            <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
-                              <Ban className="w-2.5 h-2.5 text-white" />
-                              <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
-                            </span>
-                          ) : prod.is_best_seller === true ? (
+                          {!isOutOfStock && prod.is_best_seller === true ? (
                             <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
                               <Star className="w-2.5 h-2.5 fill-current text-white" />
                               <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>
@@ -2095,12 +2085,7 @@ export default function HomePage() {
                         >
                           {/* Top Badges */}
                           <div className="flex items-center justify-between z-10 mb-1">
-                            {isOutOfStock ? (
-                              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
-                                <Ban className="w-2.5 h-2.5 text-white" />
-                                <span>{locale === 'ar' ? 'نفذت الكمية' : 'OUT OF STOCK'}</span>
-                              </span>
-                            ) : prod.is_best_seller === true ? (
+                            {!isOutOfStock && prod.is_best_seller === true ? (
                               <span className="px-2 py-0.5 rounded-full bg-[#FFA500] text-white font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 shadow-2xs">
                                 <Star className="w-2.5 h-2.5 fill-current text-white" />
                                 <span>{locale === 'ar' ? 'منتج الأكثر مبيعاً' : 'BEST SELLER'}</span>

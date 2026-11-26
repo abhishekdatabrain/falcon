@@ -47,6 +47,14 @@ export default function Navbar() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (!userDropdownOpen) return;
+    const timer = setTimeout(() => {
+      setUserDropdownOpen(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [userDropdownOpen]);
   const [dbCategories, setDbCategories] = useState([]);
   const [activeMegaCategory, setActiveMegaCategory] = useState(null);
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
@@ -656,7 +664,7 @@ export default function Navbar() {
                   {locale === 'ar' ? 'التوصيل إلى' : 'Deliver to'}
                 </span>
                 <span className="font-bold text-white">
-                  {locale === 'ar' ? 'الرياض، المملكة العربية السعودية' : 'Saudi Arabia'}
+                  {locale === 'ar' ? 'الرياض، المملكة العربية السعودية' : 'Makka'}
                 </span>
               </div>
             </div>
@@ -734,18 +742,18 @@ export default function Navbar() {
                     <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
                   </div>
                   <Link
+                    href="/profile"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="block px-4 py-2 hover:bg-slate-50 text-xs font-semibold text-slate-700"
+                  >
+                    {locale === 'ar' ? 'ملفي الشخصي' : 'My Profile'}
+                  </Link>
+                  <Link
                     href="/orders"
                     onClick={() => setUserDropdownOpen(false)}
                     className="block px-4 py-2 hover:bg-slate-50 text-xs font-semibold text-slate-700"
                   >
                     {t('nav.myOrders') || 'My Orders'}
-                  </Link>
-                  <Link
-                    href="/notifications"
-                    onClick={() => setUserDropdownOpen(false)}
-                    className="block px-4 py-2 hover:bg-slate-50 text-xs font-semibold text-slate-700"
-                  >
-                    {locale === 'ar' ? 'الإشعارات' : 'Notifications'}
                   </Link>
                   <button
                     onClick={() => {

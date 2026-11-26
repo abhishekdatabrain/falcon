@@ -273,15 +273,6 @@ export default function ProductImageCarousel({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Out of Stock Overlay */}
-      {isOutOfStock && (
-        <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl pointer-events-none">
-          <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-            {locale === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
-          </span>
-        </div>
-      )}
-
       {/* Slider Track Container (enforce LTR for identical transform physics across locales) */}
       <div className="w-full h-full overflow-hidden relative" dir="ltr">
         <div
@@ -301,9 +292,7 @@ export default function ProductImageCarousel({
                 alt={`${displayAlt} - ${idx + 1}`}
                 loading={idx === 0 ? 'eager' : 'lazy'}
                 decoding="async"
-                className={`w-full h-full object-contain pointer-events-none ${
-                  isOutOfStock ? 'opacity-50 grayscale' : ''
-                } ${imageClassName}`}
+                className={`w-full h-full object-contain pointer-events-none ${imageClassName}`}
                 onError={(e) => {
                   e.currentTarget.onerror = null;
                   e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
