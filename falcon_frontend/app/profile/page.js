@@ -65,7 +65,8 @@ export default function ProfilePage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Profile data & Form State
-  const [fullNameInput, setFullNameInput] = useState('');
+  const [firstNameInput, setFirstNameInput] = useState('');
+  const [lastNameInput, setLastNameInput] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [dob, setDob] = useState('');
@@ -167,11 +168,16 @@ export default function ProfilePage() {
 
       if (profRes && profRes.success && profRes.data?.profile) {
         const p = profRes.data.profile;
-        const combinedName = [p.first_name || p.user?.first_name, p.last_name || p.user?.last_name]
-          .filter(Boolean)
-          .join(' ')
-          .trim();
-        setFullNameInput(combinedName || user?.name || '');
+        const loadedFirst = p.first_name || p.user?.first_name || '';
+        const loadedLast = p.last_name || p.user?.last_name || '';
+        if (loadedFirst || loadedLast) {
+          setFirstNameInput(loadedFirst);
+          setLastNameInput(loadedLast);
+        } else {
+          const nameParts = (user?.name || '').trim().split(/\s+/).filter(Boolean);
+          setFirstNameInput(nameParts[0] || '');
+          setLastNameInput(nameParts.slice(1).join(' ') || '');
+        }
         setEmail(p.user?.email || user?.email || '');
         setMobile(p.user?.mobile || p.mobile || user?.mobile || '');
         setDob(p.dob || '');
@@ -205,8 +211,14 @@ export default function ProfilePage() {
           setStats(p.stats);
         }
       } else if (user) {
-        const combinedName = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
-        setFullNameInput(combinedName || user?.name || '');
+        if (user?.first_name || user?.last_name) {
+          setFirstNameInput(user.first_name || '');
+          setLastNameInput(user.last_name || '');
+        } else {
+          const nameParts = (user?.name || '').trim().split(/\s+/).filter(Boolean);
+          setFirstNameInput(nameParts[0] || '');
+          setLastNameInput(nameParts.slice(1).join(' ') || '');
+        }
         setEmail(user?.email || '');
         setMobile(user?.mobile || '');
       }
@@ -325,10 +337,8 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
-      const trimmedName = fullNameInput.trim();
-      const parts = trimmedName ? trimmedName.split(/\s+/) : [];
-      const first_name = parts[0] || '';
-      const last_name = parts.slice(1).join(' ') || '';
+      const first_name = firstNameInput.trim();
+      const last_name = lastNameInput.trim();
 
       const payload = {
         first_name,
@@ -372,8 +382,9 @@ export default function ProfilePage() {
   };
 
   // Dynamic Profile Strength Badge Calculation
+  const combinedNameInput = [firstNameInput.trim(), lastNameInput.trim()].filter(Boolean).join(' ');
   const badgeCriteria = [
-    { label: 'Full Name', ok: Boolean(fullNameInput?.trim()) },
+    { label: 'Full Name', ok: Boolean(firstNameInput?.trim() && lastNameInput?.trim()) },
     { label: 'Email Verified', ok: Boolean(email?.trim()) },
     { label: 'Mobile Phone', ok: Boolean(mobile?.trim()) },
     { label: 'Date of Birth', ok: Boolean(dob?.trim()) },
@@ -385,7 +396,7 @@ export default function ProfilePage() {
   const strengthPercentage = Math.round((completedBadges / badgeCriteria.length) * 100);
 
   // Full Name formatting
-  const fullName = fullNameInput.trim() || (user?.name || (user?.email ? user.email.split('@')[0] : 'Falcon Member'));
+  const fullName = combinedNameInput || (user?.name || (user?.email ? user.email.split('@')[0] : 'Falcon Member'));
 
   // Handle Delete Account
   const handleDeleteAccount = async () => {
@@ -803,16 +814,30 @@ export default function ProfilePage() {
               {/* Form Input Fields Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
                 
-                {/* Full Name */}
-                <div className="space-y-1 sm:col-span-2">
+                {/* First Name */}
+                <div className="space-y-1">
                   <label className="block text-slate-700 font-bold">
-                    {locale === 'ar' ? 'الاسم الكامل' : 'Full Name'}
+                    {locale === 'ar' ? 'الاسم الأول' : 'First Name'}
                   </label>
                   <input
                     type="text"
-                    value={fullNameInput}
-                    placeholder={locale === 'ar' ? 'أدخل الاسم الكامل' : 'Enter full name'}
-                    onChange={(e) => setFullNameInput(e.target.value)}
+                    value={firstNameInput}
+                    placeholder={locale === 'ar' ? 'أدخل الاسم الأول' : 'Enter first name'}
+                    onChange={(e) => setFirstNameInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
+                  />
+                </div>
+
+                {/* Last Name */}
+                <div className="space-y-1">
+                  <label className="block text-slate-700 font-bold">
+                    {locale === 'ar' ? 'الاسم الأخير' : 'Last Name'}
+                  </label>
+                  <input
+                    type="text"
+                    value={lastNameInput}
+                    placeholder={locale === 'ar' ? 'أدخل الاسم الأخير' : 'Enter last name'}
+                    onChange={(e) => setLastNameInput(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F6F8] border border-slate-200/80 text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-slate-300"
                   />
                 </div>

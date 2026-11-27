@@ -28,7 +28,9 @@ import {
   ArrowRight,
   GripVertical,
   Check,
-  AlertCircle
+  AlertCircle,
+  Search,
+  ShoppingBag
 } from 'lucide-react';
 
 const PRESET_BG_COLORS = [
@@ -68,6 +70,9 @@ export default function AdminCategorySectionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSection, setEditingSection] = useState(null);
   const [activeModalTab, setActiveModalTab] = useState('settings'); // 'settings' | 'items' | 'preview'
+  const [availableSectionProducts, setAvailableSectionProducts] = useState([]);
+  const [loadingProductsPicker, setLoadingProductsPicker] = useState(false);
+  const [productSearchQuery, setProductSearchQuery] = useState('');
 
   // Form State
   const [formData, setFormData] = useState({
@@ -80,6 +85,8 @@ export default function AdminCategorySectionsPage() {
     view_more_link: '/products',
     view_more_text_en: 'View more',
     view_more_text_ar: 'عرض المزيد',
+    category_id: '',
+    product_ids: [],
     items: [],
   });
 
@@ -114,9 +121,56 @@ export default function AdminCategorySectionsPage() {
     loadData();
   }, []);
 
+  const resolveSectionCategoryId = (sectionObj) => {
+    if (sectionObj?.category_id) return sectionObj.category_id;
+    const titleEn = (sectionObj?.title_en || '').trim().toLowerCase();
+    if (titleEn) {
+      const normalizedTitle = titleEn.replace('bevarages', 'beverages');
+      const foundByName =
+        categoriesCatalog.find((c) => !c.parent_id && (c.name_en || '').trim().toLowerCase() === normalizedTitle) ||
+        categoriesCatalog.find((c) => (c.name_en || '').trim().toLowerCase() === normalizedTitle) ||
+        categoriesCatalog.find((c) => !c.parent_id && (c.name_en || '').trim().toLowerCase().includes(normalizedTitle)) ||
+        categoriesCatalog.find((c) => (c.name_en || '').trim().toLowerCase().includes(normalizedTitle));
+      if (foundByName) return foundByName.id;
+    }
+    const link = (sectionObj?.view_more_link || '').trim();
+    const match = link.match(/[?&]category=([^&#]+)/i);
+    if (match && match[1]) {
+      const slugOrId = decodeURIComponent(match[1]).trim().toLowerCase();
+      const found = categoriesCatalog.find(
+        (c) => String(c.id).toLowerCase() === slugOrId || (c.slug || '').toLowerCase() === slugOrId
+      );
+      if (found) return found.id;
+    }
+    return '';
+  };
+
+  const loadCategoryProductsForSection = async (sectionObj) => {
+    try {
+      setLoadingProductsPicker(true);
+      const catId = resolveSectionCategoryId(sectionObj);
+      const endpoint = catId
+        ? `/products?category_id=${encodeURIComponent(catId)}&limit=100`
+        : '/products?limit=100';
+      const res = await fetchApi(endpoint);
+      if (res.success && res.data) {
+        const list = res.data.products?.products || res.data.products || (Array.isArray(res.data) ? res.data : []);
+        setAvailableSectionProducts(Array.isArray(list) ? list : []);
+      } else {
+        setAvailableSectionProducts([]);
+      }
+    } catch (err) {
+      console.error('Failed to load category products:', err);
+      setAvailableSectionProducts([]);
+    } finally {
+      setLoadingProductsPicker(false);
+    }
+  };
+
   // Open Create Modal
   const handleOpenCreateModal = () => {
     setEditingSection(null);
+    setProductSearchQuery('');
     setFormData({
       title_en: '',
       title_ar: '',
@@ -127,15 +181,21 @@ export default function AdminCategorySectionsPage() {
       view_more_link: '/products',
       view_more_text_en: 'View more',
       view_more_text_ar: 'عرض المزيد',
+      category_id: '',
+      product_ids: [],
       items: [],
     });
+    loadCategoryProductsForSection({});
     setActiveModalTab('settings');
     setIsModalOpen(true);
   };
 
   // Open Edit Modal
-  const handleOpenEditModal = (section) => {
+  const handleOpenEditModal = (section, initialTab = 'settings') => {
     setEditingSection(section);
+    setProductSearchQuery('');
+    const resolvedCatId = resolveSectionCategoryId(section);
+    const initialProductIds = Array.isArray(section.product_ids) ? section.product_ids : [];
     setFormData({
       title_en: section.title_en || '',
       title_ar: section.title_ar || '',
@@ -146,6 +206,8 @@ export default function AdminCategorySectionsPage() {
       view_more_link: section.view_more_link || '/products',
       view_more_text_en: section.view_more_text_en || 'View more',
       view_more_text_ar: section.view_more_text_ar || 'عرض المزيد',
+      category_id: resolvedCatId,
+      product_ids: initialProductIds,
       items: (section.items || []).map((it, idx) => ({
         id: it.id || 'item-' + idx,
         category_id: it.category_id || '',
@@ -157,7 +219,8 @@ export default function AdminCategorySectionsPage() {
         is_active: it.is_active !== undefined ? it.is_active : true,
       })),
     });
-    setActiveModalTab('settings');
+    loadCategoryProductsForSection(section);
+    setActiveModalTab(initialTab);
     setIsModalOpen(true);
   };
 
@@ -325,6 +388,66 @@ export default function AdminCategorySectionsPage() {
       showToast(err.message || 'Upload error', 'error');
     }
   };
+
+  const handleMoveProductInSection = (index, direction) => {
+    setFormData((prev) => {
+      const baseIds =
+        prev.product_ids && prev.product_ids.length > 0
+          ? prev.product_ids
+          : availableSectionProducts.map((p) => p.id);
+      const updated = [...baseIds];
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= updated.length) return prev;
+      const [moved] = updated.splice(index, 1);
+      updated.splice(targetIndex, 0, moved);
+      return { ...prev, product_ids: updated };
+    });
+  };
+
+  const handleAddProductToSection = (productId) => {
+    setFormData((prev) => {
+      const current = prev.product_ids || [];
+      if (current.includes(productId)) return prev;
+      return { ...prev, product_ids: [...current, productId] };
+    });
+  };
+
+  const handleRemoveProductFromSection = (productId) => {
+    setFormData((prev) => {
+      const baseIds =
+        prev.product_ids && prev.product_ids.length > 0
+          ? prev.product_ids
+          : availableSectionProducts.map((p) => p.id);
+      return {
+        ...prev,
+        product_ids: baseIds.filter((id) => String(id) !== String(productId)),
+      };
+    });
+  };
+
+  const resolveProductImg = (prod) => {
+    if (!prod) return '';
+    return (
+      prod.images?.find((img) => img.is_primary)?.image_url ||
+      prod.images?.[0]?.image_url ||
+      prod.variants?.[0]?.images?.find((img) => img.is_primary)?.image_url ||
+      prod.variants?.[0]?.images?.[0]?.image_url ||
+      prod.variants?.[0]?.image_url ||
+      ''
+    );
+  };
+
+  const selectedProductObjects = (formData.product_ids || []).length > 0
+    ? (formData.product_ids || [])
+        .map((pid) => {
+          return (
+            availableSectionProducts.find((p) => String(p.id) === String(pid)) ||
+            (editingSection?.products || []).find((p) => String(p.id) === String(pid)) ||
+            null
+          );
+        })
+        .filter(Boolean)
+    : availableSectionProducts;
 
   // Submit Section Form
   const handleSubmitSection = async (e) => {
@@ -639,46 +762,64 @@ export default function AdminCategorySectionsPage() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
-                  {(sec.items || []).slice(0, sec.max_items || 6).map((item, itIdx) => (
-                    <div
-                      key={item.id || itIdx}
-                      className="group flex flex-col items-center text-center relative min-w-0"
-                    >
-                      <div className="relative w-full aspect-square bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center overflow-hidden shrink-0 min-h-0 min-w-0 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
-                        <img
-                          src={resolveImgSrc(item.image_url)}
-                          alt={item.title_en}
-                          className="w-full h-full max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 pointer-events-none"
-                          onError={(e) => {
-                            if (e.currentTarget.dataset.errorHandled) {
-                              e.currentTarget.style.opacity = '0';
-                              return;
-                            }
-                            e.currentTarget.dataset.errorHandled = 'true';
-                            e.currentTarget.src = '/subcategories/laundry_care.png';
-                          }}
-                        />
-                        {!item.is_active && (
-                          <div className="absolute inset-0 bg-slate-900/60 rounded-2xl flex items-center justify-center backdrop-blur-2xs">
-                            <span className="text-[10px] font-bold text-white bg-slate-800 px-2 py-0.5 rounded-md">
-                              Hidden
+                  {(sec.products || []).slice(0, sec.max_items || 6).map((prod, pIdx) => {
+                    const primaryImg =
+                      prod.images?.find((img) => img.is_primary)?.image_url ||
+                      prod.images?.[0]?.image_url ||
+                      prod.variants?.[0]?.images?.find((img) => img.is_primary)?.image_url ||
+                      prod.variants?.[0]?.images?.[0]?.image_url ||
+                      prod.variants?.[0]?.image_url ||
+                      '';
+                    const prodTitle = locale === 'ar' ? (prod.name_ar || prod.name_en) : prod.name_en;
+                    const basePrice = parseFloat(prod.price || 0);
+                    const discPrice = prod.discount_price ? parseFloat(prod.discount_price) : null;
+                    const hasDiscount = discPrice && discPrice < basePrice;
+                    const displayPrice = hasDiscount ? discPrice : basePrice;
+
+                    return (
+                      <div
+                        key={prod.id || pIdx}
+                        className="group flex flex-col items-center text-center relative min-w-0"
+                      >
+                        <div className="relative w-full aspect-square bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center overflow-hidden shrink-0 min-h-0 min-w-0 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+                          <img
+                            src={resolveImgSrc(primaryImg)}
+                            alt={prodTitle}
+                            className="w-full h-full max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+                            onError={(e) => {
+                              if (e.currentTarget.dataset.errorHandled) {
+                                e.currentTarget.style.opacity = '0';
+                                return;
+                              }
+                              e.currentTarget.dataset.errorHandled = 'true';
+                              e.currentTarget.src = '/subcategories/laundry_care.png';
+                            }}
+                          />
+                        </div>
+
+                        <div className="w-full mt-2.5 flex flex-col items-center px-0.5 space-y-1">
+                          <span className="font-bold text-slate-800 text-xs sm:text-[13px] text-center leading-snug line-clamp-2 min-h-[34px]">
+                            {prodTitle}
+                          </span>
+                          <div className="flex items-baseline justify-center gap-1.5 text-xs">
+                            <span className="font-extrabold text-[#043927]">
+                              SAR {displayPrice.toFixed(2)}
                             </span>
+                            {hasDiscount && (
+                              <span className="text-[10px] text-slate-400 line-through">
+                                SAR {basePrice.toFixed(2)}
+                              </span>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
+                    );
+                  })}
 
-                      <div className="w-full mt-2.5 h-[38px] sm:h-[42px] flex items-start justify-center px-0.5">
-                        <span className="font-bold text-slate-800 text-xs sm:text-[13px] text-center leading-snug line-clamp-2">
-                          {locale === 'ar' ? (item.title_ar || item.title_en) : item.title_en}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Empty Slot Placeholder if under 6 items */}
-                  {(!sec.items || sec.items.length < (sec.max_items || 6)) && (
+                  {/* Empty Slot Placeholder if under max_items */}
+                  {(!sec.products || sec.products.length < (sec.max_items || 6)) && (
                     <button
-                      onClick={() => handleOpenEditModal(sec)}
+                      onClick={() => handleOpenEditModal(sec, 'items')}
                       className="aspect-square border-2 border-dashed border-slate-300/80 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-emerald-700 hover:border-emerald-500 hover:bg-white/50 transition-all cursor-pointer p-4"
                     >
                       <Plus className="w-6 h-6" />
@@ -756,7 +897,7 @@ export default function AdminCategorySectionsPage() {
               >
                 <Layers className="w-4 h-4" />
                 <span>
-                  {locale === 'ar' ? 'العناصر والفئات' : 'Category Items'} ({formData.items.length})
+                  {locale === 'ar' ? 'منتجات القسم' : 'Showcase Products'} ({(formData.product_ids || []).length})
                 </span>
               </button>
 
@@ -779,6 +920,41 @@ export default function AdminCategorySectionsPage() {
               {/* TAB 1: SECTION SETTINGS */}
               {activeModalTab === 'settings' && (
                 <div className="space-y-6">
+                  {/* Linked Parent Category Selector */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">
+                      {locale === 'ar' ? 'الفئة المرتبطة (تحديد المنتجات تلقائياً)' : 'Linked Category (Determines Products)'}
+                    </label>
+                    <select
+                      value={formData.category_id || ''}
+                      onChange={(e) => {
+                        const newCatId = e.target.value;
+                        const catObj = categoriesCatalog.find((c) => String(c.id) === String(newCatId));
+                        setFormData((prev) => ({
+                          ...prev,
+                          category_id: newCatId,
+                          title_en: catObj ? catObj.name_en : prev.title_en,
+                          title_ar: catObj ? (catObj.name_ar || catObj.name_en) : prev.title_ar,
+                          view_more_link: catObj ? `/products?category=${catObj.slug}` : prev.view_more_link,
+                          product_ids: [],
+                        }));
+                        loadCategoryProductsForSection({ category_id: newCatId });
+                      }}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:bg-white focus:outline-emerald-600 transition-all"
+                    >
+                      <option value="">
+                        {locale === 'ar' ? '-- اختر الفئة الرئيسية --' : '-- Auto-detect by Title / Select Category --'}
+                      </option>
+                      {categoriesCatalog
+                        .filter((c) => !c.parent_id)
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name_en} ({c.name_ar})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
                   {/* Title Fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
@@ -952,204 +1128,220 @@ export default function AdminCategorySectionsPage() {
                 </div>
               )}
 
-              {/* TAB 2: CATEGORY ITEMS */}
+              {/* TAB 2: SHOWCASE PRODUCTS */}
               {activeModalTab === 'items' && (
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-800">
-                        {locale === 'ar' ? 'بطاقات الفئات المعروضة' : 'Configured Category Cards'}
-                      </h4>
-                      <p className="text-xs text-slate-500">
-                        {locale === 'ar'
-                          ? 'يمكنك إضافة فئات من الكتالوج أو تخصيص عناوين وصور وروابط مخصصة'
-                          : 'Select categories from the catalog or customize images, titles, and links'}
-                      </p>
+                  {/* Selected Products (Ordered) */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-800">
+                          {locale === 'ar' ? 'المنتجات المختارة للعرض' : 'Selected Showcase Products'}
+                        </h4>
+                        <p className="text-xs text-slate-500">
+                          {locale === 'ar'
+                            ? 'رتب المنتجات أو احذفها. تظهر المنتجات بالترتيب المحدد في الصفحة الرئيسية.'
+                            : 'Reorder or remove products. Products appear on the homepage in this exact order.'}
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-[#043927]">
+                        {(formData.product_ids || []).length} {locale === 'ar' ? 'محدد' : 'Selected'} / Max {formData.max_items}
+                      </span>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={handleAddItemToForm}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-[#043927] text-white rounded-xl text-xs font-bold hover:bg-[#032b1d] cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>{locale === 'ar' ? 'إضافة بطاقة جديدة' : 'Add Category Item'}</span>
-                    </button>
-                  </div>
+                    {selectedProductObjects.length === 0 ? (
+                      <div className="p-6 border-2 border-dashed border-slate-200 rounded-2xl text-center space-y-2 bg-slate-50/60">
+                        <ShoppingBag className="w-7 h-7 text-slate-300 mx-auto" />
+                        <p className="text-xs font-medium text-slate-500">
+                          {locale === 'ar'
+                            ? 'لم يتم تحديد منتجات مخصصة بعد. اختر منتجات من القائمة أدناه.'
+                            : 'No custom products selected yet. Add products from the category list below.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                        {selectedProductObjects.map((prod, idx) => {
+                          const prodName = locale === 'ar' ? (prod.name_ar || prod.name_en) : prod.name_en;
+                          const prodImg = resolveProductImg(prod);
+                          const prodPrice = parseFloat(prod.discount_price || prod.price || 0).toFixed(2);
+                          const isOverLimit = idx >= (parseInt(formData.max_items, 10) || 6);
 
-                  {formData.items.length === 0 ? (
-                    <div className="p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center space-y-3">
-                      <FolderTree className="w-8 h-8 text-slate-300 mx-auto" />
-                      <p className="text-sm font-medium text-slate-500">
-                        {locale === 'ar'
-                          ? 'لا توجد بطاقات مضافة حتى الآن. اضغط فوق "إضافة بطاقة جديدة" لإضافة فئات.'
-                          : 'No category items in this section yet. Click "Add Category Item" to begin.'}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleAddItemToForm}
-                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer"
-                      >
-                        {locale === 'ar' ? 'إضافة بطاقة' : 'Add First Item'}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {formData.items.map((item, idx) => (
-                        <div
-                          key={item.id || idx}
-                          className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl space-y-3 relative group"
-                        >
-                          {/* Item Top Bar */}
-                          <div className="flex items-center justify-between gap-3 border-b border-slate-200/60 pb-2.5">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-black px-2 py-0.5 rounded-md bg-slate-200 text-slate-700">
-                                #{idx + 1}
-                              </span>
-                              <span className="text-sm font-bold text-slate-800">
-                                {item.title_en || 'Untitled'}
-                              </span>
-                              <span className="text-xs text-slate-400">/</span>
-                              <span className="text-xs font-bold text-slate-600">
-                                {item.title_ar}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-1.5">
-                              {/* Order controls */}
-                              <button
-                                type="button"
-                                onClick={() => handleMoveItemInForm(idx, -1)}
-                                disabled={idx === 0}
-                                className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-30 rounded cursor-pointer"
-                              >
-                                <ChevronUp className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleMoveItemInForm(idx, 1)}
-                                disabled={idx === formData.items.length - 1}
-                                className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-30 rounded cursor-pointer"
-                              >
-                                <ChevronDown className="w-4 h-4" />
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveItemFromForm(idx)}
-                                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer ml-1"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Quick Select from Catalog Category */}
-                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-                            <div className="sm:col-span-5 space-y-1">
-                              <label className="text-[11px] font-bold text-slate-600">
-                                {locale === 'ar' ? 'ربط بفئة من الكتالوج (اختياري)' : 'Link to Existing Catalog Category'}
-                              </label>
-                              <select
-                                value={item.category_id || ''}
-                                onChange={(e) => handleSelectCategoryForModalItem(idx, e.target.value)}
-                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-emerald-600"
-                              >
-                                <option value="">-- {locale === 'ar' ? 'فئة مخصصة / اختيار فئة' : 'Custom / Select Category'} --</option>
-                                {categoriesCatalog.map((c) => (
-                                  <option key={c.id} value={c.id}>
-                                    {c.name_en} ({c.name_ar})
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className="sm:col-span-7 flex flex-wrap gap-2 items-center pt-3">
-                              <span className="text-[11px] font-bold text-slate-500">
-                                {locale === 'ar' ? 'نماذج صور سريعة:' : 'Quick Presets:'}
-                              </span>
-                              {PRESET_IMAGES.slice(0, 6).map((preset) => (
-                                <button
-                                  key={preset.url}
-                                  type="button"
-                                  onClick={() => handleUpdateItemInForm(idx, 'image_url', preset.url)}
-                                  className={`px-2 py-0.5 rounded text-[10px] font-semibold border transition-all cursor-pointer ${
- item.image_url === preset.url
- ? 'bg-emerald-100 border-emerald-500 text-emerald-800'
- : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
- }`}
-                                >
-                                  {preset.label.split('(')[0]}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Item Details Row */}
-                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-center">
-                            {/* Image Preview & Upload */}
-                            <div className="flex items-center gap-3">
-                              <div className="w-14 h-14 bg-white rounded-xl border border-slate-200 p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
-                                <img
-                                  src={resolveImgSrc(item.image_url)}
-                                  alt="preview"
-                                  className="w-full h-full object-contain"
-                                />
+                          return (
+                            <div
+                              key={prod.id}
+                              className={`flex items-center justify-between gap-3 p-2.5 rounded-xl border ${
+                                isOverLimit
+                                  ? 'bg-amber-50/40 border-amber-200/80 opacity-75'
+                                  : 'bg-white border-slate-200'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <span className="text-xs font-black text-slate-400 w-5 text-center shrink-0">
+                                  #{idx + 1}
+                                </span>
+                                <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden">
+                                  <img
+                                    src={resolveImgSrc(prodImg)}
+                                    alt={prodName}
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = '/subcategories/laundry_care.png';
+                                    }}
+                                  />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-slate-900 truncate">{prodName}</p>
+                                  <p className="text-[11px] text-slate-500 truncate">
+                                    {prod.brand ? `${prod.brand} • ` : ''}SAR {prodPrice}
+                                    {isOverLimit && (
+                                      <span className="ml-2 text-amber-700 font-semibold">
+                                        ({locale === 'ar' ? 'خارج الحد الأقصى' : 'Hidden by Max limit'})
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
                               </div>
 
-                              <label className="cursor-pointer px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-lg flex items-center gap-1 shadow-2xs">
-                                <Upload className="w-3.5 h-3.5" />
-                                <span>{locale === 'ar' ? 'رفع' : 'Upload'}</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={(e) => {
-                                    if (e.target.files?.[0]) {
-                                      handleUploadItemImage(idx, e.target.files[0]);
-                                    }
-                                  }}
-                                />
-                              </label>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  disabled={idx === 0}
+                                  onClick={() => handleMoveProductInSection(idx, -1)}
+                                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-30 cursor-pointer"
+                                  title="Move up"
+                                >
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx === selectedProductObjects.length - 1}
+                                  onClick={() => handleMoveProductInSection(idx, 1)}
+                                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-30 cursor-pointer"
+                                  title="Move down"
+                                >
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveProductFromSection(prod.id)}
+                                  className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 cursor-pointer ml-1"
+                                  title="Remove product"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
 
-                            {/* English Title */}
-                            <div>
-                              <input
-                                type="text"
-                                placeholder="Title (EN)"
-                                value={item.title_en}
-                                onChange={(e) => handleUpdateItemInForm(idx, 'title_en', e.target.value)}
-                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-emerald-600"
-                              />
-                            </div>
-
-                            {/* Arabic Title */}
-                            <div>
-                              <input
-                                type="text"
-                                placeholder="العنوان (AR)"
-                                value={item.title_ar}
-                                onChange={(e) => handleUpdateItemInForm(idx, 'title_ar', e.target.value)}
-                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-emerald-600 text-right"
-                              />
-                            </div>
-
-                            {/* Target URL */}
-                            <div>
-                              <input
-                                type="text"
-                                placeholder="/products?category=..."
-                                value={item.link_url}
-                                onChange={(e) => handleUpdateItemInForm(idx, 'link_url', e.target.value)}
-                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-emerald-600"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                  {/* Available Category Products Picker */}
+                  <div className="pt-4 border-t border-slate-200 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <h4 className="text-sm font-bold text-slate-800">
+                        {locale === 'ar' ? 'إضافة منتجات من القسم' : 'Add Products from Category'}
+                      </h4>
+                      <div className="relative w-full sm:w-72">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={productSearchQuery}
+                          onChange={(e) => setProductSearchQuery(e.target.value)}
+                          placeholder={locale === 'ar' ? 'ابحث عن منتج...' : 'Search products by name, brand, SKU...'}
+                          className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-emerald-600"
+                        />
+                      </div>
                     </div>
-                  )}
+
+                    {loadingProductsPicker ? (
+                      <div className="p-6 flex items-center justify-center gap-2 text-xs text-slate-500">
+                        <Loader2 className="w-4 h-4 animate-spin text-[#043927]" />
+                        <span>{locale === 'ar' ? 'جاري تحميل المنتجات...' : 'Loading category products...'}</span>
+                      </div>
+                    ) : (() => {
+                      const q = productSearchQuery.trim().toLowerCase();
+                      const filteredAvailable = availableSectionProducts.filter((p) => {
+                        if (!q) return true;
+                        return (
+                          (p.name_en || '').toLowerCase().includes(q) ||
+                          (p.name_ar || '').toLowerCase().includes(q) ||
+                          (p.brand || '').toLowerCase().includes(q) ||
+                          (p.sku || '').toLowerCase().includes(q)
+                        );
+                      });
+
+                      if (filteredAvailable.length === 0) {
+                        return (
+                          <div className="p-6 text-center text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200/70">
+                            {locale === 'ar'
+                              ? 'لا توجد منتجات مطابقة في هذا القسم'
+                              : 'No matching products found in this category.'}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto pr-1">
+                          {filteredAvailable.map((prod) => {
+                            const isSelected = (formData.product_ids || []).includes(prod.id);
+                            const prodName = locale === 'ar' ? (prod.name_ar || prod.name_en) : prod.name_en;
+                            const prodImg = resolveProductImg(prod);
+                            const prodPrice = parseFloat(prod.discount_price || prod.price || 0).toFixed(2);
+
+                            return (
+                              <div
+                                key={prod.id}
+                                className={`flex items-center justify-between gap-2.5 p-2.5 rounded-xl border transition-all ${
+                                  isSelected
+                                    ? 'bg-emerald-50/60 border-emerald-200'
+                                    : 'bg-slate-50/70 border-slate-200 hover:bg-white'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className="w-10 h-10 rounded-lg bg-white border border-slate-200/80 p-1 flex items-center justify-center shrink-0 overflow-hidden">
+                                    <img
+                                      src={resolveImgSrc(prodImg)}
+                                      alt={prodName}
+                                      className="w-full h-full object-contain"
+                                      onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = '/subcategories/laundry_care.png';
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-bold text-slate-900 truncate">{prodName}</p>
+                                    <p className="text-[11px] text-slate-500 truncate">
+                                      {prod.brand ? `${prod.brand} • ` : ''}SAR {prodPrice}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {isSelected ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-[#043927] text-[11px] font-bold shrink-0">
+                                    <Check className="w-3 h-3" />
+                                    <span>{locale === 'ar' ? 'مضاف' : 'Added'}</span>
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddProductToSection(prod.id)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#043927] hover:bg-[#02281b] text-white text-[11px] font-bold shrink-0 cursor-pointer"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    <span>{locale === 'ar' ? 'إضافة' : 'Add'}</span>
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               )}
 
@@ -1161,7 +1353,7 @@ export default function AdminCategorySectionsPage() {
                       {locale === 'ar' ? 'معاينة مباشرة كما تظهر في الصفحة الرئيسية' : 'Instant Homepage Section Preview'}
                     </span>
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                      {(formData.items || []).length} {locale === 'ar' ? 'عناصر' : 'Items'}
+                      {selectedProductObjects.length} {locale === 'ar' ? 'منتجات' : 'Products'}
                     </span>
                   </div>
 
@@ -1176,30 +1368,49 @@ export default function AdminCategorySectionsPage() {
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
-                      {(formData.items || []).slice(0, parseInt(formData.max_items, 10) || 6).map((item, itIdx) => (
-                        <div key={item.id || itIdx} className="group flex flex-col items-center text-center min-w-0">
-                          <div className="relative w-full aspect-square bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center overflow-hidden shrink-0 min-h-0 min-w-0 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
-                            <img
-                              src={resolveImgSrc(item.image_url)}
-                              alt={item.title_en}
-                              className="w-full h-full max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 pointer-events-none"
-                              onError={(e) => {
-                                if (e.currentTarget.dataset.errorHandled) {
-                                  e.currentTarget.style.opacity = '0';
-                                  return;
-                                }
-                                e.currentTarget.dataset.errorHandled = 'true';
-                                e.currentTarget.src = '/subcategories/laundry_care.png';
-                              }}
-                            />
+                      {selectedProductObjects.slice(0, parseInt(formData.max_items, 10) || 6).map((prod, pIdx) => {
+                        const prodName = locale === 'ar' ? (prod.name_ar || prod.name_en) : prod.name_en;
+                        const prodImg = resolveProductImg(prod);
+                        const basePrice = parseFloat(prod.price || 0);
+                        const discPrice = prod.discount_price ? parseFloat(prod.discount_price) : null;
+                        const hasDiscount = discPrice && discPrice < basePrice;
+                        const displayPrice = hasDiscount ? discPrice : basePrice;
+
+                        return (
+                          <div key={prod.id || pIdx} className="group flex flex-col items-center text-center min-w-0">
+                            <div className="relative w-full aspect-square bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 p-3 sm:p-4 flex items-center justify-center overflow-hidden shrink-0 min-h-0 min-w-0 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+                              <img
+                                src={resolveImgSrc(prodImg)}
+                                alt={prodName}
+                                className="w-full h-full max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+                                onError={(e) => {
+                                  if (e.currentTarget.dataset.errorHandled) {
+                                    e.currentTarget.style.opacity = '0';
+                                    return;
+                                  }
+                                  e.currentTarget.dataset.errorHandled = 'true';
+                                  e.currentTarget.src = '/subcategories/laundry_care.png';
+                                }}
+                              />
+                            </div>
+                            <div className="w-full mt-2.5 flex flex-col items-center px-0.5 space-y-1">
+                              <span className="font-bold text-slate-800 text-xs sm:text-[13px] text-center leading-snug line-clamp-2 min-h-[34px]">
+                                {prodName}
+                              </span>
+                              <div className="flex items-baseline justify-center gap-1.5 text-xs">
+                                <span className="font-extrabold text-[#043927]">
+                                  SAR {displayPrice.toFixed(2)}
+                                </span>
+                                {hasDiscount && (
+                                  <span className="text-[10px] text-slate-400 line-through">
+                                    SAR {basePrice.toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div className="w-full mt-2.5 sm:mt-3 h-[38px] sm:h-[42px] flex items-start justify-center px-0.5">
-                            <span className="font-bold text-slate-800 text-xs sm:text-[13px] md:text-[14px] text-center leading-snug line-clamp-2">
-                              {locale === 'ar' ? (item.title_ar || item.title_en) : item.title_en}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {formData.view_more_link && (

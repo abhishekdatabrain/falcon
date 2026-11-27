@@ -326,7 +326,12 @@ export default function Navbar() {
                               {p.brand}
                             </span>
                           )}
-                          {p.unit_value && <span className="text-slate-400">{p.unit_value} {p.unit_type} {p.pack_size }</span>}
+                          {(() => {
+                            const unitLabel = (p.unit_value
+                              ? `${p.unit_value}${p.unit_type ? ` ${p.unit_type}` : ''}${p.pack_size ? ` (${p.pack_size})` : ''}`
+                              : p.pack_size || '');
+                            return unitLabel ? <span className="text-slate-400">{unitLabel}</span> : null;
+                          })()}
                         </div>
                       </div>
                     </div>

@@ -17,35 +17,44 @@ const { sendSuccess, sendError } = require('../utils/response');
  * descendant category IDs recursively.
  */
 function resolveSectionCategoryIds(section, allCategories) {
-  const link = (section.view_more_link || '').trim();
-  let paramCat = null;
-  const queryMatch = link.match(/[?&]category=([^&#]+)/i);
-  if (queryMatch && queryMatch[1]) {
-    paramCat = decodeURIComponent(queryMatch[1]).trim().toLowerCase();
-  }
-
-  const titleEn = (section.title_en || '').trim().toLowerCase();
-  const titleAr = (section.title_ar || '').trim();
-
   const activeCategories = allCategories.filter((c) => c.is_active !== false);
   let matched = null;
 
-  if (paramCat) {
+  // 1. Explicit category_id configured on the section takes highest priority
+  if (section.category_id) {
     matched = activeCategories.find(
-      (c) => String(c.id).toLowerCase() === paramCat || (c.slug || '').toLowerCase() === paramCat
+      (c) => String(c.id).toLowerCase() === String(section.category_id).toLowerCase()
     );
   }
 
+  // 2. Match by section title (so renaming a section to e.g. "Coffee" immediately resolves Coffee)
+  const titleEn = (section.title_en || '').trim().toLowerCase();
   if (!matched && titleEn) {
+    const normalizedTitle = titleEn.replace('bevarages', 'beverages');
     matched =
-      activeCategories.find((c) => !c.parent_id && (c.name_en || '').trim().toLowerCase() === titleEn) ||
-      activeCategories.find((c) => (c.name_en || '').trim().toLowerCase() === titleEn);
+      activeCategories.find((c) => !c.parent_id && (c.name_en || '').trim().toLowerCase() === normalizedTitle) ||
+      activeCategories.find((c) => (c.name_en || '').trim().toLowerCase() === normalizedTitle) ||
+      activeCategories.find((c) => !c.parent_id && (c.name_en || '').trim().toLowerCase().includes(normalizedTitle)) ||
+      activeCategories.find((c) => (c.name_en || '').trim().toLowerCase().includes(normalizedTitle));
   }
 
+  const titleAr = (section.title_ar || '').trim();
   if (!matched && titleAr) {
     matched =
       activeCategories.find((c) => !c.parent_id && (c.name_ar || '').trim() === titleAr) ||
       activeCategories.find((c) => (c.name_ar || '').trim() === titleAr);
+  }
+
+  // 3. Fallback to view_more_link (?category=...)
+  if (!matched) {
+    const link = (section.view_more_link || '').trim();
+    const queryMatch = link.match(/[?&]category=([^&#]+)/i);
+    if (queryMatch && queryMatch[1]) {
+      const paramCat = decodeURIComponent(queryMatch[1]).trim().toLowerCase();
+      matched = activeCategories.find(
+        (c) => String(c.id).toLowerCase() === paramCat || (c.slug || '').toLowerCase() === paramCat
+      );
+    }
   }
 
   if (!matched) {
@@ -65,6 +74,94 @@ function resolveSectionCategoryIds(section, allCategories) {
   }
 
   return { parentCategoryId: matched.id, categoryIds: Array.from(collected) };
+}
+
+/**
+ * Fetches active, available products belonging to a section's resolved parent
+ * category (and all descendant child categories) and attaches them to plainSection.
+ */
+async function attachSectionProducts(plainSection, allCategories, maxItems) {
+  const { parentCategoryId, categoryIds } = resolveSectionCategoryIds(plainSection, allCategories);
+  plainSection.category_id = parentCategoryId;
+
+  const productInclude = [
+    {
+      model: ProductImage,
+      as: 'images',
+      attributes: ['id', 'image_url', 'is_primary', 'display_order'],
+      separate: true,
+      order: [['is_primary', 'DESC'], ['display_order', 'ASC']],
+    },
+    {
+      model: ProductVariant,
+      as: 'variants',
+      where: { is_active: true },
+      required: false,
+      include: [
+        {
+          model: ProductVariantImage,
+          as: 'images',
+          order: [['is_primary', 'DESC'], ['sort_order', 'ASC']],
+        },
+      ],
+    },
+  ];
+
+  const customIds = Array.isArray(plainSection.product_ids)
+    ? plainSection.product_ids.filter(Boolean)
+    : [];
+
+  if (customIds.length > 0) {
+    const customWhere = {
+      id: { [Op.in]: customIds },
+      is_active: true,
+      is_available: true,
+    };
+    if (categoryIds.length > 0) {
+      customWhere[Op.or] = [
+        { category_id: { [Op.in]: categoryIds } },
+        { subcategory_id: { [Op.in]: categoryIds } },
+        { sub_subcategory_id: { [Op.in]: categoryIds } },
+        { sub_sub_subcategory_id: { [Op.in]: categoryIds } },
+      ];
+    }
+    const selectedProducts = await Product.findAll({
+      where: customWhere,
+      include: productInclude,
+    });
+    if (selectedProducts.length > 0) {
+      const orderMap = new Map(customIds.map((pid, idx) => [String(pid), idx]));
+      selectedProducts.sort(
+        (a, b) => (orderMap.get(String(a.id)) ?? 9999) - (orderMap.get(String(b.id)) ?? 9999)
+      );
+      plainSection.products = selectedProducts.slice(0, maxItems).map((p) => p.get({ plain: true }));
+      return plainSection;
+    }
+  }
+
+  if (categoryIds.length === 0) {
+    plainSection.products = [];
+    return plainSection;
+  }
+
+  const products = await Product.findAll({
+    where: {
+      is_active: true,
+      is_available: true,
+      [Op.or]: [
+        { category_id: { [Op.in]: categoryIds } },
+        { subcategory_id: { [Op.in]: categoryIds } },
+        { sub_subcategory_id: { [Op.in]: categoryIds } },
+        { sub_sub_subcategory_id: { [Op.in]: categoryIds } },
+      ],
+    },
+    include: productInclude,
+    order: [['is_featured', 'DESC'], ['created_at', 'DESC']],
+    limit: maxItems,
+  });
+
+  plainSection.products = products.map((p) => p.get({ plain: true }));
+  return plainSection;
 }
 
 class CategorySectionController {
@@ -113,54 +210,7 @@ class CategorySectionController {
           );
           const maxItems = plainSection.max_items || 12;
           plainSection.items = sortedItems.slice(0, maxItems);
-
-          const { parentCategoryId, categoryIds } = resolveSectionCategoryIds(plainSection, allCategories);
-          plainSection.category_id = parentCategoryId;
-
-          if (categoryIds.length === 0) {
-            plainSection.products = [];
-            return plainSection;
-          }
-
-          const products = await Product.findAll({
-            where: {
-              is_active: true,
-              is_available: true,
-              [Op.or]: [
-                { category_id: { [Op.in]: categoryIds } },
-                { subcategory_id: { [Op.in]: categoryIds } },
-                { sub_subcategory_id: { [Op.in]: categoryIds } },
-                { sub_sub_subcategory_id: { [Op.in]: categoryIds } },
-              ],
-            },
-            include: [
-              {
-                model: ProductImage,
-                as: 'images',
-                attributes: ['id', 'image_url', 'is_primary', 'display_order'],
-                separate: true,
-                order: [['is_primary', 'DESC'], ['display_order', 'ASC']],
-              },
-              {
-                model: ProductVariant,
-                as: 'variants',
-                where: { is_active: true },
-                required: false,
-                include: [
-                  {
-                    model: ProductVariantImage,
-                    as: 'images',
-                    order: [['is_primary', 'DESC'], ['sort_order', 'ASC']],
-                  },
-                ],
-              },
-            ],
-            order: [['is_featured', 'DESC'], ['created_at', 'DESC']],
-            limit: maxItems,
-          });
-
-          plainSection.products = products.map((p) => p.get({ plain: true }));
-          return plainSection;
+          return attachSectionProducts(plainSection, allCategories, maxItems);
         })
       );
 
@@ -176,35 +226,43 @@ class CategorySectionController {
   // Admin endpoint: GET /api/v1/category-sections/admin/all
   async getAllSectionsAdmin(req, res) {
     try {
-      const sections = await HomepageCategorySection.findAll({
-        order: [
-          ['display_order', 'ASC'],
-          ['created_at', 'ASC'],
-        ],
-        include: [
-          {
-            model: HomepageCategoryItem,
-            as: 'items',
-            required: false,
-            include: [
-              {
-                model: Category,
-                as: 'category',
-                attributes: ['id', 'name_en', 'name_ar', 'slug', 'image_url'],
-                required: false,
-              },
-            ],
-          },
-        ],
-      });
+      const [sections, allCategories] = await Promise.all([
+        HomepageCategorySection.findAll({
+          order: [
+            ['display_order', 'ASC'],
+            ['created_at', 'ASC'],
+          ],
+          include: [
+            {
+              model: HomepageCategoryItem,
+              as: 'items',
+              required: false,
+              include: [
+                {
+                  model: Category,
+                  as: 'category',
+                  attributes: ['id', 'name_en', 'name_ar', 'slug', 'image_url'],
+                  required: false,
+                },
+              ],
+            },
+          ],
+        }),
+        Category.findAll({
+          attributes: ['id', 'name_en', 'name_ar', 'slug', 'parent_id', 'is_active'],
+        }),
+      ]);
 
-      const formattedSections = sections.map((sec) => {
-        const plain = sec.get({ plain: true });
-        plain.items = (plain.items || []).sort(
-          (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
-        );
-        return plain;
-      });
+      const formattedSections = await Promise.all(
+        sections.map(async (sec) => {
+          const plain = sec.get({ plain: true });
+          plain.items = (plain.items || []).sort(
+            (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+          );
+          const maxItems = plain.max_items || 12;
+          return attachSectionProducts(plain, allCategories, maxItems);
+        })
+      );
 
       return sendSuccess(res, 'All homepage category sections retrieved', {
         sections: formattedSections,
@@ -266,12 +324,18 @@ class CategorySectionController {
         display_order,
         is_active,
         items,
+        category_id,
+        product_ids,
       } = req.body;
 
       if (!title_en || !title_ar) {
         await t.rollback();
         return sendError(res, 'Both English and Arabic titles are required', [], 400);
       }
+
+      const normalizedProductIds = Array.isArray(product_ids)
+        ? Array.from(new Set(product_ids.filter(Boolean).map(String)))
+        : [];
 
       const nextOrder =
         display_order !== undefined
@@ -287,6 +351,8 @@ class CategorySectionController {
           view_more_text_ar: view_more_text_ar || 'عرض المزيد',
           bg_color: bg_color || '#F6FFF8',
           max_items: max_items ? parseInt(max_items, 10) : 6,
+          category_id: category_id || null,
+          product_ids: normalizedProductIds,
           display_order: nextOrder,
           is_active: is_active !== undefined ? Boolean(is_active) : true,
         },
@@ -347,6 +413,8 @@ class CategorySectionController {
         display_order,
         is_active,
         items,
+        category_id,
+        product_ids,
       } = req.body;
 
       const section = await HomepageCategorySection.findByPk(id, { transaction: t });
@@ -354,6 +422,10 @@ class CategorySectionController {
         await t.rollback();
         return sendError(res, 'Category section not found', [], 404);
       }
+
+      const normalizedProductIds = Array.isArray(product_ids)
+        ? Array.from(new Set(product_ids.filter(Boolean).map(String)))
+        : undefined;
 
       await section.update(
         {
@@ -364,6 +436,8 @@ class CategorySectionController {
           view_more_text_ar: view_more_text_ar !== undefined ? view_more_text_ar : section.view_more_text_ar,
           bg_color: bg_color !== undefined ? bg_color : section.bg_color,
           max_items: max_items !== undefined ? parseInt(max_items, 10) : section.max_items,
+          category_id: category_id !== undefined ? (category_id || null) : section.category_id,
+          product_ids: normalizedProductIds !== undefined ? normalizedProductIds : section.product_ids,
           display_order: display_order !== undefined ? parseInt(display_order, 10) : section.display_order,
           is_active: is_active !== undefined ? Boolean(is_active) : section.is_active,
         },

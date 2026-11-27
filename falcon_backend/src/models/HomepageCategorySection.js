@@ -42,6 +42,15 @@ const HomepageCategorySection = sequelize.define('HomepageCategorySection', {
     allowNull: false,
     defaultValue: 6,
   },
+  category_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+  },
+  product_ids: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    defaultValue: [],
+  },
   display_order: {
     type: DataTypes.INTEGER,
     allowNull: false,

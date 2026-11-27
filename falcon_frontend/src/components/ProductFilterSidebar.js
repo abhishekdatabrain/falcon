@@ -48,7 +48,7 @@ export default function ProductFilterSidebar({
   onCloseMobile,
 }) {
   const { locale } = useLanguage();
-  const [expandedCats, setExpandedCats] = useState(new Set());
+  const [expandedCategoryId, setExpandedCategoryId] = useState(undefined);
 
   // Single active selected category (mutually exclusive, no multiple checkboxes)
   const singleSelectedId =
@@ -116,53 +116,52 @@ export default function ProductFilterSidebar({
     });
   }, [categories]);
 
-  // Auto-expand all ancestors of the currently selected category
-  useEffect(() => {
-    if (!displayCategoryTree || displayCategoryTree.length === 0) return;
+  const isNodeOrDescendant = (node, targetId) => {
+    if (!node || !targetId) return false;
+    if (String(node.id) === String(targetId)) return true;
+    return Array.isArray(node.children) && node.children.some((c) => isNodeOrDescendant(c, targetId));
+  };
+
+  // Auto-resolve the ancestor branch of the currently selected category
+  const selectedBranchId = useMemo(() => {
+    if (!displayCategoryTree || displayCategoryTree.length === 0) return null;
 
     const targetId = singleSelectedId ? String(singleSelectedId).toLowerCase() : '';
-    if (!targetId) return;
+    if (!targetId) return null;
 
-    const toExpand = new Set();
-
-    const findAndCollectAncestors = (nodes, currentAncestors = []) => {
+    const findParentId = (nodes, parentId = null) => {
       for (const node of nodes) {
         const nodeIdStr = String(node.id).toLowerCase();
         const nodeSlugStr = node.slug ? String(node.slug).toLowerCase() : '';
 
-        const isMatch = nodeIdStr === targetId || (nodeSlugStr && nodeSlugStr === targetId);
-
-        if (isMatch) {
-          currentAncestors.forEach((ancId) => toExpand.add(ancId));
+        if (nodeIdStr === targetId || (nodeSlugStr && nodeSlugStr === targetId)) {
+          return parentId || node.id;
         }
 
         if (node.children && node.children.length > 0) {
-          findAndCollectAncestors(node.children, [...currentAncestors, node.id]);
+          const found = findParentId(node.children, node.id);
+          if (found) return found;
         }
       }
+      return null;
     };
 
-    findAndCollectAncestors(displayCategoryTree);
-
-    if (toExpand.size > 0) {
-      setExpandedCats((prev) => {
-        const next = new Set(prev);
-        toExpand.forEach((id) => next.add(id));
-        return next;
-      });
-    }
+    return findParentId(displayCategoryTree);
   }, [singleSelectedId, displayCategoryTree]);
 
-  const toggleCatExpand = (catId, e) => {
+  const activeExpandedId = expandedCategoryId !== undefined ? expandedCategoryId : selectedBranchId;
+
+  const toggleCatExpand = (node, parentId = null, e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    setExpandedCats((prev) => {
-      const next = new Set(prev);
-      if (next.has(catId)) next.delete(catId);
-      else next.add(catId);
-      return next;
+    setExpandedCategoryId((prev) => {
+      const current = prev !== undefined ? prev : selectedBranchId;
+      if (current && isNodeOrDescendant(node, current)) {
+        return parentId || null;
+      }
+      return node.id;
     });
   };
 
@@ -178,9 +177,9 @@ export default function ProductFilterSidebar({
     }
   };
 
-  const renderCategoryNode = (node, level = 1) => {
+  const renderCategoryNode = (node, level = 1, parentId = null) => {
     const hasChildren = Array.isArray(node.children) && node.children.length > 0;
-    const isExpanded = expandedCats.has(node.id);
+    const isExpanded = isNodeOrDescendant(node, activeExpandedId);
 
     // Exact single match for checkbox checkmark
     const isDirectMatch = Boolean(
@@ -220,7 +219,7 @@ export default function ProductFilterSidebar({
         <div key={node.id} className="space-y-1">
           {/* Parent Pill matching Screenshot 1 */}
           <div
-            onClick={(e) => toggleCatExpand(node.id, e)}
+            onClick={(e) => toggleCatExpand(node, parentId, e)}
             className={`w-full py-2 px-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between select-none ${isExpanded || isAncestorActive
  ? 'bg-[#F0FDF4] border-[#86EFAC] text-slate-900 shadow-2xs'
  : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-800'
@@ -269,7 +268,7 @@ export default function ProductFilterSidebar({
               </div>
 
               {/* Children Nodes */}
-              {node.children.map((child) => renderCategoryNode(child, level + 1))}
+              {node.children.map((child) => renderCategoryNode(child, level + 1, node.id))}
             </div>
           )}
         </div>
@@ -331,8 +330,8 @@ export default function ProductFilterSidebar({
           {locale === 'ar' ? 'تصنيفات المنتجات' : 'Category Hierarchy'}
         </h4>
         {displayCategoryTree && displayCategoryTree.length > 0 ? (
-          <div className="space-y-1 text-xs">
-            {displayCategoryTree.map((catNode) => renderCategoryNode(catNode, 1))}
+          <div className="space-y-1 text-xs max-h-72 overflow-y-auto pr-1">
+            {displayCategoryTree.map((catNode) => renderCategoryNode(catNode, 1, null))}
           </div>
         ) : (
           <div className="space-y-2 animate-pulse py-1">

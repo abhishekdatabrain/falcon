@@ -5,15 +5,11 @@ const { setAuthCookies, clearAuthCookies } = require('../utils/jwt');
 class AuthController {
   async register(req, res, next) {
     try {
-      let { email, mobile, password, first_name, last_name, full_name, username, verificationCode, emailVerificationCode, mobileVerificationCode, vatNo, companyName, crNo, address } = req.body;
+      let { email, mobile, password, first_name, last_name, full_name, verificationCode, emailVerificationCode, mobileVerificationCode, vatNo, companyName, crNo, address } = req.body;
       const fieldErrors = {};
 
       if (full_name) {
         const parts = String(full_name).trim().split(/\s+/);
-        if (!first_name) first_name = parts[0] || 'User';
-        if (!last_name) last_name = parts.slice(1).join(' ') || parts[0] || 'Customer';
-      } else if (username) {
-        const parts = String(username).trim().split(/\s+/);
         if (!first_name) first_name = parts[0] || 'User';
         if (!last_name) last_name = parts.slice(1).join(' ') || parts[0] || 'Customer';
       }
@@ -26,7 +22,7 @@ class AuthController {
         email = `user_${cleanMobile}@saqrcart.com`;
       }
 
-      if (!full_name && !username && !first_name) fieldErrors.full_name = 'Full name is required';
+      if (!full_name && !first_name) fieldErrors.full_name = 'Full name is required';
       if (!first_name) fieldErrors.first_name = 'First name is required';
       if (!last_name) fieldErrors.last_name = 'Last name is required';
       if (!email) fieldErrors.email = 'Email address is required';
@@ -51,7 +47,6 @@ class AuthController {
         password,
         first_name,
         last_name,
-        username: username || null,
         verificationCode,
         emailVerificationCode,
         mobileVerificationCode,
@@ -76,7 +71,6 @@ class AuthController {
         userId: result.user.id,
         email: result.user.email,
         mobile: result.user.mobile,
-        username: result.user.username,
         business_profile,
       }, 201);
     } catch (error) {

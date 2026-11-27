@@ -23,7 +23,8 @@ export default function RegisterPage() {
   const [signupMode, setSignupMode] = useState('mobile');
 
   // Form Fields matching screenshot
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -308,11 +309,18 @@ export default function RegisterPage() {
 
     const errors = {};
 
-    const trimmedFullName = fullName.trim();
-    if (!trimmedFullName) {
-      errors.fullName = locale === 'ar' ? 'الاسم الكامل مطلوب' : 'Full name is required';
-    } else if (trimmedFullName.length < 2) {
-      errors.fullName = locale === 'ar' ? 'يجب أن يتكون الاسم الكامل من حرفين على الأقل' : 'Full name must be at least 2 characters';
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+    if (!trimmedFirstName) {
+      errors.firstName = locale === 'ar' ? 'الاسم الأول مطلوب' : 'First name is required';
+    } else if (trimmedFirstName.length < 2) {
+      errors.firstName = locale === 'ar' ? 'يجب أن يتكون الاسم الأول من حرفين على الأقل' : 'First name must be at least 2 characters';
+    }
+
+    if (!trimmedLastName) {
+      errors.lastName = locale === 'ar' ? 'الاسم الأخير مطلوب' : 'Last name is required';
+    } else if (trimmedLastName.length < 2) {
+      errors.lastName = locale === 'ar' ? 'يجب أن يتكون الاسم الأخير من حرفين على الأقل' : 'Last name must be at least 2 characters';
     }
 
     if (!password) {
@@ -384,9 +392,8 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const parts = trimmedFullName.split(/\s+/);
-      const first_name = parts[0] || 'User';
-      const last_name = parts.slice(1).join(' ') || parts[0] || 'Customer';
+      const first_name = trimmedFirstName;
+      const last_name = trimmedLastName;
 
       const cleanMobile = mobileNumber.replace(/[^0-9]/g, '');
       const fullMobile = signupMode === 'mobile'
@@ -402,7 +409,7 @@ export default function RegisterPage() {
         : emailVerificationCode.trim();
 
       const res = await register({
-        full_name: trimmedFullName,
+        full_name: `${first_name} ${last_name}`.trim(),
         first_name,
         last_name,
         email: fullEmail,
@@ -482,30 +489,57 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
 
-          {/* Full Name */}
-          <div className="space-y-1.5 text-left rtl:text-right">
-            <label className="block text-sm font-semibold text-slate-800">
-              {locale === 'ar' ? 'الاسم الكامل' : 'Full Name'}
-            </label>
+          {/* First Name & Last Name */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left rtl:text-right">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-slate-800">
+                {locale === 'ar' ? 'الاسم الأول' : 'First Name'}
+              </label>
 
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => {
-                setFullName(e.target.value);
-                if (fieldErrors.fullName) setFieldErrors(prev => ({ ...prev, fullName: null }));
-                if (error) setError('');
-              }}
-              placeholder={locale === 'ar' ? 'أدخل الاسم الكامل' : 'Enter full name'}
-              className={`w-full px-4 py-3 rounded-xl bg-[#f5f6f8] border text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all ${fieldErrors.fullName
-                ? 'border-rose-400 focus:ring-rose-500 bg-rose-50/20'
-                : 'border-slate-200/80 focus:ring-[#00c269] focus:border-transparent'
-              }`}
-            />
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => {
+                  setFirstName(e.target.value);
+                  if (fieldErrors.firstName) setFieldErrors(prev => ({ ...prev, firstName: null }));
+                  if (error) setError('');
+                }}
+                placeholder={locale === 'ar' ? 'أدخل الاسم الأول' : 'Enter first name'}
+                className={`w-full px-4 py-3 rounded-xl bg-[#f5f6f8] border text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all ${fieldErrors.firstName
+                  ? 'border-rose-400 focus:ring-rose-500 bg-rose-50/20'
+                  : 'border-slate-200/80 focus:ring-[#00c269] focus:border-transparent'
+                }`}
+              />
 
-            {fieldErrors.fullName && (
-              <p className="text-xs font-medium text-rose-600 mt-1">{fieldErrors.fullName}</p>
-            )}
+              {fieldErrors.firstName && (
+                <p className="text-xs font-medium text-rose-600 mt-1">{fieldErrors.firstName}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-slate-800">
+                {locale === 'ar' ? 'الاسم الأخير' : 'Last Name'}
+              </label>
+
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value);
+                  if (fieldErrors.lastName) setFieldErrors(prev => ({ ...prev, lastName: null }));
+                  if (error) setError('');
+                }}
+                placeholder={locale === 'ar' ? 'أدخل الاسم الأخير' : 'Enter last name'}
+                className={`w-full px-4 py-3 rounded-xl bg-[#f5f6f8] border text-slate-900 placeholder-slate-400 text-sm font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all ${fieldErrors.lastName
+                  ? 'border-rose-400 focus:ring-rose-500 bg-rose-50/20'
+                  : 'border-slate-200/80 focus:ring-[#00c269] focus:border-transparent'
+                }`}
+              />
+
+              {fieldErrors.lastName && (
+                <p className="text-xs font-medium text-rose-600 mt-1">{fieldErrors.lastName}</p>
+              )}
+            </div>
           </div>
 
           {/* Password */}

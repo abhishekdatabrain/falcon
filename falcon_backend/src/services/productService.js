@@ -425,6 +425,7 @@ class ProductService {
         'stock_quantity',
         'is_available',
         'is_featured',
+        'has_variants',
         'rating',
         'category_id',
       ],
@@ -445,6 +446,8 @@ class ProductService {
         {
           model: ProductVariant,
           as: 'variants',
+          where: { is_active: true },
+          required: false,
           separate: true,
           limit: 1,
           order: [['price', 'ASC']],
@@ -470,7 +473,23 @@ class ProductService {
         primaryImage = p.variants[0].images[0].image_url;
       }
 
-      const unitText = p.pack_size || (p.unit_value ? `${p.unit_value} ${p.unit_type || ''}`.trim() : p.unit) || '';
+      const primaryVariant = p.has_variants && p.variants && p.variants.length > 0 ? p.variants[0] : null;
+      const effectiveUnitValue = (primaryVariant?.unit_value ?? p.unit_value) || null;
+      const effectiveUnitType = (primaryVariant?.unit_type ?? p.unit_type) || null;
+      const effectivePackSize = (primaryVariant?.pack_size ?? p.pack_size) || null;
+
+      const unitCombo = effectiveUnitValue
+        ? `${effectiveUnitValue}${effectiveUnitType ? ` ${effectiveUnitType}` : ''}`.trim()
+        : '';
+      let unitText = '';
+      if (unitCombo && effectivePackSize) {
+        const lowerPack = String(effectivePackSize).toLowerCase();
+        const hasVal = effectiveUnitValue && lowerPack.includes(String(effectiveUnitValue).toLowerCase());
+        const hasType = effectiveUnitType && lowerPack.includes(String(effectiveUnitType).toLowerCase());
+        unitText = hasVal && hasType ? effectivePackSize : `${unitCombo} (${effectivePackSize})`;
+      } else {
+        unitText = unitCombo || effectivePackSize || p.unit || '';
+      }
 
       return {
         id: p.id,
@@ -484,9 +503,9 @@ class ProductService {
         thumbnail: primaryImage,
         image: primaryImage,
         unit: unitText,
-        unit_value: p.unit_value || null,
-        unit_type: p.unit_type || null,
-        pack_size: p.pack_size || null,
+        unit_value: effectiveUnitValue,
+        unit_type: effectiveUnitType,
+        pack_size: effectivePackSize,
         brand: p.brand || '',
         sku: p.sku,
         category: p.category ? {
@@ -498,7 +517,6 @@ class ProductService {
         } : null,
       };
     });
-console.log(formattedProducts,"formattedProducts")
     const formattedCategories = matchingCategories.map((c) => ({
       id: c.id,
       name: c.name_en || c.name_ar,

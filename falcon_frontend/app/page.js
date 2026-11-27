@@ -361,7 +361,6 @@ export default function HomePage() {
   const [heroAutoplay, setHeroAutoplay] = useState(true);
   const [promoBanners, setPromoBanners] = useState([]);
   const [categorySections, setCategorySections] = useState([]);
-  const [beveragesProducts, setBeveragesProducts] = useState([]);
   const [cmsSections, setCmsSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState(null);
@@ -508,14 +507,13 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [catRes, prodRes, dealsRes, promoRes, sectionsRes, cmsRes, beveragesRes] = await Promise.all([
+        const [catRes, prodRes, dealsRes, promoRes, sectionsRes, cmsRes] = await Promise.all([
           fetchApi('/categories?type=parent'),
           fetchApi('/products?limit=40'),
           fetchApi('/products?best_deals_or_store=true&limit=40'),
           fetchApi('/promo-banners').catch(() => ({ success: false })),
           fetchApi('/category-sections/active').catch(() => ({ success: false })),
           fetchApi('/homepage-cms/public').catch(() => ({ success: false })),
-          fetchApi('/products?category_id=fc1600aa-f20d-477d-a206-958b78fe3944&limit=12').catch(() => ({ success: false })),
         ]);
 
         if (catRes.success) {
@@ -539,10 +537,6 @@ export default function HomePage() {
         }
         if (cmsRes && cmsRes.success && cmsRes.data?.sections?.length > 0) {
           setCmsSections(cmsRes.data.sections);
-        }
-        if (beveragesRes && beveragesRes.success) {
-          const bevArr = beveragesRes.data?.products?.products || beveragesRes.data?.products || (Array.isArray(beveragesRes.data) ? beveragesRes.data : []);
-          setBeveragesProducts(Array.isArray(bevArr) ? bevArr : []);
         }
       } catch (err) {
         console.error('Error loading home data:', err);
@@ -1914,18 +1908,6 @@ export default function HomePage() {
             </section>
           );
         })()}
-
-        {/* 6.5. Beverages Product Showcase Section */}
-        {beveragesProducts && beveragesProducts.length > 0 && (
-          <section className="bg-[#F6FFF8] rounded-[28px] sm:rounded-[36px] p-6 sm:p-10 lg:p-12 transition-all duration-300">
-            <SubCategorySlider
-              title={locale === 'ar' ? 'المشروبات' : 'Beverages'}
-              items={beveragesProducts}
-              locale={locale}
-              renderCard={(prod) => renderDealStyleCard(prod, `beverages-${prod.id}`)}
-            />
-          </section>
-        )}
 
         {/* 7. Popular Picks Product 2-Row Slider Section */}
         <section className="space-y-5 pt-2 select-none">
