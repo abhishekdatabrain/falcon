@@ -44,150 +44,150 @@ class ContactService {
       await OfficeLocation.sync();
       await SupportTicket.sync();
 
-    const settingsCount = await ContactSetting.count();
-    if (settingsCount === 0) {
-      await ContactSetting.create({
-        support_email: 'care@saqrcart.com',
-        support_phone: '800 124 5555',
-        whatsapp_number: '+966 59 597 4591',
-        business_address_en: 'King Fahd Road, Al Malqa District, P.O. Box 8421, Riyadh 13524, Saudi Arabia',
-        business_address_ar: 'طريق الملك فهد، حي الملقا، ص.ب 8421، الرياض 13524، المملكة العربية السعودية',
-        support_hours_en: '6:00 AM – 1:00 AM',
-        support_hours_ar: '6:00 ص – 1:00 ص',
-        dispatch_hours_en: 'Operating 24/7',
-        dispatch_hours_ar: 'يعمل 24/7',
-        live_chat_wait_en: '< 3 mins',
-        live_chat_wait_ar: 'أقل من 3 دقائق',
-        social_links: {
-          facebook: '',
-          instagram: '',
-          twitter: '',
-          linkedin: '',
-        },
-      });
-    }
-
-    const catCount = await InquiryCategory.count();
-    if (catCount === 0) {
-      await InquiryCategory.bulkCreate([
-        {
-          code: 'ORDER_STATUS',
-          name_en: 'Active Order Status & Live GPS Tracking',
-          name_ar: 'حالة الطلب والتتبع المباشر للتوصيل',
-          is_active: true,
-          display_order: 1,
-        },
-        {
-          code: 'QUALITY',
-          name_en: 'Farm Freshness & 100% Quality Assurance',
-          name_ar: 'طزاجة المزرعة وضمان الجودة 100%',
-          is_active: true,
-          display_order: 2,
-        },
-        {
-          code: 'COLD_CHAIN',
-          name_en: 'Cold-Chain Temperature Report Inquiry',
-          name_ar: 'استفسار عن سلسلة التبريد ودرجات الحرارة',
-          is_active: true,
-          display_order: 3,
-        },
-        {
-          code: 'FARMER',
-          name_en: 'Farmer & Producer Partnership Onboarding',
-          name_ar: 'شراكات المزارعين والمنتجين المحليين',
-          is_active: true,
-          display_order: 4,
-        },
-        {
-          code: 'CORPORATE',
-          name_en: 'Corporate & Institutional Bulk Catering',
-          name_ar: 'الطلبات المؤسسية والتموين للشركات',
-          is_active: true,
-          display_order: 5,
-        },
-        {
-          code: 'PAYMENT',
-          name_en: 'Payment, Invoicing & VAT Receipts',
-          name_ar: 'المدفوعات والفواتير الضريبية',
-          is_active: true,
-          display_order: 6,
-        },
-      ]);
-    }
-
-    const locCount = await OfficeLocation.count();
-    if (locCount === 0) {
-      await OfficeLocation.bulkCreate([
-        {
-          name_en: 'Riyadh Central Dispatch & HQ',
-          name_ar: 'المركز الرئيسي للتحكم والعمليات بالرياض',
-          location_type: 'HQ',
-          badge_en: 'MAIN CENTRAL HQ',
-          badge_ar: 'المقر الرئيسي المركزي',
-          region_en: 'Riyadh Central',
-          region_ar: 'الرياض المركزية',
-          address_en: 'King Fahd Road, Al Malqa District, P.O. Box 8421, Riyadh 13524, Saudi Arabia',
-          address_ar: 'طريق الملك فهد، حي الملقا، ص.ب 8421، الرياض 13524، المملكة العربية السعودية',
-          latitude: 24.71360000,
-          longitude: 46.67530000,
-          map_image_url: '/images/contact/riyadh_map.jpg',
-          service_areas_en: 'Riyadh Metropolitan Area & Surrounding Districts',
-          service_areas_ar: 'مدينة الرياض والمناطق المحيطة بها',
-          support_hours_en: 'Sun – Thu: 8:00 AM – 6:00 PM',
-          support_hours_ar: 'الأحد – الخميس: 8:00 ص – 6:00 م',
+      const settingsCount = await ContactSetting.count();
+      if (settingsCount === 0) {
+        await ContactSetting.create({
+          support_email: 'care@saqrcart.com',
+          support_phone: '800 124 5555',
+          whatsapp_number: '+966 59 597 4591',
+          business_address_en: 'King Fahd Road, Al Malqa District, P.O. Box 8421, Riyadh 13524, Saudi Arabia',
+          business_address_ar: 'طريق الملك فهد، حي الملقا، ص.ب 8421، الرياض 13524، المملكة العربية السعودية',
+          support_hours_en: '6:00 AM – 1:00 AM',
+          support_hours_ar: '6:00 ص – 1:00 ص',
           dispatch_hours_en: 'Operating 24/7',
           dispatch_hours_ar: 'يعمل 24/7',
-          is_active: true,
-          display_order: 1,
-        },
-        {
-          name_en: 'Jeddah Cold-Chain Logistics Hub',
-          name_ar: 'مركز لوجستيات التبريد بجدة',
-          location_type: 'DISPATCH_HUB',
-          badge_en: 'Western Province',
-          badge_ar: 'المنطقة الغربية',
-          region_en: 'Jeddah West',
-          region_ar: 'جدة الغربية',
-          address_en: 'Al Andalus District, Near Madinah Road, Jeddah 23326',
-          address_ar: 'حي الأندلس، بالقرب من طريق المدينة، جدة 23326',
-          latitude: 21.54330000,
-          longitude: 39.17280000,
-          map_image_url: '/images/contact/riyadh_map.jpg',
-          service_areas_en: 'Jeddah, Makkah, and Red Sea Coastal Areas',
-          service_areas_ar: 'جدة، مكة المكرمة، والمناطق الساحلية للبحر الأحمر',
-          support_hours_en: 'Sun – Thu: 8:00 AM – 6:00 PM',
-          support_hours_ar: 'الأحد – الخميس: 8:00 ص – 6:00 م',
-          dispatch_hours_en: 'Operating 24/7',
-          dispatch_hours_ar: 'يعمل 24/7',
-          is_active: true,
-          display_order: 2,
-        },
-        {
-          name_en: 'Dammam & Khobar Micro-Hub',
-          name_ar: 'مركز الدمام والخبر اللوجستي المصغر',
-          location_type: 'WAREHOUSE',
-          badge_en: 'Eastern Province',
-          badge_ar: 'المنطقة الشرقية',
-          region_en: 'Dammam East',
-          region_ar: 'الدمام الشرقية',
-          address_en: 'King Saud Street, Al Faisaliyah District, Dammam 32272',
-          address_ar: 'شارع الملك سعود، حي الفيصلية، الدمام 32272',
-          latitude: 26.42070000,
-          longitude: 50.08880000,
-          map_image_url: '/images/contact/riyadh_map.jpg',
-          service_areas_en: 'Dammam, Al Khobar, Dhahran & Jubail industrial corridor',
-          service_areas_ar: 'الدمام، الخبر، الظهران ومحور الجبيل الصناعي',
-          support_hours_en: 'Sun – Thu: 8:00 AM – 6:00 PM',
-          support_hours_ar: 'الأحد – الخميس: 8:00 ص – 6:00 م',
-          dispatch_hours_en: '6:00 AM – 11:00 PM',
-          dispatch_hours_ar: '6:00 ص – 11:00 م',
-          is_active: true,
-          display_order: 3,
-        },
-      ]);
-    }
+          live_chat_wait_en: '< 3 mins',
+          live_chat_wait_ar: 'أقل من 3 دقائق',
+          social_links: {
+            facebook: '',
+            instagram: '',
+            twitter: '',
+            linkedin: '',
+          },
+        });
+      }
 
-    seeded = true;
+      const catCount = await InquiryCategory.count();
+      if (catCount === 0) {
+        await InquiryCategory.bulkCreate([
+          {
+            code: 'ORDER_STATUS',
+            name_en: 'Active Order Status & Live GPS Tracking',
+            name_ar: 'حالة الطلب والتتبع المباشر للتوصيل',
+            is_active: true,
+            display_order: 1,
+          },
+          {
+            code: 'QUALITY',
+            name_en: 'Farm Freshness & 100% Quality Assurance',
+            name_ar: 'طزاجة المزرعة وضمان الجودة 100%',
+            is_active: true,
+            display_order: 2,
+          },
+          {
+            code: 'COLD_CHAIN',
+            name_en: 'Cold-Chain Temperature Report Inquiry',
+            name_ar: 'استفسار عن سلسلة التبريد ودرجات الحرارة',
+            is_active: true,
+            display_order: 3,
+          },
+          {
+            code: 'FARMER',
+            name_en: 'Farmer & Producer Partnership Onboarding',
+            name_ar: 'شراكات المزارعين والمنتجين المحليين',
+            is_active: true,
+            display_order: 4,
+          },
+          {
+            code: 'CORPORATE',
+            name_en: 'Corporate & Institutional Bulk Catering',
+            name_ar: 'الطلبات المؤسسية والتموين للشركات',
+            is_active: true,
+            display_order: 5,
+          },
+          {
+            code: 'PAYMENT',
+            name_en: 'Payment, Invoicing & VAT Receipts',
+            name_ar: 'المدفوعات والفواتير الضريبية',
+            is_active: true,
+            display_order: 6,
+          },
+        ]);
+      }
+
+      const locCount = await OfficeLocation.count();
+      if (locCount === 0) {
+        await OfficeLocation.bulkCreate([
+          {
+            name_en: 'Riyadh Central Dispatch & HQ',
+            name_ar: 'المركز الرئيسي للتحكم والعمليات بالرياض',
+            location_type: 'HQ',
+            badge_en: 'MAIN CENTRAL HQ',
+            badge_ar: 'المقر الرئيسي المركزي',
+            region_en: 'Riyadh Central',
+            region_ar: 'الرياض المركزية',
+            address_en: 'King Fahd Road, Al Malqa District, P.O. Box 8421, Riyadh 13524, Saudi Arabia',
+            address_ar: 'طريق الملك فهد، حي الملقا، ص.ب 8421، الرياض 13524، المملكة العربية السعودية',
+            latitude: 24.71360000,
+            longitude: 46.67530000,
+            map_image_url: '/images/contact/riyadh_map.jpg',
+            service_areas_en: 'Riyadh Metropolitan Area & Surrounding Districts',
+            service_areas_ar: 'مدينة الرياض والمناطق المحيطة بها',
+            support_hours_en: 'Sun – Thu: 8:00 AM – 6:00 PM',
+            support_hours_ar: 'الأحد – الخميس: 8:00 ص – 6:00 م',
+            dispatch_hours_en: 'Operating 24/7',
+            dispatch_hours_ar: 'يعمل 24/7',
+            is_active: true,
+            display_order: 1,
+          },
+          {
+            name_en: 'Jeddah Cold-Chain Logistics Hub',
+            name_ar: 'مركز لوجستيات التبريد بجدة',
+            location_type: 'DISPATCH_HUB',
+            badge_en: 'Western Province',
+            badge_ar: 'المنطقة الغربية',
+            region_en: 'Jeddah West',
+            region_ar: 'جدة الغربية',
+            address_en: 'Al Andalus District, Near Madinah Road, Jeddah 23326',
+            address_ar: 'حي الأندلس، بالقرب من طريق المدينة، جدة 23326',
+            latitude: 21.54330000,
+            longitude: 39.17280000,
+            map_image_url: '/images/contact/riyadh_map.jpg',
+            service_areas_en: 'Jeddah, Makkah, and Red Sea Coastal Areas',
+            service_areas_ar: 'جدة، مكة المكرمة، والمناطق الساحلية للبحر الأحمر',
+            support_hours_en: 'Sun – Thu: 8:00 AM – 6:00 PM',
+            support_hours_ar: 'الأحد – الخميس: 8:00 ص – 6:00 م',
+            dispatch_hours_en: 'Operating 24/7',
+            dispatch_hours_ar: 'يعمل 24/7',
+            is_active: true,
+            display_order: 2,
+          },
+          {
+            name_en: 'Dammam & Khobar Micro-Hub',
+            name_ar: 'مركز الدمام والخبر اللوجستي المصغر',
+            location_type: 'WAREHOUSE',
+            badge_en: 'Eastern Province',
+            badge_ar: 'المنطقة الشرقية',
+            region_en: 'Dammam East',
+            region_ar: 'الدمام الشرقية',
+            address_en: 'King Saud Street, Al Faisaliyah District, Dammam 32272',
+            address_ar: 'شارع الملك سعود، حي الفيصلية، الدمام 32272',
+            latitude: 26.42070000,
+            longitude: 50.08880000,
+            map_image_url: '/images/contact/riyadh_map.jpg',
+            service_areas_en: 'Dammam, Al Khobar, Dhahran & Jubail industrial corridor',
+            service_areas_ar: 'الدمام، الخبر، الظهران ومحور الجبيل الصناعي',
+            support_hours_en: 'Sun – Thu: 8:00 AM – 6:00 PM',
+            support_hours_ar: 'الأحد – الخميس: 8:00 ص – 6:00 م',
+            dispatch_hours_en: '6:00 AM – 11:00 PM',
+            dispatch_hours_ar: '6:00 ص – 11:00 م',
+            is_active: true,
+            display_order: 3,
+          },
+        ]);
+      }
+
+      seeded = true;
     })();
 
     try {
@@ -410,7 +410,7 @@ class ContactService {
           reference_type: 'SUPPORT_TICKET',
           is_read: false,
         }));
-        await Notification.bulkCreate(notifications).catch(() => {});
+        await Notification.bulkCreate(notifications).catch(() => { });
       }
     } catch (err) {
       logger.warn(`notifyAdminsNewTicket error: ${err.message}`);
@@ -427,12 +427,12 @@ class ContactService {
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;">
           <div style="background: #043927; color: #ffffff; padding: 24px; text-align: center;">
-            <h2 style="margin: 0; font-size: 20px;">SaaRCart Customer Care</h2>
+            <h2 style="margin: 0; font-size: 20px;">SaqrCart Customer Care</h2>
             <p style="margin: 6px 0 0 0; color: #a7f3d0; font-size: 13px;">Support Ticket Confirmation</p>
           </div>
           <div style="padding: 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
             <p>Hello <strong>${ticket.full_name}</strong>,</p>
-            <p>Thank you for contacting SaaRCart. Your support inquiry has been received and logged with reference number:</p>
+            <p>Thank you for contacting SaqrCart. Your support inquiry has been received and logged with reference number:</p>
             <div style="background: #f0fdf4; border: 1px dashed #05a764; border-radius: 10px; padding: 14px; text-align: center; margin: 16px 0;">
               <span style="font-size: 18px; font-weight: bold; color: #043927; letter-spacing: 1px;">${ticket.ticket_number}</span>
             </div>
@@ -444,9 +444,9 @@ class ContactService {
       `;
 
       await emailService.transporter.sendMail({
-        from: `"SaaRCart Care" <${process.env.SMTP_FROM || process.env.SMTP_USER || 'care@saqrcart.com'}>`,
+        from: `"SaqrCart Care" <${process.env.SMTP_FROM || process.env.SMTP_USER || 'care@saqrcart.com'}>`,
         to: ticket.email,
-        subject: `[${ticket.ticket_number}] We received your SaaRCart Support Request`,
+        subject: `[${ticket.ticket_number}] We received your SaqrCart Support Request`,
         html,
       });
     } catch (err) {

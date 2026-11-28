@@ -10,7 +10,7 @@ const DEFAULT_ABOUT_CONTENT = {
     title_en: 'Rooted in Freshness,\nDelivered to Your\nDoorstep.',
     title_ar: 'جذور ممتدة في الطزاجة، تصل إلى باب منزلك.',
     paragraph1_en:
-      "Empowering Saudi households with fresh, sustainable, farm-to-table groceries delivered in as little as 30 minutes. Founded in the heart of Riyadh, SaaRCart was born from a fundamental question: why should fresh food spend two weeks in static cold-storage depots before reaching your family's dinner table?",
+      "Empowering Saudi households with fresh, sustainable, farm-to-table groceries delivered in as little as 30 minutes. Founded in the heart of Riyadh, SaqrCart was born from a fundamental question: why should fresh food spend two weeks in static cold-storage depots before reaching your family's dinner table?",
     paragraph1_ar:
       'تمكين العائلات السعودية بمقاضي طازجة ومستدامة من المزرعة إلى المائدة مباشرة في غضون 30 دقيقة. انطلقت صقر كارت من قلب الرياض بناءً على سؤال جوهري: لماذا تقضي الأغذية الطازجة أسبوعين في مستودعات التبريد التقليدية قبل أن تصل لمائدة عائلتك؟',
     paragraph2_en:
@@ -139,7 +139,7 @@ const DEFAULT_ABOUT_CONTENT = {
       { name_en: 'Al-Kharj', name_ar: 'الخرج', produce_en: 'Farm-Fresh Dairy & Hydro Greens', produce_ar: 'ألبان طازجة وخضار مائية' },
       { name_en: 'Tabuk & Taif', name_ar: 'تبوك والطائف', produce_en: 'Figs, Pomegranates & Apricots', produce_ar: 'تين، رمان، وفواكه جبلية' },
     ],
-    quote_en: '"SaaRCart gave our family greenhouse farm direct access to thousands of homes in Riyadh every single morning. We harvest at dawn, and our produce is on family dining tables before lunchtime."',
+    quote_en: '"SaqrCart gave our family greenhouse farm direct access to thousands of homes in Riyadh every single morning. We harvest at dawn, and our produce is on family dining tables before lunchtime."',
     quote_ar: '"منحتنا منصة صقر كارت وصولاً مباشراً لآلاف العائلات في الرياض كل صباح. نحصد مع شروق الشمس، ومحصولنا يكون على مائدة الغداء قبل الظهر."',
     quote_author_en: 'Abu Fahad Al-Subaie • Master Grower, Al-Kharj Valley',
     quote_author_ar: '— أبو فهد السبيعي • مزارع رئيسي، وادي الخرج',
@@ -184,7 +184,7 @@ const DEFAULT_ABOUT_CONTENT = {
         name: 'Dr. Sarah Jenkins',
         role_en: 'Head of Quality & Food Science',
         role_ar: 'رئيسة قسم الجودة وعلوم الأغذية',
-        bio_en: "Ph.D. in Post-Harvest Physiology and AgTech. Leads SaaRCart's rigorous 17-point quality protocol and oversees USDA-equivalent testing across all micro-hubs.",
+        bio_en: "Ph.D. in Post-Harvest Physiology and AgTech. Leads SaqrCart's rigorous 17-point quality protocol and oversees USDA-equivalent testing across all micro-hubs.",
         bio_ar: 'دكتوراه في فسيولوجيا ما بعد الحصاد والتقنيات الزراعية. تقود بروتوكول فحص الجودة المكون من 17 نقطة ومختبرات الفحص في المستودعات.',
         location_en: 'Riyadh Hub HQ',
         location_ar: 'مقر الرياض المركزي',
@@ -198,7 +198,7 @@ const DEFAULT_ABOUT_CONTENT = {
     badge_ar: '🌿 مبادرة الأسطول الأخضر 2030',
     title_en: 'Honoring Our Land, Nurturing Our Communities.',
     title_ar: 'نحترم أرضنا، ونرعى مجتمعاتنا.',
-    description_en: 'SaaRCart foods not only serve the expanse of our environment. We are building the most environmentally responsible grocery infrastructure in the Middle East.',
+    description_en: 'SaqrCart foods not only serve the expanse of our environment. We are building the most environmentally responsible grocery infrastructure in the Middle East.',
     description_ar: 'لا ينبغي أن يأتي الطعام الطازج على حساب بيئتنا. نحن نبني البنية التحتية الأكثر مسؤولية واستدامة لتوصيل البقالة في الشرق الأوسط.',
     highlights: [
       { icon: 'leaf', title_en: 'Zero Emissions', title_ar: 'انبعاثات صفرية', description_en: '100% Electric delivery fleet in urban centers', description_ar: 'أسطول كهربائي 100% في المراكز الحضرية.' },

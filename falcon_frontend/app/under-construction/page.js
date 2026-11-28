@@ -2,7 +2,7 @@ import React from 'react';
 import { Clock, ShoppingBag, Sparkles, Wrench } from 'lucide-react';
 
 export const metadata = {
-  title: 'SaaRCart – Coming Soon',
+  title: 'SaqrCart – Coming Soon',
   description:
     "We're working hard to bring you a better shopping experience. Our website will be available soon.",
   robots: {
@@ -36,7 +36,7 @@ export default function UnderConstructionPage() {
           <div className="inline-flex items-center justify-center bg-white rounded-2xl px-5 py-2.5 border border-slate-100 shadow-2xs">
             <img
               src="/saqrcart-logo.png"
-              alt="SaaRCart"
+              alt="SaqrCart"
               className="h-10 sm:h-12 w-auto object-contain"
             />
           </div>
@@ -132,7 +132,7 @@ export default function UnderConstructionPage() {
 
       {/* Subtle Copyright */}
       <p className="relative z-10 mt-6 text-xs text-slate-400">
-        &copy; {new Date().getFullYear()} SaaRCart. All rights reserved.
+        &copy; {new Date().getFullYear()} SaqrCart. All rights reserved.
       </p>
     </div>
   );

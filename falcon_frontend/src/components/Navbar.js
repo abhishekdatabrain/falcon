@@ -669,7 +669,7 @@ export default function Navbar() {
                   {locale === 'ar' ? 'التوصيل إلى' : 'Deliver to'}
                 </span>
                 <span className="font-bold text-white">
-                  {locale === 'ar' ? 'الرياض، المملكة العربية السعودية' : 'Makka'}
+                  {locale === 'ar' ? 'الرياض، المملكة العربية السعودية' : 'Makkah City in Saudi Arabia'}
                 </span>
               </div>
             </div>

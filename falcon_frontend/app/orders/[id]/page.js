@@ -552,7 +552,102 @@ export default function OrderDetailsPage() {
   const discountVal = parseFloat(order?.discount_total || 0);
   const grandTotalVal = parseFloat(order?.grand_total || subtotalVal + deliveryVal + taxVal - discountVal);
 
-  const isPaid = order?.payment?.status === 'VERIFIED' || ['CONFIRMED', 'PROCESSING', 'PACKING', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(currentStatus);
+  const rawPaymentStatus = String(
+    order?.payment?.status ||
+    (currentStatus === 'PAYMENT_VERIFIED'
+      ? 'VERIFIED'
+      : currentStatus === 'PAYMENT_REJECTED'
+        ? 'REJECTED'
+        : currentStatus === 'PAYMENT_SUBMITTED'
+          ? 'SUBMITTED'
+          : 'PENDING')
+  ).toUpperCase();
+
+  const getPaymentStatusBadge = (status) => {
+    switch (status) {
+      case 'PAID':
+      case 'VERIFIED':
+        return {
+          label: locale === 'ar' ? 'مدفوع' : 'PAID',
+          className: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+        };
+      case 'FAILED':
+      case 'REJECTED':
+        return {
+          label: status === 'REJECTED'
+            ? (locale === 'ar' ? 'مرفوض' : 'REJECTED')
+            : (locale === 'ar' ? 'فشل الدفع' : 'FAILED'),
+          className: 'bg-rose-50 text-rose-800 border-rose-200',
+        };
+      case 'REFUNDED':
+        return {
+          label: locale === 'ar' ? 'مسترد' : 'REFUNDED',
+          className: 'bg-slate-100 text-slate-700 border-slate-200',
+        };
+      case 'SUBMITTED':
+      case 'UNDER_REVIEW':
+        return {
+          label: locale === 'ar' ? 'قيد الانتظار' : 'PENDING',
+          className: 'bg-amber-50 text-amber-800 border-amber-200',
+        };
+      case 'PENDING':
+      default:
+        return {
+          label: locale === 'ar' ? 'قيد الانتظار' : 'PENDING',
+          className: 'bg-amber-50 text-amber-800 border-amber-200',
+        };
+    }
+  };
+
+  const paymentStatusBadge = getPaymentStatusBadge(rawPaymentStatus);
+
+  const rawPaymentMethod = String(
+    order?.payment?.payment_method ||
+    order?.payment?.method ||
+    order?.payment_method ||
+    ''
+  ).trim();
+
+  const normalizedPaymentMethod = rawPaymentMethod.toUpperCase().replace(/[\s-]+/g, '_');
+
+  const getPaymentMethodDisplay = (method) => {
+    if (!method) {
+      return {
+        label: locale === 'ar' ? 'غير محدد' : 'Not specified',
+        tag: 'N/A',
+      };
+    }
+    if (method === 'COD' || method === 'CASH_ON_DELIVERY') {
+      return {
+        label: locale === 'ar' ? 'الدفع عند الاستلام (COD)' : 'Cash on Delivery (COD)',
+        tag: 'COD',
+      };
+    }
+    if (method === 'MADA') {
+      return {
+        label: 'mada',
+        tag: 'MADA',
+      };
+    }
+    if (method === 'APPLE_PAY' || method === 'APPLEPAY') {
+      return {
+        label: 'Apple Pay',
+        tag: 'APPLE PAY',
+      };
+    }
+    if (method === 'BANK_TRANSFER') {
+      return {
+        label: locale === 'ar' ? 'تحويل بنكي' : 'Bank Transfer',
+        tag: 'BANK',
+      };
+    }
+    return {
+      label: rawPaymentMethod,
+      tag: rawPaymentMethod.toUpperCase(),
+    };
+  };
+
+  const paymentMethodDisplay = getPaymentMethodDisplay(normalizedPaymentMethod);
 
   return (
     <div className="min-h-screen bg-[#F4F6F4] text-slate-800 pb-24">
@@ -1054,11 +1149,9 @@ export default function OrderDetailsPage() {
                 <h3 className="font-black text-base text-slate-900">
                   {locale === 'ar' ? 'ملخص الدفع والفاتورة' : 'Payment & Invoice Summary'}
                 </h3>
-                {isPaid && (
-                  <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border bg-emerald-50 text-emerald-800 border-emerald-200">
-                    {locale === 'ar' ? 'مدفوع' : 'PAID'}
-                  </span>
-                )}
+                <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${paymentStatusBadge.className}`}>
+                  {paymentStatusBadge.label}
+                </span>
               </div>
 
               {/* Price Breakdown */}
@@ -1119,13 +1212,13 @@ export default function OrderDetailsPage() {
                       {locale === 'ar' ? 'طريقة الدفع' : 'Payment Method'}
                     </span>
                     <span className="text-[10px] text-slate-500 font-medium">
-                      {order?.payment?.method || 'mada / Apple Pay'}
+                      {paymentMethodDisplay.label}
                     </span>
                   </div>
                 </div>
 
                 <span className="bg-slate-200/80 text-slate-800 text-[9px] font-black px-2 py-0.5 rounded-md font-mono">
-                  MADA
+                  {paymentMethodDisplay.tag}
                 </span>
               </div>
 

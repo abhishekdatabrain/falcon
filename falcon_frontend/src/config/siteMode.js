@@ -2,7 +2,7 @@
  * Toggle this flag to enable or disable public Under Construction mode.
  * Admin, Driver, Auth, API, and static routes remain accessible.
  */
-export const UNDER_CONSTRUCTION_MODE = true;
+export const UNDER_CONSTRUCTION_MODE = false;
 
 export const UNDER_CONSTRUCTION_HOSTS = ['saqrcart.com', 'www.saqrcart.com'];
 

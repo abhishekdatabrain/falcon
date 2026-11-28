@@ -126,17 +126,17 @@ export default function PublicDeleteAccountPage() {
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-2xs space-y-4">
           <div className="inline-flex items-center gap-2 bg-rose-50 border border-rose-200 px-3.5 py-1.5 rounded-full text-xs font-bold text-rose-700">
             <ShieldAlert className="w-4 h-4" />
-            <span>{isAr ? 'مركز خصوصية صقر كارت • حذف الحساب' : 'SaaRCart Privacy Center • Account Deletion'}</span>
+            <span>{isAr ? 'مركز خصوصية صقر كارت • حذف الحساب' : 'SaqrCart Privacy Center • Account Deletion'}</span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            {isAr ? 'طلب حذف حساب صقر كارت (SaaRCart)' : 'Delete Your SaaRCart Account & Personal Data'}
+            {isAr ? 'طلب حذف حساب صقر كارت (SaqrCart)' : 'Delete Your SaqrCart Account & Personal Data'}
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
             {isAr
-              ? 'توفر شركة صقر الاندماج للتجارة (SaaRCart) هذه الصفحة العامة لتمكين المستخدمين من حذف حساباتهم وبياناتهم الشخصية بشكل نهائي، سواء عبر تطبيق الهاتف أو مباشرة عبر الويب.'
-              : 'Saqr Alindimaj Trading Company (SaaRCart) provides this public portal so users can permanently delete their SaaRCart account and personal data directly from the web, even if the mobile app is no longer installed.'}
+              ? 'توفر شركة صقر الاندماج للتجارة (SaqrCart) هذه الصفحة العامة لتمكين المستخدمين من حذف حساباتهم وبياناتهم الشخصية بشكل نهائي، سواء عبر تطبيق الهاتف أو مباشرة عبر الويب.'
+              : 'Saqr Alindimaj Trading Company (SaqrCart) provides this public portal so users can permanently delete their SaqrCart account and personal data directly from the web, even if the mobile app is no longer installed.'}
           </p>
         </div>
 
@@ -166,7 +166,7 @@ export default function PublicDeleteAccountPage() {
                 <p className="text-xs text-emerald-800 leading-relaxed">
                   {isAr
                     ? 'تم تعطيل حسابك وإخفاء جميع بياناتك الشخصية، العناوين، السلة، وقائمة المفضلة بشكل نهائي.'
-                    : 'Your SaaRCart account has been deactivated and your personal data, saved addresses, cart, wishlist, and device tokens have been permanently removed.'}
+                    : 'Your SaqrCart account has been deactivated and your personal data, saved addresses, cart, wishlist, and device tokens have been permanently removed.'}
                 </p>
                 <Link
                   href="/"
@@ -240,7 +240,7 @@ export default function PublicDeleteAccountPage() {
                   <span className="text-[11px] text-slate-600 leading-snug">
                     {isAr
                       ? 'أقر وأفهم أن حذف حسابي إجراء نهائي ولا يمكن التراجع عنه، وسيتم حذف بياناتي الشخصية وعناويني المحفوظة فوراً.'
-                      : 'I understand that deleting my SaaRCart account is permanent and irreversible, and all my personal profile data and saved addresses will be deleted.'}
+                      : 'I understand that deleting my SaqrCart account is permanent and irreversible, and all my personal profile data and saved addresses will be deleted.'}
                   </span>
                 </label>
 
@@ -300,7 +300,7 @@ export default function PublicDeleteAccountPage() {
                 <span>{isAr ? 'الحذف من داخل التطبيق' : 'Delete In-App Steps'}</span>
               </div>
               <ol className="list-decimal list-inside space-y-1.5 text-slate-600">
-                <li>{isAr ? 'افتح تطبيق صقر كارت وسجل الدخول.' : 'Open the SaaRCart app and sign in.'}</li>
+                <li>{isAr ? 'افتح تطبيق صقر كارت وسجل الدخول.' : 'Open the SaqrCart app and sign in.'}</li>
                 <li>{isAr ? 'انتقل إلى الملف الشخصي (Profile).' : 'Navigate to Profile.'}</li>
                 <li>{isAr ? 'انزل إلى منطقة الخطر (Danger Zone) واضغط على "حذف الحساب".' : 'Scroll to Danger Zone and tap "Delete My Account".'}</li>
               </ol>

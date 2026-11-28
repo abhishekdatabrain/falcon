@@ -396,7 +396,7 @@ export default function AdminProductsPage() {
 
       const blob = await res.blob();
       const today = new Date().toISOString().split('T')[0];
-      const filename = `SaaRCart_Products_${today}.xlsx`;
+      const filename = `SaqrCart_Products_${today}.xlsx`;
 
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -585,36 +585,36 @@ export default function AdminProductsPage() {
 
     const loadedVariants = Array.isArray(targetProd.variants)
       ? targetProd.variants.map((v) => {
-          let vImgs = [];
-          if (Array.isArray(v.images) && v.images.length > 0) {
-            vImgs = v.images.map((img, idx) => ({
-              id: img.id || null,
-              image_url: img.image_url || (typeof img === 'string' ? img : ''),
-              is_primary: Boolean(img.is_primary),
-              sort_order: img.sort_order !== undefined ? Number(img.sort_order) : idx,
-            })).filter((i) => i.image_url);
-          } else if (v.image_url) {
-            vImgs = [{ id: null, image_url: v.image_url, is_primary: true, sort_order: 0 }];
-          }
-          if (vImgs.length > 0 && !vImgs.some((i) => i.is_primary)) {
-            vImgs[0].is_primary = true;
-          }
-          const primaryUrl = vImgs.find((i) => i.is_primary)?.image_url || vImgs[0]?.image_url || v.image_url || '';
+        let vImgs = [];
+        if (Array.isArray(v.images) && v.images.length > 0) {
+          vImgs = v.images.map((img, idx) => ({
+            id: img.id || null,
+            image_url: img.image_url || (typeof img === 'string' ? img : ''),
+            is_primary: Boolean(img.is_primary),
+            sort_order: img.sort_order !== undefined ? Number(img.sort_order) : idx,
+          })).filter((i) => i.image_url);
+        } else if (v.image_url) {
+          vImgs = [{ id: null, image_url: v.image_url, is_primary: true, sort_order: 0 }];
+        }
+        if (vImgs.length > 0 && !vImgs.some((i) => i.is_primary)) {
+          vImgs[0].is_primary = true;
+        }
+        const primaryUrl = vImgs.find((i) => i.is_primary)?.image_url || vImgs[0]?.image_url || v.image_url || '';
 
-          return {
-            id: v.id,
-            sku: v.sku || '',
-            unit_value: v.unit_value || '',
-            unit_type: v.unit_type || 'kg',
-            pack_size: v.pack_size || '',
-            price: v.price !== undefined ? String(v.price) : '',
-            discount_price: v.discount_price !== undefined && v.discount_price !== null ? String(v.discount_price) : '',
-            stock_quantity: v.stock_quantity !== undefined ? String(v.stock_quantity) : '0',
-            image_url: primaryUrl,
-            images: vImgs,
-            is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
-          };
-        })
+        return {
+          id: v.id,
+          sku: v.sku || '',
+          unit_value: v.unit_value || '',
+          unit_type: v.unit_type || 'kg',
+          pack_size: v.pack_size || '',
+          price: v.price !== undefined ? String(v.price) : '',
+          discount_price: v.discount_price !== undefined && v.discount_price !== null ? String(v.discount_price) : '',
+          stock_quantity: v.stock_quantity !== undefined ? String(v.stock_quantity) : '0',
+          image_url: primaryUrl,
+          images: vImgs,
+          is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+        };
+      })
       : [];
 
     let loadedHighlights = [];
@@ -642,7 +642,7 @@ export default function AdminProductsPage() {
             };
           });
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     let loadedBadges = [];
@@ -670,7 +670,7 @@ export default function AdminProductsPage() {
             };
           });
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     let loadedNutrition = {
@@ -695,7 +695,7 @@ export default function AdminProductsPage() {
         if (typeof parsed === 'object' && parsed !== null) {
           loadedNutrition = { ...loadedNutrition, ...parsed };
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     setProductForm({
@@ -1318,23 +1318,23 @@ export default function AdminProductsPage() {
         long_description_ar: productForm.long_description_ar || null,
         highlights: Array.isArray(productForm.highlights)
           ? productForm.highlights
-              .filter((h) => (h.text_en && h.text_en.trim()) || (h.text_ar && h.text_ar.trim()))
-              .map((h) => ({
-                text: (h.text_en || h.text_ar || '').trim(),
-                text_en: (h.text_en || '').trim(),
-                text_ar: (h.text_ar || '').trim(),
-                icon: (h.icon || 'Check').trim(),
-              }))
+            .filter((h) => (h.text_en && h.text_en.trim()) || (h.text_ar && h.text_ar.trim()))
+            .map((h) => ({
+              text: (h.text_en || h.text_ar || '').trim(),
+              text_en: (h.text_en || '').trim(),
+              text_ar: (h.text_ar || '').trim(),
+              icon: (h.icon || 'Check').trim(),
+            }))
           : [],
         feature_badges: Array.isArray(productForm.feature_badges)
           ? productForm.feature_badges
-              .filter((b) => (b.text_en && b.text_en.trim()) || (b.text_ar && b.text_ar.trim()))
-              .map((b) => ({
-                text: (b.text_en || b.text_ar || '').trim(),
-                text_en: (b.text_en || '').trim(),
-                text_ar: (b.text_ar || '').trim(),
-                icon: (b.icon || 'Check').trim(),
-              }))
+            .filter((b) => (b.text_en && b.text_en.trim()) || (b.text_ar && b.text_ar.trim()))
+            .map((b) => ({
+              text: (b.text_en || b.text_ar || '').trim(),
+              text_en: (b.text_en || '').trim(),
+              text_ar: (b.text_ar || '').trim(),
+              icon: (b.icon || 'Check').trim(),
+            }))
           : [],
         nutrition_facts: productForm.nutrition_facts || {},
         brand: productForm.brand || null,
@@ -1347,28 +1347,28 @@ export default function AdminProductsPage() {
         has_variants: Boolean(productForm.has_variants),
         variants: productForm.has_variants && Array.isArray(productForm.variants)
           ? productForm.variants.map((v) => {
-              const vImgs = Array.isArray(v.images) && v.images.length > 0
-                ? v.images
-                : (v.image_url ? [{ image_url: v.image_url, is_primary: true, sort_order: 0 }] : []);
-              const primaryUrl = vImgs.find((i) => i.is_primary)?.image_url || vImgs[0]?.image_url || v.image_url || null;
-              return {
-                id: v.id || undefined,
-                sku: (v.sku || '').trim(),
-                unit_value: v.unit_value || null,
-                unit_type: v.unit_type || null,
-                pack_size: v.pack_size || null,
-                price: parseFloat(v.price),
-                discount_price: v.discount_price !== '' && v.discount_price !== null ? parseFloat(v.discount_price) : null,
-                stock_quantity: parseInt(v.stock_quantity !== '' ? v.stock_quantity : '0', 10),
-                image_url: primaryUrl,
-                images: vImgs.map((img, idx) => ({
-                  image_url: img.image_url,
-                  is_primary: Boolean(img.is_primary),
-                  sort_order: idx,
-                })),
-                is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
-              };
-            })
+            const vImgs = Array.isArray(v.images) && v.images.length > 0
+              ? v.images
+              : (v.image_url ? [{ image_url: v.image_url, is_primary: true, sort_order: 0 }] : []);
+            const primaryUrl = vImgs.find((i) => i.is_primary)?.image_url || vImgs[0]?.image_url || v.image_url || null;
+            return {
+              id: v.id || undefined,
+              sku: (v.sku || '').trim(),
+              unit_value: v.unit_value || null,
+              unit_type: v.unit_type || null,
+              pack_size: v.pack_size || null,
+              price: parseFloat(v.price),
+              discount_price: v.discount_price !== '' && v.discount_price !== null ? parseFloat(v.discount_price) : null,
+              stock_quantity: parseInt(v.stock_quantity !== '' ? v.stock_quantity : '0', 10),
+              image_url: primaryUrl,
+              images: vImgs.map((img, idx) => ({
+                image_url: img.image_url,
+                is_primary: Boolean(img.is_primary),
+                sort_order: idx,
+              })),
+              is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
+            };
+          })
           : [],
         images: productForm.images.filter(Boolean),
       };
@@ -1548,10 +1548,10 @@ export default function AdminProductsPage() {
                         {filterSubSubSubcategory
                           ? (locale === 'ar' ? 'المستوى 4: ' : 'Level 4: ')
                           : filterSubSubcategory
-                          ? (locale === 'ar' ? 'المستوى 3: ' : 'Level 3: ')
-                          : filterSubcategory
-                          ? (locale === 'ar' ? 'المستوى 2: ' : 'Level 2: ')
-                          : (locale === 'ar' ? 'القسم: ' : 'Category: ')}
+                            ? (locale === 'ar' ? 'المستوى 3: ' : 'Level 3: ')
+                            : filterSubcategory
+                              ? (locale === 'ar' ? 'المستوى 2: ' : 'Level 2: ')
+                              : (locale === 'ar' ? 'القسم: ' : 'Category: ')}
                         {categories.find((c) => String(c.id) === String(effectiveCategoryFilter))?.name_en || 'Active'}
                       </span>
                     </span>
@@ -1589,8 +1589,8 @@ export default function AdminProductsPage() {
                         {!filterCategory
                           ? (locale === 'ar' ? '-- اختر القسم أولاً --' : '-- Subcategory (Level 2) --')
                           : filterLevel2Options.length === 0
-                          ? (locale === 'ar' ? '-- لا توجد أقسام فرعية --' : '-- No Subcategories --')
-                          : (locale === 'ar' ? 'جميع الأقسام الفرعية (المستوى 2)' : 'All Subcategories (Level 2)')}
+                            ? (locale === 'ar' ? '-- لا توجد أقسام فرعية --' : '-- No Subcategories --')
+                            : (locale === 'ar' ? 'جميع الأقسام الفرعية (المستوى 2)' : 'All Subcategories (Level 2)')}
                       </option>
                       {filterLevel2Options.map((sc) => (
                         <option key={sc.id} value={sc.id}>
@@ -1613,8 +1613,8 @@ export default function AdminProductsPage() {
                         {!filterSubcategory
                           ? (locale === 'ar' ? '-- اختر المستوى 2 أولاً --' : '-- Sub-subcategory (Level 3) --')
                           : filterLevel3Options.length === 0
-                          ? (locale === 'ar' ? '-- لا توجد أقسام فرعية 3 --' : '-- No Sub-subcategories --')
-                          : (locale === 'ar' ? 'جميع الأقسام (المستوى 3)' : 'All Sub-subcategories (Level 3)')}
+                            ? (locale === 'ar' ? '-- لا توجد أقسام فرعية 3 --' : '-- No Sub-subcategories --')
+                            : (locale === 'ar' ? 'جميع الأقسام (المستوى 3)' : 'All Sub-subcategories (Level 3)')}
                       </option>
                       {filterLevel3Options.map((ssc) => (
                         <option key={ssc.id} value={ssc.id}>
@@ -1637,8 +1637,8 @@ export default function AdminProductsPage() {
                         {!filterSubSubcategory
                           ? (locale === 'ar' ? '-- اختر المستوى 3 أولاً --' : '-- Sub-sub-subcategory (Level 4) --')
                           : filterLevel4Options.length === 0
-                          ? (locale === 'ar' ? '-- لا توجد أقسام فرعية 4 --' : '-- No Level 4 Categories --')
-                          : (locale === 'ar' ? 'جميع الأقسام (المستوى 4)' : 'All Level 4 Categories')}
+                            ? (locale === 'ar' ? '-- لا توجد أقسام فرعية 4 --' : '-- No Level 4 Categories --')
+                            : (locale === 'ar' ? 'جميع الأقسام (المستوى 4)' : 'All Level 4 Categories')}
                       </option>
                       {filterLevel4Options.map((sssc) => (
                         <option key={sssc.id} value={sssc.id}>
@@ -1799,11 +1799,10 @@ export default function AdminProductsPage() {
                   type="button"
                   onClick={handleResetFilters}
                   disabled={!isAnyFilterActive}
-                  className={`h-9 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-2xs shrink-0 ${
-                    isAnyFilterActive
+                  className={`h-9 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-2xs shrink-0 ${isAnyFilterActive
                       ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 cursor-pointer active:scale-95'
                       : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
-                  }`}
+                    }`}
                   title={locale === 'ar' ? 'إعادة تعيين جميع الفلاتر' : 'Reset All Filters'}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -2042,11 +2041,10 @@ export default function AdminProductsPage() {
                           {/* Status Column */}
                           <td className="px-3.5 py-3 whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
- prod.is_active !== false
- ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
- : 'bg-rose-50 text-rose-700 border-rose-200'
- }`}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${prod.is_active !== false
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200'
+                                }`}
                             >
                               {prod.is_active !== false ? (
                                 <>
@@ -2122,7 +2120,7 @@ export default function AdminProductsPage() {
 
           {/* Form Body Layout */}
           <form onSubmit={handleSubmit} className="space-y-6">
-{/* MIDDLE SECTION: FULL WIDTH CATEGORY CLASSIFICATION (4 LEVELS) */}
+            {/* MIDDLE SECTION: FULL WIDTH CATEGORY CLASSIFICATION (4 LEVELS) */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 w-full">
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
                 <Layers className="w-4 h-4 text-[#05A764]" /> 2. Category Classification (4 Levels)
@@ -2456,7 +2454,7 @@ export default function AdminProductsPage() {
 
             </div>
 
-            
+
 
             {/* BOTTOM SECTION: Packaging & Inventory (2 Cols) + Online Store Options (1 Col) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -2497,17 +2495,17 @@ export default function AdminProductsPage() {
                               has_variants: isChecked,
                               variants: isChecked && (!prev.variants || prev.variants.length === 0)
                                 ? [{
-                                    id: null,
-                                    sku: prev.sku ? `${prev.sku}-V1` : 'SKU-V1',
-                                    unit_value: prev.unit_value || '1',
-                                    unit_type: prev.unit_type || 'kg',
-                                    pack_size: prev.pack_size || '',
-                                    price: prev.price || '',
-                                    discount_price: prev.discount_price || '',
-                                    stock_quantity: prev.stock_quantity || '10',
-                                    image_url: prev.images?.[0] || '',
-                                    is_active: true,
-                                  }]
+                                  id: null,
+                                  sku: prev.sku ? `${prev.sku}-V1` : 'SKU-V1',
+                                  unit_value: prev.unit_value || '1',
+                                  unit_type: prev.unit_type || 'kg',
+                                  pack_size: prev.pack_size || '',
+                                  price: prev.price || '',
+                                  discount_price: prev.discount_price || '',
+                                  stock_quantity: prev.stock_quantity || '10',
+                                  image_url: prev.images?.[0] || '',
+                                  is_active: true,
+                                }]
                                 : prev.variants,
                             }));
                           }}
@@ -2872,7 +2870,7 @@ export default function AdminProductsPage() {
                         >
                           🌻 Oil (1L / 2L / 5L)
                         </button>
-                        
+
                       </div>
 
                       {/* VARIANTS ROWS */}
@@ -3141,11 +3139,10 @@ export default function AdminProductsPage() {
                                               setDraggedVariantImg(null);
                                             }
                                           }}
-                                          className={`group relative rounded-2xl p-1.5 transition-all bg-white flex flex-col justify-between overflow-hidden shadow-2xs select-none ${
- isPrimary
- ? 'border-2 border-[#05A764] ring-2 ring-emerald-500/10 shadow-emerald-50'
- : 'border border-slate-200 hover:border-slate-300'
- }`}
+                                          className={`group relative rounded-2xl p-1.5 transition-all bg-white flex flex-col justify-between overflow-hidden shadow-2xs select-none ${isPrimary
+                                              ? 'border-2 border-[#05A764] ring-2 ring-emerald-500/10 shadow-emerald-50'
+                                              : 'border border-slate-200 hover:border-slate-300'
+                                            }`}
                                         >
                                           {/* Top Badges / Set Primary / Remove */}
                                           <div className="flex items-center justify-between gap-1 mb-1">
@@ -3935,7 +3932,7 @@ export default function AdminProductsPage() {
                     </div>
 
                     {/* Customer Rating & Reviews Settings */}
-                  
+
                   </div>
                 </div>
 
@@ -3984,11 +3981,10 @@ export default function AdminProductsPage() {
                   <button
                     type="button"
                     onClick={() => setStockAdjType('RESTOCK')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
- stockAdjType === 'RESTOCK'
- ? 'bg-[#043927] text-white shadow-xs'
- : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
- }`}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${stockAdjType === 'RESTOCK'
+                        ? 'bg-[#043927] text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                      }`}
                   >
                     <TrendingUp className="w-4 h-4 text-emerald-400" />
                     📥 Restock (+ Add)
@@ -3996,11 +3992,10 @@ export default function AdminProductsPage() {
                   <button
                     type="button"
                     onClick={() => setStockAdjType('DAMAGE')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
- stockAdjType === 'DAMAGE'
- ? 'bg-rose-700 text-white shadow-xs'
- : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
- }`}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${stockAdjType === 'DAMAGE'
+                        ? 'bg-rose-700 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                      }`}
                   >
                     <TrendingDown className="w-4 h-4 text-rose-300" />
                     📤 Waste / Damage (- Remove)
@@ -4008,11 +4003,10 @@ export default function AdminProductsPage() {
                   <button
                     type="button"
                     onClick={() => setStockAdjType('CORRECTION')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
- stockAdjType === 'CORRECTION'
- ? 'bg-amber-600 text-white shadow-xs'
- : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
- }`}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${stockAdjType === 'CORRECTION'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                      }`}
                   >
                     <RefreshCw className="w-4 h-4 text-amber-200" />
                     ✏️ Audit Count (Set Total)
@@ -4087,8 +4081,8 @@ export default function AdminProductsPage() {
                     stockAdjType === 'RESTOCK'
                       ? 'e.g. Supplier Shipment Batch #402 received'
                       : stockAdjType === 'DAMAGE'
-                      ? 'e.g. Discarded 5 expired / damaged items'
-                      : 'e.g. Annual physical inventory audit reconciliation'
+                        ? 'e.g. Discarded 5 expired / damaged items'
+                        : 'e.g. Annual physical inventory audit reconciliation'
                   }
                   value={stockAdjReason}
                   onChange={(e) => setStockAdjReason(e.target.value)}
@@ -4135,13 +4129,12 @@ export default function AdminProductsPage() {
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${
- log.type === 'RESTOCK' || log.type === 'ADD'
- ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
- : log.type === 'DAMAGE' || log.type === 'REMOVE'
- ? 'bg-rose-100 text-rose-800 border-rose-200'
- : 'bg-amber-100 text-amber-800 border-amber-200'
- }`}
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${log.type === 'RESTOCK' || log.type === 'ADD'
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                : log.type === 'DAMAGE' || log.type === 'REMOVE'
+                                  ? 'bg-rose-100 text-rose-800 border-rose-200'
+                                  : 'bg-amber-100 text-amber-800 border-amber-200'
+                              }`}
                           >
                             {log.type}
                           </span>

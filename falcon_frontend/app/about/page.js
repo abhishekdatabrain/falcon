@@ -154,7 +154,7 @@ export default function AboutPage() {
               <div className="relative rounded-3xl overflow-hidden border border-slate-200/90 shadow-2xl aspect-[4/3] bg-emerald-950">
                 <img
                   src={resolveMedia(hero.image_url, '/images/about/greenhouse.jpg')}
-                  alt="SaaRCart Freshness"
+                  alt="SaqrCart Freshness"
                   className="w-full h-full object-cover"
                 />
 
@@ -196,11 +196,10 @@ export default function AboutPage() {
             {stats.map((stat, idx) => (
               <div
                 key={idx}
-                className={`space-y-2 ${
-                  idx < stats.length - 1
+                className={`space-y-2 ${idx < stats.length - 1
                     ? 'border-b sm:border-b-0 sm:border-r border-emerald-800/70 pb-6 sm:pb-0 pr-0 sm:pr-6 rtl:border-r-0 rtl:border-l rtl:pr-0 rtl:pl-6'
                     : ''
-                }`}
+                  }`}
               >
                 <div className="w-8 h-8 rounded-lg bg-emerald-900/70 flex items-center justify-center text-[#34D399]">
                   {ICON_MAP[stat.icon] || <Truck className="w-4.5 h-4.5" />}
@@ -465,13 +464,11 @@ export default function AboutPage() {
             {(timeline.steps || []).map((step, idx) => (
               <div
                 key={idx}
-                className={`bg-white p-6 rounded-2xl border shadow-xs space-y-3 relative ${
-                  step.is_highlighted ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200/90'
-                }`}
+                className={`bg-white p-6 rounded-2xl border shadow-xs space-y-3 relative ${step.is_highlighted ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200/90'
+                  }`}
               >
-                <div className={`w-8 h-8 rounded-full text-white font-black text-xs flex items-center justify-center ${
-                  step.is_highlighted ? 'bg-[#05A764]' : 'bg-[#043927]'
-                }`}>
+                <div className={`w-8 h-8 rounded-full text-white font-black text-xs flex items-center justify-center ${step.is_highlighted ? 'bg-[#05A764]' : 'bg-[#043927]'
+                  }`}>
                   {step.step_number || idx + 1}
                 </div>
                 <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">

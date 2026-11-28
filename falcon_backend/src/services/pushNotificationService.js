@@ -135,7 +135,7 @@ class PushNotificationService {
         const message = {
           tokens: uniqueTokens,
           notification: {
-            title: title || 'SaaRCart Super Mart',
+            title: title || 'SaqrCart Super Mart',
             body: body || '',
           },
           data: stringifiedData,
@@ -355,7 +355,7 @@ class PushNotificationService {
         screen = 'OrderTracking';
       } else if (status === 'DELIVERED') {
         title = `Order Delivered! 🎉 #${cleanOrderNumber}`;
-        body = `Your order #${cleanOrderNumber} has been delivered successfully. Thank you for shopping with SaaRCart!`;
+        body = `Your order #${cleanOrderNumber} has been delivered successfully. Thank you for shopping with SaqrCart!`;
         screen = 'OrderConfirmation';
       } else if (status === 'DELIVERY_FAILED') {
         const reasonText = failureReason ? ` (${failureReason})` : '';
@@ -405,14 +405,11 @@ class PushNotificationService {
   async sendOrderCancelledPush({ orderId, orderNumber, customerUserId, reason, refundStatus }) {
     try {
       const cleanOrderNumber = orderNumber || `#${orderId}`;
-      const refundText = refundStatus === 'REFUNDED'
-        ? ' Your refund has been initiated and processed.'
-        : '';
 
       // 1. Customer Confirmation
       if (customerUserId) {
         const title = `Order Cancelled #${cleanOrderNumber}`;
-        const body = `Your order #${cleanOrderNumber} has been cancelled successfully.${refundText}`;
+        const body = `Your order #${cleanOrderNumber} has been cancelled successfully.`;
         const data = {
           type: 'ORDER_CANCELLED',
           orderId,
@@ -428,7 +425,7 @@ class PushNotificationService {
 
       // 2. Admin Alert Push
       const adminTitle = `Order Cancelled by Customer #${cleanOrderNumber}`;
-      const adminBody = `Order #${cleanOrderNumber} was cancelled by customer. Reason: ${reason || 'N/A'}.${refundText}`;
+      const adminBody = `Order #${cleanOrderNumber} was cancelled by customer. Reason: ${reason || 'N/A'}.`;
       const adminData = {
         type: 'ADMIN_ORDER_CANCELLED',
         orderId,

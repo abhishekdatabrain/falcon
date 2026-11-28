@@ -112,6 +112,7 @@ export default function CheckoutPage() {
 
   // Test Payment Gateway Modal State
   const [showPaymentGatewayModal, setShowPaymentGatewayModal] = useState(false);
+  const [showCodConfirmModal, setShowCodConfirmModal] = useState(false);
   const [gatewayStep, setGatewayStep] = useState('input'); // 'input' | 'otp' | 'processing' | 'failed'
   const [otpInput, setOtpInput] = useState('123456');
   const [gatewayErrorMsg, setGatewayErrorMsg] = useState('');
@@ -379,6 +380,7 @@ export default function CheckoutPage() {
         triggerBrowserPushNotification(res.data.order);
         await clearCart(false);
         await fetchCart().catch(() => { });
+        setShowCodConfirmModal(false);
         showToast(
           locale === 'ar' ? 'تم تأكيد طلبك بنجاح! 🎉 الدفع عند الاستلام' : 'Order placed successfully! 🎉 Cash on delivery',
           'success'
@@ -468,7 +470,7 @@ export default function CheckoutPage() {
     }
 
     if (paymentMethod === 'cod') {
-      handleExecuteCodOrder();
+      setShowCodConfirmModal(true);
     } else {
       setGatewayStep('input');
       setGatewayErrorMsg('');
@@ -2405,6 +2407,104 @@ export default function CheckoutPage() {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* COD ORDER CONFIRMATION MODAL */}
+      {showCodConfirmModal && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => {
+            if (!loading) setShowCodConfirmModal(false);
+          }}
+        >
+          <div
+            className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-2xl space-y-5 relative animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cod-confirm-modal-title"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-[#E8F8F0] border border-emerald-200/80 flex items-center justify-center text-[#006E2D] shrink-0">
+                  <Banknote className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 id="cod-confirm-modal-title" className="text-lg font-black text-slate-900">
+                    {locale === 'ar' ? 'تأكيد طلبك' : 'Confirm Your Order'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+                    {locale === 'ar'
+                      ? 'هل أنت متأكد من أنك تريد تأكيد هذا الطلب؟'
+                      : 'Are you sure you want to place this order?'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!loading) setShowCodConfirmModal(false);
+                }}
+                disabled={loading}
+                aria-label="Close"
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-[#F8F9FA] rounded-2xl p-4 border border-slate-200/80 space-y-3 text-xs sm:text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-slate-500 font-semibold">
+                  {locale === 'ar' ? 'إجمالي الطلب' : 'Order Total'}
+                </span>
+                <span className="text-base font-black text-[#043927]">
+                  SAR {finalTotal.toFixed(2)}
+                </span>
+              </div>
+              <div className="border-t border-dashed border-slate-200" />
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-slate-500 font-semibold">
+                  {locale === 'ar' ? 'طريقة الدفع' : 'Payment Method'}
+                </span>
+                <span className="font-bold text-slate-900">
+                  {locale === 'ar' ? 'الدفع عند الاستلام (COD)' : 'Cash on Delivery (COD)'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowCodConfirmModal(false)}
+                disabled={loading}
+                className="w-full sm:flex-1 py-3 px-4 rounded-full bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-sm transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExecuteCodOrder}
+                disabled={loading}
+                className="w-full sm:flex-1 py-3 px-4 rounded-full bg-[#006E2D] hover:bg-[#048b53] text-white font-black text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{locale === 'ar' ? 'جاري التأكيد...' : 'Placing Order...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{locale === 'ar' ? 'نعم، تأكيد الطلب' : 'Yes, Place Order'}</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

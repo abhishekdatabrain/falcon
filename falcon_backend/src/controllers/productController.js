@@ -104,7 +104,7 @@ class ProductController {
       }
 
       const today = new Date().toISOString().split('T')[0];
-      const filename = `SaaRCart_Products_${today}.xlsx`;
+      const filename = `SaqrCart_Products_${today}.xlsx`;
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

@@ -342,7 +342,7 @@ export default function ContactPage() {
                 </>
               ) : (
                 <>
-                  Get in Touch with the <span className="text-[#05A764]">SaaRCart</span><br />Care Team
+                  Get in Touch with the <span className="text-[#05A764]">SaqrCart</span><br />Care Team
                 </>
               )}
             </h1>
@@ -350,7 +350,7 @@ export default function ContactPage() {
             <p className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
               {isAr
                 ? 'سواء كان لديك استفسار حول طلب قيد التوصيل المبرد، التحقق من طزاجة المنتجات، الطلبات المؤسسية، أو شراكات الموردين — فريقنا المتخصص في خدمتك دائماً.'
-                : 'Whether you have a question about an ongoing delivery, product freshness verification, corporate bulk orders, or supplier onboarding — our dedicated SaaRCart team is at your service.'}
+                : 'Whether you have a question about an ongoing delivery, product freshness verification, corporate bulk orders, or supplier onboarding — our dedicated SaqrCart team is at your service.'}
             </p>
           </div>
 
@@ -484,42 +484,6 @@ export default function ContactPage() {
               </a>
             </div>
 
-            {/* Card 3: Toll-Free Hotline */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 rounded-xl bg-[#EAF5EF] text-[#05A764] flex items-center justify-center font-bold">
-                    <PhoneCall className="w-4.5 h-4.5" />
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    {supportHours}
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="font-black text-slate-900 text-sm sm:text-base">
-                    {isAr ? 'الرقم المجاني الموحد' : 'Toll-Free Hotline'}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-1">
-                    {isAr
-                      ? 'تحدث مباشرة مع فريق خدمة العملاء باللغتين العربية والإنجليزية.'
-                      : 'Speak directly with our Saudi-based Arabic & English customer care team.'}
-                  </p>
-                  <div className="pt-2 text-xs font-mono font-black text-[#043927]" dir="ltr">
-                    {supportPhone}
-                  </div>
-                </div>
-              </div>
-
-              <a
-                href={`tel:${cleanPhoneDigits}`}
-                className="w-full py-2.5 rounded-full bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/60"
-              >
-                <span>{isAr ? 'اتصال مجاني' : 'Call Toll-Free'}</span>
-                <PhoneCall className="w-3.5 h-3.5 text-slate-500" />
-              </a>
-            </div>
-
             {/* Card 4: Corporate & Support Desk */}
             <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
               <div className="space-y-3">
@@ -564,7 +528,7 @@ export default function ContactPage() {
           <div className="flex flex-wrap items-center justify-center gap-3 bg-white rounded-2xl py-3 px-5 border border-slate-200/80 shadow-2xs text-xs">
             <span className="font-bold text-slate-600 flex items-center gap-1.5">
               <Globe className="w-4 h-4 text-[#05A764]" />
-              <span>{isAr ? 'تابع صقر كارت:' : 'Connect with SaaRCart:'}</span>
+              <span>{isAr ? 'تابع صقر كارت:' : 'Connect with SaqrCart:'}</span>
             </span>
             {Object.entries(socialLinks).map(([network, url]) =>
               url && String(url).trim() ? (
@@ -618,7 +582,7 @@ export default function ContactPage() {
                 <p className="text-xs text-emerald-900 font-medium max-w-md mx-auto leading-relaxed">
                   {isAr
                     ? `تم تسجيل طلبك في نظام المتابعة برقم المرجع ${submittedTicket.ticket_number}. سيتواصل معك فريق دعم صقر كارت قريباً.`
-                    : `Your enquiry has been logged in our support system with tracking reference ${submittedTicket.ticket_number}. Our SaaRCart Care team will respond promptly.`}
+                    : `Your enquiry has been logged in our support system with tracking reference ${submittedTicket.ticket_number}. Our SaqrCart Care team will respond promptly.`}
                 </p>
                 <button
                   type="button"
@@ -775,66 +739,6 @@ export default function ContactPage() {
                   {fieldErrors.message && <p className="text-[11px] text-rose-600 font-medium mt-1">{fieldErrors.message}</p>}
                 </div>
 
-                {/* Row 5: Attach Photos or Invoices */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
-                    {isAr ? 'إرفاق صور أو فواتير (اختياري، حد أقصى 5 ميجابايت)' : 'Attach Photos or Invoices (Optional, max 5MB)'}
-                  </label>
-
-                  {attachment ? (
-                    <div className="border border-emerald-200 bg-emerald-50/50 rounded-2xl p-3.5 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-emerald-100 text-[#043927] flex items-center justify-center shrink-0">
-                          <FileText className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-900 truncate">{attachment.name}</p>
-                          <p className="text-[10px] text-emerald-700 font-semibold">{attachment.formattedSize} • {isAr ? 'تم الرفع بنجاح ✓' : 'Uploaded ✓'}</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleRemoveAttachment}
-                        className="p-1.5 rounded-lg hover:bg-rose-100 text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
-                        title={isAr ? 'إزالة الملف' : 'Remove attachment'}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100/70 rounded-2xl p-4 text-center block cursor-pointer transition-colors">
-                      <input
-                        type="file"
-                        accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
-                        className="hidden"
-                        disabled={uploadingFile}
-                        onChange={handleFileSelect}
-                      />
-                      {uploadingFile ? (
-                        <div className="space-y-2 py-1">
-                          <Loader2 className="w-5 h-5 text-[#05A764] mx-auto animate-spin" />
-                          <span className="text-xs font-bold text-slate-700 block">
-                            {isAr ? `جاري الرفع... ${uploadProgress}%` : `Uploading... ${uploadProgress}%`}
-                          </span>
-                          <div className="w-48 mx-auto h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-[#05A764] transition-all" style={{ width: `${uploadProgress}%` }} />
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <Upload className="w-5 h-5 text-[#05A764] mx-auto mb-1.5" />
-                          <span className="text-xs font-bold text-slate-800 block">
-                            {isAr ? 'اضغط للرفع أو اسحب الملف هنا' : 'Click to upload or drag and drop'}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-normal block mt-0.5">
-                            {isAr ? 'JPG, PNG, PDF حتى 5 ميجابايت (مفيد للبضائع المتضررة أو إثبات التوصيل)' : 'JPG, PNG, PDF up to 5MB (Helpful for damaged goods or proof of delivery)'}
-                          </span>
-                        </>
-                      )}
-                    </label>
-                  )}
-                </div>
-
                 {/* Row 6: Agreement Checkbox */}
                 <div>
                   <div className="flex items-start gap-2.5 pt-1">
@@ -858,7 +762,7 @@ export default function ContactPage() {
                         </>
                       ) : (
                         <>
-                          I agree to SaaRCart processing my information in accordance with the{' '}
+                          I agree to SaqrCart processing my information in accordance with the{' '}
                           <Link href="/privacy" className="font-bold underline text-slate-800 hover:text-[#043927]">Privacy Policy</Link> and{' '}
                           <Link href="/terms" className="font-bold underline text-slate-800 hover:text-[#043927]">Terms of Service</Link> for prompt resolution.
                         </>
@@ -955,11 +859,10 @@ export default function ContactPage() {
                             key={loc.id}
                             type="button"
                             onClick={() => setActiveLocationId(loc.id)}
-                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
-                              isSelected
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${isSelected
                                 ? 'bg-[#043927] text-white'
                                 : 'bg-white/95 text-slate-700 hover:bg-white border border-slate-200'
-                            }`}
+                              }`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-[#34D399]' : 'bg-slate-400'}`}></span>
                             <span>{label}</span>
@@ -977,18 +880,16 @@ export default function ContactPage() {
                         <div
                           key={loc.id}
                           onClick={() => setActiveLocationId(loc.id)}
-                          className={`p-4 rounded-2xl border transition-all space-y-2 cursor-pointer ${
-                            isSelected
+                          className={`p-4 rounded-2xl border transition-all space-y-2 cursor-pointer ${isSelected
                               ? 'bg-emerald-50/40 border-emerald-300 ring-1 ring-emerald-300'
                               : 'bg-slate-50/70 border-slate-200/80 hover:border-emerald-200'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md uppercase ${
-                              isSelected
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md uppercase ${isSelected
                                 ? 'text-emerald-800 bg-[#EAF5EF] border border-[#CDE5D7]'
                                 : 'text-slate-600 bg-slate-100'
-                            }`}>
+                              }`}>
                               {isAr ? (loc.badge_ar || loc.location_type) : (loc.badge_en || loc.location_type)}
                             </span>
                             {getLocationIcon(loc.location_type)}
@@ -1048,13 +949,13 @@ export default function ContactPage() {
               <p className="text-xs text-emerald-100/90 font-normal leading-relaxed">
                 {isAr
                   ? 'شارك مع صقر كارت للتوزيع المباشر إلى آلاف المنازل والشركات في المملكة العربية السعودية.'
-                  : 'Partner with SaaRCart for direct distribution to thousands of households and businesses across Saudi Arabia.'}
+                  : 'Partner with SaqrCart for direct distribution to thousands of households and businesses across Saudi Arabia.'}
               </p>
               <Link
                 href="/about"
                 className="w-full py-2.5 rounded-full bg-white text-[#043927] hover:bg-emerald-50 font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <span>{isAr ? 'تعرّف على صقر كارت' : 'Learn About SaaRCart'}</span>
+                <span>{isAr ? 'تعرّف على صقر كارت' : 'Learn About SaqrCart'}</span>
                 <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
               </Link>
             </div>
